@@ -107,7 +107,7 @@ const Register = () => {
   return (
     <View className="h-full p-6 bg-bgauth  w-full">
       <SafeAreaView className="bg-bgauth  flex-1 justify-start items-center">
-        <Header title="NOVA CONTA"></Header>
+        <Header title="NOVA CONTA" />
 
         <View className="mt-4 flex flex-1 w-full">
           <View className="flex flex-[0.9] w-full">
@@ -117,7 +117,7 @@ const Register = () => {
               }}
               onChangeText={setName}
               title="NOME"
-            ></Input>
+             />
             <Input
               keyboardType="email-address"
               autoCapitalize="none"
@@ -125,14 +125,14 @@ const Register = () => {
                 setEmail(value);
               }}
               title="EMAIL"
-            ></Input>
+             />
             <Input
               secureTextEntry
               title="PASSWORD"
               handleGetValue={(value) => {
                 setPassword(value);
               }}
-            ></Input>
+             />
 
             <Text className="text-white opacity-50 mt-[-20] text-xs font-dinRegular text-left">
               Password deve conter no mínimo 6 caracteres
@@ -147,7 +147,7 @@ const Register = () => {
               <ActivityIndicator
                 color={"#00835B"}
                 size={24}
-              ></ActivityIndicator>
+               />
             ) : (
               <Text
                 className={`text-titleauth font-dinBold ${Platform.OS === "ios" ? "mt-3" : "mt-0"} text-lg`}
