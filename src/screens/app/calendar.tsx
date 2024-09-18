@@ -47,7 +47,7 @@ const Calendar = () => {
     entering={FadeInUp.delay(100)}
     className="bg-bgauth flex flex-col mt-0 h-full w-full" >
        <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-         <Header title={'AGENDA'}></Header>
+         <Header title={'AGENDA'} />
       </View>
       {nextGame &&
         <PrincipalGame

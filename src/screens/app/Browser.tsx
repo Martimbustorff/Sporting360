@@ -17,7 +17,7 @@ const Browser = () => {
     entering={FadeInUp.delay(100)}
     className="bg-background flex flex-col mt-0 h-full w-full" >
        <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-         <Header title={ClubSites[index].title}></Header>
+         <Header title={ClubSites[index].title} />
       </View>
     <WebView
       className='h-full flex-1 w-full'

@@ -30,7 +30,7 @@ const CubSites = () => {
     entering={FadeInUp.delay(100)}
     className="bg-bgauth flex flex-col mt-0 h-full w-full" >
        <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-         <Header title={'SITES DO CLUBE'}></Header>
+         <Header title={'SITES DO CLUBE'} />
       </View>
       <Text className=' pl-4 pr-4 font-dinLight text-base mb-6 leading-1 text-white'>Aqui podes encontrar ligações directas para os sites oficiais do clube. </Text>
       <ScrollView>

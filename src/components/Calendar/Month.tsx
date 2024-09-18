@@ -11,8 +11,7 @@ const Month = ({title}:IMonth) => {
     <Text className='font-dinBold text-lg  mt-2 mb-2 text-white'>
     {title}
     </Text>
-    <View className='absolute  bg-white flex w-full h-full  opacity-5'>
-    </View>
+    <View className='absolute  bg-white flex w-full h-full  opacity-5' />
   
 </View>  
 }

@@ -140,12 +140,11 @@ const Login = () => {
   return (
     <Animated.View  className="h-full p-6 bg-bgauth  w-full">
          <SafeAreaView className="bg-bgauth   flex-1 justify-start items-center">
-      <Header  title="ACESSO"></Header>
+      <Header  title="ACESSO" />
       <Animated.View entering={FadeIn.delay(100)}  className="mt-4 flex flex-1 w-full">
         <View className="flex flex-[0.9] w-full">
-          <Input  autoCapitalize="none" keyboardType="email-address"  handleGetValue={(value)=>{setEmail(value)}} title="EMAIL"></Input>
-          <Input  handleGetValue={(value)=>{setPassword(value)}} secureTextEntry={true} title="PASSWORD"  >
-         </Input>
+          <Input  autoCapitalize="none" keyboardType="email-address"  handleGetValue={(value)=>{setEmail(value)}} title="EMAIL" />
+          <Input  handleGetValue={(value)=>{setPassword(value)}} secureTextEntry={true} title="PASSWORD"   />
         </View>
         <TouchableOpacity 
             onPress={()=>handlePress()}
@@ -153,7 +152,7 @@ const Login = () => {
             className='bg-white w-full h-14 justify-center items-center rounded-full top-4'
           >
                 {loading ?
-          <ActivityIndicator color={'#00835B'} size={24}></ActivityIndicator>
+          <ActivityIndicator color={'#00835B'} size={24} />
          : <Text className={`text-titleauth font-dinBold ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-lg`}>ENTRAR</Text>}
         </TouchableOpacity>
       </Animated.View>

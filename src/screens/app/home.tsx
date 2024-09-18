@@ -243,7 +243,7 @@ const Home = () => {
           index={index}
           key={item.url} item={item} navigation={navigation} />;
       })}
-      <View  className={` mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 `}></View>
+      <View  className={` mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 `} />
       {/* Gamebox Section */}
       {user && gameboxes.length > 0 ? (
         <Animated.View style={bootomBackgroundStyle} className={`bg-white absolute flex-row    w-[100%] rounded-t-[48px] pr-8 pl-8 pb-8 pt-4 `}>
@@ -253,8 +253,8 @@ const Home = () => {
               <Text className='font-dinBold text-titleauth text-xl mt-[4] mb-2'>GAMEBOX DIGITAL</Text>
               <TouchableOpacity onPress={()=>handleOpenGameBoxWithFill()}>
                 <Text className="text-black  text-center text-sm  mb-4 font-dinRegular ">
-                  {open ? <Image source={require('../../assets/Chevron_Up.png')}></Image>
-                    : <Image source={require('../../assets/Chevron_down.png')}></Image> 
+                  {open ? <Image source={require('../../assets/Chevron_Up.png')} />
+                    : <Image source={require('../../assets/Chevron_down.png')} /> 
                   }
                 </Text>
               </TouchableOpacity>

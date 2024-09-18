@@ -63,12 +63,12 @@ const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
           <Text className={`text-white font-dinBold text-xl leading-9 w-14 pl-4 top-1`}>{ homeValue !==  "null" ? homeValue : "0"}</Text>
           {x.name === "Cartão amarelo" ?
            <View className='flex-row gap-2'>
-             <Image className='w-4' source={require('../../assets/icons/yellowcard.png')} ></Image>
+             <Image className='w-4' source={require('../../assets/icons/yellowcard.png')}  />
             <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>
            </View>
           : x.name === "Cartão vermelho" ? 
           <View className='flex-row gap-2'>
-          <Image className='w-4' source={require('../../assets/icons/redcard.png')} ></Image>
+          <Image className='w-4' source={require('../../assets/icons/redcard.png')}  />
          <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>
         </View>
           :  <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>}
@@ -76,7 +76,7 @@ const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
        </View>
       )
     })}
-    <View className='h-60'></View>
+    <View className='h-60' />
         
   </View>;
 }

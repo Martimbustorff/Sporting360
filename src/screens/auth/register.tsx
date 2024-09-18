@@ -106,13 +106,13 @@ const Register = () => {
   return (
     <View className="h-full p-6 bg-bgauth  w-full">
     <SafeAreaView className="bg-bgauth  flex-1 justify-start items-center">
-      <Header title="NOVA CONTA"></Header>
+      <Header title="NOVA CONTA" />
       
       <View className="mt-4 flex flex-1 w-full">
         <View className="flex flex-[0.9] w-full">
-          <Input handleGetValue={(value)=>{setName(value)}}  autoFocus={true}  onChangeText={setName} title="NOME"></Input>
-          <Input  keyboardType="email-address" autoCapitalize="none" handleGetValue={(value)=>{setEmail(value)}}   title="EMAIL"></Input>
-          <Input secureTextEntry title="PASSWORD" handleGetValue={(value)=>{setPassword(value)}} ></Input>
+          <Input handleGetValue={(value)=>{setName(value)}}  autoFocus={true}  onChangeText={setName} title="NOME" />
+          <Input  keyboardType="email-address" autoCapitalize="none" handleGetValue={(value)=>{setEmail(value)}}   title="EMAIL" />
+          <Input secureTextEntry title="PASSWORD" handleGetValue={(value)=>{setPassword(value)}}  />
 
 
           <Text className="text-white opacity-50 mt-[-20] text-xs font-dinRegular text-left">
@@ -125,7 +125,7 @@ const Register = () => {
             className='bg-white w-full h-14 justify-center items-center rounded-full mb-4'
           >
          {loading ?
-          <ActivityIndicator color={'#00835B'} size={24}></ActivityIndicator>
+          <ActivityIndicator color={'#00835B'} size={24} />
          : <Text className={`text-titleauth font-dinBold ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-lg`}>CRIAR CONTA</Text>}
         </TouchableOpacity>
         <TouchableOpacity

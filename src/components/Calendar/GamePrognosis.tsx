@@ -51,8 +51,7 @@ return  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                   {formatDate()}
         </Text>
       </View>
-      <View className='w-1/3'>
-      </View>
+      <View className='w-1/3' />
 
     </View>
    
@@ -75,8 +74,7 @@ return  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                   mr-2
                   ml-2
                     font-bold font-dinBold  text-3xl  text-center leading-[15px] h-20
-                     rounded-md '>
-                  </TextInput>
+                     rounded-md ' />
                   <TextInput 
                   onChangeText={(text)=>text ? Keyboard.dismiss() : null}
                   keyboardType='number-pad'

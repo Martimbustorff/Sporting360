@@ -181,20 +181,18 @@ const Definitions = () => {
     <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
        <Image
         className='flex flex-1  absolute h-full w-full'
-        source={require('../../assets/opacebg.png')}  >
-      </Image>
+        source={require('../../assets/opacebg.png')}   />
       <Animated.View 
             style={[{backgroundColor:'#001B13'}]}
-            className='flex flex-1 absolute h-full w-full opacity-80'>
-          </Animated.View>
+            className='flex flex-1 absolute h-full w-full opacity-80' />
           <View className=" mt-2 mt-[5] mb-[-15] w-full ">
-      <Header title="CONTA S360"></Header>
+      <Header title="CONTA S360" />
       </View>
      
       <View className={`mt-0  p-6   flex flex-1 w-full`}>
         <Animated.View  entering={FadeIn.delay(100)} className="flex flex-[0.9] w-full">
-          <Input defaultValue={user.name.toUpperCase()}  handleGetValue={(value)=>{setName(value)}}  onChangeText={setName} title="NOME"></Input>
-          <Input maskInput  mask="99/9999" defaultValue={user.partnerNumber}  keyboardType="default" autoCapitalize="none" handleGetValue={(value)=>{setParterNumber(value)}}   title="SÓCIO DESDE"></Input>
+          <Input defaultValue={user.name.toUpperCase()}  handleGetValue={(value)=>{setName(value)}}  onChangeText={setName} title="NOME" />
+          <Input maskInput  mask="99/9999" defaultValue={user.partnerNumber}  keyboardType="default" autoCapitalize="none" handleGetValue={(value)=>{setParterNumber(value)}}   title="SÓCIO DESDE" />
           <TouchableOpacity 
       className="flex-row"
       onPress={()=>handleResetPassword()}>
@@ -209,7 +207,7 @@ const Definitions = () => {
             className='bg-white w-full h-14 justify-center   items-center rounded-full'
           >
          {loading ?
-          <ActivityIndicator color={'#00835B'} size={24}></ActivityIndicator>
+          <ActivityIndicator color={'#00835B'} size={24} />
          : <Text className={`text-titleauth font-dinBold ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-lg`}>GUARDAR</Text>}
         </TouchableOpacity>
         <TouchableOpacity 

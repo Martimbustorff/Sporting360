@@ -219,17 +219,15 @@ const GameboxMangement = () => {
       <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
          <Image
           className='flex flex-1  absolute h-full w-full'
-          source={require('../../../assets/opacebg.png')}  >
-        </Image>
+          source={require('../../../assets/opacebg.png')}   />
         <Animated.View 
               style={[{backgroundColor:'#001B13'}]}
-              className='flex flex-1 absolute h-full w-full opacity-80'>
-            </Animated.View>
+              className='flex flex-1 absolute h-full w-full opacity-80' />
             <View className=" mt-2 mt-[5] mb-[-15] w-full ">
-        <Header title="GESTÃO GAMEBOX"></Header>
+        <Header title="GESTÃO GAMEBOX" />
         </View>
         <View className={`mt-0  p-6 justify-center items-center   flex flex-1 w-full`}>
-            <ActivityIndicator color={'#FFFF'} size={24}></ActivityIndicator>
+            <ActivityIndicator color={'#FFFF'} size={24} />
         </View>
       </SafeAreaView>
       </ScrollView>
@@ -243,12 +241,10 @@ const GameboxMangement = () => {
     <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
        <Image
         className='flex flex-1  absolute h-full w-full'
-        source={require('../../../assets/opacebg.png')}  >
-      </Image>
+        source={require('../../../assets/opacebg.png')}   />
       <Animated.View 
             style={[{backgroundColor:'#001B13'}]}
-            className='flex flex-1 absolute h-full w-full opacity-80'>
-          </Animated.View>
+            className='flex flex-1 absolute h-full w-full opacity-80' />
           <View className=" mt-2 mt-[5] mb-[-15] w-full ">
           <View
             style={{height:Platform.OS === "android" ? 110 : 40}}
@@ -256,7 +252,7 @@ const GameboxMangement = () => {
             <TouchableOpacity 
             style={{paddingTop:Platform.OS === "android" ? 20 : 0}}
             className={`w-12 h-12 justify-center items-center`} onPress={()=>navigation.goBack()}>
-            <Image  className='h-auto' resizeMode='contain' source={require('../../../assets/arrowLeft.png')}></Image>
+            <Image  className='h-auto' resizeMode='contain' source={require('../../../assets/arrowLeft.png')} />
             </TouchableOpacity>
             <Text className='font-dinBold h-6 mt-2 text-lg text-titleauth'>
               GESTÃO GAMEBOX
@@ -264,7 +260,7 @@ const GameboxMangement = () => {
             <TouchableOpacity
              onPress={()=>handlePress()}
              className={`w-12 h-12 justify-center ${Platform.OS == 'android' && 'mt-2'} items-start`} >
-            <Image  className='h-auto' resizeMode='contain' source={require('../../../assets/icons/Check_Big.png')}></Image>
+            <Image  className='h-auto' resizeMode='contain' source={require('../../../assets/icons/Check_Big.png')} />
             </TouchableOpacity>
           </View>  
       
@@ -275,9 +271,9 @@ const GameboxMangement = () => {
           <View className="w-full flex  flex-row">
             {
               gameboxReaded !== null ?
-            gameboxReaded.gameboxNumber ?  <Input defaultValue={gameboxReaded.gameboxNumber}  keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX"></Input>
-             : <Input defaultValue={gamebox ? decryptGameBox(gamebox?.gameboxNumber,user.uuid) : ""}  keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX"></Input>
-            : <Input defaultValue={gamebox ? decryptGameBox(gamebox?.gameboxNumber,user.uuid) : ""}   keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX"></Input>
+            gameboxReaded.gameboxNumber ?  <Input defaultValue={gameboxReaded.gameboxNumber}  keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX" />
+             : <Input defaultValue={gamebox ? decryptGameBox(gamebox?.gameboxNumber,user.uuid) : ""}  keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX" />
+            : <Input defaultValue={gamebox ? decryptGameBox(gamebox?.gameboxNumber,user.uuid) : ""}   keyboardType="number-pad" autoCapitalize="none" handleGetValue={(value)=>{setGameboxNumber(value)}}   title="NUMERO DA GAMEBOX" />
             }
            <TouchableOpacity 
             onPress={()=>navigation.navigate('Gamebox')}
@@ -289,27 +285,27 @@ const GameboxMangement = () => {
                  keyboardType="default"
                  autoCapitalize="none"
                  handleGetValue={(value)=>{setGameboxName(value)}}  
-                 title="NOME"></Input>
+                 title="NOME" />
           <Input defaultValue={gamebox?.gameboxPort}  
                  keyboardType="number-pad"
                  autoCapitalize="none"
                  handleGetValue={(value)=>{setGameboxPort(value)}}  
-                 title="PORTA"></Input>
+                 title="PORTA" />
           <Input defaultValue={gamebox?.gameboxSector}  
                  keyboardType="default"
                  autoCapitalize="none"
                  handleGetValue={(value)=>{setGameboxSector(value)}}  
-                 title="SECTOR"></Input>
+                 title="SECTOR" />
          <Input defaultValue={gamebox?.gameboxLine}  
                  keyboardType="number-pad"
                  autoCapitalize="none"
                  handleGetValue={(value)=>{setGameboxLine(value)}}  
-                 title="FILA"></Input>
+                 title="FILA" />
          <Input  defaultValue={gamebox?.gameboxSeat}  
                  keyboardType="number-pad"
                  autoCapitalize="none"
                  handleGetValue={(value)=>{setGameboxSeat(value)}}  
-                 title="LUGAR"></Input>
+                 title="LUGAR" />
         </Animated.View>
    
         {route.params?.id && <TouchableOpacity 

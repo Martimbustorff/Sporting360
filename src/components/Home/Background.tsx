@@ -35,16 +35,14 @@ export const Background = () => {
         style={imageBackgroundStyle}
         className="flex flex-1 top-20 absolute h-full w-full"
         source={require("../../assets/bghome.png")}
-      ></Animated.Image>
+       />
       <Animated.Image
         style={imageBackgroundCircleStyle}
         className='flex flex-1 top-0 absolute h-96 w-full'
-        source={require('../../assets/Circle2.png')}  >
-      </Animated.Image>
+        source={require('../../assets/Circle2.png')}   />
       <Animated.View 
             style={[{backgroundColor:'#003625'},bgGreenStyle]}
-            className=' absolute h-full w-full'>
-      </Animated.View>
+            className=' absolute h-full w-full' />
     </>
   )
 }

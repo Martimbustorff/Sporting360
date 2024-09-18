@@ -112,12 +112,10 @@ export const Stadium = () => {
     <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
        <Image
         className='flex flex-1  absolute h-full w-full'
-        source={require('../../assets/opacebg.png')}  >
-       </Image>
+        source={require('../../assets/opacebg.png')}   />
          <Animated.View 
             style={[{backgroundColor:'#001B13'}]}
-            className='flex  absolute h-full w-full opacity-80'>
-          </Animated.View>
+            className='flex  absolute h-full w-full opacity-80' />
           <View className=" mt-2   w-full ">
               <View
             style={{height:Platform.OS === "android" ? 110 : 40}}
@@ -127,7 +125,7 @@ export const Stadium = () => {
             className={`w-12 h-12 justify-center items-center`} onPress={()=>
               navigation.goBack()
              }>
-            <Image  className='h-auto' resizeMode='contain' source={require('../../assets/arrowLeft.png')}></Image>
+            <Image  className='h-auto' resizeMode='contain' source={require('../../assets/arrowLeft.png')} />
             </TouchableOpacity>
             <Text className='font-dinBold h-6 mt-2 text-lg text-titleauth'>
               ESTÁDIO
@@ -147,7 +145,7 @@ export const Stadium = () => {
                   scaleValue.value = withTiming(1.6, { duration: 300 })
                }
               }>
-              <Image  className='h-auto' resizeMode='contain' source={isZoomed ? require('../../assets/icons/Shrink.png') : require('../../assets/icons/Expand.png')}></Image>
+              <Image  className='h-auto' resizeMode='contain' source={isZoomed ? require('../../assets/icons/Shrink.png') : require('../../assets/icons/Expand.png')} />
             </TouchableOpacity>
             </View>
          </View>
@@ -155,20 +153,20 @@ export const Stadium = () => {
             <PanGestureHandler
           onGestureEvent={gestureHandler}
           enabled={isZoomed}>
-                <Animated.Image className='h-96 w-96 object-contain' resizeMode={'contain'} style={animatedStyle} source={require('../../assets/stadiummap.png')} ></Animated.Image>
+                <Animated.Image className='h-96 w-96 object-contain' resizeMode={'contain'} style={animatedStyle} source={require('../../assets/stadiummap.png')}  />
                 </PanGestureHandler>
             </View>
             <View className="flex-col w-full h-40 p-4">
                 <View className={`flex flex-row ${Platform.OS === 'android' ? 'h-5' : 'h-3'}  mb-12 gap-4 w-full justify-start items-center`}>
-                  <Image className="" source={require('../../assets/icons/Museum.png')} ></Image>
+                  <Image className="" source={require('../../assets/icons/Museum.png')}  />
                   <Text className={`font-bold text-center  h-full text-sm text-white font-dinBold`}>MUSEU SPORTING</Text>
                 </View>
                 <View className={`flex flex-row ${Platform.OS === 'android' ? 'h-5' : 'h-3'}  mb-12 gap-4 w-full justify-start items-center`}>
-                  <Image className="h-5 w-5" source={require('../../assets/store.png')} ></Image>
+                  <Image className="h-5 w-5" source={require('../../assets/store.png')}  />
                   <Text className="font-bold h-full text-sm text-white font-dinBold">LOJA VERDE</Text>
                 </View>
                 <View className={`flex flex-row ${Platform.OS === 'android' ? 'h-5' : 'h-3'}  mb-12 gap-4 w-full justify-start items-center`}>
-                  <Image className="h-5 w-5" resizeMode="contain" source={require('../../assets/tickets.png')} ></Image>
+                  <Image className="h-5 w-5" resizeMode="contain" source={require('../../assets/tickets.png')}  />
                   <Text className="font-bold h-full text-sm text-white font-dinBold">BILHETEIRA</Text>
                 </View>
             </View>
