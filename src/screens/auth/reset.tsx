@@ -81,7 +81,7 @@ const Reset = () => {
 
         <View className="mt-6 flex flex-1 w-full">
           <View className="flex flex-[0.9] w-full">
-            <Input autoFocus autoCapitalize="none"  keyboardType="email-address" handleGetValue={(value)=>{setEmail(value)}}  title="EMAIL"></Input>
+            <Input  autoCapitalize="none"  keyboardType="email-address" handleGetValue={(value)=>{setEmail(value)}}  title="EMAIL"></Input>
           </View>
           <TouchableOpacity 
               onPress={handleResetPassword}
