@@ -8,14 +8,21 @@ export interface IManOfTheMatch {
   id: string;
 }
 // get summaries from firebase by gameId
-export const getManOfTheMatch = async (gameId:string):Promise<IManOfTheMatch[]> => {
-  const document = firebase.firestore().collection('manofmatch').where('GameId', '==', gameId);
-  const lineups =  await document.get()
-  return lineups.docs.map(doc => doc.data()) as IManOfTheMatch[];
-}
+export const getManOfTheMatch = async (
+  gameId: string,
+): Promise<IManOfTheMatch[]> => {
+  const document = firebase
+    .firestore()
+    .collection("manofmatch")
+    .where("GameId", "==", gameId);
+  const lineups = await document.get();
+  return lineups.docs.map((doc) => doc.data()) as IManOfTheMatch[];
+};
 
-export const postManOfTheMatch = async (manOfTheMatch:IManOfTheMatch):Promise<boolean> => {
-  const document = firebase.firestore().collection('manofmatch');
+export const postManOfTheMatch = async (
+  manOfTheMatch: IManOfTheMatch,
+): Promise<boolean> => {
+  const document = firebase.firestore().collection("manofmatch");
   await document.add(manOfTheMatch);
   return true;
-}
+};

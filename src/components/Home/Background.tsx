@@ -1,5 +1,9 @@
-import React ,{ useEffect } from "react";
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated"
+import React, { useEffect } from "react";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 export const Background = () => {
   const opacityBackgroundCircleValue = useSharedValue(0);
@@ -31,20 +35,20 @@ export const Background = () => {
 
   return (
     <>
-       <Animated.Image
+      <Animated.Image
         style={imageBackgroundStyle}
         className="flex flex-1 top-20 absolute h-full w-full"
         source={require("../../assets/bghome.png")}
       ></Animated.Image>
       <Animated.Image
         style={imageBackgroundCircleStyle}
-        className='flex flex-1 top-0 absolute h-96 w-full'
-        source={require('../../assets/Circle2.png')}  >
-      </Animated.Image>
-      <Animated.View 
-            style={[{backgroundColor:'#003625'},bgGreenStyle]}
-            className=' absolute h-full w-full'>
-      </Animated.View>
+        className="flex flex-1 top-0 absolute h-96 w-full"
+        source={require("../../assets/Circle2.png")}
+      ></Animated.Image>
+      <Animated.View
+        style={[{ backgroundColor: "#003625" }, bgGreenStyle]}
+        className=" absolute h-full w-full"
+      ></Animated.View>
     </>
-  )
-}
+  );
+};

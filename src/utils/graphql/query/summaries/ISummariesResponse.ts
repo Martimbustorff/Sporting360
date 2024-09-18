@@ -29,10 +29,8 @@ export interface Summary {
   };
 }
 
-
- export interface ISummariesResponse {
+export interface ISummariesResponse {
   summaries: {
     data: Summary[];
   };
 }
-

@@ -1,4 +1,3 @@
-
 interface VideosAttributes {
   URL: string;
   Description: string; // Adjust the type based on the possible values
@@ -16,5 +15,3 @@ interface Videos {
 export interface IVideosResponse {
   videos: Videos;
 }
-
-

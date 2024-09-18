@@ -29,5 +29,3 @@ interface Statistics {
 export interface IStatisticsResponse {
   statistics: Statistics;
 }
-
-
