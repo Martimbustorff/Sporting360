@@ -47,7 +47,7 @@ return  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       </View>
     
       <View className='w-1/3  mb-3 mt-3 justify-center items-center'>
-        <Text className={`font-dinLight  text-sm  text-white `}>
+        <Text className={"font-dinLight  text-sm  text-white "}>
                   {formatDate()}
         </Text>
       </View>

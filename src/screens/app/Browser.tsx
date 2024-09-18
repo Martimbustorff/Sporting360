@@ -11,7 +11,7 @@ const Browser = () => {
   const navigation = useNavigation()
   const routes = useRoute()
   const index = Number(routes.params.index)
-  return <SafeAreaView className={`bg-primary  flex-1 h-full justify-start items-center`}>
+  return <SafeAreaView className={"bg-primary  flex-1 h-full justify-start items-center"}>
   <Animated.View 
     style={{backgroundColor:'#003625'}}
     entering={FadeInUp.delay(100)}

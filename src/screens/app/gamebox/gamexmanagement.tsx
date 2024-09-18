@@ -216,7 +216,7 @@ const GameboxMangement = () => {
     return ( 
       <ScrollView contentContainerStyle={{flexGrow: 1}}
       keyboardShouldPersistTaps='handled'>
-      <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+      <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
          <Image
           className='flex flex-1  absolute h-full w-full'
           source={require('../../../assets/opacebg.png')}  >
@@ -228,7 +228,7 @@ const GameboxMangement = () => {
             <View className=" mt-2 mt-[5] mb-[-15] w-full ">
         <Header title="GESTÃO GAMEBOX"></Header>
         </View>
-        <View className={`mt-0  p-6 justify-center items-center   flex flex-1 w-full`}>
+        <View className={"mt-0  p-6 justify-center items-center   flex flex-1 w-full"}>
             <ActivityIndicator color={'#FFFF'} size={24}></ActivityIndicator>
         </View>
       </SafeAreaView>
@@ -240,7 +240,7 @@ const GameboxMangement = () => {
   return (
     <ScrollView contentContainerStyle={{flexGrow: 1}}
     keyboardShouldPersistTaps='handled'>
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
        <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../../assets/opacebg.png')}  >
@@ -255,7 +255,7 @@ const GameboxMangement = () => {
             className={`w-full ${Platform.OS == 'ios' ? 'h-10 mb-6' : 'h-10'} flex-row  justify-between items-center`}>
             <TouchableOpacity 
             style={{paddingTop:Platform.OS === "android" ? 20 : 0}}
-            className={`w-12 h-12 justify-center items-center`} onPress={()=>navigation.goBack()}>
+            className={"w-12 h-12 justify-center items-center"} onPress={()=>navigation.goBack()}>
             <Image  className='h-auto' resizeMode='contain' source={require('../../../assets/arrowLeft.png')}></Image>
             </TouchableOpacity>
             <Text className='font-dinBold h-6 mt-2 text-lg text-titleauth'>
@@ -270,7 +270,7 @@ const GameboxMangement = () => {
       
       </View>
      
-      <View className={`mt-0  p-6   flex flex-1 w-full`}>
+      <View className={"mt-0  p-6   flex flex-1 w-full"}>
         <Animated.View  entering={FadeIn.delay(100)} className="flex flex-[0.9] w-full">
           <View className="w-full flex  flex-row">
             {

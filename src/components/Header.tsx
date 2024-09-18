@@ -15,7 +15,7 @@ const Header = ({title,hideBackButton = false}:IHeader) => {
   className={`w-full ${Platform.OS == 'ios' ? 'h-10 mb-6' : 'h-10'} flex-row  justify-between items-center`}>
   <TouchableOpacity 
    style={{paddingTop:Platform.OS === "android" ? 20 : 0}}
-  className={`w-12 h-12 justify-center items-center`} onPress={()=>navigation.goBack()}>
+  className={"w-12 h-12 justify-center items-center"} onPress={()=>navigation.goBack()}>
    {!hideBackButton && <Image  className='h-auto' resizeMode='contain' source={require('../assets/arrowLeft.png')}></Image>}
   </TouchableOpacity>
   <Text className='font-dinBold h-6 mt-2 text-lg text-titleauth'>

@@ -72,7 +72,7 @@ const GameboxList = () => {
   );
 
   return (
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
        <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../../assets/opacebg.png')}  >
@@ -91,7 +91,7 @@ const GameboxList = () => {
         </Text>
        </View>
       }
-      <View className={`mt-4  pl-6 pr-6   flex flex-1 w-full`}>
+      <View className={"mt-4  pl-6 pr-6   flex flex-1 w-full"}>
         <Animated.View  entering={FadeIn.delay(100)} className="flex flex-[0.9] w-full">
           <DraggableFlatList
           data={gameboxes.sort(x=>x.order)}

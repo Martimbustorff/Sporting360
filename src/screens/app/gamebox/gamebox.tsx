@@ -74,7 +74,7 @@ const Gamebox = () => {
   };
 
   return (
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
           <View className=" pl-6   w-full ">
       <Header title="Gamebox"></Header>
       </View>

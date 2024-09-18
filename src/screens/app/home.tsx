@@ -243,10 +243,10 @@ const Home = () => {
           index={index}
           key={item.url} item={item} navigation={navigation} />;
       })}
-      <View  className={` mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 `}></View>
+      <View  className={" mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 "}></View>
       {/* Gamebox Section */}
       {user && gameboxes.length > 0 ? (
-        <Animated.View style={bootomBackgroundStyle} className={`bg-white absolute flex-row    w-[100%] rounded-t-[48px] pr-8 pl-8 pb-8 pt-4 `}>
+        <Animated.View style={bootomBackgroundStyle} className={"bg-white absolute flex-row    w-[100%] rounded-t-[48px] pr-8 pl-8 pb-8 pt-4 "}>
           {/* Gamebox Cards */}
           <View className={`w-full ${open ? 'flex-col' : 'flex-col'} justify-between`} onPress={()=>handleOpenGameBoxWithFill()} >
             <View className="flex flex-row w-full justify-between items-center">
@@ -306,7 +306,7 @@ const Home = () => {
           </View> 
         </Animated.View>
       ) : (
-        <Animated.View style={bootomBackgroundStyle} className={`bg-white absolute flex-col     w-[100%] rounded-t-[48px] pt-4 pl-8 pr-8 pb-8 `}>
+        <Animated.View style={bootomBackgroundStyle} className={"bg-white absolute flex-col     w-[100%] rounded-t-[48px] pt-4 pl-8 pr-8 pb-8 "}>
           {/* Gamebox Management Section */}
           <Pressable onPress={() => handleOpenGameBox()}>
             <View className="flex flex-row w-full justify-between items-center">

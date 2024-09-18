@@ -7,7 +7,7 @@ const Terms = () => {
   return (
     <SafeAreaView className="bg-bgauth flex-1 justify-center items-center">
       <Header title="TERMOS E SERVIÇOS"></Header>
-      <ScrollView className={`flex-1 pl-4 pr-4 mb-10`}>
+      <ScrollView className={"flex-1 pl-4 pr-4 mb-10"}>
       <Text className="text-white_gray font-dinBold leading-10  text-md">
         1. ACEITAÇÃO DOS TERMOS E CONDIÇÕES
       </Text>

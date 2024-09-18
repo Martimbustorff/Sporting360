@@ -178,7 +178,7 @@ const Definitions = () => {
   return (
     <ScrollView contentContainerStyle={{flexGrow: 1}}
     keyboardShouldPersistTaps='handled'>
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
        <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../assets/opacebg.png')}  >
@@ -191,7 +191,7 @@ const Definitions = () => {
       <Header title="CONTA S360"></Header>
       </View>
      
-      <View className={`mt-0  p-6   flex flex-1 w-full`}>
+      <View className={"mt-0  p-6   flex flex-1 w-full"}>
         <Animated.View  entering={FadeIn.delay(100)} className="flex flex-[0.9] w-full">
           <Input defaultValue={user.name.toUpperCase()}  handleGetValue={(value)=>{setName(value)}}  onChangeText={setName} title="NOME"></Input>
           <Input maskInput  mask="99/9999" defaultValue={user.partnerNumber}  keyboardType="default" autoCapitalize="none" handleGetValue={(value)=>{setParterNumber(value)}}   title="SÓCIO DESDE"></Input>

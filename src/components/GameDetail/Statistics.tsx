@@ -60,7 +60,7 @@ const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
       }
       return (
         <View className='justify-between flex-row w-full  border-b mb-4  border-b-white_20 pb-2'>
-          <Text className={`text-white font-dinBold text-xl leading-9 w-14 pl-4 top-1`}>{ homeValue !==  "null" ? homeValue : "0"}</Text>
+          <Text className={"text-white font-dinBold text-xl leading-9 w-14 pl-4 top-1"}>{ homeValue !==  "null" ? homeValue : "0"}</Text>
           {x.name === "Cartão amarelo" ?
            <View className='flex-row gap-2'>
              <Image className='w-4' source={require('../../assets/icons/yellowcard.png')} ></Image>
