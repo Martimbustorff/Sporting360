@@ -110,7 +110,7 @@ const Register = () => {
       
       <View className="mt-4 flex flex-1 w-full">
         <View className="flex flex-[0.9] w-full">
-          <Input handleGetValue={(value)=>{setName(value)}}  autoFocus={true}  onChangeText={setName} title="NOME"></Input>
+          <Input handleGetValue={(value)=>{setName(value)}}    onChangeText={setName} title="NOME"></Input>
           <Input  keyboardType="email-address" autoCapitalize="none" handleGetValue={(value)=>{setEmail(value)}}   title="EMAIL"></Input>
           <Input secureTextEntry title="PASSWORD" handleGetValue={(value)=>{setPassword(value)}} ></Input>
 
