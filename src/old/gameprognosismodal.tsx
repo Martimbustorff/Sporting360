@@ -1,6 +1,6 @@
 <Modal
 animationType="slide"
-transparent={true}
+transparent
 visible={modalVisible}
 onRequestClose={() => {
   setModalVisible(!modalVisible);
@@ -31,7 +31,7 @@ onRequestClose={() => {
            Prognóstico
         </Text>
         <GamePrognosis 
-                  isLast={true}
+                  isLast
                   resultHome={nextGame?.node.scorehome}
                   resultaway={nextGame?.node.scoreaway}
                   jorney={nextGame?.node.journey}

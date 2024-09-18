@@ -101,7 +101,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
       })}
       <Modal
           animationType="slide"
-          transparent={true}
+          transparent
           visible={modalVisible}
           onRequestClose={() => {
             setModalVisible(!modalVisible);

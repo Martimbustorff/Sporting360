@@ -144,7 +144,7 @@ const Login = () => {
       <Animated.View entering={FadeIn.delay(100)}  className="mt-4 flex flex-1 w-full">
         <View className="flex flex-[0.9] w-full">
           <Input  autoCapitalize="none" keyboardType="email-address"  handleGetValue={(value)=>{setEmail(value)}} title="EMAIL"></Input>
-          <Input  handleGetValue={(value)=>{setPassword(value)}} secureTextEntry={true} title="PASSWORD"  >
+          <Input  handleGetValue={(value)=>{setPassword(value)}} secureTextEntry title="PASSWORD"  >
          </Input>
         </View>
         <TouchableOpacity 

@@ -266,7 +266,7 @@ const Home = () => {
                   { nativeEvent: { contentOffset: { x: scrollX } } },
                 ])}
                 showsHorizontalScrollIndicator={false}
-                horizontal= {true}
+                horizontal
                 decelerationRate={0}
                 snapToInterval={328} // your element width
               >

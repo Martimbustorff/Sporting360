@@ -188,7 +188,7 @@ const GameDetail = () => {
         <View className='w-full pl-4 pr-4'>
 
           <View className='w-full mt-3 flex-row justify-center items pr-4 pl-4   bg-white_20 rounded-md h-11'>
-            <ScrollView horizontal={true}>
+            <ScrollView horizontal>
             {listItems.map(item=>{
                 return (
                   <TouchableOpacity
@@ -211,7 +211,7 @@ const GameDetail = () => {
           </View>
           <ScrollView 
             showsHorizontalScrollIndicator={false}
-            horizontal= {true}
+            horizontal
             ref={scrollViewRef}
             decelerationRate={0}
             onScroll={(x)=>{
@@ -288,7 +288,7 @@ const GameDetail = () => {
   </Animated.View>
   <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => {
           setModalVisible(!modalVisible);
@@ -315,7 +315,7 @@ const GameDetail = () => {
                   <Text className='font-dinBold ext-3xl leading-[40px] text-white'>DAY</Text>
                 </Text>
                 <GamePrognosis 
-                          isLast={true}
+                          isLast
                           resultHome={game.scorehome}
                           resultaway={game.scoreaway}
                           jorney={game.journey}

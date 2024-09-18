@@ -87,7 +87,7 @@ const Calendar = () => {
           </View>
           <ScrollView 
             showsHorizontalScrollIndicator={false}
-            horizontal= {true}
+            horizontal
             ref={scrollViewRef}
             
             decelerationRate={0}
@@ -128,7 +128,7 @@ const Calendar = () => {
                           awayteam={game?.teamaway.name}
                           competation={game?.competition}
                           hometeam={game?.teamhome.name}
-                          isLast={true}
+                          isLast
                           jorney={game?.journey}
                           resultaway={game?.scoreaway}
                           resultHome={game?.scorehome}
