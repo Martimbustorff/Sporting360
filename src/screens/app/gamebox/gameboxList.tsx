@@ -88,13 +88,13 @@ const GameboxList = () => {
       <Image
         className="flex flex-1  absolute h-full w-full"
         source={require("../../../assets/opacebg.png")}
-      ></Image>
+       />
       <Animated.View
         style={[{ backgroundColor: "#001B13" }]}
         className="flex flex-1 absolute h-full w-full opacity-80"
-      ></Animated.View>
+       />
       <View className=" mt-2 mt-[5] mb-[-15] w-full ">
-        <Header title="GESTÃO GAMEBOX"></Header>
+        <Header title="GESTÃO GAMEBOX" />
       </View>
       {gameboxes.length >= 6 && (
         <View className="w-full bg-white_20 h-8  justify-center items-center">

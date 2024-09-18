@@ -257,7 +257,7 @@ const Home = () => {
           className={
             " mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 "
           }
-        ></View>
+         />
         {/* Gamebox Section */}
         {user && gameboxes.length > 0 ? (
           <Animated.View
@@ -280,11 +280,11 @@ const Home = () => {
                     {open ? (
                       <Image
                         source={require("../../assets/Chevron_Up.png")}
-                      ></Image>
+                       />
                     ) : (
                       <Image
                         source={require("../../assets/Chevron_down.png")}
-                      ></Image>
+                       />
                     )}
                   </Text>
                 </TouchableOpacity>
@@ -296,7 +296,7 @@ const Home = () => {
                       { nativeEvent: { contentOffset: { x: scrollX } } },
                     ])}
                     showsHorizontalScrollIndicator={false}
-                    horizontal={true}
+                    horizontal
                     decelerationRate={0}
                     snapToInterval={328} // your element width
                   >

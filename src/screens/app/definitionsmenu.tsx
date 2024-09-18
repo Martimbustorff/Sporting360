@@ -47,17 +47,17 @@ const DefinitionsMenu = () => {
       <Image
         className="flex flex-1  absolute h-full w-full"
         source={require("../../assets/opacebg.png")}
-      ></Image>
+       />
       <Animated.View
         style={[{ backgroundColor: "#001B13" }]}
         className="flex flex-1 absolute h-full w-full opacity-80"
-      ></Animated.View>
+       />
       <Animated.View
         entering={FadeInUp.delay(100)}
         className="  flex flex-col mt-0 h-full w-full"
       >
         <View className="mb-1  mt-2 mt-[2]  w-full ">
-          <Header title={"DEFINIÇÕES"}></Header>
+          <Header title={"DEFINIÇÕES"} />
         </View>
         <ScrollView>
           <Animated.View

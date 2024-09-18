@@ -69,7 +69,7 @@ const Calendar = () => {
         className="bg-bgauth flex flex-col mt-0 h-full w-full"
       >
         <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-          <Header title={"AGENDA"}></Header>
+          <Header title={"AGENDA"} />
         </View>
         {nextGame && (
           <PrincipalGame
@@ -125,7 +125,7 @@ const Calendar = () => {
           </View>
           <ScrollView
             showsHorizontalScrollIndicator={false}
-            horizontal={true}
+            horizontal
             ref={scrollViewRef}
             decelerationRate={0}
             onScroll={(x) => {
@@ -172,7 +172,7 @@ const Calendar = () => {
                     awayteam={game?.teamaway.name}
                     competation={game?.competition}
                     hometeam={game?.teamhome.name}
-                    isLast={true}
+                    isLast
                     jorney={game?.journey}
                     resultaway={game?.scoreaway}
                     resultHome={game?.scorehome}

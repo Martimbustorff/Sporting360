@@ -41,13 +41,13 @@ const Header = ({ title, hideBackButton = false }: IHeader) => {
             className="h-auto"
             resizeMode="contain"
             source={require("../assets/arrowLeft.png")}
-          ></Image>
+           />
         )}
       </TouchableOpacity>
       <Text className="font-dinBold h-6 mt-2 text-lg text-titleauth">
         {title}
       </Text>
-      <TouchableOpacity className="w-12 h-12 justify-center items-start"></TouchableOpacity>
+      <TouchableOpacity className="w-12 h-12 justify-center items-start" />
     </View>
   );
 };

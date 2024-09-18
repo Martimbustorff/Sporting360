@@ -104,7 +104,7 @@ const GamePrognosis = ({
               {formatDate()}
             </Text>
           </View>
-          <View className="w-1/3"></View>
+          <View className="w-1/3" />
         </View>
 
         <View className="w-full flex-row  mt-[-10]  mb-0 justify-between ">
@@ -128,7 +128,7 @@ const GamePrognosis = ({
                   ml-2
                     font-bold font-dinBold  text-3xl  text-center leading-[15px] h-20
                      rounded-md "
-                ></TextInput>
+                 />
                 <TextInput
                   onChangeText={(text) => (text ? Keyboard.dismiss() : null)}
                   keyboardType="number-pad"

@@ -159,7 +159,7 @@ const GameDetail = () => {
           className="bg-bgauth flex flex-col mt-0 h-full w-full"
         >
           <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-            <Header title={"AGENDA"}></Header>
+            <Header title={"AGENDA"} />
           </View>
         </Animated.View>
       </SafeAreaView>
@@ -198,7 +198,7 @@ const GameDetail = () => {
         className="bg-bgauth flex flex-col mt-0 h-full w-full"
       >
         <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-          <Header hideBackButton={false} title={game.competition}></Header>
+          <Header hideBackButton={false} title={game.competition} />
         </View>
         <DetailGame
           id={Number(game?.api)}
@@ -217,7 +217,7 @@ const GameDetail = () => {
         />
         <View className="w-full pl-4 pr-4">
           <View className="w-full mt-3 flex-row justify-center items pr-4 pl-4   bg-white_20 rounded-md h-11">
-            <ScrollView horizontal={true}>
+            <ScrollView horizontal>
               {listItems.map((item) => {
                 return (
                   <TouchableOpacity
@@ -247,7 +247,7 @@ const GameDetail = () => {
           </View>
           <ScrollView
             showsHorizontalScrollIndicator={false}
-            horizontal={true}
+            horizontal
             ref={scrollViewRef}
             decelerationRate={0}
             onScroll={(x) => {
@@ -268,7 +268,7 @@ const GameDetail = () => {
                   <Summary
                     teamHomeId={game.teamhome.api}
                     summaries={summaries}
-                  ></Summary>
+                   />
                 ) : (
                   <View className="w-full h-40 ml-[-10] justify-center mt-14 items-center">
                     <Text className="text-lg text-white font-bold font-dinLight">
@@ -316,15 +316,15 @@ const GameDetail = () => {
               <Statistics
                 homeTeamId={game.teamhome.api}
                 statistics={statistics}
-              ></Statistics>
+               />
             </ScrollView>
             {standings ? (
-              <Standings standings={standings}></Standings>
+              <Standings standings={standings} />
             ) : (
               <View className="w-full h-40 ml-[-10] justify-center mt-14 items-center">
                 <Image
                   source={require("../../../assets/icons/calendarcheck.png")}
-                ></Image>
+                 />
                 <Text className="text-lg text-white font-bold font-dinLight">
                   Disponível no dia de jogo
                 </Text>
@@ -337,12 +337,12 @@ const GameDetail = () => {
               }}
             >
               {videos ? (
-                <Videos videos={videos}></Videos>
+                <Videos videos={videos} />
               ) : (
                 <View className="w-full h-40 ml-[-10] justify-center mt-14 items-center">
                   <Image
                     source={require("../../../assets/icons/calendarcheck.png")}
-                  ></Image>
+                   />
                   <Text className="text-lg text-white font-bold font-dinLight">
                     Disponível no dia de jogo
                   </Text>
@@ -361,12 +361,12 @@ const GameDetail = () => {
                     handleRefreshManofTheMatch={handleRefreshManofTheMatch}
                     manOfTheMatch={manOfTheMatch}
                     lineups={lineups}
-                  ></ManOfTheMatch>
+                   />
                 ) : (
                   <View className="w-full h-40 ml-[-10] justify-center mt-14 items-center">
                     <Image
                       source={require("../../../assets/icons/calendarcheck.png")}
-                    ></Image>
+                     />
                     <Text className="text-lg text-white font-bold font-dinLight">
                       Disponível no dia de jogo
                     </Text>
@@ -376,7 +376,7 @@ const GameDetail = () => {
                 <View className="w-full h-40 ml-[-10] justify-center mt-14 items-center">
                   <Image
                     source={require("../../../assets/icons/calendarcheck.png")}
-                  ></Image>
+                   />
                   <Text className="text-lg text-white font-bold font-dinLight">
                     Disponível no dia de jogo
                   </Text>
@@ -388,7 +388,7 @@ const GameDetail = () => {
       </Animated.View>
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => {
           setModalVisible(!modalVisible);
@@ -409,11 +409,11 @@ const GameDetail = () => {
                   className="  absolute h-[390px] w-[800px]"
                   resizeMode="cover"
                   source={require("../../../assets/opacebg.png")}
-                ></Image>
+                 />
                 <Animated.View
                   style={[{ backgroundColor: "#001B13" }]}
                   className="flex flex-1 h-[390px] absolute  w-[800px] opacity-80"
-                ></Animated.View>
+                 />
                 <Image
                   className="items-center self-center mt-4 mb-3  w-20"
                   resizeMode="contain"
@@ -426,7 +426,7 @@ const GameDetail = () => {
                   </Text>
                 </Text>
                 <GamePrognosis
-                  isLast={true}
+                  isLast
                   resultHome={game.scorehome}
                   resultaway={game.scoreaway}
                   jorney={game.journey}
