@@ -25,7 +25,7 @@ const Summary: React.FC<ISummaryPage> = ({summaries,teamHomeId}) => {
       <View className='flex flex-col mt-4'>
           {summaries?.filter(x=>Number(x.time) <= 45).sort(function(a, b) {return Number(a.time) - Number(b.time)}).map(x=>{
           return (
-            <SummaryDetail teamHomeId={teamHomeId} summary={x}></SummaryDetail>
+            <SummaryDetail teamHomeId={teamHomeId} summary={x} />
           )
          })}
       </View>
@@ -38,7 +38,7 @@ const Summary: React.FC<ISummaryPage> = ({summaries,teamHomeId}) => {
       <View className='flex flex-col mt-3'>
       {summaries?.filter(x=>Number(x.time) > 45).sort(function(a, b) {return Number(a.time) - Number(b.time)}).map(x=>{
           return (
-            <SummaryDetail key={x.api} teamHomeId={teamHomeId} summary={x}></SummaryDetail>
+            <SummaryDetail key={x.api} teamHomeId={teamHomeId} summary={x} />
           )
          })}
       </View>

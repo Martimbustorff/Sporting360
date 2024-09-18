@@ -65,7 +65,7 @@ const Standings: React.FC<IStandingsProps> = ({standings}) => {
           </View>     
         )
       })}
-      <View className='h-72'></View>
+      <View className='h-72' />
      </ScrollView>
         
   </View>;

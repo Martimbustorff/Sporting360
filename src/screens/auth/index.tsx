@@ -131,17 +131,15 @@ const Index = () => {
           <Animated.View
             style={imageBackgroundStyle}
             className="flex flex-1 absolute h-full w-full bg-bgauth"
-          ></Animated.View>
+           />
           <Animated.Image
             style={imageBackgroundCircleStyle}
             resizeMode={'cover'}
             className='flex flex-1 top-[-9] absolute h-full w-full'
-            source={require('../../assets/welcome.png')}  >
-          </Animated.Image>
+            source={require('../../assets/welcome.png')}   />
           <Animated.View 
             style={[bgGreenStyle]}
-            className='absolute h-full w-full'>
-          </Animated.View>
+            className='absolute h-full w-full' />
         
           <View className="flex-[1] p-4  justify-end pb-20 flex-col items-center">
               <TouchableOpacity 

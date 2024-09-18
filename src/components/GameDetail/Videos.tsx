@@ -43,7 +43,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
   return <View className='flex flex-col w-full'>
      {videos.length === 0 &&
       <View className='w-full h-40 ml-[-20] justify-center mt-14 items-center'>
-      <Image source={require('../../assets/icons/calendarcheck.png')}></Image>
+      <Image source={require('../../assets/icons/calendarcheck.png')} />
       <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
       </View>}
       <Video 
@@ -82,7 +82,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
               /> */}
               <Image 
             className='h-40 w-full rounded-xl'
-            source={{uri:k.bigpicture}}></Image>
+            source={{uri:k.bigpicture}} />
             {/* 
               {/* <Video 
                useNativeControls
@@ -114,7 +114,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
               source={{
                 uri:'https://vsports.pt/vsports/vod/golo-sporting-cp-gyokeres-45-sl-benfica-0-1-sporting-cp-91112'
               }}
-            ></WebView>
+             />
 
               </View>
             
@@ -131,7 +131,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
 
           </View>
           </Modal>
-    <View className='h-72'></View>
+    <View className='h-72' />
 
   </View>;
 }

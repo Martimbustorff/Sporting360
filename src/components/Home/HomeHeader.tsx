@@ -20,7 +20,7 @@ const HomeHeader = ({ navigation, user }) => {
                 <Text className={`font-dinBold ${Platform.OS === 'ios'? 'leading-10' : 'h-10' } pt-1 text-white text-3xl`}>S360</Text>
               </View>
               <TouchableOpacity  onPress={()=>navigation.navigate('DefinitionsMenu')} activeOpacity={0.7}>
-                <Image className='object-contain ' source={require('../../assets/settings.png')}></Image>
+                <Image className='object-contain ' source={require('../../assets/settings.png')} />
               </TouchableOpacity>
       </View>
       <TouchableOpacity onPress={()=>!user ? navigation.navigate('DefinitionsMenu') : null}>

@@ -12,12 +12,10 @@ onRequestClose={() => {
       <Image
         className='  absolute h-[390px] w-[800px]'
         resizeMode='cover'
-        source={require('../../assets/opacebg.png')}  >
-      </Image>
+        source={require('../../assets/opacebg.png')}   />
         <Animated.View 
           style={[{backgroundColor:'#001B13'}]}
-          className='flex flex-1 h-[390px] absolute  w-[800px] opacity-80'>
-        </Animated.View>
+          className='flex flex-1 h-[390px] absolute  w-[800px] opacity-80' />
         <Image
           className='items-center self-center mt-4 mb-3  w-20'
           resizeMode='contain'

@@ -76,12 +76,12 @@ const Reset = () => {
   return (
     <View className="h-full p-6 bg-bgauth  w-full">
       <SafeAreaView className="bg-bgauth   flex-1 justify-start items-center">
-        <Header title="RECUPERAR PASS"></Header>
+        <Header title="RECUPERAR PASS" />
         <Text className='text-white_gray font-dinLight mb-4 text-md'>Indica o teu email para receberes as instruções de recuperação da Pass.</Text>
 
         <View className="mt-6 flex flex-1 w-full">
           <View className="flex flex-[0.9] w-full">
-            <Input autoFocus autoCapitalize="none"  keyboardType="email-address" handleGetValue={(value)=>{setEmail(value)}}  title="EMAIL"></Input>
+            <Input autoFocus autoCapitalize="none"  keyboardType="email-address" handleGetValue={(value)=>{setEmail(value)}}  title="EMAIL" />
           </View>
           <TouchableOpacity 
               onPress={handleResetPassword}
@@ -89,7 +89,7 @@ const Reset = () => {
               className='bg-white w-full h-14 justify-center items-center rounded-full'
             >
             {loading ?
-            <ActivityIndicator color={'#00835B'} size={24}></ActivityIndicator>
+            <ActivityIndicator color={'#00835B'} size={24} />
           : <Text className={`text-titleauth font-dinBold ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-lg`}>ENVIAR</Text>} 
           </TouchableOpacity>
         </View>

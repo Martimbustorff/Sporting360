@@ -9,7 +9,7 @@ interface ISummaryDetailPage {
 }
 const SummaryDetail: React.FC<ISummaryDetailPage> = ({summary,teamHomeId}) => {
   if(summary.type === 'Var'){
-    return <View></View>
+    return <View />
   }
   const returnImage = () =>{
     if(summary.detail === 'Yellow Card'){
@@ -29,7 +29,7 @@ const SummaryDetail: React.FC<ISummaryDetailPage> = ({summary,teamHomeId}) => {
     return <View className='w-auto mt-4 mb-2 flex-row items-center gap-4 justify-start'>
     <Text className='text-white font-dinBold  top-1 text-base'>{summary.time}´</Text>
     <View className='bg-white w-8 h-8 rounded-full p-3 justify-center items-center'>
-     <Image className='w-5 h-5 object-contain' source={returnImage()}></Image>
+     <Image className='w-5 h-5 object-contain' source={returnImage()} />
     </View>
     <Text className='text-white font-dinLight top-1 text-base'>{summary.player.name}</Text>
   </View>
@@ -37,7 +37,7 @@ const SummaryDetail: React.FC<ISummaryDetailPage> = ({summary,teamHomeId}) => {
   return <View className='w-auto mt-4 mb-2 flex-row items-center gap-4 justify-end'>
     <Text className='text-white font-dinLight top-1 text-base'>{summary.player.name}</Text>
     <View className='bg-white w-8 h-8 rounded-full p-3 justify-center items-center'>
-     <Image className='w-5 h-5 object-contain' source={returnImage()}></Image>
+     <Image className='w-5 h-5 object-contain' source={returnImage()} />
     </View>
     <Text className='text-white font-dinBold  top-1 text-base'>{summary.time}´</Text>
   </View>;

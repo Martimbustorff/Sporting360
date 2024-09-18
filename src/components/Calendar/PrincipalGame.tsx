@@ -49,7 +49,7 @@ return <TouchableOpacity
       activeOpacity={0.7}>
     <Animated.View sharedTransitionTag="sharedTag" className='w-full h-44'>
       <View className='absolute right-3 top-12'>
-        <Image source={require('../../assets/icons/arrowrigth.png')}></Image>
+        <Image source={require('../../assets/icons/arrowrigth.png')} />
       </View>
       <View className='w-full bg-white_20 h-8  justify-center items-center'>
         <Text className={`text-white font-dinBold ${Platform.OS === 'ios' && 'pt-2'}  text-lg `}>{competation}</Text>

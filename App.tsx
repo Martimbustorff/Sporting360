@@ -63,7 +63,7 @@ export default function App() {
         <View className='bg-bgauth flex flex-1'>
               <PopupRootProvider>
                   <NavigationContainer linking={linking}>
-                          <Routes></Routes>
+                          <Routes />
                           <StatusBar translucent style={'light'}/>
                           <FlashMessage position="top" />
                   </NavigationContainer>

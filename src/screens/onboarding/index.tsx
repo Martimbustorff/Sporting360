@@ -79,9 +79,7 @@ const Intro = () => {
                         </Animated.View >
 
                     
-                    <View>
-
-                    </View>
+                    <View />
                   </View>
                   </View>
               )
@@ -105,7 +103,7 @@ const Intro = () => {
               };
               });
               return (
-                <Animated.View key={i}  style={[{height:15},animatedStyle]}  className='w-5 h-5 rounded-full'></Animated.View>
+                <Animated.View key={i}  style={[{height:15},animatedStyle]}  className='w-5 h-5 rounded-full' />
               )
           })}
         </View>

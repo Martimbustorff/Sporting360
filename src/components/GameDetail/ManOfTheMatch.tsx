@@ -34,7 +34,7 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,han
   return <View className='flex flex-col w-[85%] '>
      {lineups.length === 0 &&
       <View className='w-full h-40 ml-[-20] justify-center mt-0 items-center'>
-      <Image source={require('../../assets/icons/calendarcheck.png')}></Image>
+      <Image source={require('../../assets/icons/calendarcheck.png')} />
       <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
       </View>}
       {lineups.length > 0 && 
@@ -43,7 +43,7 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,han
        {!userId && <Text className='text-xs mt-2  text-white font-bold font-dinBold'>Para votar precisar estar autenticado</Text>}
       </>
       }
-      <View className="mb-[-30] "></View>
+      <View className="mb-[-30] " />
       <RNPoll
         totalVotes={manOfTheMatch === null ?  0 : manOfTheMatch.length}
         percentageTextStyle={{color:'#ffff'}}
@@ -74,7 +74,7 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,han
           }}
       />
       
-    <View className='h-72 mb-40'></View>
+    <View className='h-72 mb-40' />
 
   </View>;
 }

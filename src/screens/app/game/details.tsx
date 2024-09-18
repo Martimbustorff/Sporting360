@@ -131,7 +131,7 @@ const GameDetail = () => {
            entering={FadeInUp.delay(100)}
            className="bg-bgauth flex flex-col mt-0 h-full w-full" >
              <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-               <Header title={'AGENDA'}></Header>
+               <Header title={'AGENDA'} />
              </View>
          </Animated.View>
        </SafeAreaView>
@@ -168,7 +168,7 @@ const GameDetail = () => {
     entering={FadeIn.delay(100)}
     className="bg-bgauth flex flex-col mt-0 h-full w-full" >
        <View className="  mt-2 mt-[2] mb-[-15] w-full ">
-          <Header hideBackButton={false} title={game.competition}></Header>
+          <Header hideBackButton={false} title={game.competition} />
         </View>
         <DetailGame
          id={Number(game?.api)}
@@ -223,7 +223,7 @@ const GameDetail = () => {
               contentContainerStyle={{width:Dimensions.get('window').width}}>
                 {summaries ? 
                 summaries.length > 0 ?
-                    <Summary teamHomeId={game.teamhome.api} summaries={summaries}></Summary>
+                    <Summary teamHomeId={game.teamhome.api} summaries={summaries} />
                     : 
                     <View className='w-full h-40 ml-[-10] justify-center mt-14 items-center'>
                       <Text className='text-lg text-white font-bold font-dinLight'>Qual o teu prognostico para o Jogo ? </Text>
@@ -249,35 +249,35 @@ const GameDetail = () => {
                 }  
               </ScrollView>
                <ScrollView  contentContainerStyle={{marginLeft:10,width:Dimensions.get('window').width,marginBottom:40}}>
-                <Statistics homeTeamId={game.teamhome.api} statistics={statistics}></Statistics>
+                <Statistics homeTeamId={game.teamhome.api} statistics={statistics} />
               </ScrollView>
                {standings  ? 
-                  <Standings  standings={standings}></Standings>
+                  <Standings  standings={standings} />
                 :
                 <View className='w-full h-40 ml-[-10] justify-center mt-14 items-center'>
-                    <Image source={require('../../../assets/icons/calendarcheck.png')}></Image>
+                    <Image source={require('../../../assets/icons/calendarcheck.png')} />
                     <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
                 </View>
                 }
                 <ScrollView  contentContainerStyle={{marginLeft:10,width:Dimensions.get('window').width}}>
                 {videos ? 
-                  <Videos   videos={videos}></Videos>
+                  <Videos   videos={videos} />
                 :
                 <View className='w-full h-40 ml-[-10] justify-center mt-14 items-center'>
-                      <Image source={require('../../../assets/icons/calendarcheck.png')}></Image>
+                      <Image source={require('../../../assets/icons/calendarcheck.png')} />
                       <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
                   </View>
                 }
               </ScrollView>
               <ScrollView  contentContainerStyle={{marginLeft:10,width:Dimensions.get('window').width}}>
                 {lineups ? 
-                  lineups.length > 0 ? <ManOfTheMatch handleRefreshManofTheMatch={handleRefreshManofTheMatch} manOfTheMatch={manOfTheMatch} lineups={lineups} ></ManOfTheMatch>
+                  lineups.length > 0 ? <ManOfTheMatch handleRefreshManofTheMatch={handleRefreshManofTheMatch} manOfTheMatch={manOfTheMatch} lineups={lineups}  />
                : <View className='w-full h-40 ml-[-10] justify-center mt-14 items-center'>
-               <Image source={require('../../../assets/icons/calendarcheck.png')}></Image>
+               <Image source={require('../../../assets/icons/calendarcheck.png')} />
                  <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
              </View> :
                 <View className='w-full h-40 ml-[-10] justify-center mt-14 items-center'>
-                      <Image source={require('../../../assets/icons/calendarcheck.png')}></Image>
+                      <Image source={require('../../../assets/icons/calendarcheck.png')} />
                       <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
                   </View>
                 }
@@ -300,12 +300,10 @@ const GameDetail = () => {
               <Image
                 className='  absolute h-[390px] w-[800px]'
                 resizeMode='cover'
-                source={require('../../../assets/opacebg.png')}  >
-              </Image>
+                source={require('../../../assets/opacebg.png')}   />
                 <Animated.View 
                   style={[{backgroundColor:'#001B13'}]}
-                  className='flex flex-1 h-[390px] absolute  w-[800px] opacity-80'>
-                </Animated.View>
+                  className='flex flex-1 h-[390px] absolute  w-[800px] opacity-80' />
                 <Image
                   className='items-center self-center mt-4 mb-3  w-20'
                   resizeMode='contain'

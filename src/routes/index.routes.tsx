@@ -9,6 +9,6 @@ export default function Routes() {
   // if(!user){
   //   return <AuthRoutes></AuthRoutes>
   // }
-    return <AppRoutes></AppRoutes>
+    return <AppRoutes />
  
 }
