@@ -4,11 +4,10 @@ import { AppRoutes } from "./app.routes";
 import { AuthRoutes } from "./auth.routes";
 
 export default function Routes() {
-  const user = useAuthStore((state) => state.user)
-  
+  const user = useAuthStore((state) => state.user);
+
   // if(!user){
   //   return <AuthRoutes></AuthRoutes>
   // }
-    return <AppRoutes />
- 
+  return <AppRoutes />;
 }
