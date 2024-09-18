@@ -118,11 +118,11 @@ export const Stadium = () => {
       <Image
         className="flex flex-1  absolute h-full w-full"
         source={require("../../assets/opacebg.png")}
-       />
+      />
       <Animated.View
         style={[{ backgroundColor: "#001B13" }]}
         className="flex  absolute h-full w-full opacity-80"
-       />
+      />
       <View className=" mt-2   w-full ">
         <View
           style={{ height: Platform.OS === "android" ? 110 : 40 }}
@@ -137,7 +137,7 @@ export const Stadium = () => {
               className="h-auto"
               resizeMode="contain"
               source={require("../../assets/arrowLeft.png")}
-             />
+            />
           </TouchableOpacity>
           <Text className="font-dinBold h-6 mt-2 text-lg text-titleauth">
             ESTÁDIO
@@ -166,7 +166,7 @@ export const Stadium = () => {
                   ? require("../../assets/icons/Shrink.png")
                   : require("../../assets/icons/Expand.png")
               }
-             />
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -177,7 +177,7 @@ export const Stadium = () => {
             resizeMode={"contain"}
             style={animatedStyle}
             source={require("../../assets/stadiummap.png")}
-           />
+          />
         </PanGestureHandler>
       </View>
       <View className="flex-col w-full h-40 p-4">
@@ -187,7 +187,7 @@ export const Stadium = () => {
           <Image
             className=""
             source={require("../../assets/icons/Museum.png")}
-           />
+          />
           <Text
             className={
               "font-bold text-center  h-full text-sm text-white font-dinBold"
@@ -202,7 +202,7 @@ export const Stadium = () => {
           <Image
             className="h-5 w-5"
             source={require("../../assets/store.png")}
-           />
+          />
           <Text className="font-bold h-full text-sm text-white font-dinBold">
             LOJA VERDE
           </Text>
@@ -214,7 +214,7 @@ export const Stadium = () => {
             className="h-5 w-5"
             resizeMode="contain"
             source={require("../../assets/tickets.png")}
-           />
+          />
           <Text className="font-bold h-full text-sm text-white font-dinBold">
             BILHETEIRA
           </Text>

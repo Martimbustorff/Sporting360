@@ -257,7 +257,7 @@ const Home = () => {
           className={
             " mb-16 mt-0 flex-col justify-center    w-full rounded-t-[48px] p-8 "
           }
-         />
+        />
         {/* Gamebox Section */}
         {user && gameboxes.length > 0 ? (
           <Animated.View
@@ -278,13 +278,11 @@ const Home = () => {
                 <TouchableOpacity onPress={() => handleOpenGameBoxWithFill()}>
                   <Text className="text-black  text-center text-sm  mb-4 font-dinRegular ">
                     {open ? (
-                      <Image
-                        source={require("../../assets/Chevron_Up.png")}
-                       />
+                      <Image source={require("../../assets/Chevron_Up.png")} />
                     ) : (
                       <Image
                         source={require("../../assets/Chevron_down.png")}
-                       />
+                      />
                     )}
                   </Text>
                 </TouchableOpacity>

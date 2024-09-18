@@ -128,7 +128,7 @@ const GamePrognosis = ({
                   ml-2
                     font-bold font-dinBold  text-3xl  text-center leading-[15px] h-20
                      rounded-md "
-                 />
+                />
                 <TextInput
                   onChangeText={(text) => (text ? Keyboard.dismiss() : null)}
                   keyboardType="number-pad"

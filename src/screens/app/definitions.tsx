@@ -191,11 +191,11 @@ const Definitions = () => {
         <Image
           className="flex flex-1  absolute h-full w-full"
           source={require("../../assets/opacebg.png")}
-         />
+        />
         <Animated.View
           style={[{ backgroundColor: "#001B13" }]}
           className="flex flex-1 absolute h-full w-full opacity-80"
-         />
+        />
         <View className=" mt-2 mt-[5] mb-[-15] w-full ">
           <Header title="CONTA S360" />
         </View>
@@ -212,7 +212,7 @@ const Definitions = () => {
               }}
               onChangeText={setName}
               title="NOME"
-             />
+            />
             <Input
               maskInput
               mask="99/9999"
@@ -223,7 +223,7 @@ const Definitions = () => {
                 setParterNumber(value);
               }}
               title="SÓCIO DESDE"
-             />
+            />
             <TouchableOpacity
               className="flex-row"
               onPress={() => handleResetPassword()}
@@ -242,10 +242,7 @@ const Definitions = () => {
             className="bg-white w-full h-14 justify-center   items-center rounded-full"
           >
             {loading ? (
-              <ActivityIndicator
-                color={"#00835B"}
-                size={24}
-               />
+              <ActivityIndicator color={"#00835B"} size={24} />
             ) : (
               <Text
                 className={`text-titleauth font-dinBold ${Platform.OS === "ios" ? "mt-3" : "mt-0"} text-lg`}

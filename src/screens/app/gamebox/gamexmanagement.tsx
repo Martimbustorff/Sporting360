@@ -234,11 +234,11 @@ const GameboxMangement = () => {
           <Image
             className="flex flex-1  absolute h-full w-full"
             source={require("../../../assets/opacebg.png")}
-           />
+          />
           <Animated.View
             style={[{ backgroundColor: "#001B13" }]}
             className="flex flex-1 absolute h-full w-full opacity-80"
-           />
+          />
           <View className=" mt-2 mt-[5] mb-[-15] w-full ">
             <Header title="GESTÃO GAMEBOX" />
           </View>
@@ -265,11 +265,11 @@ const GameboxMangement = () => {
         <Image
           className="flex flex-1  absolute h-full w-full"
           source={require("../../../assets/opacebg.png")}
-         />
+        />
         <Animated.View
           style={[{ backgroundColor: "#001B13" }]}
           className="flex flex-1 absolute h-full w-full opacity-80"
-         />
+        />
         <View className=" mt-2 mt-[5] mb-[-15] w-full ">
           <View
             style={{ height: Platform.OS === "android" ? 110 : 40 }}
@@ -284,7 +284,7 @@ const GameboxMangement = () => {
                 className="h-auto"
                 resizeMode="contain"
                 source={require("../../../assets/arrowLeft.png")}
-               />
+              />
             </TouchableOpacity>
             <Text className="font-dinBold h-6 mt-2 text-lg text-titleauth">
               GESTÃO GAMEBOX
@@ -297,7 +297,7 @@ const GameboxMangement = () => {
                 className="h-auto"
                 resizeMode="contain"
                 source={require("../../../assets/icons/Check_Big.png")}
-               />
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -318,7 +318,7 @@ const GameboxMangement = () => {
                       setGameboxNumber(value);
                     }}
                     title="NUMERO DA GAMEBOX"
-                   />
+                  />
                 ) : (
                   <Input
                     defaultValue={
@@ -332,7 +332,7 @@ const GameboxMangement = () => {
                       setGameboxNumber(value);
                     }}
                     title="NUMERO DA GAMEBOX"
-                   />
+                  />
                 )
               ) : (
                 <Input
@@ -347,7 +347,7 @@ const GameboxMangement = () => {
                     setGameboxNumber(value);
                   }}
                   title="NUMERO DA GAMEBOX"
-                 />
+                />
               )}
               <TouchableOpacity
                 onPress={() => navigation.navigate("Gamebox")}
@@ -367,7 +367,7 @@ const GameboxMangement = () => {
                 setGameboxName(value);
               }}
               title="NOME"
-             />
+            />
             <Input
               defaultValue={gamebox?.gameboxPort}
               keyboardType="number-pad"
@@ -376,7 +376,7 @@ const GameboxMangement = () => {
                 setGameboxPort(value);
               }}
               title="PORTA"
-             />
+            />
             <Input
               defaultValue={gamebox?.gameboxSector}
               keyboardType="default"
@@ -385,7 +385,7 @@ const GameboxMangement = () => {
                 setGameboxSector(value);
               }}
               title="SECTOR"
-             />
+            />
             <Input
               defaultValue={gamebox?.gameboxLine}
               keyboardType="number-pad"
@@ -394,7 +394,7 @@ const GameboxMangement = () => {
                 setGameboxLine(value);
               }}
               title="FILA"
-             />
+            />
             <Input
               defaultValue={gamebox?.gameboxSeat}
               keyboardType="number-pad"
@@ -403,7 +403,7 @@ const GameboxMangement = () => {
                 setGameboxSeat(value);
               }}
               title="LUGAR"
-             />
+            />
           </Animated.View>
 
           {route.params?.id && (

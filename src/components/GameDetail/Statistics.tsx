@@ -78,7 +78,7 @@ const Statistics: React.FC<IStatisticsProps> = ({ statistics, homeTeamId }) => {
                 <Image
                   className="w-4"
                   source={require("../../assets/icons/yellowcard.png")}
-                 />
+                />
                 <Text className="text-white font-dinRegular top-1  text-sm">
                   {x.name}
                 </Text>
@@ -88,7 +88,7 @@ const Statistics: React.FC<IStatisticsProps> = ({ statistics, homeTeamId }) => {
                 <Image
                   className="w-4"
                   source={require("../../assets/icons/redcard.png")}
-                 />
+                />
                 <Text className="text-white font-dinRegular top-1  text-sm">
                   {x.name}
                 </Text>

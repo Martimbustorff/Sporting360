@@ -47,11 +47,11 @@ const DefinitionsMenu = () => {
       <Image
         className="flex flex-1  absolute h-full w-full"
         source={require("../../assets/opacebg.png")}
-       />
+      />
       <Animated.View
         style={[{ backgroundColor: "#001B13" }]}
         className="flex flex-1 absolute h-full w-full opacity-80"
-       />
+      />
       <Animated.View
         entering={FadeInUp.delay(100)}
         className="  flex flex-col mt-0 h-full w-full"

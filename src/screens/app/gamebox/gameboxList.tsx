@@ -88,11 +88,11 @@ const GameboxList = () => {
       <Image
         className="flex flex-1  absolute h-full w-full"
         source={require("../../../assets/opacebg.png")}
-       />
+      />
       <Animated.View
         style={[{ backgroundColor: "#001B13" }]}
         className="flex flex-1 absolute h-full w-full opacity-80"
-       />
+      />
       <View className=" mt-2 mt-[5] mb-[-15] w-full ">
         <Header title="GESTÃO GAMEBOX" />
       </View>
