@@ -117,7 +117,7 @@ const Register = () => {
               }}
               onChangeText={setName}
               title="NOME"
-             />
+            />
             <Input
               keyboardType="email-address"
               autoCapitalize="none"
@@ -125,14 +125,14 @@ const Register = () => {
                 setEmail(value);
               }}
               title="EMAIL"
-             />
+            />
             <Input
               secureTextEntry
               title="PASSWORD"
               handleGetValue={(value) => {
                 setPassword(value);
               }}
-             />
+            />
 
             <Text className="text-white opacity-50 mt-[-20] text-xs font-dinRegular text-left">
               Password deve conter no mínimo 6 caracteres
@@ -144,10 +144,7 @@ const Register = () => {
             className="bg-white w-full h-14 justify-center items-center rounded-full mb-4"
           >
             {loading ? (
-              <ActivityIndicator
-                color={"#00835B"}
-                size={24}
-               />
+              <ActivityIndicator color={"#00835B"} size={24} />
             ) : (
               <Text
                 className={`text-titleauth font-dinBold ${Platform.OS === "ios" ? "mt-3" : "mt-0"} text-lg`}

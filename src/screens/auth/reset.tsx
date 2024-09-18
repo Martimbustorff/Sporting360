@@ -90,7 +90,7 @@ const Reset = () => {
                 setEmail(value);
               }}
               title="EMAIL"
-             />
+            />
           </View>
           <TouchableOpacity
             onPress={handleResetPassword}
@@ -98,10 +98,7 @@ const Reset = () => {
             className="bg-white w-full h-14 justify-center items-center rounded-full"
           >
             {loading ? (
-              <ActivityIndicator
-                color={"#00835B"}
-                size={24}
-               />
+              <ActivityIndicator color={"#00835B"} size={24} />
             ) : (
               <Text
                 className={`text-titleauth font-dinBold ${Platform.OS === "ios" ? "mt-3" : "mt-0"} text-lg`}
