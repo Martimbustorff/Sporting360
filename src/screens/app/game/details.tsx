@@ -126,7 +126,7 @@ const GameDetail = () => {
 
   if(!summaries && !game){
     return (
-       <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+       <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
          <Animated.View 
            entering={FadeInUp.delay(100)}
            className="bg-bgauth flex flex-col mt-0 h-full w-full" >
@@ -163,7 +163,7 @@ const GameDetail = () => {
 
  
   
- return <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+ return <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
   <Animated.View 
     entering={FadeIn.delay(100)}
     className="bg-bgauth flex flex-col mt-0 h-full w-full" >

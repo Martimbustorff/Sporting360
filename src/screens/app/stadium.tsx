@@ -109,7 +109,7 @@ export const Stadium = () => {
     },
   });
   return (
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={"bg-bgauth  flex-1 h-full justify-start items-center"}>
        <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../assets/opacebg.png')}  >
@@ -124,7 +124,7 @@ export const Stadium = () => {
             className={`w-full ${Platform.OS == 'ios' ? 'h-10 mb-6' : 'h-10'} flex-row  justify-between items-center`}>
             <TouchableOpacity 
             style={{paddingTop:Platform.OS === "android" ? 20 : 0}}
-            className={`w-12 h-12 justify-center items-center`} onPress={()=>
+            className={"w-12 h-12 justify-center items-center"} onPress={()=>
               navigation.goBack()
              }>
             <Image  className='h-auto' resizeMode='contain' source={require('../../assets/arrowLeft.png')}></Image>
@@ -134,7 +134,7 @@ export const Stadium = () => {
             </Text>
             <TouchableOpacity 
               style={{paddingTop:Platform.OS === "android" ? 10 : 0}}    
-              className={`w-12 h-12 justify-center items-center`} onPress={()=>{
+              className={"w-12 h-12 justify-center items-center"} onPress={()=>{
                   if(isZoomed){
                    setIsZoomed(false)
                    scaleValue.value = withTiming(1, { duration: 300 })
@@ -161,7 +161,7 @@ export const Stadium = () => {
             <View className="flex-col w-full h-40 p-4">
                 <View className={`flex flex-row ${Platform.OS === 'android' ? 'h-5' : 'h-3'}  mb-12 gap-4 w-full justify-start items-center`}>
                   <Image className="" source={require('../../assets/icons/Museum.png')} ></Image>
-                  <Text className={`font-bold text-center  h-full text-sm text-white font-dinBold`}>MUSEU SPORTING</Text>
+                  <Text className={"font-bold text-center  h-full text-sm text-white font-dinBold"}>MUSEU SPORTING</Text>
                 </View>
                 <View className={`flex flex-row ${Platform.OS === 'android' ? 'h-5' : 'h-3'}  mb-12 gap-4 w-full justify-start items-center`}>
                   <Image className="h-5 w-5" source={require('../../assets/store.png')} ></Image>

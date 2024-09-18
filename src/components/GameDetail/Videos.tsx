@@ -58,7 +58,7 @@ const Videos: React.FC<IVideosProps> = ({videos}) => {
                 }
                }}
                resizeMode={ResizeMode.COVER}
-                className={`h-0 w-full rounded-xl opacity-0 `}
+                className={"h-0 w-full rounded-xl opacity-0 "}
                 source={{
                   uri:selectedVideo?.videoUrl
                 }}

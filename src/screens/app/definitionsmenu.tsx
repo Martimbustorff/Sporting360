@@ -23,7 +23,7 @@ interface GroupedData {
 
 const DefinitionsMenu = () => {
   const navigation = useNavigation()
-  return <SafeAreaView className={` bg-bgauth  flex-1 h-full justify-start items-center`}>
+  return <SafeAreaView className={" bg-bgauth  flex-1 h-full justify-start items-center"}>
   <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../assets/opacebg.png')}  >
