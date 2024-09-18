@@ -5,7 +5,7 @@ interface TeamAttributes {
 
 interface TeamData {
   data: {
-    id:number,
+    id: number;
     attributes: TeamAttributes;
   };
 }
@@ -14,7 +14,7 @@ interface GameAttributes {
   Competation: string;
   API: string;
   Timestamp: string;
-  ElapseTime:string;
+  ElapseTime: string;
   Channel: string;
   Journey: string;
   ScoreHome: string;
@@ -39,8 +39,6 @@ export interface IGameByIdResponse {
   game: GamesDataById;
 }
 
-
 export interface IGamesResponse {
-    games: GamesData;
+  games: GamesData;
 }
-

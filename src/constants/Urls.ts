@@ -1,9 +1,9 @@
 export const Urls = [
   {
-    title:"AGENDA",
-    image:require('../assets/Calendar.png'),
-    url:null,
-    page:'Calendar'
+    title: "AGENDA",
+    image: require("../assets/Calendar.png"),
+    url: null,
+    page: "Calendar",
   },
   // {
   //   title:"NOTIFICAÇÕES",
@@ -11,13 +11,13 @@ export const Urls = [
   //   page:'',
   // },
   {
-    title:"MAPA DO ESTÁDIO",
-    image:require('../assets/icons/Compass.png'),
-    page:'Stadium',
+    title: "MAPA DO ESTÁDIO",
+    image: require("../assets/icons/Compass.png"),
+    page: "Stadium",
   },
   {
-    title:"SITES DO CLUBE",
-    image:require('../assets/icons/Globe.png'),
-    page:'Clubsites',
+    title: "SITES DO CLUBE",
+    image: require("../assets/icons/Globe.png"),
+    page: "Clubsites",
   },
-]
+];

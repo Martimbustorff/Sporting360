@@ -28,9 +28,6 @@ interface Standings {
   data: StandingItem[];
 }
 
-
- export interface IStandingsResponse{
+export interface IStandingsResponse {
   standings: Standings;
 }
-
-

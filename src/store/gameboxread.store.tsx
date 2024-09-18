@@ -1,31 +1,30 @@
 import { Appearance } from "react-native";
-import {  createJSONStorage, persist, StateStorage } from "zustand/middleware";
+import { createJSONStorage, persist, StateStorage } from "zustand/middleware";
 import { zustandMMKVStorage } from "./persist.store";
-import { create } from 'zustand'
+import { create } from "zustand";
 
 export interface IGameboxRead {
-  gameboxNumber:string,
+  gameboxNumber: string;
 }
 interface GameboxState {
-  add: (user: IGameboxRead) => void
-  gamebox:IGameboxRead
+  add: (user: IGameboxRead) => void;
+  gamebox: IGameboxRead;
 }
 
-
 export const useGameboxRead = create<
-GameboxState,
+  GameboxState,
   [["zustand/persist", GameboxState]]
 >(
   persist(
     (set, get) => ({
       gamebox: {
-        gameboxNumber:""
+        gameboxNumber: "",
       },
       add: (gamebox) => set((state) => ({ gamebox: gamebox })),
     }),
     {
       name: "app-persist-storage",
-      storage: createJSONStorage(() => zustandMMKVStorage)
+      storage: createJSONStorage(() => zustandMMKVStorage),
     },
   ),
 );

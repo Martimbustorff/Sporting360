@@ -3,7 +3,7 @@ import { firebase } from "@react-native-firebase/firestore";
 export interface ILineups {
   GameId: string;
   teamId: string;
-  startXI : {
+  startXI: {
     playerId: string;
     name: string;
     position: string;
@@ -17,8 +17,13 @@ export interface ILineups {
   id: string;
 }
 // get summaries from firebase by gameId
-export const getLineupsByGameId = async (gameId:string):Promise<ILineups[]> => {
-  const document = firebase.firestore().collection('lineups').where('GameId', '==', gameId);
-  const lineups =  await document.get()
-  return lineups.docs.map(doc => doc.data()) as ILineups[];
-}
+export const getLineupsByGameId = async (
+  gameId: string,
+): Promise<ILineups[]> => {
+  const document = firebase
+    .firestore()
+    .collection("lineups")
+    .where("GameId", "==", gameId);
+  const lineups = await document.get();
+  return lineups.docs.map((doc) => doc.data()) as ILineups[];
+};
