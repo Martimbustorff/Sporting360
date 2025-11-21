@@ -19,8 +19,6 @@ interface IManOfTheMatchProps {
   handleRefreshManofTheMatch:()=>void;
 }
 const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,handleRefreshManofTheMatch}) => {
-  console.log("HOME DO JOGO")
-  console.log(manOfTheMatch)
   const {navigate} = useNavigation()
   const userId = auth().currentUser?.uid
   const choices:Array<IChoice> = lineups.length == 0 ?  [] : [...lineups.filter(x=>x.teamId == "228")[0].startXI, ...lineups.filter(x=>x.teamId == "228")[0].substitutes].filter(x=>x.name && x.name !== "" ).map(k=>{
@@ -31,19 +29,19 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,han
       } as IChoice
     })
   const [modalVisible,setModalVisible] = useState(false)
-  return <View className='flex flex-col w-[85%] '>
+  return <View className='flex flex-col justify-center w-full pr-10 pl-4'>
      {lineups.length === 0 &&
-      <View className='w-full h-40 ml-[-20] justify-center mt-0 items-center'>
+      <View className='w-[85%] h-40 justify-center mt-0 items-center'>
       <Image source={require('../../assets/icons/calendarcheck.png')}></Image>
-      <Text className='text-lg text-white font-bold font-dinLight'>Disponível no dia de jogo</Text>
+      <Text className='text-lg text-white font-bold font-Poppins font-base'>Disponível no dia de jogo</Text>
       </View>}
       {lineups.length > 0 && 
       <>
-       <Text className='text-lg mt-4  text-white font-bold font-dinBold'>🦁 MVP</Text>
-       {!userId && <Text className='text-xs mt-2  text-white font-bold font-dinBold'>Para votar precisar estar autenticado</Text>}
+       <Text className='text-lg mt-4  text-white font-bold font-dinBold font-base'>🦁 MVP</Text>
+       {!userId && <Text className='text-xs mt-2  text-white font-bold font-dinBold font-base'>Para votar precisar estar autenticado</Text>}
       </>
       }
-      <View className="mb-[-30] "></View>
+      <View className='mb-[-30]'></View>
       <RNPoll
         totalVotes={manOfTheMatch === null ?  0 : manOfTheMatch.length}
         percentageTextStyle={{color:'#ffff'}}
@@ -73,10 +71,7 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({lineups,manOfTheMatch,han
             handleRefreshManofTheMatch()
           }}
       />
-      
-    <View className='h-72 mb-40'></View>
-
-  </View>;
+  </View>
 }
 
 export default ManOfTheMatch

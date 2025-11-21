@@ -58,6 +58,7 @@ const Calendar = () => {
             competation={nextGame?.competition}
             hometeam={nextGame?.teamhome.name}
             isStart={Number(nextGame?.elapsedTime) > 0}
+            isActive={nextGame?.isActive}
             jorney={nextGame?.journey}
             resultaway={nextGame?.scoreaway}
             resultHome={nextGame?.scorehome}

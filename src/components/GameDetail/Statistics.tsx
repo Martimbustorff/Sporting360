@@ -1,5 +1,5 @@
 import React from 'react';
-import { View,Text,Image } from 'react-native';
+import { View,Text,Image, Dimensions } from 'react-native';
 import { IStatisticsResponse } from '../../utils/graphql/query/statistics/IStatisticsResponse';
 import { IStastistics } from '../../api/firebase/stastics';
 
@@ -9,6 +9,11 @@ interface IStatisticsProps{
   homeTeamId : string
 }
 const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
+
+  // const screenWidth = Dimensions.get('window').width; // Get the screen width dynamically
+  // const padding = 18; // Adjust this value as per your `padding` styles
+  // const containerWidth = screenWidth - padding; 
+
   const types = [
     {
      type:"Ball Possession",
@@ -47,8 +52,7 @@ const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
       name:"Cartão vermelho"
     }
   ]
-  console.log(statistics)
-  return <View className='flex flex-col w-96 pr-9 mt-4 h-full'>
+  return <View  className='flex flex-col w-full pr-9 mt-4 h-full'>
     {types.map(x=>{
       let homeValue = "0"
       let awayValue = "0"
@@ -60,23 +64,23 @@ const Statistics: React.FC<IStatisticsProps> = ({statistics,homeTeamId}) => {
       }
       return (
         <View className='justify-between flex-row w-full  border-b mb-4  border-b-white_20 pb-2'>
-          <Text className={`text-white font-dinBold text-xl leading-9 w-14 pl-4 top-1`}>{ homeValue !==  "null" ? homeValue : "0"}</Text>
+          <Text className={`text-white font-dinCondensed text-center text-2xl leading-9 flex w-16 top-1 pl-2 h-12`}>{ homeValue !==  "null" ? homeValue : "0"}</Text>
           {x.name === "Cartão amarelo" ?
-           <View className='flex-row gap-2'>
+           <View className='flex-row gap-2 items-center'>
              <Image className='w-4' source={require('../../assets/icons/yellowcard.png')} ></Image>
-            <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>
+            <Text className='text-white font-PoppinsMedium  text-md'>{x.name}</Text>
            </View>
           : x.name === "Cartão vermelho" ? 
-          <View className='flex-row gap-2'>
+          <View className='flex-row gap-2 items-center'>
           <Image className='w-4' source={require('../../assets/icons/redcard.png')} ></Image>
-         <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>
+         <Text className='text-white font-PoppinsMedium text-md'>{x.name}</Text>
         </View>
-          :  <Text className='text-white font-dinRegular top-1  text-sm'>{x.name}</Text>}
-          <Text className='text-white font-dinBold text-xl leading-9 w-14 pr-4 top-1'>{ awayValue !==  "null" ? awayValue : "0" }</Text>
+          :  <Text className='text-white font-PoppinsMedium top-2 text-md'>{x.name}</Text>}
+          <Text className='text-white font-dinCondensed text-center text-2xl leading-9 w-16 pr-2 top-1'>{ awayValue !==  "null" ? awayValue : "0" }</Text>
        </View>
       )
     })}
-    <View className='h-60'></View>
+    <View className='h-72'></View>
         
   </View>;
 }

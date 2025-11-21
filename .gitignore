@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.idea/
 dist/
 npm-debug.*
 *.jks
@@ -54,6 +55,8 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+android/.gradle/
+android/app/release/
 
 # node.js
 #
@@ -76,3 +79,7 @@ web-build/
 dist/
 
 # @end expo-cli
+# Expo
+.expo
+dist/
+web-build/

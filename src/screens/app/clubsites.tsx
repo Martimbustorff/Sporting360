@@ -6,8 +6,6 @@ import Header from '../../components/Header';
 import Month from '../../components/Calendar/Month';
 import Game from '../../components/Calendar/Game';
 import firestore from '@react-native-firebase/firestore';
-import ical from 'ical.js'
-import axios from 'axios'
 import { handleGetCalendarIcal } from '../../utils/getMatchShedule';
 import { MatchSchedule } from '../../interfaces/MatchSchedule';
 import { ClubSites } from '../../constants/ClubSites';
@@ -32,7 +30,7 @@ const CubSites = () => {
        <View className="  mt-2 mt-[2] mb-[-15] w-full ">
          <Header title={'SITES DO CLUBE'}></Header>
       </View>
-      <Text className=' pl-4 pr-4 font-dinLight text-base mb-6 leading-1 text-white'>Aqui podes encontrar ligações directas para os sites oficiais do clube. </Text>
+      <Text className=' pl-4 pr-4 font-dinLight text-base mb-8 leading-1 text-white'>Aqui podes encontrar ligações directas para os sites oficiais do clube. </Text>
       <ScrollView>
       <Animated.View   entering={FadeIn.delay(600)} className='flex justify-end flex-col flex-1  gap-4'>
             {ClubSites.map((item,index)=>{
@@ -49,7 +47,7 @@ const CubSites = () => {
                     }
                    }}
                    key={item.url} className='pl-6 pr-6  '>
-                    <View className='flex flex-row border-b border-b-white pb-3  gap-2 justify-between items-center'>
+                    <View className='flex flex-row border-b border-b-white pb-4  gap-2 justify-between items-center'>
                       <View className='flex flex-row  justify-center pb-3 items-center'>
                         <Image resizeMode="contain"  className="h-8 w-6 mr-2 object-contain" source={item.image} />
                         <Text  className={`font-dinBold ${Platform.OS === 'ios' ? 'h-6 mt-4' : 'mt-0'} text-white text-sm`}>{item.title}</Text>

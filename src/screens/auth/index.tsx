@@ -24,7 +24,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { BarCodeScanner } from "expo-barcode-scanner";
 import firestore from '@react-native-firebase/firestore';
 
 import BottomSheet from '@gorhom/bottom-sheet';
@@ -147,11 +146,17 @@ const Index = () => {
               <TouchableOpacity 
                 activeOpacity={0.7}
                 onPress={()=>navigation.navigate('Home')}
+                className='bg-white w-80 h-14 justify-center items-center rounded-full top-4 mb-4'
+              >
+               <Text className={`text-titleauth font-dinCondensed ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-2xl`}>ENTRAR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                activeOpacity={0.7}
+                onPress={()=>navigation.navigate('Register')}
                 className='bg-white w-80 h-14 justify-center items-center rounded-full top-4'
               >
-               <Text className={`text-titleauth font-dinBold ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-lg`}>ENTRAR</Text>
+               <Text className={`text-titleauth font-dinCondensed ${Platform.OS === 'ios' ? 'mt-3' : 'mt-0'} text-2xl`}>CRIAR UMA CONTA</Text>
               </TouchableOpacity>
-           
           </View>
     </View>
   );

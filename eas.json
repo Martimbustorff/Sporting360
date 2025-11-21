@@ -1,31 +1,32 @@
 {
   "cli": {
-    "version": ">= 3.8.1"
+    "version": ">= 13.4.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
-      "distribution": "internal",
-      "android": {
-        "gradleCommand": ":app:assembleDebug"
-      },
-      "ios": {
-        "buildConfiguration": "Debug",
-        "resourceClass": "m-medium",
-      }
+      "developmentClient": true,
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "resourceClass": "m-medium"
-      },
+      "distribution": "internal"
+    },
+    "preview1": {
       "android": {
         "buildType": "apk"
       }
     },
+    "preview2": {
+      "android": {
+        "gradleCommand": "app:assembleRelease"
+      }
+    },
     "production": {
-      "ios": {
-        "resourceClass": "m-medium",
-        "image": "latest"
+      "node": "18.19.1",
+      "autoIncrement": true,
+      "android": {
+        "gradleCommand": ":app:bundleRelease",
+        "buildType": "app-bundle"
       }
     }
   },

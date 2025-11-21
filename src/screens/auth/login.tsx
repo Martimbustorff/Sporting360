@@ -58,8 +58,6 @@ const Login = () => {
      const result = await auth()
      .signInWithEmailAndPassword(email, password)
 
-   
-   
      const userdata = await firestore()
       .collection('users')
       .doc(result.user.uid)
@@ -87,6 +85,7 @@ const Login = () => {
       titleStyle:{fontFamily:'DinBold',lineHeight:20},
       backgroundColor:'#003625',
     });
+    navigation.navigate("Home");
    } catch (error) {
     console.log(error)
      setLoading(false)

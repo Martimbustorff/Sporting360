@@ -109,7 +109,7 @@ export const Stadium = () => {
     },
   });
   return (
-    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center`}>
+    <SafeAreaView className={`bg-bgauth  flex-1 h-full justify-start items-center pb-16`}>
        <Image
         className='flex flex-1  absolute h-full w-full'
         source={require('../../assets/opacebg.png')}  >
@@ -118,7 +118,7 @@ export const Stadium = () => {
             style={[{backgroundColor:'#001B13'}]}
             className='flex  absolute h-full w-full opacity-80'>
           </Animated.View>
-          <View className=" mt-2   w-full ">
+          <View className=" mt-2 w-full ">
               <View
             style={{height:Platform.OS === "android" ? 110 : 40}}
             className={`w-full ${Platform.OS == 'ios' ? 'h-10 mb-6' : 'h-10'} flex-row  justify-between items-center`}>

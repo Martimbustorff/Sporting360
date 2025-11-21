@@ -17,10 +17,13 @@ interface IGame {
   resultaway?:string,
   jorney:string,
   isStart:boolean,
-  elapseTime:string
-  timestamp:string
+  elapseTime:string,
+  timestamp:string,
+  isActive: boolean,
+  startTime: string,
+  endTime: string
 }
-const PrincipalGameHome = ({competation,hometeam,uriLogo,jorney,awayteam,uriAwayLogo,timestamp,resultHome,resultaway,isStart,id,elapseTime}:IGame) => {
+const PrincipalGameHome = ({competation,hometeam,uriLogo,jorney,awayteam,uriAwayLogo,timestamp,resultHome,resultaway,isStart,id,elapseTime,isActive, startTime, endTime}:IGame) => {
   const navigation = useNavigation()
   function formatDate() {
     const date = new Date(Number(timestamp.seconds) * 1000);
@@ -48,63 +51,66 @@ return <TouchableOpacity
         })
       }}
       activeOpacity={0.7}>
-    <Animated.View entering={FadeIn.delay(1000)} sharedTransitionTag="sharedTag" className='w-80 mt-12 self-center bg-bgauth opacity-70 rounded-lg h-44'>
+    <Animated.View entering={FadeIn.delay(1000)} sharedTransitionTag="sharedTag" className='w-[80%] mt-4 flex flex-col self-center bg-bgauth opacity-95 rounded-lg items-stretch h-[90%]'>
      
-      <View className='w-full bg-white_20 h-8 rounded-lg justify-center items-center'>
+      <View className='w-full bg-white_20 h-[15%] rounded-lg justify-center items-center'>
+        {!isStart?
         <Text className={`text-white font-dinBold ${Platform.OS === 'ios' && 'pt-2'}  text-lg `}>{competation}</Text>
+        :<Text className={`text-white font-dinBold ${Platform.OS === 'ios' && 'pt-2'}  text-lg `}>Live</Text>
+        }
       </View>
-      <View className='w-full items-center flex-row mt-4  justify-center '>
-          <View className='flex justify-center items-center w-1/3 flex-col gap-2'>
-              <Image className='w-16  h-16 ' source={{uri:uriLogo}}  />
-              <Text className='font-dinLight text-center h-15 flex-wrap text-xs pt-1 mt-2 mb-2 text-white'>
+      <View className='w-full items-center flex-row justify-center pt-2 h-[85%]'>
+          <View className='flex justify-center items-center w-1/3 flex-col gap-2 h-full'>
+              <Image className='w-20  h-20 ' source={{uri:uriLogo}}  />
+              <Text className='font-Poppins text-center h-15 flex-wrap text-sm pt-1 mt-2 ml-2 mb-2 text-white'>
                 {hometeam} 
               </Text>
           </View>
-          <View className='flex flex-col w-1/3  items-center gap-2'>
-            <View style={{backgroundColor:'#00835B'}} className=' justify-center mb-1 items-center rounded-full h-6 w-11'>
-              <Text className={`font-dinBold  text-xs  text-white ${Platform.OS === 'ios' && 'leading-9 h-full pt-'}`}>J{jorney.trim()}</Text>
+          <View className='flex flex-col w-1/3 justify-between gap-2 items-center'>
+            <View style={{backgroundColor:'#00835B'}} className=' justify-center mb-1 items-center rounded-full w-11'>
+              <Text className={`font-dinBold  text-sm  text-white ${Platform.OS === 'ios' && 'leading-9 h-full pt-2'}`}>J{jorney.trim()}</Text>
             </View>
-            {isStart  ? 
-            <View className=' justify-center mb-[-8]  items-center'>
-                {!isStart ? <Text className='font-dinLight  text-xs  text-white'>
+            {(isStart || isActive)  ? 
+            <View className=' justify-center  items-center'>
+                {!isStart ? <Text className='text-xs  text-white'>
                   {formatDate()}
                 </Text> : 
-                <Text className='font-dinBold pb-[-8]  mt-2  text-xl  text-titleauth'>
+                <Text className='font-dinBold text-xl text-titleauth'>
                 {elapseTime}´min
               </Text> 
                 }
-                <View className='w-20 flex-row mt-2  justify-between'>
+                <View className='w-20 flex-row mt-3 justify-between'>
                     <View className='bg-white w-9 mr-2 h-10 rounded-md justify-center items-center'>
-                      <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                      <Text className={`font-dinCondensed  text-3xl text-bold  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                         {resultHome === null ? "0" : resultHome}
                       </Text>
                     </View>
                     <View className='bg-white w-9 h-10 rounded-md justify-center items-center'>
-                    <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                    <Text className={`font-dinCondensed  text-3xl text-bold text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                         {resultaway === null ? "0" : resultaway}
                       </Text>
                     </View>
                 </View>
             </View>
-            : 
-              <View className=' justify-center mb-[-3]  items-center'>
-                <Text className='font-dinLight  text-xs  text-white'>
-                  {formatDate()}
-                </Text>
-                <Text className='font-dinBold  text-xsm  text-white'>
-                  {formatHour()}
-                </Text>
-              </View>
-            }
-              {!isStart && <View className=' bg-white_20 p-1  w-16 mt-4 h-8 pl-1 pr-1 rounded-full justify-center items-center'>
-                <Text className={`font-dinBold  text-xs  text-white ${Platform.OS === 'ios' && 'leading-9'}`}>
-                  SportTV1
-                </Text>
-              </View> }
+             : 
+               <View className=' justify-center  items-center'>
+                 <Text className='font-Poppins text-sm  text-white'>
+                   {formatDate()}
+                 </Text>
+                 <Text className='font-dinCondensed mt-1 text-header  text-white'>
+                   {formatHour()}
+                 </Text>
+               </View>
+             }
+               {!isStart && <View className=' bg-white_20 p-1  w-20 mt-1 h-8 pl-1 pr-1 rounded-full justify-center items-center'>
+                 <Text className={`font-dinBold  text-sm  text-white ${Platform.OS === 'ios' && 'leading-9'}`}>
+                   SportTV1
+                 </Text>
+               </View> }
           </View>
           <View className='flex justify-center items-center w-1/3 flex-col gap-2'>
-              <Image className='w-16  h-16 ' resizeMode='contain' source={{uri:uriAwayLogo}}  />
-              <Text className='font-dinLight text-center h-15 flex-wrap text-xs pt-1 mt-2 mb-2 text-white'>
+              <Image className='w-20  h-20 ' resizeMode='contain' source={{uri:uriAwayLogo}}  />
+              <Text className='font-Poppins text-center h-15 flex-wrap text-sm pt-1 mt-2 mb-2 text-white'>
                 {awayteam}
               </Text>
           </View>

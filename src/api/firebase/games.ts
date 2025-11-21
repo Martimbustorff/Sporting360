@@ -20,6 +20,7 @@ export interface IGame {
     logo: string;
     api: string;
   };
+  isActive: boolean;
 }
 
 //get game from firebase by where GameId
@@ -32,15 +33,19 @@ export const getGameById = async (gameId:string):Promise<IGame> => {
 }
 
 // get games from firebase
-export const getNextGame = async ():Promise<IGame> => {
-  // Get the next date based on timestamp 
+export const getNextGame = async (): Promise<IGame | null> => {
   const date = new Date();
   const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const firebaseTimeStamp = firebase.firestore.Timestamp.fromDate(startOfDay);
-  const document =  firebase.firestore().collection('games').where('timestamp', '>=', firebaseTimeStamp).orderBy('timestamp').limit(1);
-  const game =  await document.get()
+  const document = firebase.firestore().collection('games')
+    .where('timestamp', '>=', firebaseTimeStamp)
+    .orderBy('timestamp')
+    .limit(1);
+  const game = await document.get();
+
+  if (!game.docs.length) return null; // No games found!
   return game.docs[0].data() as IGame;
-}
+};
 
 // get games from firebase excluding the next game
 export const getFeatureGames = async ():Promise<IGame[]> => {

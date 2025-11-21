@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./App.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
+  presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
@@ -22,7 +23,27 @@ module.exports = {
         dinRegular: ["DinRegular"],
         dinLight: ["DinLight"],
         dinMedium: ["DinMedium"],
+        dinCondensed: ["DinCondensed"],
+        dinCondensedBold: ["DinCondensedBold"],
+        Poppins:["Poppins"],
+        PoppinsMedium:["PoppinsMedium"],
+        PoppinsBold:["PoppinsBold"],
       },
+      // spacing: {
+      //   sm: '20px', // Increase spacing
+      //   lg: '48px',
+      // },
+      // fontSize: {
+      //   sm: '1rem', // Larger fonts
+      //   lg: '1.2rem',
+      //   xl: '2rem',
+      //   'ssm': '0.9rem',
+      //   'mark': '3rem',
+      //   'score': '2.5rem',
+      //   'base': '1.1rem',
+      //   'markscore': '1.4rem',
+      //   'header': '1.7rem'
+      // },
     },
   },
   plugins: [],

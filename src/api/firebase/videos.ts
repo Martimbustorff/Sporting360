@@ -11,6 +11,6 @@ export interface IVideos {
 // get summaries from firebase by gameId
 export const getVideosByGameId = async (gameId:string):Promise<IVideos[]> => {
   const document = firebase.firestore().collection('videos').where('GameId', '==', gameId);
-  const videos =  await document.get()
+  const videos =  await document.get();
   return videos.docs.map(doc => doc.data()) as IVideos[];
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View,Image,Text,ScrollView, Dimensions, TouchableOpacity, Linking, TextInput, TextInputProps, Platform } from 'react-native';
+import { View,Image,Text,ScrollView, Dimensions, TouchableOpacity, Linking, TextInput, TextInputProps, Platform , StyleSheet} from 'react-native';
 import Animated, { FadeInUp, interpolateColor, useAnimatedStyle, useSharedValue, withSpring, withTiming }  from 'react-native-reanimated';
 import { MaskedTextInput} from "react-native-mask-text";
 type IInput =  TextInputProps & {
@@ -49,21 +49,24 @@ const Input = ({title,handleGetValue,defaultValue,mask,maskInput,...rest}:IInput
           onChangeText={(text, rawText) => {
             setValue(text);
           }}
-          placeholder={focus ? "Ex: 09/1987" :""}
+          placeholder={focus ? "Ex: 09/1987" : ""}
           placeholderTextColor={'#8a8a8a9a'}
-          onBlur={()=>{
-            if(!value){
-              setFocus(!focus)
+          onBlur={() => {
+            if (!value) {
+              setFocus(!focus);
             }
-            setActive(false)
+            setActive(false);
           }}
-          onFocus={()=>{
-            setFocus(true)
-            setActive(true)
+          onFocus={() => {
+            setFocus(true);
+            setActive(true);
           }}
           value={value}
-          className={`w-full h-full text-white font-dinBold border-b ${Platform.OS == 'ios' ? 'leading-3' : 'leading-none' }  
-          ${active ? 'border-b-titleauth':'border-b-white'} `} 
+          style={[
+            styles.input,
+            active ? styles.activeBorder : styles.inactiveBorder,
+            Platform.OS === 'ios' ? styles.iosLeading : styles.androidLeading,
+          ]}
           keyboardType="numeric"
         />
       : 
@@ -89,5 +92,28 @@ const Input = ({title,handleGetValue,defaultValue,mask,maskInput,...rest}:IInput
 </View>
 
 }
+
+
+const styles = StyleSheet.create({
+  input: {
+    width: '100%',
+    height: '100%',
+    color: 'white',
+    fontFamily: 'din-bold', // Ensure this font is loaded in your project
+    borderBottomWidth: 1,
+  },
+  activeBorder: {
+    borderBottomColor: 'titleauth', // Replace 'titleauth' with the correct color value
+  },
+  inactiveBorder: {
+    borderBottomColor: 'white',
+  },
+  iosLeading: {
+    lineHeight: 16, // Adjust as needed
+  },
+  androidLeading: {
+    lineHeight: undefined, // or adjust as needed
+  },
+});
 
 export default Input;

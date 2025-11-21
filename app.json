@@ -1,20 +1,21 @@
 {
   "expo": {
-    "name": "S360",
-    "scheme": "s360",
-    "slug": "scp360",
-    "version": "5.2.0",
+    "name": "scp360_mobile",
+    "slug": "sportingcpandroid",
+    "scheme": "com.scp360_v2",
+    "version": "6.1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "white",
-    
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splashscreen_image.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.scp360",
-      "buildNumber": "5.1.0",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
@@ -22,8 +23,12 @@
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#001B13"
-      }
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       [
@@ -33,23 +38,9 @@
         }
       ],
       [
-        "expo-barcode-scanner",
+        "expo-camera",
         {
-          "cameraPermission": "Allow $(SCP) to access camera to read the Gamebox barcode"
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 33,
-            "targetSdkVersion": 33,
-            "usesCleartextTraffic": true,
-            "buildToolsVersion": "33.0.0"
-          },
-          "ios": {
-            "useFrameworks": "static"
-          }
+          "cameraPermission": "Allow $(SCP) to access the camera to read the Gamebox barcode."
         }
       ],
       "@react-native-firebase/app",
@@ -57,14 +48,53 @@
       "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "expo-localization",
+      "expo-asset",
+      "expo-font"
     ],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "extra": {
       "eas": {
-        "projectId": "c0260642-90dd-4638-9116-2c82fa07942a"
+        "projectId": "d2198311-78a3-42c9-8966-8fc8ab130b28",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.scp360.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.scp360.onesignal"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.scp360.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.scp360.onesignal"
+                    ]
+                  }
+                },
+                {
+                  "targetName": "OneSignalNotificationServiceExtension",
+                  "bundleIdentifier": "com.scp360.OneSignalNotificationServiceExtension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.scp360.onesignal"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
-    }
+    },
+    "owner": "wonderyb"
   }
 }

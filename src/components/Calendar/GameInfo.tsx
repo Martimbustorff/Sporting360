@@ -56,12 +56,12 @@ return  <Animated.View sharedTransitionTag="sharedTag" className='w-full h-44'>
               </Text>
               <View className='w-20 flex-row mt-2  justify-between'>
                   <View className='bg-white w-9 mr-2 h-10 rounded-md justify-center items-center'>
-                    <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                    <Text className={`font-dinCondensed  text-2xl  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                       {resultHome === null ? "0" : resultHome}
                     </Text>
                   </View>
                   <View className='bg-white w-9 h-10 rounded-md justify-center items-center'>
-                  <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                  <Text className={`font-dinCondensed  text-2xl  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                       {resultaway === null ? "0" : resultaway}
                     </Text>
                   </View>
@@ -69,7 +69,7 @@ return  <Animated.View sharedTransitionTag="sharedTag" className='w-full h-44'>
            </View>
           : 
             <View className=' justify-center mb-[-8]  items-center'>
-              <Text className='font-dinLight  text-sm  text-white'>
+              <Text className='text-sm  text-white'>
                 {formatDate()}
               </Text>
               <Text className='font-dinBold  text-lg  text-white'>

@@ -17,10 +17,13 @@ interface IGame {
   resultaway?:string,
   jorney:string,
   isStart:boolean,
-  elapseTime:string
-  timestamp:string
+  elapseTime:string,
+  timestamp:string,
+  isActive: boolean,
+  startTime: string,
+  endTime: string
 }
-const PrincipalGame = ({competation,hometeam,uriLogo,jorney,awayteam,uriAwayLogo,timestamp,resultHome,resultaway,isStart,id,elapseTime}:IGame) => {
+const PrincipalGame = ({competation,hometeam,uriLogo,jorney,awayteam,uriAwayLogo,timestamp,resultHome,resultaway,isStart,id,elapseTime,isActive,startTime,endTime}:IGame) => {
   const navigation = useNavigation()
   function formatDate() {
     const date = new Date(Number(timestamp.seconds) * 1000);
@@ -47,17 +50,20 @@ return <TouchableOpacity
         })
       }}
       activeOpacity={0.7}>
-    <Animated.View sharedTransitionTag="sharedTag" className='w-full h-44'>
+    <Animated.View sharedTransitionTag="sharedTag" className='w-full h-48'>
       <View className='absolute right-3 top-12'>
         <Image source={require('../../assets/icons/arrowrigth.png')}></Image>
       </View>
       <View className='w-full bg-white_20 h-8  justify-center items-center'>
+       {!isActive?
         <Text className={`text-white font-dinBold ${Platform.OS === 'ios' && 'pt-2'}  text-lg `}>{competation}</Text>
+        :<Text className={`text-white font-dinBold ${Platform.OS === 'ios' && 'pt-2'}  text-lg `}>Live</Text>
+        }
       </View>
       <View className='w-full items-center flex-row mt-4 pl-4 justify-center pr-4'>
           <View className='flex justify-center items-center w-1/3 flex-col gap-2'>
-              <Image className='w-20  h-20 ' source={{uri:uriLogo}}  />
-              <Text className='font-dinLight text-center h-15 flex-wrap text-sm pt-1 mt-2 mb-2 text-white'>
+              <Image className='w-24  h-24 ' source={{uri:uriLogo}}  />
+              <Text className='font-Poppins text-center h-15 flex-wrap text-md pt-1 mb-2 text-white'>
                 {hometeam} 
               </Text>
           </View>
@@ -65,23 +71,23 @@ return <TouchableOpacity
             <View style={{backgroundColor:'#00835B'}} className=' justify-center mb-1 items-center rounded-full h-6 w-11'>
               <Text className={`font-dinBold  text-sm  text-white ${Platform.OS === 'ios' && 'leading-9 h-full pt-'}`}>J{jorney.trim()}</Text>
             </View>
-            {isStart  ? 
+            {(isStart || isActive)  ? 
             <View className=' justify-center mb-[-8]  items-center'>
-                {!isStart ? <Text className='font-dinLight  text-sm  text-white'>
+                {!isStart ? <Text className='font-dinLight  text-md  text-white'>
                   {formatDate()}
                 </Text> : 
-                <Text className='font-dinBold pb-[-8]  mt-2  text-xl  text-titleauth'>
-                {elapseTime}´min
+                <Text className='text-white pb-[-8]  text-lg  text-titleauth font-Poppins'>
+                {elapseTime} min
               </Text> 
                 }
                 <View className='w-20 flex-row mt-2  justify-between'>
-                    <View className='bg-white w-9 mr-2 h-10 rounded-md justify-center items-center'>
-                      <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                    <View className='bg-white w-9 mr-2 h-12 rounded-md justify-center items-center'>
+                      <Text className={`font-dinCondensed text-3xl text-bold text-score text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                         {resultHome === null ? "0" : resultHome}
                       </Text>
                     </View>
-                    <View className='bg-white w-9 h-10 rounded-md justify-center items-center'>
-                    <Text className={`font-dinBold  text-lg  text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
+                    <View className='bg-white w-9 h-12 rounded-md justify-center items-center'>
+                    <Text className={`font-dinCondensed text-3xl text-score text-bold text-bgauth ${Platform.OS === 'ios' && 'leading-9  pt-2'}`}>
                         {resultaway === null ? "0" : resultaway}
                       </Text>
                     </View>
@@ -89,23 +95,23 @@ return <TouchableOpacity
             </View>
             : 
               <View className=' justify-center mb-[-8]  items-center'>
-                <Text className='font-dinLight  text-sm  text-white'>
+                <Text className='items-center text-md  text-white'>
                   {formatDate()}
                 </Text>
-                <Text className='font-dinBold  text-lg  text-white'>
+                <Text className='font-dinCondensed  text-2xl  text-white'>
                   {formatHour()}
                 </Text>
               </View>
             }
-              {!isStart && <View className=' bg-white_20 p-1 w-16 mt-2 h-8 pl-1 pr-1 rounded-full justify-center items-center'>
-                <Text className={`font-dinBold  text-xs  text-white ${Platform.OS === 'ios' && 'leading-9'}`}>
+              {!isStart && <View className=' bg-white_20 p-1 w-20 mt-2 h-8 pl-1 pr-1 rounded-full justify-center items-center'>
+                <Text className={`font-dinBold  text-sm  text-white ${Platform.OS === 'ios' && 'leading-9'}`}>
                   SportTV1
                 </Text>
               </View> }
           </View>
           <View className='flex justify-center items-center w-1/3 flex-col gap-2'>
-              <Image className='w-20  h-20 ' resizeMode='contain' source={{uri:uriAwayLogo}}  />
-              <Text className='font-dinLight text-center h-15 flex-wrap text-sm pt-1 mt-2 mb-2 text-white'>
+              <Image className='w-24  h-24 ' resizeMode='contain' source={{uri:uriAwayLogo}}  />
+              <Text className='font-Poppins text-center h-15 flex-wrap text-md pt-1 mb-2 text-white'>
                 {awayteam}
               </Text>
           </View>

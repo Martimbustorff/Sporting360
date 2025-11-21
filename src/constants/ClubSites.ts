@@ -19,4 +19,9 @@ export const ClubSites = [
     image:require('../assets/tickets.png'),
     url:"https://tickets.sporting.pt/",
   },
+  {
+    title:"GAMEBACK",
+    image:require('../assets/share.png'),
+    url:"https://gamebox.sporting.pt/estadio/gameback",
+  },
 ]

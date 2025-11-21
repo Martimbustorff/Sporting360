@@ -132,10 +132,10 @@ const Register = () => {
         onPress={()=>navigation.navigate('Terms')}
         className="h-10 justify-center items-center flex-col "
         >
-        <Text className={`text-white ${Platform.OS === 'ios' ? 'leading-10' : ''} opacity-50 font-dinRegular text-center`}>
-          Ao clicar em criar conta aceita os nossos {'\n'}
+        <Text className={`text-white ${Platform.OS === 'ios' ? 'leading-10' : ''} opacity-50 font-dinRegular  text-center`}>
+         {'\n'} Ao clicar em criar conta aceita os nossos {'\n'}
         </Text>
-        <Text className={`text-white ${Platform.OS === 'ios' ? 'leading-10' : ''}  text-titleauth font-dinBold mt-[-14]  text-center`}>Termos e Condições</Text>
+        <Text className={`text-white ${Platform.OS === 'ios' ? 'leading-10' : ''} opacity-50 text-titleauth font-dinBold mt-1  text-center`}>Termos e Condições</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

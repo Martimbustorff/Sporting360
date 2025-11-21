@@ -83,7 +83,7 @@ return <TouchableOpacity
             </View>
             : 
               <View className=' justify-center mb-[2] mt-8  items-center'>
-                <Text className='font-dinBold mt-4 text-lg  text-white'>
+                <Text className='font-dinCondensed mt-4 text-lg  text-white'>
                   {formatHour()}
                 </Text>
               </View>

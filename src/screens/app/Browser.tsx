@@ -2,7 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useRef, useState } from 'react';
 import { View,Image,Text,ScrollView, Dimensions, TouchableOpacity, Linking, SafeAreaView } from 'react-native';
 import Animated, { FadeInUp, interpolateColor, useAnimatedStyle, useSharedValue, withTiming }  from 'react-native-reanimated';
-import { WebView } from 'react-native-webview';
+import WebView from 'react-native-webview';
 
 import Header from '../../components/Header';
 import { ClubSites } from '../../constants/ClubSites';

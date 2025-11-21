@@ -1,8 +1,9 @@
 {
   "project_info": {
     "project_number": "394641993263",
+    "firebase_url": "https://scp360-37a74-default-rtdb.europe-west1.firebasedatabase.app",
     "project_id": "scp360-37a74",
-    "storage_bucket": "scp360-37a74.appspot.com"
+    "storage_bucket": "scp360-37a74.firebasestorage.app"
   },
   "client": [
     {
@@ -29,6 +30,13 @@
             {
               "client_id": "394641993263-m82d9jj7m2do7204davvqo5k1f09epoh.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "394641993263-84tree10asc01anqldkhog14sbqq1k7b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.scp360"
+              }
             }
           ]
         }

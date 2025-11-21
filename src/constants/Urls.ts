@@ -1,5 +1,11 @@
 export const Urls = [
   {
+    title:"NEWS",
+    image:require('../assets/news.png'),
+    url:null,
+    page:'News'
+  },
+  {
     title:"AGENDA",
     image:require('../assets/Calendar.png'),
     url:null,
