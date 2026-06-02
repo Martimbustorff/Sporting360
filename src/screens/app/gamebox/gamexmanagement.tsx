@@ -37,14 +37,14 @@ const GameboxMangement = () => {
   const [gameboxPort,setGameboxPort] = useState("")
   const [gameboxName,setGameboxName] = useState("")
   const [gameboxSeat,setGameboxSeat] = useState("")
-  const [gamebox,setGamebox] = useState<Gamebox>(null)
+  const [gamebox,setGamebox] = useState<Gamebox | null>(null)
  
   const [gameboxSector,setGameboxSector] = useState("")
 
   const [loading,setLoading] = useState(true)
  
   const navigation = useNavigation();
-  const route = useRoute();
+  const route = useRoute<any>();
 
   //TODO:
   // BUSCAR SE TIVER ID OS DADOS DA GAMEBOX PARA EDITAR

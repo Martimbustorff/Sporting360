@@ -18,7 +18,7 @@ interface IGame {
   jorney:string,
   isStart:boolean,
   elapseTime:string,
-  timestamp:string,
+  timestamp:any,
   isActive: boolean,
   startTime: string,
   endTime: string

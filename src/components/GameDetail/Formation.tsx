@@ -12,7 +12,7 @@ interface IPlayersProps {
   homeTeamId: string
 }
 
-const formatName = (fullName: string) => {
+const formatName = (fullName: string = "") => {
   const [firstName, lastName] = fullName.split(' ');
   if(lastName !== undefined)
     return `${firstName.charAt(0)}.${lastName}`;
@@ -64,7 +64,7 @@ const Formation: React.FC<IPlayersProps> = ({ summaries, players, homeTeamId }) 
     // Update the maximum column number for the current row
     acc[row] = Math.max(acc[row] || 0, col);
     return acc;
-  }, {});
+  }, {} as any);
 
   const maxMinutes = minutesData.reduce((max, player) => {
     return Math.max(max, player);
@@ -84,7 +84,7 @@ const Formation: React.FC<IPlayersProps> = ({ summaries, players, homeTeamId }) 
     // Update the maximum column number for the current row
     acc[row] = Math.max(acc[row] || 0, col);
     return acc;
-  }, {});
+  }, {} as any);
 
   useEffect(() => {
     const handleResize = () => {
@@ -257,7 +257,7 @@ const Formation: React.FC<IPlayersProps> = ({ summaries, players, homeTeamId }) 
     <View style={{ marginBottom: 30, flexDirection: 'row', justifyContent: 'space-between' }}>
       <View style={{ flex: 1 }} className='flex-col'>
         {homeSubsts?.sort((a, b) => Number(a.time) - Number(b.time)).map(x => {
-          const rate = findPlayer(x.player.api, homePlayer[0])?.rating ? parseFloat(findPlayer(x.player.api, homePlayer[0])?.rating) : 0
+          const rate = findPlayer(x.player.api, homePlayer[0])?.rating ? parseFloat(findPlayer(x.player.api, homePlayer[0])?.rating ?? "0") : 0
           return (
             <View key={x.player.api} className='w-auto mt-4 mb-2 flex-row items-center justify-start gap-2'>
               <Image className='w-10 h-10 rounded-full object-contain' source={{ uri: findPlayer(x.player.api, homePlayer[0])?.photo }} />
@@ -280,7 +280,7 @@ const Formation: React.FC<IPlayersProps> = ({ summaries, players, homeTeamId }) 
       </View>
       <View style={{ flex: 1 }} className='flex-col items-end'>
         {awaySubsts?.sort((a, b) => Number(a.time) - Number(b.time)).map(x => {
-          const rate = findPlayer(x.player.api, awayPlayers[0])?.rating ? parseFloat(findPlayer(x.player.api, awayPlayers[0])?.rating) : 0
+          const rate = findPlayer(x.player.api, awayPlayers[0])?.rating ? parseFloat(findPlayer(x.player.api, awayPlayers[0])?.rating ?? "0") : 0
           return (
             <View key={x.player.api} className='w-auto mt-4 mb-2 flex-row items-center justify-end'>
               <View className='flex-col gap-1'>

@@ -4,9 +4,9 @@ import Animated, { FadeInUp, interpolateColor, useAnimatedStyle, useSharedValue,
 import { MaskedTextInput} from "react-native-mask-text";
 type IInput =  TextInputProps & {
   title: string;
-  defaultValue: string;
-  maskInput:boolean;
-  mask:string;
+  defaultValue?: string;
+  maskInput?: boolean;
+  mask?: string;
   handleGetValue: (value: string) => void;
 }
 const Input = ({title,handleGetValue,defaultValue,mask,maskInput,...rest}:IInput) => {
