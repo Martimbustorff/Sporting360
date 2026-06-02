@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, ScrollView, Dimensions, StyleSheet, Image, Modal, TouchableOpacity } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
 import { IVideos } from '../../api/firebase/videos';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
@@ -14,7 +13,6 @@ const Videos: React.FC<IVideosProps> = ({ videos }) => {
   const navigation = useNavigation();
 
   const [selectedVideo, setSelectedVideo] = useState<IVideos | null>(null);
-  const videoRef = useRef<Video>(null);
   const webViewRef = useRef<WebView>(null);
   const styles = StyleSheet.create({
     heading: {
@@ -55,7 +53,6 @@ const Videos: React.FC<IVideosProps> = ({ videos }) => {
         <TouchableOpacity onPress={() => {
           setSelectedVideo(k)
           setTimeout(() => {
-            videoRef.current?.presentFullscreenPlayer();
             navigation.navigate("VideoShow", {selectedVideoLink: k.videoUrl});
           }, 500);
         }}

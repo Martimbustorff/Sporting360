@@ -4,7 +4,6 @@ import { IStatisticsResponse } from '../../utils/graphql/query/statistics/IStati
 import { IStandingsResponse } from '../../utils/graphql/query/standings/IStandingsResponse';
 import { IVideosResponse } from '../../utils/graphql/query/videos/IStatisticsResponse';
 import WebView from 'react-native-webview';
-import { Video, ResizeMode } from 'expo-av';
 // import { Container } from './styles';
 import { IVideos } from '../../api/firebase/videos';
 import RNPoll, { IChoice } from "react-native-poll";
