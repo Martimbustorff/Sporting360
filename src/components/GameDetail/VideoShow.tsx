@@ -15,7 +15,7 @@ import WebView from "react-native-webview";
 import { useNavigation } from "@react-navigation/native";
 import * as ScreenOrientation from "expo-screen-orientation";
 
-const VideoShow = ({ route }) => {
+const VideoShow = ({ route }: any) => {
   const navigation = useNavigation();
   const { selectedVideoLink } = route.params;
   const embedHtml = `

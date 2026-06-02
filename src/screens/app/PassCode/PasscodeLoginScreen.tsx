@@ -50,7 +50,7 @@ const PasscodeLoginScreen = () => {
             const existingCredentials = storage.getString('passcodecert');
             let credentialsArray = existingCredentials ? JSON.parse(existingCredentials) : [];
             // Check for duplicates
-            const LoginwithPasscode = credentialsArray.find(cred => cred.passcode === InputPasscode);
+            const LoginwithPasscode = credentialsArray.find((cred: any) => cred.passcode === InputPasscode);
             if (LoginwithPasscode) {
                 const userdata = await firestore()
                     .collection('users')

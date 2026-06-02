@@ -75,7 +75,7 @@ const Login = () => {
       gameboxPort:data.gameboxPort ?  data.gameboxPort : "",
       gameboxSeat:data.gameboxSeat ?  data.gameboxSeat : "",
       gameboxSector:data.gameboxSector ?  data.gameboxSector : "",
-     })
+     } as IUser)
      setLoading(false)
      showMessage({
       message: "Login efetuado com sucesso!",

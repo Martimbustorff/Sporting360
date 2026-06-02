@@ -51,7 +51,7 @@ const Register = () => {
         name,
         uuid:result.user.uid,
         partnerNumber:"",
-      })
+      } as IUser)
       navigation.navigate('Home')
       setLoading(false)
     } catch (error: any) {

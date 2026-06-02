@@ -71,7 +71,6 @@ const Gamebox = () => {
       textBody: 'Por favor, confirme se o número lido pela nossa aplicação está correto. Se estiver, prossiga para desfrutar das emoções do Sporting; caso contrário, verifique novamente',
       buttonText: 'Confirmar',
       confirmText: 'Corrigir',
-      okButtonStyle: { backgroundColor: '#003625' },
       callback: async () => {
         Popup.hide();
         await addGamebox({

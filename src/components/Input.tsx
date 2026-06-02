@@ -12,7 +12,7 @@ type IInput =  TextInputProps & {
 const Input = ({title,handleGetValue,defaultValue,mask,maskInput,...rest}:IInput) => {
   const [focus, setFocus] = useState(false);
   const [active, setActive] = useState(false);
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(defaultValue ?? "");
 
 
   const BootomValue = useSharedValue(10);

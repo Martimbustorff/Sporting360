@@ -24,7 +24,7 @@ const Intro = () => {
   const progress = useSharedValue(0);
   const [actualIndex,setActualIndex] = useState(0)  
 
-  const handleScroll = (event) => {
+  const handleScroll = (event: any) => {
     const { contentOffset, layoutMeasurement } = event.nativeEvent;
     const screenWidth = layoutMeasurement.width;
     const currentOffset = contentOffset.x;

@@ -67,8 +67,8 @@ const SetPasscodeScreen = () => {
         const existingCredentials = storage.getString('passcodecert');
         let credentialsArray = existingCredentials ? JSON.parse(existingCredentials) : [];
         // Check for duplicates
-        const isDuplicatePasscode = credentialsArray.some(cred => cred.passcode === passcode);
-        const isDuplicateUid = credentialsArray.some(cred => cred.userId === userId);
+        const isDuplicatePasscode = credentialsArray.some((cred: any) => cred.passcode === passcode);
+        const isDuplicateUid = credentialsArray.some((cred: any) => cred.userId === userId);
         if (isDuplicatePasscode) {
           showMessage({
             message: "O registo falhou devido a uma palavra-passe duplicada",
@@ -84,7 +84,7 @@ const SetPasscodeScreen = () => {
           shakeCircles()
         }
         else if (isDuplicateUid) {
-          const userIndex = credentialsArray.findIndex(cred => cred.userId === userId);
+          const userIndex = credentialsArray.findIndex((cred: any) => cred.userId === userId);
           credentialsArray[userIndex].passcode = newConfirmPasscode;
           storage.set('passcodecert', JSON.stringify(credentialsArray));
           showMessage({

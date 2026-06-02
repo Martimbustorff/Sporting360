@@ -74,7 +74,7 @@ const GameboxMangement = () => {
           gameboxLine,
           gameboxName,
           userid:user.uuid,
-          order:gamebox.order,
+          order:gamebox?.order,
           gameboxPort,
           gameboxSeat,
           gameboxSector
@@ -191,7 +191,7 @@ const GameboxMangement = () => {
         data.id = iterator.id
         gameboxfirebase.push(data)
       }
-      setGameboxes(gameboxfirebase)
+      setGameboxes(gameboxfirebase as Gamebox[])
       setLoading(false)
     } catch (error: any) {
       setLoading(false)

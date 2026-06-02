@@ -67,7 +67,7 @@ const Definitions = () => {
         gameboxPort:user.gameboxPort,
         gameboxSeat:user.gameboxSeat,
         gameboxSector:user.gameboxSector,
-      })
+      } as IUser)
       setLoading(false)
       showMessage({
         message: "Alterações salvas com sucesso!",
@@ -102,11 +102,11 @@ const Definitions = () => {
           text: 'Sim',
           onPress: async () => {
              try {
-                const currentUser = auth().currentUser.uid
+                const currentUser = auth().currentUser?.uid
                 await firestore().collection('users')
                 .doc(currentUser) // 👈
                 .delete()
-                await auth().currentUser.delete()
+                await auth().currentUser?.delete()
                 
                 setLoading(false)
                 showMessage({

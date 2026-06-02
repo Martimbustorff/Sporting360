@@ -80,6 +80,7 @@ const ManOfTheMatch: React.FC<IManOfTheMatchProps> = ({
       )}
       <View className="mb-[-30]"></View>
       <RNPoll
+        percentage={0}
         totalVotes={manOfTheMatch === null ? 0 : manOfTheMatch.length}
         percentageTextStyle={{ color: "#ffff" }}
         choices={choices}

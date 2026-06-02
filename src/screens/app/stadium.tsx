@@ -15,7 +15,7 @@ const BOX_HEIGHT = 50 + BOX_BORDER_WIDTH * 1.9; //add border width
 const INITIAL_SCALE = 1;
 const NEW_SCALE = 0.5;
 
-const clamp = (value, min, max) => {
+const clamp = (value: number, min: number, max: number) => {
   'worklet';
   return Math.min(Math.max(min, value), max);
 };
@@ -74,7 +74,7 @@ export const Stadium = () => {
       },
     };
   };
-  const gestureHandler = useAnimatedGestureHandler({
+  const gestureHandler = useAnimatedGestureHandler<any, { startX: number; startY: number }>({
     onStart: (_, ctx) => {
       ctx.startX = translationX.value;
       ctx.startY = translationY.value;

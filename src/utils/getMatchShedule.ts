@@ -3,7 +3,7 @@ import ical from "ical.js";
 import { MatchSchedule } from "../interfaces/MatchSchedule";
 const daysOfWeekPt = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
-function formatDateToCustomString(inputDate) {
+function formatDateToCustomString(inputDate: any) {
   const dateParts = inputDate.split('-');
   const year = parseInt(dateParts[0], 10);
   const month = parseInt(dateParts[1], 10);

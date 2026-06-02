@@ -4,7 +4,7 @@ import { WebView } from "react-native-webview";
 import { ITweet } from "../../interfaces/ITweet";
 import moment from "moment";
 
-const TweetPreview = ({ tweet }) => {
+const TweetPreview = ({ tweet }: any) => {
   return (
     <View className="bg-[#1A1A1A] rounded-xl p-4 mb-4">
       {/* Header */}
@@ -30,7 +30,7 @@ const TweetPreview = ({ tweet }) => {
       {/* Media */}
       {tweet.media?.length > 0 && (
         <View className="mt-3 space-y-2">
-          {tweet.media.map((m, i) => (
+          {tweet.media.map((m: any, i: number) => (
             <Image
               key={i}
               source={{ uri: m.url }}

@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, Image, Dimensions } from "react-native";
 import QRCode from 'react-native-qrcode-svg';
 import { decryptGameBox } from "../../../services/decryptGameBox";
 
-const GameboxCard = ({ gamebox,user ,navigation}) => {
+const GameboxCard = ({ gamebox, user, navigation }: any) => {
   if(gamebox === null) {
     return (
       <Text className="font-dinBold mt-2 text-black text-lg">A Carregar informação</Text>

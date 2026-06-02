@@ -20,8 +20,8 @@ interface IGame {
   elapseTime:string,
   timestamp:any,
   isActive: boolean,
-  startTime: string,
-  endTime: string
+  startTime?: string,
+  endTime?: string
 }
 const PrincipalGameHome = ({competation,hometeam,uriLogo,jorney,awayteam,uriAwayLogo,timestamp,resultHome,resultaway,isStart,id,elapseTime,isActive, startTime, endTime}:IGame) => {
   const navigation = useNavigation()

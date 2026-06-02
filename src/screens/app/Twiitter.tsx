@@ -11,7 +11,7 @@ import Animated, {FadeInUp} from "react-native-reanimated";
 import { useNavigation } from "@react-navigation/native";
 import { WebView } from 'react-native-webview';
 
-export const Twitter = ({ route }) => {
+export const Twitter = ({ route }: any) => {
   const { username, tweetId } = route.params;
   const navigation = useNavigation();
   const url = `https://x.com/${username}/status/${tweetId}`;

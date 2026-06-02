@@ -61,10 +61,10 @@ const Home = () => {
   const user = useAuthStore((state) => state.user)
   const heigthBootomValue = useSharedValue(120);
   const mtValue = useSharedValue(0);
-  const [hasPermission, setHasPermission] = useState(null);
+  const [hasPermission, setHasPermission] = useState<any>(null);
   const [open, setOpen] = useState(false);
   const addGamebox = useGameboxRead((state) => state.add)
-  const [nextGame, setNextGame] = useState<IGame>(null)
+  const [nextGame, setNextGame] = useState<IGame>(null as any)
 
 
   const [gameboxes, setGameboxes] = useState<Gamebox[]>([])
@@ -75,7 +75,7 @@ const Home = () => {
   useEffect(() => {
     const getGames = async () => {
       const nextGameResponse = await getNextGame()
-      setNextGame(nextGameResponse)
+      setNextGame(nextGameResponse as IGame)
     }
     getGames()
   }, [])
@@ -156,7 +156,7 @@ const Home = () => {
       if (appversion < 5.4) {
         try {
           await firebase.firestore().collection('gamebox').add({
-            gameboxNumber: defaultGamebox(user).gameboxNumber.trim(),
+            gameboxNumber: defaultGamebox(user)?.gameboxNumber?.trim(),
             gameboxLine: defaultGamebox(user)?.gameboxLine,
             gameboxName: defaultGamebox(user)?.gameboxName,
             userid: user.uuid,
@@ -255,7 +255,7 @@ const Home = () => {
           <View className="justify-end">
             <Animated.View style={bootomBackgroundStyle} className={`bg-white absolute flex-row w-[100%] rounded-t-[28px] pr-8 pl-8 pb-4 pt-4 `}>
               {/* Gamebox Cards */}
-              <View className={`w-full ${open ? 'flex-col' : 'flex-col'} justify-between`} onPress={() => handleOpenGameBoxWithFill()} >
+              <View className={`w-full ${open ? 'flex-col' : 'flex-col'} justify-between`} {...({ onPress: () => handleOpenGameBoxWithFill() } as any)} >
                 <View className="flex flex-row w-full justify-between items-center">
                   <Text className='font-dinBold text-titleauth text-xl mt-[4] mb-2'>GAMEBOX DIGITAL</Text>
                   <TouchableOpacity onPress={() => handleOpenGameBoxWithFill()}>

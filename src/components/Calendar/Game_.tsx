@@ -18,9 +18,9 @@ const Game = ({hometeam,awaiTeam,date,hour,jorney,result}:IGame) => {
 
   const detectedTimezone = getCalendars()[0].timeZone;
 
-  function convertTimezone(baseDateTime) {
+  function convertTimezone(baseDateTime: any) {
     const baseDate = DateTime.fromSQL(baseDateTime, { zone: 'Europe/Lisbon' });
-    const convertedDate = baseDate.setZone(detectedTimezone);
+    const convertedDate = baseDate.setZone(detectedTimezone ?? undefined);
     return convertedDate.toFormat("HH:mm");
   }
   
