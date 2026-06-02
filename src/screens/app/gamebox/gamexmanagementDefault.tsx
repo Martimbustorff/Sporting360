@@ -82,7 +82,7 @@ const GameboxMangementDefault = () => {
         titleStyle:{fontFamily:'DinBold',lineHeight:20},
         backgroundColor:'#003625',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({

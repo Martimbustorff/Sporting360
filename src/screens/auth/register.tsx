@@ -54,7 +54,7 @@ const Register = () => {
       })
       navigation.navigate('Home')
       setLoading(false)
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false)
       if (error.code === 'auth/email-already-in-use') {
         showMessage({

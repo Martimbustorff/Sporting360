@@ -1,3 +1,4 @@
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Intro from '../screens/onboarding';
 import Home from '../screens/app/home';

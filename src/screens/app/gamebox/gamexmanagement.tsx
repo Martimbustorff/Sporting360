@@ -103,7 +103,7 @@ const GameboxMangement = () => {
       });
       addGamebox({gameboxNumber:""})
       navigation.navigate("GameboxList")
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({
@@ -148,7 +148,7 @@ const GameboxMangement = () => {
         backgroundColor:'#003625',
       });
       navigation.navigate("GameboxList")
-    } catch (error) {
+    } catch (error: any) {
       console.log("ERRO")
       showMessage({
         message: "Não foi possivel eliminar a Gamebox, Por Favor tente novamente mais tarde",
@@ -193,7 +193,7 @@ const GameboxMangement = () => {
       }
       setGameboxes(gameboxfirebase)
       setLoading(false)
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false)
       showMessage({
         message: "Não foi possível obter Gamebox! Por favor tente mais tarde.",

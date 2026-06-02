@@ -77,7 +77,7 @@ const Definitions = () => {
         titleStyle:{fontFamily:'DinBold',lineHeight:20},
         backgroundColor:'#003625',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({
@@ -118,7 +118,7 @@ const Definitions = () => {
                   backgroundColor:'#003625',
                 });
                 logout()
-             } catch (error) {
+             } catch (error: any) {
               console.log(error)
               showMessage({
                 message: "Não foi possível eliminar a conta, tente mais tarde",
@@ -142,7 +142,7 @@ const Definitions = () => {
       },
     );
     
-   } catch (error) {
+   } catch (error: any) {
      console.log(error.message)
      setLoading(false)
      
@@ -162,7 +162,7 @@ const Definitions = () => {
           backgroundColor:'#003625',
         });
       
-      } catch (error) {
+      } catch (error: any) {
         showMessage({
           message: "Não foi possível efetuar a ação! Por favor tente mais tarde.",
           type: "warning",

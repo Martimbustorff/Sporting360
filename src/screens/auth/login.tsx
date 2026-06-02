@@ -86,7 +86,7 @@ const Login = () => {
       backgroundColor:'#003625',
     });
     navigation.navigate("Home");
-   } catch (error) {
+   } catch (error: any) {
     console.log(error)
      setLoading(false)
      if (error.code === 'auth/user-not-found') {
