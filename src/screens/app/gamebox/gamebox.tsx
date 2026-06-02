@@ -21,7 +21,6 @@ const Gamebox = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const user = useAuthStore((state) => state.user)
   const navigation = useNavigation();
-  const [stop, setStop] = useState(false)
   const login = useAuthStore((state) => state.login)
   const addGamebox = useGameboxRead((state) => state.add)
   const [scanned, setScanned] = useState(false);
@@ -87,7 +86,7 @@ const Gamebox = () => {
         navigation.goBack(); // Navigate back after confirmation
       },
       cancelCallback: () => {
-        setStop(false); // Resume scanning if the user chooses to correct
+        setScanned(false); // Resume scanning if the user chooses to correct
         Popup.hide();
       },
     });
@@ -104,7 +103,7 @@ const Gamebox = () => {
         barcodeScannerSettings={{
           barcodeTypes: ['qr']
         }}
-        onBarcodeScanned={(data) => { handleBarCodeScanned(data) }}
+        onBarcodeScanned={scanned ? undefined : (data) => { handleBarCodeScanned(data) }}
       />
       <TouchableOpacity
         className="flex-row w-full text-center justify-center mt-4 mb-4 items-center "

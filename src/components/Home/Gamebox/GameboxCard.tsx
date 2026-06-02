@@ -14,17 +14,25 @@ const GameboxCard = ({ gamebox, user, navigation }: any) => {
   const screenWidth = Dimensions.get('window').width;
   const adjustedWidth = screenWidth - 58; // Subtract 16 pixels
 
+  const gameboxValue = decryptGameBox(gamebox.gameboxNumber, user.uuid);
+
   return (
    <View className="flex flex-col flex-1">
      <View className={`mr-16 w-auto justify-center mb-4 mt-4 items-center`} style={{width:adjustedWidth}}>
-      <QRCode
-        value={decryptGameBox(gamebox.gameboxNumber, user.uuid)}
-        size={180}
-        color={'#003625'}
-        logoBackgroundColor='#000'
-      />
+      {gameboxValue ? (
+        <QRCode
+          value={gameboxValue}
+          size={180}
+          color={'#003625'}
+          logoBackgroundColor='#000'
+        />
+      ) : (
+        <Text className="font-dinBold text-black text-center text-lg" style={{ height: 180, textAlignVertical: 'center' }}>
+          Não foi possível ler a Gamebox
+        </Text>
+      )}
       <Text className="font-dinBold mt-2 text-black text-lg">{gamebox.gameboxName}</Text>
-      <Text className="font-dinLight text-black text-lg">{decryptGameBox(gamebox.gameboxNumber, user.uuid)}</Text>
+      <Text className="font-dinLight text-black text-lg">{gameboxValue}</Text>
       <View className="bg-whiteHomeGamebox w-full rounded-lg flex flex-row justify-between h-20 mt-4 pr-4 pl-4">
         <View className="flex flex-col justify-center items-center">
           <Text className="font-dinBold text-black opacity-50 text-sm">PORTA</Text>
