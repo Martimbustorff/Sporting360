@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { GAMEBOX_PASSPHRASE_PREFIX } from '../../constants/config';
 import {
   Text,
   TextInput,
@@ -52,7 +53,7 @@ const Definitions = () => {
         });
       }
       const email = user.email
-      const passphrase = 'SCP3#$)=:JI)!F5860_'+user.uuid;
+      const passphrase = GAMEBOX_PASSPHRASE_PREFIX+user.uuid;
       const numberEncprypt = user.gameboxNumber;
 
       await usersCollection.doc(user.uuid).update({name,partnerNumber,email,gameboxNumber:numberEncprypt})

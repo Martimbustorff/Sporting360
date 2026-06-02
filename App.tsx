@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ApolloClient, InMemoryCache, ApolloProvider, HttpLink, ApolloLink } from '@apollo/client';
 import { OneSignal } from 'react-native-onesignal';
 import * as Linking from 'expo-linking';
+import { GRAPHQL_URL, STRAPI_TOKEN } from './src/constants/config';
 import './gesture-handler';
 const prefix = Linking.createURL('/');
 import "./global.css";
@@ -30,7 +31,7 @@ import "./global.css";
 // });
 //firebaseApp();
 const httpLink = new HttpLink({
-  uri: 'http://164.92.254.4:1337/graphql', // Replace with your GraphQL server URL
+  uri: GRAPHQL_URL,
 });
 OneSignal.initialize('f5ea4bca-d5e4-4d50-a02f-85ca4c5bd12f');
 OneSignal.Notifications.requestPermission(true);
@@ -40,8 +41,7 @@ const authLink = new ApolloLink((operation, forward) => {
   // Set the authorization header with the token
   operation.setContext({
     headers: {
-      Authorization:
-        'Bearer 78ad69f0b97f7de8c47c605d8eb44b4ff8d8de2a06442ea17dfe79e4eee0746d1813f405e2250e6898025ca4abeabf1645d93ba9556ff2ffacee45bd02b448c6e7a497e7ce1e812a0369c73a35c2056f2ad565b8813a7af96201c20bc9045f8882d62195c310e178b4c66ab181da5e836fd7c0b5a108ea0bac74a28d15a99ba3',
+      Authorization: `Bearer ${STRAPI_TOKEN}`,
     },
   });
 
