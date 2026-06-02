@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Image, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { ITweet } from '../../interfaces/Itweet';
+import { ITweet } from '../../interfaces/ITweet';
 import moment from 'moment';
 
 const TweetPreview = ({ tweet }) => {

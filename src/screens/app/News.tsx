@@ -16,7 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { firebase } from "@react-native-firebase/firestore";
 import TweetPreview from "./TweetShow";
-import { ITweet } from "../../interfaces/Itweet";
+import { ITweet } from "../../interfaces/ITweet";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const News = () => {
