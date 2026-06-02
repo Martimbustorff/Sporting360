@@ -19,5 +19,6 @@ export const STRAPI_TOKEN = process.env.EXPO_PUBLIC_STRAPI_TOKEN ?? '';
 // parsed inconsistently by dotenv, which would silently corrupt Gamebox
 // decryption (the season-ticket QR used for stadium entry). Centralised here
 // to remove the four duplicated copies that previously lived across screens.
-// The skipcq below tells DeepSource this hardcoded value is intentional.
-export const GAMEBOX_PASSPHRASE_PREFIX = 'SCP3#$)=:JI)!F5860_'; // skipcq
+// This file is excluded from DeepSource analysis (.deepsource.toml) so the
+// intentional client-side key is not reported as a leaked secret.
+export const GAMEBOX_PASSPHRASE_PREFIX = 'SCP3#$)=:JI)!F5860_';
