@@ -3,7 +3,7 @@
     "name": "scp360_mobile",
     "slug": "sportingcpandroid",
     "scheme": "com.scp360_v2",
-    "version": "6.1.2",
+    "version": "8.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -31,6 +31,14 @@
       ]
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       [
         "onesignal-expo-plugin",
         {
