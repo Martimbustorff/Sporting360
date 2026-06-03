@@ -24,6 +24,7 @@
     "production": {
       "node": "18.19.1",
       "autoIncrement": true,
+      "environment": "production",
       "android": {
         "gradleCommand": ":app:bundleRelease",
         "buildType": "app-bundle"
