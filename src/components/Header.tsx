@@ -5,7 +5,7 @@ import Animated, { FadeInUp, interpolateColor, useAnimatedStyle, useSharedValue,
 
 interface IHeader {
   title: string;
-  hideBackButton: boolean;
+  hideBackButton?: boolean;
 }
 const Header = ({ title, hideBackButton = false }: IHeader) => {
   const navigation = useNavigation()

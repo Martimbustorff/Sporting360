@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { GAMEBOX_PASSPHRASE_PREFIX } from '../../constants/config';
 import {
   Text,
   TextInput,
@@ -52,7 +53,7 @@ const Definitions = () => {
         });
       }
       const email = user.email
-      const passphrase = 'SCP3#$)=:JI)!F5860_'+user.uuid;
+      const passphrase = GAMEBOX_PASSPHRASE_PREFIX+user.uuid;
       const numberEncprypt = user.gameboxNumber;
 
       await usersCollection.doc(user.uuid).update({name,partnerNumber,email,gameboxNumber:numberEncprypt})
@@ -67,7 +68,7 @@ const Definitions = () => {
         gameboxPort:user.gameboxPort,
         gameboxSeat:user.gameboxSeat,
         gameboxSector:user.gameboxSector,
-      })
+      } as IUser)
       setLoading(false)
       showMessage({
         message: "Alterações salvas com sucesso!",
@@ -77,7 +78,7 @@ const Definitions = () => {
         titleStyle:{fontFamily:'DinBold',lineHeight:20},
         backgroundColor:'#003625',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({
@@ -102,11 +103,11 @@ const Definitions = () => {
           text: 'Sim',
           onPress: async () => {
              try {
-                const currentUser = auth().currentUser.uid
+                const currentUser = auth().currentUser?.uid
                 await firestore().collection('users')
                 .doc(currentUser) // 👈
                 .delete()
-                await auth().currentUser.delete()
+                await auth().currentUser?.delete()
                 
                 setLoading(false)
                 showMessage({
@@ -118,7 +119,7 @@ const Definitions = () => {
                   backgroundColor:'#003625',
                 });
                 logout()
-             } catch (error) {
+             } catch (error: any) {
               console.log(error)
               showMessage({
                 message: "Não foi possível eliminar a conta, tente mais tarde",
@@ -142,7 +143,7 @@ const Definitions = () => {
       },
     );
     
-   } catch (error) {
+   } catch (error: any) {
      console.log(error.message)
      setLoading(false)
      
@@ -162,7 +163,7 @@ const Definitions = () => {
           backgroundColor:'#003625',
         });
       
-      } catch (error) {
+      } catch (error: any) {
         showMessage({
           message: "Não foi possível efetuar a ação! Por favor tente mais tarde.",
           type: "warning",

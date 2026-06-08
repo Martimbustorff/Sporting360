@@ -37,26 +37,26 @@ import { getPlayersByGameId, IPlayers } from '../../../api/firebase/players';
 
 const GameDetail = () => {
   const [index, setIndex] = useState(0)
-  const [summaries, setSummaries] = useState<ISummary[]>(null)
-  const [statistics, setStatistics] = useState<IStastistics[]>(null)
-  const [players, setPlayers] = useState<IPlayers[]>(null)
-  const [standings, setStandings] = useState<IStandings[]>(null)
-  const [videos, setVideos] = useState<IVideos[]>(null)
-  const [lineups, setLineups] = useState<ILineups[]>(null)
-  const [manOfTheMatch, setManOfTheMatch] = useState<IManOfTheMatch[]>(null)
+  const [summaries, setSummaries] = useState<ISummary[]>(null as any)
+  const [statistics, setStatistics] = useState<IStastistics[]>(null as any)
+  const [players, setPlayers] = useState<IPlayers[]>(null as any)
+  const [standings, setStandings] = useState<IStandings[]>(null as any)
+  const [videos, setVideos] = useState<IVideos[]>(null as any)
+  const [lineups, setLineups] = useState<ILineups[]>(null as any)
+  const [manOfTheMatch, setManOfTheMatch] = useState<IManOfTheMatch[]>(null as any)
 
-  const [game, setGame] = useState<IGame>(null)
+  const [game, setGame] = useState<IGame>(null as any)
 
   // MARK: REFS
-  const scrollViewRef = useRef()
+  const scrollViewRef = useRef<any>(null)
 
   // MARK : ROUTES
-  const { params } = useRoute()
+  const { params } = useRoute<any>()
   const { id } = params
 
   const [modalVisible, setModalVisible] = useState(false)
   const [cursor, setCursor] = useState<string | null>(null);
-  const ref = useRef();
+  const ref = useRef<any>(null);
   const openModal = () => {
     setModalVisible(true)
   }
@@ -70,7 +70,7 @@ const GameDetail = () => {
   ];
   const subscribeGame = async (game: IGame) => {
     const nextGame = await getNextGame()
-    if (nextGame.api === game.api) {
+    if (nextGame?.api === game.api) {
       const subscriberGame = firebase.firestore()
         .collection('games')
         .doc(game.id)
@@ -104,7 +104,7 @@ const GameDetail = () => {
     setManOfTheMatch(manOfTheMatchdata)
   }
   const sharePrognosis = () => {
-    ref?.current?.capture().then(uri => {
+    ref?.current?.capture().then((uri: string) => {
       Sharing.shareAsync(uri, {
         dialogTitle: "Partilha o teu S360 Prognóstico",
       })

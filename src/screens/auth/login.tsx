@@ -75,7 +75,7 @@ const Login = () => {
       gameboxPort:data.gameboxPort ?  data.gameboxPort : "",
       gameboxSeat:data.gameboxSeat ?  data.gameboxSeat : "",
       gameboxSector:data.gameboxSector ?  data.gameboxSector : "",
-     })
+     } as IUser)
      setLoading(false)
      showMessage({
       message: "Login efetuado com sucesso!",
@@ -86,7 +86,7 @@ const Login = () => {
       backgroundColor:'#003625',
     });
     navigation.navigate("Home");
-   } catch (error) {
+   } catch (error: any) {
     console.log(error)
      setLoading(false)
      if (error.code === 'auth/user-not-found') {

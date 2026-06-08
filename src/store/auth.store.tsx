@@ -29,9 +29,9 @@ export const useAuthStore = create<
 >(
   persist(
     (set, get) => ({
-       user: null,
+       user: null as any,
        login: (user) => set((state) => ({ user: user })),
-       logout:() => set((state) => ({ user: null }))
+       logout:() => set((state) => ({ user: null as any }))
     }),
     {
       name: "app-persist-storage",

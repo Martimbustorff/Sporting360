@@ -21,17 +21,17 @@ const Calendar = () => {
   const [index,setIndex] = useState(0)
   const [prevGames,setPrevGames] = useState<IGame[]>([])
   const [featureGames,setFeatureGames] = useState<IGame[]>([])
-  const [nextGame,setNextGame] = useState<IGame>(null)
+  const [nextGame,setNextGame] = useState<IGame>(null as any)
 
   // MARK: REFS
-  const scrollViewRef = useRef()
+  const scrollViewRef = useRef<any>(null)
 
 
   // MARK: GET GAMES
   useEffect(()=>{
     const getGames = async ()=>{
       const nextGameResponse = await getNextGame()
-      setNextGame(nextGameResponse)
+      setNextGame(nextGameResponse as IGame)
       const featureGamesResponse = await getFeatureGames()
       setFeatureGames(featureGamesResponse)
       const prevGamesResponse = await getLastGames()

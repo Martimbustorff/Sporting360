@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { GAMEBOX_PASSPHRASE_PREFIX } from '../../../constants/config';
 import {
   Text,
   TextInput,
@@ -50,7 +51,7 @@ const GameboxMangementDefault = () => {
       const email = user.email
       const name = user.name
       const partnerNumber = user.partnerNumber
-      const passphrase = 'SCP3#$)=:JI)!F5860_'+user.uuid;
+      const passphrase = GAMEBOX_PASSPHRASE_PREFIX+user.uuid;
       const numberEncprypt = CryptoJS.AES.encrypt(String(`${user.uuid}_${gameboxNumber.trim()}`), passphrase).toString();
 
       await usersCollection.doc(user.uuid).update({
@@ -82,7 +83,7 @@ const GameboxMangementDefault = () => {
         titleStyle:{fontFamily:'DinBold',lineHeight:20},
         backgroundColor:'#003625',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({

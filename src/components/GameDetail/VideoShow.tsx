@@ -1,14 +1,21 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, ScrollView, Dimensions, StyleSheet, Image, Modal, TouchableOpacity } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
-import { IVideos } from '../../api/firebase/videos';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import WebView from 'react-native-webview';
-import { useNavigation } from '@react-navigation/native';
-import * as ScreenOrientation from 'expo-screen-orientation';
+import React, { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Dimensions,
+  StyleSheet,
+  Image,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
+import { IVideos } from "../../api/firebase/videos";
+import { SafeAreaView } from "react-native-safe-area-context";
+import WebView from "react-native-webview";
+import { useNavigation } from "@react-navigation/native";
+import * as ScreenOrientation from "expo-screen-orientation";
 
-const VideoShow = ({ route }) => {
-
+const VideoShow = ({ route }: any) => {
   const navigation = useNavigation();
   const { selectedVideoLink } = route.params;
   const embedHtml = `
@@ -82,7 +89,11 @@ const VideoShow = ({ route }) => {
         onPress={() => navigation.goBack()}
         style={styles.backButton}
       >
-        <Image className='h-auto' resizeMode='contain' source={require('../../assets/arrowLeft.png')}></Image>
+        <Image
+          className="h-auto"
+          resizeMode="contain"
+          source={require("../../assets/arrowLeft.png")}
+        ></Image>
       </TouchableOpacity>
 
       {/* WebView */}
@@ -99,23 +110,22 @@ const VideoShow = ({ route }) => {
       />
     </View>
   );
-}
-
+};
 
 const styles = StyleSheet.create({
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     left: 20,
     zIndex: 1, // Ensure it appears above the WebView
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 5,
   },
   backButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
   },
 });
 
-export default VideoShow
+export default VideoShow;

@@ -9,7 +9,7 @@ import { ClubSites } from '../../constants/ClubSites';
 
 const Browser = () => {
   const navigation = useNavigation()
-  const routes = useRoute()
+  const routes = useRoute<any>()
   const index = Number(routes.params.index)
   return <SafeAreaView className={`bg-primary  flex-1 h-full justify-start items-center`}>
   <Animated.View 

@@ -1,4 +1,4 @@
-import create from "zustand";
+import { create } from "zustand";
 import { persist, StateStorage } from "zustand/middleware";
 import { MMKV } from "react-native-mmkv";
 

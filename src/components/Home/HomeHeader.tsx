@@ -2,9 +2,9 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, Platform } from "react-native";
 
-const HomeHeader = ({ navigation, user }) => {
+const HomeHeader = ({ navigation, user }: any) => {
   
-  const validateInfoDate = (dateStr) => {
+  const validateInfoDate = (dateStr: any) => {
     const pattern = /^\d{2}\/\d{4}$/; // Regular expression for 00/0000 format
     if (pattern.test(dateStr)) {
       return true

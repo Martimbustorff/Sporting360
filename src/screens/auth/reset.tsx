@@ -36,7 +36,7 @@ const Reset = () => {
       setTimeout(() => {
         navigation.navigate('Login')
       }, 600);
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false)
 
       console.log(error)

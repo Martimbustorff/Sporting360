@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, Platform, Linking } from "react-native";
 
-const HomeMenuItem = ({ item, navigation,index,Urls }) => {
+const HomeMenuItem = ({ item, navigation, index, Urls }: any) => {
   return (
     <TouchableOpacity
     activeOpacity={0.7}

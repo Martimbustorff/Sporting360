@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { GAMEBOX_PASSPHRASE_PREFIX } from '../../../constants/config';
 import {
   Text,
   TextInput,
@@ -37,14 +38,14 @@ const GameboxMangement = () => {
   const [gameboxPort,setGameboxPort] = useState("")
   const [gameboxName,setGameboxName] = useState("")
   const [gameboxSeat,setGameboxSeat] = useState("")
-  const [gamebox,setGamebox] = useState<Gamebox>(null)
+  const [gamebox,setGamebox] = useState<Gamebox | null>(null)
  
   const [gameboxSector,setGameboxSector] = useState("")
 
   const [loading,setLoading] = useState(true)
  
   const navigation = useNavigation();
-  const route = useRoute();
+  const route = useRoute<any>();
 
   //TODO:
   // BUSCAR SE TIVER ID OS DADOS DA GAMEBOX PARA EDITAR
@@ -65,7 +66,7 @@ const GameboxMangement = () => {
      setLoading(true)
 
     try {
-      const passphrase = 'SCP3#$)=:JI)!F5860_'+user.uuid;
+      const passphrase = GAMEBOX_PASSPHRASE_PREFIX+user.uuid;
       const numberEncprypt = CryptoJS.AES.encrypt(String(`${user.uuid}_${gameboxNumber.trim()}`), passphrase).toString();
 
       if(route.params?.id){
@@ -74,7 +75,7 @@ const GameboxMangement = () => {
           gameboxLine,
           gameboxName,
           userid:user.uuid,
-          order:gamebox.order,
+          order:gamebox?.order,
           gameboxPort,
           gameboxSeat,
           gameboxSector
@@ -103,7 +104,7 @@ const GameboxMangement = () => {
       });
       addGamebox({gameboxNumber:""})
       navigation.navigate("GameboxList")
-    } catch (error) {
+    } catch (error: any) {
       console.log(error.message)
       setLoading(false)
       showMessage({
@@ -148,7 +149,7 @@ const GameboxMangement = () => {
         backgroundColor:'#003625',
       });
       navigation.navigate("GameboxList")
-    } catch (error) {
+    } catch (error: any) {
       console.log("ERRO")
       showMessage({
         message: "Não foi possivel eliminar a Gamebox, Por Favor tente novamente mais tarde",
@@ -191,9 +192,9 @@ const GameboxMangement = () => {
         data.id = iterator.id
         gameboxfirebase.push(data)
       }
-      setGameboxes(gameboxfirebase)
+      setGameboxes(gameboxfirebase as Gamebox[])
       setLoading(false)
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false)
       showMessage({
         message: "Não foi possível obter Gamebox! Por favor tente mais tarde.",

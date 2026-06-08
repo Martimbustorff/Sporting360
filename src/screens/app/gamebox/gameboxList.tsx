@@ -40,7 +40,7 @@ const GameboxList = () => {
     try {
       const gameboxListCollections = await firestore().collection('gamebox').where('userid','==',user.uuid).get();
       const gameboxfirebase = []
-      for (const iterator of gameboxListCollections.docs.sort(x=>x.data.order)) {
+      for (const iterator of gameboxListCollections.docs.sort(x=>x.data().order)) {
         const data = iterator.data() as Gamebox
         data.id = iterator.id
         gameboxfirebase.push(data)

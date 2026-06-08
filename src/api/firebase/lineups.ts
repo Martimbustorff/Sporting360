@@ -11,6 +11,7 @@ export interface ILineups {
   }[];
   substitutes: {
     playerId: string;
+    name: string;
     position: string;
     number: number;
   }[];

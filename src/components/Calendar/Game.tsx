@@ -14,7 +14,7 @@ interface IGame {
   jorney:string,
   resultHome?:string,
   resultaway?:string,
-  timestamp:string,
+  timestamp:any,
   id:string,
   isLast?:boolean,
 }
