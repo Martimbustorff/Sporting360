@@ -1,0 +1,65 @@
+{
+  "season": "2026/27",
+  "as_of": "2026-09-05T23:43:00+01:00",
+  "yellow_card_convention": "yellow_first + second_yellow (all yellow cards physically shown)",
+  "red_card_convention": "direct_red + second_yellow dismissals",
+  "FC Porto": {
+    "games": 5,
+    "team": {
+      "fouls": 69,
+      "fouls_per_game": 13.8,
+      "yellow_cards_shown": 3,
+      "red_cards": 0,
+      "fouls_per_yellow": 23.0
+    },
+    "opponents": {
+      "fouls": 44,
+      "fouls_per_game": 8.8,
+      "yellow_cards_shown": 6,
+      "red_cards": 1,
+      "fouls_per_yellow": 7.33
+    },
+    "foul_balance_team_minus_opponents": 25
+  },
+  "SL Benfica": {
+    "games": 4,
+    "team": {
+      "fouls": 55,
+      "fouls_per_game": 13.75,
+      "yellow_cards_shown": 5,
+      "red_cards": 0,
+      "fouls_per_yellow": 11.0
+    },
+    "opponents": {
+      "fouls": 58,
+      "fouls_per_game": 14.5,
+      "yellow_cards_shown": 10,
+      "red_cards": 1,
+      "fouls_per_yellow": 5.8
+    },
+    "foul_balance_team_minus_opponents": -3
+  },
+  "Sporting CP": {
+    "games": 5,
+    "team": {
+      "fouls": 61,
+      "fouls_per_game": 12.2,
+      "yellow_cards_shown": 10,
+      "red_cards": 0,
+      "fouls_per_yellow": 6.1
+    },
+    "opponents": {
+      "fouls": 65,
+      "fouls_per_game": 13.0,
+      "yellow_cards_shown": 11,
+      "red_cards": 0,
+      "fouls_per_yellow": 5.91
+    },
+    "foul_balance_team_minus_opponents": -4
+  },
+  "quality_notes": [
+    "Moreirense at FC Porto: 2 yellows and 1 direct red; previous infographic incorrectly showed 0 opponent reds for Porto.",
+    "Season-level aggregate providers showed inconsistencies versus match-level sums for Benfica and Sporting. Canonical S360 totals therefore use match-level records.",
+    "CS Maritimo-SL Benfica and Sporting CP-CD Nacional currently have one independent match-level source in the dataset and should be cross-checked again before the next publication cycle."
+  ]
+}
