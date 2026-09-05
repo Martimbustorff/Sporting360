@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S360 Liga Portugal Discipline Match",
+  "type": "object",
+  "required": [
+    "season", "round", "date", "home_team", "away_team",
+    "home", "away", "verification_status", "sources"
+  ],
+  "properties": {
+    "season": {"type": "string"},
+    "round": {"type": "integer", "minimum": 1},
+    "date": {"type": "string", "format": "date"},
+    "home_team": {"type": "string"},
+    "away_team": {"type": "string"},
+    "score": {"type": "string"},
+    "home": {"$ref": "#/$defs/discipline"},
+    "away": {"$ref": "#/$defs/discipline"},
+    "verification_status": {
+      "enum": ["verified_two_sources", "verified_one_source", "disputed", "provisional"]
+    },
+    "verified_at": {"type": "string", "format": "date-time"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["provider"],
+        "properties": {
+          "provider": {"type": "string"},
+          "url": {"type": ["string", "null"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "notes": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "discipline": {
+      "type": "object",
+      "required": ["fouls", "yellow_first", "second_yellow", "direct_red"],
+      "properties": {
+        "fouls": {"type": "integer", "minimum": 0},
+        "yellow_first": {"type": "integer", "minimum": 0},
+        "second_yellow": {"type": "integer", "minimum": 0},
+        "direct_red": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
