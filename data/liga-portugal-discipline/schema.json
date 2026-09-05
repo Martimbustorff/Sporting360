@@ -7,7 +7,7 @@
     "home", "away", "verification_status", "sources"
   ],
   "properties": {
-    "season": {"type": "string"},
+    "season": {"type": "string", "const": "2026/27"},
     "round": {"type": "integer", "minimum": 1},
     "date": {"type": "string", "format": "date"},
     "home_team": {"type": "string"},
@@ -16,18 +16,21 @@
     "home": {"$ref": "#/$defs/discipline"},
     "away": {"$ref": "#/$defs/discipline"},
     "verification_status": {
-      "enum": ["verified_two_sources", "verified_one_source", "disputed", "provisional"]
+      "enum": ["verified_two_sources", "verified_one_source", "resolved_dispute", "disputed", "provisional"]
     },
     "verified_at": {"type": "string", "format": "date-time"},
     "sources": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "required": ["provider"],
         "properties": {
           "provider": {"type": "string"},
           "url": {"type": ["string", "null"]},
-          "notes": {"type": ["string", "null"]}
+          "notes": {"type": ["string", "null"]},
+          "supports": {"type": ["string", "null"]},
+          "conflicts": {"type": ["string", "null"]}
         }
       }
     },
@@ -41,8 +44,11 @@
         "fouls": {"type": "integer", "minimum": 0},
         "yellow_first": {"type": "integer", "minimum": 0},
         "second_yellow": {"type": "integer", "minimum": 0},
-        "direct_red": {"type": "integer", "minimum": 0}
-      }
+        "direct_red": {"type": "integer", "minimum": 0},
+        "staff_yellow": {"type": "integer", "minimum": 0, "default": 0},
+        "staff_red": {"type": "integer", "minimum": 0, "default": 0}
+      },
+      "additionalProperties": false
     }
   }
 }
