@@ -12,12 +12,14 @@
   {
     "season": "2026/27", "round": 2, "date": "2026-08-15", "home_team": "Rio Ave", "away_team": "FC Porto", "score": "0-2",
     "home": {"fouls": 1, "yellow_first": 0, "second_yellow": 0, "direct_red": 0},
-    "away": {"fouls": 10, "yellow_first": 1, "second_yellow": 0, "direct_red": 0},
-    "verification_status": "verified_two_sources", "verified_at": "2026-09-05T23:43:00+01:00",
+    "away": {"fouls": 10, "yellow_first": 0, "second_yellow": 0, "direct_red": 0, "staff_yellow": 1},
+    "verification_status": "resolved_dispute", "verified_at": "2026-09-06T00:20:00+01:00",
     "sources": [
-      {"provider": "OFStats", "url": "https://ofstats.com/matches/view/rio-ave-porto-2026-08-15", "notes": "1-10 fouls, 0-1 yellow cards"},
-      {"provider": "Statz", "url": "https://statz.ai/team/porto/yellowcards", "notes": "Porto 1 yellow, Rio Ave 0"}
-    ]
+      {"provider": "OFStats", "url": "https://ofstats.com/matches/view/rio-ave-porto-2026-08-15", "notes": "Shows 1-10 fouls and a 0-1 team yellow total, but does not identify the recipient in the summary.", "conflicts": "Team total mixes a staff booking into the FC Porto yellow-card total."},
+      {"provider": "Betora", "url": "https://betora.app/pt-BR/resultado/portugal-primeira-liga/rio-ave-vs-fc-porto-2026-08-15", "notes": "Event timeline identifies the 81' yellow card as Francesco Farioli.", "supports": "FC Porto players received 0 yellows; staff_yellow=1."},
+      {"provider": "LiveSoccerTV", "url": "https://www.livesoccertv.com/match/porto-vs-rio-ave/1cmcl", "notes": "Player event list contains no FC Porto player booking.", "supports": "0 player yellows for FC Porto."}
+    ],
+    "notes": "Resolved: the single yellow attributed to FC Porto by some team-level providers was shown to coach Francesco Farioli. S360 player discipline therefore records 0 player yellows and 1 staff yellow."
   },
   {
     "season": "2026/27", "round": 3, "date": "2026-08-23", "home_team": "FC Porto", "away_team": "FC Arouca", "score": "2-0",
@@ -86,11 +88,11 @@
     "season": "2026/27", "round": 5, "date": "2026-09-05", "home_team": "CS Marítimo", "away_team": "SL Benfica", "score": "0-3",
     "home": {"fouls": 22, "yellow_first": 2, "second_yellow": 0, "direct_red": 0},
     "away": {"fouls": 14, "yellow_first": 3, "second_yellow": 0, "direct_red": 0},
-    "verification_status": "verified_one_source", "verified_at": "2026-09-05T23:43:00+01:00",
+    "verification_status": "verified_two_sources", "verified_at": "2026-09-06T00:20:00+01:00",
     "sources": [
-      {"provider": "RubiScore", "url": "https://rubiscore.com/football/match/maritimo-vs-benfica-K3pf0o3Lcef", "notes": "22-14 fouls, 2-3 yellows"}
-    ],
-    "notes": "Needs second independent match-level source before next publication cycle."
+      {"provider": "RubiScore", "url": "https://rubiscore.com/football/match/maritimo-vs-benfica-K3pf0o3Lcef", "notes": "22-14 fouls, 2-3 yellows", "supports": "Full discipline line."},
+      {"provider": "Forebet Match Centre", "url": "https://www.forebet.com/en/football-predictions/match-center/mar%C3%ADtimo-sl-benfica-2494288", "notes": "Confirms 22-14 fouls and player-level booking data consistent with the 2-3 card split.", "supports": "Foul total and booking cross-check."}
+    ]
   },
 
   {
@@ -135,12 +137,14 @@
   },
   {
     "season": "2026/27", "round": 5, "date": "2026-09-05", "home_team": "Sporting CP", "away_team": "CD Nacional", "score": "2-0",
-    "home": {"fouls": 8, "yellow_first": 2, "second_yellow": 0, "direct_red": 0},
+    "home": {"fouls": 10, "yellow_first": 2, "second_yellow": 0, "direct_red": 0},
     "away": {"fouls": 7, "yellow_first": 1, "second_yellow": 0, "direct_red": 0},
-    "verification_status": "verified_one_source", "verified_at": "2026-09-05T23:43:00+01:00",
+    "verification_status": "resolved_dispute", "verified_at": "2026-09-06T00:20:00+01:00",
     "sources": [
-      {"provider": "RubiScore", "url": "https://rubiscore.com/football/match/cd-nacional-sporting-nairnzx", "notes": "8-7 fouls, 2-1 yellows; match page had inconsistent score header but event/stat block was present"}
+      {"provider": "RubiScore match page", "url": "https://rubiscore.com/football/match/cd-nacional-sporting-nairnzx", "notes": "Match page displayed 8-7 fouls and also had an inconsistent score header.", "conflicts": "Sporting foul count."},
+      {"provider": "RubiScore team aggregate", "url": "https://rubiscore.com/football/team/sporting-1821", "notes": "After five Liga matches Sporting total is 63 fouls and 10 yellows. First four canonical matches total 53 fouls, implying 10 in round 5.", "supports": "Sporting round-5 foul count=10 by reconciliation."},
+      {"provider": "r/SportingCP match thread stats", "url": "https://www.reddit.com/r/SportingCP/comments/1w89ci8/match_thread_sporting_cp_vs_cd_nacional_primeira/", "notes": "Post-match stats table: 10-7 fouls, 2-1 yellows, 0-0 reds.", "supports": "Exact match-level discipline line."}
     ],
-    "notes": "Needs second independent match-level source before next publication cycle."
+    "notes": "Resolved conflict: canonical S360 value is Sporting 10 fouls, Nacional 7. The 8-foul RubiScore match-page value is rejected because it conflicts with the provider's own season total and an independent match-level table."
   }
 ]
