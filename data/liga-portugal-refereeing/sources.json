@@ -1,0 +1,29 @@
+{
+  "season": "2026/27",
+  "scope": "Liga Portugal only",
+  "sources": [
+    {
+      "id": "fpf-ca-official",
+      "name": "FPF / Conselho de Arbitragem",
+      "tier": "A_OFFICIAL",
+      "type": "official",
+      "notes": "Avaliações oficiais, comunicações técnicas, áudios VAR e documentação publicada pelo Conselho de Arbitragem/FPF."
+    },
+    {
+      "id": "pedro-henriques-abola",
+      "name": "Pedro Henriques — A BOLA",
+      "tier": "B_EX_REFEREE",
+      "type": "former_referee_analyst",
+      "profile_url": "https://www.abola.pt/autor/pedro-henriques-2025050217292998075",
+      "notes": "Ex-árbitro e especialista de arbitragem de A BOLA; publica análises regulares jogo a jogo da Liga Portugal."
+    },
+    {
+      "id": "iturralde-record",
+      "name": "Iturralde González — Record",
+      "tier": "B_EX_REFEREE",
+      "type": "former_referee_analyst",
+      "notes": "Antigo árbitro internacional espanhol; usado pelo Record em análises de lances de arbitragem em Portugal."
+    }
+  ],
+  "rule": "Um analista de media não é fonte oficial. Para classificar um erro como confirmed, aplicar a regra de consenso definida no README."
+}
