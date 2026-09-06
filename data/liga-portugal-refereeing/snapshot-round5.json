@@ -1,19 +1,20 @@
 {
   "season":"2026/27",
-  "as_of":"2026-09-06T01:43:00+01:00",
+  "as_of":"2026-09-06T23:35:00+01:00",
   "through_round":5,
   "scope":"Liga Portugal 2026/27 only",
   "clubs":{
-    "FC Porto":{"games_played":5,"games_fully_reviewed":5,"games_pending_full_review":0,"confirmed_errors_all":{"favor":5,"against":5,"balance":0},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":5,"against":5},"disputed_not_counted":1,"pending_matches":[]},
-    "SL Benfica":{"games_played":4,"games_fully_reviewed":3,"games_pending_full_review":1,"confirmed_errors_all":{"favor":3,"against":2,"balance":1},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":3,"against":2},"disputed_not_counted":0,"pending_matches":["CS Marítimo–SL Benfica"]},
-    "Sporting CP":{"games_played":5,"games_fully_reviewed":4,"games_pending_full_review":1,"confirmed_errors_all":{"favor":5,"against":5,"balance":0},"confirmed_major_errors":{"favor":0,"against":1,"balance":-1},"confirmed_secondary_discipline_errors":{"favor":5,"against":4},"disputed_not_counted":2,"pending_matches":["Sporting CP–CD Nacional"]}
+    "FC Porto":{"games_played":5,"games_fully_reviewed":5,"games_pending_full_review":0,"confirmed_errors_all":{"favor":5,"against":5,"balance":0},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":5,"against":5},"disputed_not_counted":1,"candidates_not_counted":1,"pending_matches":[]},
+    "SL Benfica":{"games_played":4,"games_fully_reviewed":4,"games_pending_full_review":0,"confirmed_errors_all":{"favor":4,"against":2,"balance":2},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":4,"against":2},"disputed_not_counted":0,"candidates_not_counted":1,"pending_matches":[]},
+    "Sporting CP":{"games_played":5,"games_fully_reviewed":5,"games_pending_full_review":0,"confirmed_errors_all":{"favor":6,"against":7,"balance":-1},"confirmed_major_errors":{"favor":0,"against":1,"balance":-1},"confirmed_secondary_discipline_errors":{"favor":6,"against":6},"disputed_not_counted":3,"candidates_not_counted":0,"pending_matches":[]}
   },
-  "publishable":false,
+  "publishable":true,
   "quality_notes":[
     "Round 3 Moreirense–SL Benfica is postponed to 2026-09-09 and is not treated as an unreviewed played match.",
-    "CS Marítimo–SL Benfica now has same-night coverage from Pedro Henriques for the 22' Prestianni incident and a full VAR Bola Branca review validating the principal penalty/goal decisions. The strict S360 gate still waits for sufficient former-referee/official coverage before marking the full match reviewed.",
-    "Sporting CP–CD Nacional remains pending: match/video evidence is available, but the latest source sweep did not find a complete named former-referee review. Absence of analysis is never interpreted as zero errors.",
-    "Through round 4, confirmed all-error totals reproduce the independently published Verdade Desportiva club-level counts: FC Porto 3 favor/4 against, SL Benfica 3/2, Sporting CP 5/5.",
+    "CS Marítimo–SL Benfica is now fully reviewed. The 22' Tomás Araújo missed-yellow error is confirmed in favor of Benfica by a 4-1 former-referee majority. The 9' Igor Julião incident remains candidate-only because sufficient named-expert provenance for that exact incident was not independently recovered; it is excluded from public totals.",
+    "Sporting CP–CD Nacional is now fully reviewed. Confirmed secondary errors are 16' Pablo Ruan missed yellow (against Sporting), 31' Leo Santos missed yellow (against Sporting) and 59' Geny Catamo missed yellow (favor Sporting).",
+    "Sporting–Nacional 53' remains disputed and excluded: Jorge Faustino says an outside-area foul plus yellow was missed; Tiago Antunes/VAR Bola Branca says there was no foul. Both views agree it was not a penalty.",
+    "Only confirmed decisions enter the public totals. Candidate and disputed rows remain auditable but excluded.",
     "Major-error panel remains deliberately stricter than the all-error panel. Routine missed yellows do not count as major errors."
   ]
 }
