@@ -5,15 +5,25 @@ from pathlib import Path
 
 TRACKED = ["FC Porto", "SL Benfica", "Sporting CP"]
 
+
+def load_decisions(base):
+    rows = json.loads((base / "decisions.json").read_text(encoding="utf-8"))
+    for path in sorted(base.glob("decisions-round*.json")):
+        rows.extend(json.loads(path.read_text(encoding="utf-8")))
+    return rows
+
+
 def load(base):
-    decisions = json.loads((base / "decisions.json").read_text(encoding="utf-8"))
+    decisions = load_decisions(base)
     matches = json.loads((base / "match_reviews.json").read_text(encoding="utf-8"))
     return decisions, matches
+
 
 def counts(rows):
     favor = sum(1 for r in rows if r.get("error_direction") == "favor")
     against = sum(1 for r in rows if r.get("error_direction") == "against")
     return {"favor": favor, "against": against, "balance": favor - against}
+
 
 def aggregate(decisions, matches):
     out = {}
@@ -46,12 +56,14 @@ def aggregate(decisions, matches):
         }
     return out
 
+
 def main():
     base = Path(__file__).resolve().parent
     decisions, matches = load(base)
     result = aggregate(decisions, matches)
     result["publishable"] = all(row["games_pending_full_review"] == 0 for row in result.values() if isinstance(row, dict) and "games_pending_full_review" in row)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
 
 if __name__ == "__main__":
     main()
