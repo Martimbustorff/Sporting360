@@ -7,6 +7,7 @@ from pathlib import Path
 TRACKED = {"FC Porto", "SL Benfica", "Sporting CP"}
 MAJOR = {"penalty", "goal", "offside_goal", "direct_red", "second_yellow_dismissal", "var_intervention"}
 
+
 def has_publishable_evidence(row):
     sources = row.get("sources", [])
     official_error = any(s.get("tier") == "A_OFFICIAL" and s.get("conclusion") == "error" for s in sources)
@@ -16,15 +17,24 @@ def has_publishable_evidence(row):
     one_ex_ref_plus_evidence = len(ex_ref_errors) >= 1 and match_evidence and not ex_ref_correct
     return official_error or len(ex_ref_errors) >= 2 or one_ex_ref_plus_evidence
 
+
+def load_decisions(base):
+    rows = json.loads((base / "decisions.json").read_text(encoding="utf-8"))
+    for path in sorted(base.glob("decisions-round*.json")):
+        rows.extend(json.loads(path.read_text(encoding="utf-8")))
+    return rows
+
+
 def match_key(row):
     return (row.get("season"), row.get("round"), row.get("home_team"), row.get("away_team"))
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--publish", action="store_true", help="Apply publication gate: all played tracked matches must be fully reviewed.")
     args = parser.parse_args()
     base = Path(__file__).resolve().parent
-    rows = json.loads((base / "decisions.json").read_text(encoding="utf-8"))
+    rows = load_decisions(base)
     matches = json.loads((base / "match_reviews.json").read_text(encoding="utf-8"))
     errors = []
     ids = set()
@@ -85,6 +95,7 @@ def main():
     print(f"{len(matches)} tracked match rows checked")
     if args.publish:
         print("PUBLICATION GATE PASSED")
+
 
 if __name__ == "__main__":
     main()
