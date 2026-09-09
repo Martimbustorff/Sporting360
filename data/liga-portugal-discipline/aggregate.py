@@ -5,6 +5,13 @@ from pathlib import Path
 TRACKED = ["FC Porto", "SL Benfica", "Sporting CP"]
 
 
+def load_matches(base):
+    matches = []
+    for path in sorted(base.glob("matches*.json")):
+        matches.extend(json.loads(path.read_text(encoding="utf-8")))
+    return matches
+
+
 def card_totals(side):
     yellow_shown = side["yellow_first"] + side["second_yellow"]
     red_total = side["second_yellow"] + side["direct_red"]
@@ -52,7 +59,7 @@ def aggregate(matches, team):
 
 def main():
     base = Path(__file__).resolve().parent
-    matches = json.loads((base / "matches.json").read_text(encoding="utf-8"))
+    matches = load_matches(base)
     result = {team: aggregate(matches, team) for team in TRACKED}
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
