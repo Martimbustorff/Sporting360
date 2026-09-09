@@ -1,0 +1,30 @@
+{
+  "season": "2026/27",
+  "as_of": "2026-09-09T23:55:00+01:00",
+  "through_round": 5,
+  "note": "Round-3 Moreirense-SL Benfica postponed fixture played on 09/09/2026. All three tracked clubs now have five Liga matches played.",
+  "clubs": {
+    "FC Porto": {
+      "games": 5,
+      "team": {"fouls": 69, "fouls_per_game": 13.8, "yellow_cards_shown": 2, "red_cards": 0, "fouls_per_yellow": 34.5},
+      "opponents": {"fouls": 44, "fouls_per_game": 8.8, "yellow_cards_shown": 6, "red_cards": 1, "fouls_per_yellow": 7.33}
+    },
+    "SL Benfica": {
+      "games": 5,
+      "team": {"fouls": 65, "fouls_per_game": 13.0, "yellow_cards_shown": 7, "red_cards": 0, "fouls_per_yellow": 9.29},
+      "opponents": {"fouls": 75, "fouls_per_game": 15.0, "yellow_cards_shown": 14, "red_cards": 1, "fouls_per_yellow": 5.36}
+    },
+    "Sporting CP": {
+      "games": 5,
+      "team": {"fouls": 63, "fouls_per_game": 12.6, "yellow_cards_shown": 10, "red_cards": 0, "fouls_per_yellow": 6.3},
+      "opponents": {"fouls": 65, "fouls_per_game": 13.0, "yellow_cards_shown": 11, "red_cards": 0, "fouls_per_yellow": 5.91}
+    }
+  },
+  "publishable": true,
+  "quality_notes": [
+    "Moreirense-SL Benfica match-level discipline verified as 17-10 fouls, 4-2 player yellow cards and 0-0 reds.",
+    "No staff cards from the catch-up match are included in player-card totals.",
+    "Second-yellow dismissals continue to count both as a shown yellow and as one dismissal in S360 totals.",
+    "All infographic totals are derived from canonical match rows, not typed manually."
+  ]
+}

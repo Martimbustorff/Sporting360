@@ -1,0 +1,66 @@
+{
+  "season": "2026/27",
+  "as_of": "2026-09-06T00:20:00+01:00",
+  "scope": "Liga Portugal 2026/27 only; player discipline only",
+  "yellow_card_convention": "yellow_first + second_yellow; staff bookings excluded",
+  "red_card_convention": "direct_red + second_yellow dismissals; every player dismissal counts",
+  "FC Porto": {
+    "games": 5,
+    "team": {
+      "fouls": 69,
+      "fouls_per_game": 13.8,
+      "yellow_cards_shown": 2,
+      "red_cards": 0,
+      "fouls_per_yellow": 34.5
+    },
+    "opponents": {
+      "fouls": 44,
+      "fouls_per_game": 8.8,
+      "yellow_cards_shown": 6,
+      "red_cards": 1,
+      "fouls_per_yellow": 7.33
+    }
+  },
+  "SL Benfica": {
+    "games": 4,
+    "team": {
+      "fouls": 55,
+      "fouls_per_game": 13.75,
+      "yellow_cards_shown": 5,
+      "red_cards": 0,
+      "fouls_per_yellow": 11.0
+    },
+    "opponents": {
+      "fouls": 58,
+      "fouls_per_game": 14.5,
+      "yellow_cards_shown": 10,
+      "red_cards": 1,
+      "fouls_per_yellow": 5.8
+    }
+  },
+  "Sporting CP": {
+    "games": 5,
+    "team": {
+      "fouls": 63,
+      "fouls_per_game": 12.6,
+      "yellow_cards_shown": 10,
+      "red_cards": 0,
+      "fouls_per_yellow": 6.3
+    },
+    "opponents": {
+      "fouls": 65,
+      "fouls_per_game": 13.0,
+      "yellow_cards_shown": 11,
+      "red_cards": 0,
+      "fouls_per_yellow": 5.91
+    }
+  },
+  "quality_notes": [
+    "FC Porto player yellows corrected from 3 to 2: the Rio Ave match's extra team yellow was shown to coach Francesco Farioli and is excluded from player discipline.",
+    "Moreirense at FC Porto: 2 player yellows and 1 direct player red; opponent red total for Porto is 1.",
+    "Casa Pia at Benfica: second-yellow dismissal counts both as a shown yellow and as one player dismissal under S360 convention.",
+    "Sporting CP-Nacional canonical foul line is 10-7. This resolves a conflict with one RubiScore match page; Sporting season aggregate plus an independent match-level table support 10.",
+    "All current infographic totals are derived from match records, not manually edited season totals."
+  ],
+  "publishable": true
+}
