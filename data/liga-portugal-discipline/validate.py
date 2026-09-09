@@ -8,6 +8,13 @@ TRACKED = {"FC Porto", "SL Benfica", "Sporting CP"}
 PUBLISHABLE_STATUSES = {"verified_two_sources", "resolved_dispute"}
 
 
+def load_matches(base):
+    matches = []
+    for path in sorted(base.glob("matches*.json")):
+        matches.extend(json.loads(path.read_text(encoding="utf-8")))
+    return matches
+
+
 def fail(message, errors):
     errors.append(message)
 
@@ -21,7 +28,7 @@ def validate_side(side, label, errors):
 
 def main():
     base = Path(__file__).resolve().parent
-    matches = json.loads((base / "matches.json").read_text(encoding="utf-8"))
+    matches = load_matches(base)
     errors = []
     seen = set()
 
@@ -55,7 +62,6 @@ def main():
                 fail(f"staff/player card separation invalid: {key} {side_name}", errors)
 
         # A second yellow always counts as both a shown yellow and a dismissal.
-        # This assertion documents the public S360 convention used by aggregate.py.
         for side_name in ("home", "away"):
             side = m[side_name]
             yellow_shown = side["yellow_first"] + side["second_yellow"]
