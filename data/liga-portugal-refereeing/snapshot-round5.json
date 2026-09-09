@@ -1,0 +1,20 @@
+{
+  "season":"2026/27",
+  "as_of":"2026-09-09T23:55:00+01:00",
+  "through_round":5,
+  "scope":"Liga Portugal 2026/27 only",
+  "clubs":{
+    "FC Porto":{"games_played":5,"games_fully_reviewed":5,"games_pending_full_review":0,"confirmed_errors_all":{"favor":5,"against":5,"balance":0},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":5,"against":5},"disputed_not_counted":1,"candidates_not_counted":1,"pending_matches":[]},
+    "SL Benfica":{"games_played":5,"games_fully_reviewed":4,"games_pending_full_review":1,"confirmed_errors_all":{"favor":4,"against":2,"balance":2},"confirmed_major_errors":{"favor":0,"against":0,"balance":0},"confirmed_secondary_discipline_errors":{"favor":4,"against":2},"disputed_not_counted":0,"candidates_not_counted":1,"pending_matches":["Moreirense–SL Benfica"]},
+    "Sporting CP":{"games_played":5,"games_fully_reviewed":5,"games_pending_full_review":0,"confirmed_errors_all":{"favor":6,"against":7,"balance":-1},"confirmed_major_errors":{"favor":0,"against":1,"balance":-1},"confirmed_secondary_discipline_errors":{"favor":6,"against":6},"disputed_not_counted":3,"candidates_not_counted":0,"pending_matches":[]}
+  },
+  "publishable":false,
+  "quality_notes":[
+    "The postponed round-3 Moreirense–SL Benfica fixture was played on 2026-09-09 and ended 0-4. It is now in awaiting_full_expert_review status.",
+    "At the 23:55 Lisbon source sweep, complete match evidence and the Verdade Desportiva round page were available, but no sufficient named former-referee analysis had yet surfaced to support confirmed error/no-error conclusions for the match. Absence of analysis is not treated as zero errors.",
+    "Existing confirmed public totals remain unchanged until Moreirense–SL Benfica passes the S360 evidence threshold.",
+    "CS Marítimo–SL Benfica and Sporting CP–CD Nacional remain fully reviewed under the existing evidence threshold.",
+    "Only confirmed decisions enter public totals. Candidate and disputed rows remain auditable but excluded.",
+    "Major-error panel remains deliberately stricter than the all-error panel. Routine missed yellows do not count as major errors."
+  ]
+}

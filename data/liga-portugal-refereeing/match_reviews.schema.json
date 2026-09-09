@@ -1,0 +1,23 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"S360 Liga Portugal Refereeing Match Review",
+  "type":"object",
+  "required":["season","competition","round","date","home_team","away_team","tracked_club","review_status","match_key"],
+  "properties":{
+    "season":{"const":"2026/27"},
+    "competition":{"const":"Liga Portugal"},
+    "round":{"type":"integer","minimum":1},
+    "date":{"type":"string","format":"date"},
+    "home_team":{"type":"string"},
+    "away_team":{"type":"string"},
+    "score":{"type":["string","null"]},
+    "referee":{"type":["string","null"]},
+    "var":{"type":["string","null"]},
+    "tracked_club":{"enum":["FC Porto","SL Benfica","Sporting CP"]},
+    "review_status":{"enum":["reviewed","awaiting_full_expert_review","not_played"]},
+    "match_key":{"type":"string"},
+    "last_checked_at":{"type":["string","null"],"format":"date-time"},
+    "review_notes":{"type":["string","null"]},
+    "evidence_urls":{"type":"array","items":{"type":"string"},"uniqueItems":true}
+  }
+}

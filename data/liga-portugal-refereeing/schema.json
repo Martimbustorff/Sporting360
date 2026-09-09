@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S360 Liga Portugal Refereeing Decision",
+  "type": "object",
+  "required": [
+    "id", "season", "competition", "round", "date", "home_team", "away_team",
+    "minute", "category", "on_field_decision", "correct_decision", "status", "sources"
+  ],
+  "properties": {
+    "id": {"type": "string"},
+    "season": {"const": "2026/27"},
+    "competition": {"const": "Liga Portugal"},
+    "round": {"type": "integer", "minimum": 1},
+    "date": {"type": "string", "format": "date"},
+    "home_team": {"type": "string"},
+    "away_team": {"type": "string"},
+    "referee": {"type": ["string", "null"]},
+    "var": {"type": ["string", "null"]},
+    "minute": {"type": "string"},
+    "category": {
+      "enum": [
+        "penalty", "goal", "offside_goal", "direct_red", "second_yellow_dismissal",
+        "var_intervention", "missed_yellow", "wrong_yellow", "technical_other"
+      ]
+    },
+    "impact_class": {"enum": ["major", "disciplinary_secondary"]},
+    "on_field_decision": {"type": "string"},
+    "correct_decision": {"type": "string"},
+    "error_direction": {"enum": ["favor", "against", "neutral", "disputed", "not_applicable"]},
+    "tracked_club": {"enum": ["FC Porto", "SL Benfica", "Sporting CP", "none"]},
+    "status": {"enum": ["candidate", "confirmed", "disputed", "no_error", "not_reviewed"]},
+    "var_relevant": {"type": "boolean"},
+    "result_impact": {"enum": ["scoreline", "player_count", "discipline_only", "none", "unknown"]},
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["source_id", "tier", "url", "conclusion"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "tier": {"enum": ["A_OFFICIAL", "B_EX_REFEREE", "C_MATCH_EVIDENCE"]},
+          "url": {"type": "string"},
+          "conclusion": {"enum": ["error", "correct", "unclear"]},
+          "notes": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "notes": {"type": ["string", "null"]},
+    "verified_at": {"type": ["string", "null"], "format": "date-time"}
+  }
+}
