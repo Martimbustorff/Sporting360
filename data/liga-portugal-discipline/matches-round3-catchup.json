@@ -1,0 +1,27 @@
+[
+  {
+    "season": "2026/27",
+    "round": 3,
+    "date": "2026-09-09",
+    "home_team": "Moreirense",
+    "away_team": "SL Benfica",
+    "score": "0-4",
+    "home": {"fouls": 17, "yellow_first": 4, "second_yellow": 0, "direct_red": 0},
+    "away": {"fouls": 10, "yellow_first": 2, "second_yellow": 0, "direct_red": 0},
+    "verification_status": "verified_two_sources",
+    "verified_at": "2026-09-09T23:50:00+01:00",
+    "sources": [
+      {
+        "provider": "BeSoccer",
+        "url": "https://www.besoccer.com/match/moreirense-fc/benfica/202733951/events",
+        "notes": "Post-match discipline line: Moreirense 17 fouls, 4 yellow cards, 0 reds; Benfica 10 fouls, 2 yellow cards, 0 reds. Player events identify the four Moreirense and two Benfica bookings."
+      },
+      {
+        "provider": "r/soccer match thread stats",
+        "url": "https://www.reddit.com/r/soccer/comments/1wbvoru/match_thread_moreirense_vs_benfica_primeira_liga/",
+        "notes": "Independent post-match stats table reproduces 17-10 fouls, 4-2 yellows and 0-0 reds."
+      }
+    ],
+    "notes": "Round-3 postponed fixture played on 09/09/2026. No staff booking is included in the player-card totals."
+  }
+]
