@@ -1,5 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore, FieldValue, type Firestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { publicName } from "../data/profiles";
 import { periodKeys } from "../time/periods";
 import { validateDisplayName, validAvatarId } from "./validation";
@@ -9,6 +9,8 @@ import { validateDisplayName, validAvatarId } from "./validation";
  * `{}` só (re)publica o perfil (a app chama-o depois de cada login).
  * `avatarId` ausente do pedido preserva o valor já publicado; `null` limpa-o.
  */
+const RENAME_COOLDOWN_MS = 60_000;
+
 export async function handleUpdateProfile(
   db: Firestore,
   auth: { uid: string } | undefined,
@@ -40,13 +42,22 @@ export async function handleUpdateProfile(
 
   return db.runTransaction(async (tx) => {
     const [userSnap, pubSnap, ...entrySnaps] = await tx.getAll(userRef, pubRef, ...entryRefs);
-    const user = (userSnap.data() ?? {}) as { displayName?: string | null; name?: string | null };
+    const user = (userSnap.data() ?? {}) as {
+      displayName?: string | null;
+      name?: string | null;
+      nameChangedAt?: Timestamp;
+    };
+    if (newName !== undefined && user.nameChangedAt instanceof Timestamp) {
+      if (now.getTime() - user.nameChangedAt.toMillis() < RENAME_COOLDOWN_MS) {
+        throw new HttpsError("resource-exhausted", "RENAME_COOLDOWN");
+      }
+    }
     const merged = newName !== undefined ? { ...user, displayName: newName } : user;
     const displayName = publicName(merged, uid);
     const avatarId =
       newAvatar !== undefined ? newAvatar : ((pubSnap.data()?.avatarId as string | null | undefined) ?? null);
 
-    if (newName !== undefined) tx.set(userRef, { displayName: newName }, { merge: true });
+    if (newName !== undefined) tx.set(userRef, { displayName: newName, nameChangedAt: Timestamp.fromDate(now) }, { merge: true });
     tx.set(pubRef, { displayName, avatarId, updatedAt: FieldValue.serverTimestamp() });
     for (const snap of entrySnaps) {
       if (snap.exists && snap.get("displayName") !== displayName) tx.update(snap.ref, { displayName });

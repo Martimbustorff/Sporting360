@@ -98,6 +98,11 @@ describe("users displayName is server-only", () => {
     await assertFails(updateDoc(doc(as("alice"), "users/alice"), { displayName: "Leão 77" }));
     await assertSucceeds(updateDoc(doc(as("alice"), "users/alice"), { name: "B" }));
   });
+  it("owner cannot write nameChangedAt (cooldown is server-only)", async () => {
+    await assertFails(setDoc(doc(as("alice"), "users/alice"), { name: "A", nameChangedAt: 1 }));
+    await seed("users/alice", { name: "A" });
+    await assertFails(updateDoc(doc(as("alice"), "users/alice"), { nameChangedAt: 1 }));
+  });
   it("owner can still update other fields when the server already set displayName", async () => {
     await seed("users/alice", { name: "A", displayName: "Leão 77" });
     await assertSucceeds(updateDoc(doc(as("alice"), "users/alice"), { name: "B" }));

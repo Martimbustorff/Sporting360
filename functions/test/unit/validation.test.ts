@@ -25,7 +25,7 @@ describe("validateDisplayName", () => {
     expect(validateDisplayName("a".repeat(21))).toEqual({ ok: false, error: "TOO_LONG" });
   });
   it("counts code points, not UTF-16 units", () => {
-    // 10 astral letters = 20 UTF-16 units but 10 code points, still INVALID_CHARS (not letters), never TOO_LONG.
+    // 10 astral letters = 20 UTF-16 units but 10 code points: accepted (length is counted in code points).
     expect(validateDisplayName("𝒜".repeat(10))).toEqual({ ok: true, value: "𝒜".repeat(10) });
   });
   it("HAS_AT wins over INVALID_CHARS", () => {
@@ -35,6 +35,11 @@ describe("validateDisplayName", () => {
   it("invalid chars", () => {
     expect(validateDisplayName("Leão 🦁")).toEqual({ ok: false, error: "INVALID_CHARS" });
     expect(validateDisplayName("-abc")).toEqual({ ok: false, error: "INVALID_CHARS" });
+  });
+  it("reserved fallback prefix", () => {
+    expect(validateDisplayName("Sportinguista 7")).toEqual({ ok: false, error: "RESERVED_NAME" });
+    expect(validateDisplayName("sportinguista")).toEqual({ ok: false, error: "RESERVED_NAME" });
+    expect(validateDisplayName("Sportinguistas")).toEqual({ ok: true, value: "Sportinguistas" });
   });
   it("non-string is TOO_SHORT", () => {
     expect(validateDisplayName(undefined)).toEqual({ ok: false, error: "TOO_SHORT" });

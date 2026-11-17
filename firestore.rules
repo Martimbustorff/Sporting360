@@ -45,14 +45,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // users: public read (phase 1), owner-only writes. `displayName` is server-only (updateProfile
+    // users: public read (phase 1), owner-only writes. `displayName` and `nameChangedAt` are server-only (updateProfile
     // callable validates it); the V2 app never writes it, so it keeps working.
     match /users/{uid} {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid
-                    && !('displayName' in request.resource.data);
+                    && !('displayName' in request.resource.data)
+                    && !('nameChangedAt' in request.resource.data);
       allow update: if signedIn() && request.auth.uid == uid
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName']);
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'nameChangedAt']);
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 

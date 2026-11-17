@@ -1,13 +1,18 @@
-/** Nome mostrado no ranking. Nunca expõe email. */
+import { validateDisplayName } from "../callables/validation";
+
+/**
+ * Nome mostrado no ranking. Nunca expõe email. displayName e name (campo legado, escrito pelo dono)
+ * passam ambos por validateDisplayName; inválido cai para "Sportinguista #<4 últimos do uid>".
+ */
 export function publicName(
   user: { displayName?: string | null; name?: string | null },
   uid: string,
 ): string {
-  const display = (user.displayName ?? "").trim();
-  if (display && !display.includes("@")) return display;
+  const display = validateDisplayName(user.displayName ?? "");
+  if (display.ok) return display.value;
 
-  const name = (user.name ?? "").trim();
-  if (name && !name.includes("@")) return titleCasePt(name);
+  const legacy = validateDisplayName(titleCasePt((user.name ?? "").trim()));
+  if (legacy.ok) return legacy.value;
 
   return `Sportinguista #${uid.slice(-4)}`;
 }

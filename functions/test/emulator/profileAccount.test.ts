@@ -102,4 +102,27 @@ describe("updateProfile", () => {
     const cleared = await handleUpdateProfile(db, { uid: "u1" }, { avatarId: null }, NOW);
     expect(cleared.avatarId).toBeNull();
   });
+
+  it("legacy name cannot spoof another user's fallback name", async () => {
+    await db.doc("users/abcd1234").set({ name: "SPORTINGUISTA #ZZZZ" });
+    const out = await handleUpdateProfile(db, { uid: "abcd1234" }, {}, NOW);
+    expect(out.displayName).toBe("Sportinguista #1234");
+  });
+
+  it("reserved displayName is rejected", async () => {
+    const r = await code(handleUpdateProfile(db, { uid: "u1" }, { displayName: "Sportinguista 9" }, NOW));
+    expect(r).toEqual({ code: "invalid-argument", message: "RESERVED_NAME" });
+  });
+
+  it("rename cooldown: 60 s between displayName changes; avatar-only and {} unaffected", async () => {
+    await handleUpdateProfile(db, { uid: "u1" }, { displayName: "Leão 77" }, NOW);
+    const later = (ms: number) => new Date(NOW.getTime() + ms);
+    const r = await code(handleUpdateProfile(db, { uid: "u1" }, { displayName: "Leão 78" }, later(30_000)));
+    expect(r).toEqual({ code: "resource-exhausted", message: "RENAME_COOLDOWN" });
+    expect((await db.doc("users/u1").get()).data()!.displayName).toBe("Leão 77");
+    await expect(handleUpdateProfile(db, { uid: "u1" }, { avatarId: "leao-1" }, later(30_000))).resolves.toBeDefined();
+    await expect(handleUpdateProfile(db, { uid: "u1" }, {}, later(30_000))).resolves.toBeDefined();
+    const ok = await handleUpdateProfile(db, { uid: "u1" }, { displayName: "Leão 78" }, later(61_000));
+    expect(ok.displayName).toBe("Leão 78");
+  });
 });

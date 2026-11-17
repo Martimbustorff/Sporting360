@@ -22,4 +22,14 @@ describe("publicName", () => {
     expect(publicName({ displayName: "joao@mail.com", name: "ana pinto" }, "u1")).toBe("Ana Pinto");
     expect(publicName({ displayName: "joao@mail.com" }, "abcd1234")).toBe("Sportinguista #1234");
   });
+  it("name legado inválido (impersonação, tamanho, emoji, quebras de linha) cai para o uid", () => {
+    expect(publicName({ name: "SPORTINGUISTA #ZZZZ" }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "a".repeat(60) }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "Leão 🦁" }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "ana\u200Bpinto" }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "Sportinguista Ana" }, "abcd1234")).toBe("Sportinguista #1234");
+  });
+  it("displayName inválido também é ignorado", () => {
+    expect(publicName({ displayName: "x".repeat(40), name: "ana pinto" }, "u1")).toBe("Ana Pinto");
+  });
 });

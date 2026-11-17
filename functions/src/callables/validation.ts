@@ -13,17 +13,20 @@
  *   'a@b.pt'              -> HAS_AT (tem prioridade sobre INVALID_CHARS)
  *   'Leão 🦁'             -> INVALID_CHARS
  *   '-abc'                -> INVALID_CHARS
+ *   'Sportinguista 7'     -> RESERVED_NAME (/^sportinguista\b/i, depois das restantes regras)
  * Regras: NFC, trim, espaços internos colapsados num só, 3 a 20 code points (contar com [...s].length,
  * nunca s.length), sem '@', regex /^[\p{L}\p{N}][\p{L}\p{N} ._'-]*$/u.
  * validAvatarId: null ou /^[a-z0-9-]{1,32}$/.
  */
 
-export type DisplayNameError = "TOO_SHORT" | "TOO_LONG" | "INVALID_CHARS" | "HAS_AT";
+export type DisplayNameError = "TOO_SHORT" | "TOO_LONG" | "INVALID_CHARS" | "HAS_AT" | "RESERVED_NAME";
 export type DisplayNameResult =
   | { ok: true; value: string }
   | { ok: false; error: DisplayNameError };
 
 const NAME_RE = /^[\p{L}\p{N}][\p{L}\p{N} ._'-]*$/u;
+// Nomes de fallback ("Sportinguista #1234") não podem ser escolhidos (evita imitar outro utilizador).
+const RESERVED_RE = /^sportinguista\b/i;
 const AVATAR_RE = /^[a-z0-9-]{1,32}$/;
 
 export function validateDisplayName(raw: unknown): DisplayNameResult {
@@ -34,6 +37,7 @@ export function validateDisplayName(raw: unknown): DisplayNameResult {
   if (len > 20) return { ok: false, error: "TOO_LONG" };
   if (value.includes("@")) return { ok: false, error: "HAS_AT" };
   if (!NAME_RE.test(value)) return { ok: false, error: "INVALID_CHARS" };
+  if (RESERVED_RE.test(value)) return { ok: false, error: "RESERVED_NAME" };
   return { ok: true, value };
 }
 
