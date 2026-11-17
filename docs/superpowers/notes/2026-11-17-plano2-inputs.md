@@ -20,3 +20,7 @@
 - Link único (ex.: página no Firebase Hosting) que deteta o sistema e abre a App Store ou a Google Play; se a app já estiver instalada, abre o jogo (universal links / app links). Firebase Dynamic Links já não existe.
 - Link ou QR curto também desenhado no próprio cartão, porque algumas apps (ex. Instagram stories, WhatsApp em certos casos) largam o texto.
 - Medir: parâmetro de origem no link (ex. ?src=share&game=...) para saber quantos downloads vêm das partilhas.
+
+## Emblema do Sporting (17/11, 21:33)
+- O emblema atual do Sporting é o de 2026 (escudo verde com o leão e "SCP" por cima): `brand/sporting-cp-2026.png` (fonte indicada pelo Martim: assets.football-logos.cc, sporting-cp 512x512).
+- O logo da API-Football para a equipa 228 pode ser o antigo. Plano 2: a ingestão substitui o logo da equipa 228 pelo emblema novo (alojado no Firebase Storage ou Hosting) em `matches`, `teams` e nas coleções antigas. Plano 3/4: a app usa o emblema local sempre que a equipa é o Sporting.
