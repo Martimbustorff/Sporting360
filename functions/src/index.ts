@@ -1,7 +1,7 @@
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { RAPIDAPI_KEY } from "./config/secrets";
+import { RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
@@ -9,7 +9,9 @@ import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
 import { settleDue } from "./scheduled/settle";
 import { apiFootball } from "./sources/apiFootball";
+import { vsports } from "./sources/vsports";
 import { runJob } from "./store/health";
+import { syncVideos } from "./videos/videosSync";
 
 if (getApps().length === 0) initializeApp();
 getFirestore().settings({ ignoreUndefinedProperties: true });
@@ -99,6 +101,23 @@ export const footballLiveTicker = onSchedule(
         sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
       },
       { minRemaining: 500 },
+    );
+  },
+);
+
+// Vídeos da VSports (golos, resumo, flash interviews): 5 em 5 min; a própria função decide se há jogo
+// a seguir (sem jogo nas últimas 48 h faz 0 chamadas). A VSports não tem quota: sem `remaining`.
+export const videosSync = onSchedule(
+  { schedule: "every 5 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [VSPORTS_KEY] },
+  async () => {
+    const override = Number.parseInt(VSPORTS_SEASON_ID.value(), 10);
+    await runJob(getFirestore(), "videos", () =>
+      syncVideos({
+        db: getFirestore(),
+        vs: vsports({ key: VSPORTS_KEY.value() }),
+        now: () => new Date(),
+        seasonId: Number.isFinite(override) ? override : undefined,
+      }),
     );
   },
 );
