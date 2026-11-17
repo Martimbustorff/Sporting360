@@ -22,6 +22,7 @@
 - Os pontos contam na **data do jogo** (kickoff), não na data da liquidação.
 - O ranking nunca expõe o email; usa `displayName`.
 - Nada deste plano pode partir a app atual em produção (V2, Expo 54) antes do corte do Plano 5.
+- Todos os utilizadores começam com **0 pontos** na app nova; não há migração da coleção `rankings` antiga.
 - A chave RapidAPI nunca entra no repositório; vai para o Secret Manager como `RAPIDAPI_KEY`.
 
 ## Review Focus
@@ -57,7 +58,6 @@ functions/
   src/callables/submitPrediction.ts
   src/callables/voteMvp.ts
   src/scheduled/settle.ts          liquidação de jogos terminados
-  scripts/migrateRankings.ts       migração dos pontos antigos (dry-run por omissão)
   test/unit/*.test.ts              Jest puro
   test/emulator/*.test.ts          Jest contra o emulator
 ```
@@ -231,7 +231,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 **Interfaces:**
 - Consumes: `periodKeys` (Task 4), `publicName` (Task 7)
 - Produces:
-  - `type PointType = 'prediction_participation' | 'prediction_exact' | 'prediction_outcome' | 'mvp_participation' | 'mvp_correct' | 'migration'`
+  - `type PointType = 'prediction_participation' | 'prediction_exact' | 'prediction_outcome' | 'mvp_participation' | 'mvp_correct'`
   - `awardPoints(db: Firestore, e: { uid: string; gameId: string | null; type: PointType; points: number; gameDate: Date; periods?: ('week' | 'month' | 'season')[] }): Promise<boolean>`
     - O id do documento é determinístico: `${uid}_${gameId ?? 'none'}_${type}`.
     - Numa transação: se `pointEvents/{id}` já existe, devolve `false` e não faz nada. Se não existe, cria-o e incrementa `leaderboards/{kind}_{key}/entries/{uid}` (`{ uid, displayName, points }`) para cada período em `periods` (por omissão os três). Devolve `true`.
@@ -240,7 +240,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 - [ ] **Step 1: Escrever os testes (emulator).**
   - Uma atribuição de 3 pontos a `alice` num jogo de 16/11/2026 → `leaderboards/week_2026-W47/entries/alice.points == 3`, o mesmo em `month_2026-11` e `season_2026-2027`.
   - **Review Focus 2:** a mesma chamada repetida devolve `false` e os totais ficam em 3.
-  - Uma chamada `migration` com `periods: ['season']` só altera `season_2026-2027`.
+  - Uma chamada com `periods: ['season']` só altera `season_2026-2027`.
   - Um utilizador sem nome → a entrada tem `displayName: 'Sportinguista #xxxx'`, e nenhum documento de `leaderboards` contém `@`.
 - [ ] **Step 2:** `npm run test:emulator -- ledger`. Esperado: falha.
 - [ ] **Step 3:** Implementar.
@@ -285,7 +285,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 - Produces:
   - `settleGame(db: Firestore, gameId: string): Promise<{ predictions: number; votes: number; officialMvp: string[] }>`
     - Atribui `prediction_exact` (3) ou `prediction_outcome` (1) a cada prognóstico, e `mvp_correct` (2) a cada voto certo.
-    - Considera **só** documentos com `source == 'v2027'`. Os prognósticos e votos da app antiga continuam a ser pontuados pela `predictionsSettlementScheduler` antiga, dentro de `rankings`, e entram no total migrado no corte. Assim nada é contado duas vezes.
+    - Considera **só** documentos com `source == 'v2027'`. Os prognósticos e votos da app antiga são ignorados: todos os utilizadores começam a zero na app nova (decisão do Martim).
     - Escreve `settlements/{gameId}` com `{ settledAt, finalHome, finalAway, officialMvp }`; a app usa-o para mostrar "a apurar" ou o MVP oficial.
   - `settleDue(db: Firestore, now: Date): Promise<number>`
 
@@ -301,27 +301,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 - [ ] **Step 4:** Correr. Esperado: passa.
 - [ ] **Step 5:** Commit `feat(scheduled): settle finished games`.
 
-### Task 11: Script de migração dos pontos antigos
-
-**Files:**
-- Create: `functions/scripts/migrateRankings.ts`
-- Test: `functions/test/emulator/migrateRankings.test.ts`
-
-**Interfaces:**
-- Consumes: `awardPoints` (tipo `migration`, `periods: ['season']`, `gameId: null`, `gameDate` = 1/7 da época)
-- Produces: `migrateRankings(db: Firestore, season: string, opts: { dryRun: boolean }): Promise<{ users: number; points: number }>`; a linha de comando `npx ts-node scripts/migrateRankings.ts --season 2026-2027 [--apply]`, que por omissão é dry-run.
-
-- [ ] **Step 1: Escrever os testes (emulator).**
-  - `rankings` com `alice_2026-2027` (5 pontos) e `bob_2026-2027` (1 ponto) → em dry-run devolve `{users: 2, points: 6}` e não escreve nada.
-  - Com `apply` → `season_2026-2027` fica com 5 e 1.
-  - Repetir o `apply` → nada muda.
-  - Documentos de outra época são ignorados.
-- [ ] **Step 2:** Correr. Esperado: falha.
-- [ ] **Step 3:** Implementar.
-- [ ] **Step 4:** Correr. Esperado: passa.
-- [ ] **Step 5:** Commit `feat(scripts): migrate legacy season rankings`. O script **só corre em produção no corte** (Plano 5).
-
-### Task 12: Publicação do motor (sem efeito na app atual)
+### Task 11: Publicação do motor (sem efeito na app atual)
 
 **Files:**
 - Modify: `functions/src/index.ts` (já exporta tudo)
