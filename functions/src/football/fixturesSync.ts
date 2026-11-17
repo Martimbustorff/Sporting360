@@ -21,6 +21,12 @@ export interface FootballDeps {
 const HOUR = 3_600_000;
 const DEFAULT_WINDOW_MS = 36 * HOUR;
 
+/**
+ * Jogos LIVE/HT com kickoff há menos disto pertencem ao ticker (é a janela para trás que ele lê).
+ * Depois disto um LIVE/HT está preso (a API deixou de o atualizar no ticker) e o calendário corrige-o.
+ */
+export const LIVE_OWNERSHIP_MS = 6 * HOUR;
+
 /** O calendário não traz lances, equipas nem estatísticas: completa com listas vazias. */
 const asFull = (f: AfFixtureCore): AfFixture => ({ events: [], lineups: [], statistics: [], players: [], ...f });
 
@@ -32,8 +38,9 @@ function chunk<T>(xs: T[], n: number): T[][] {
 
 /**
  * Calendário completo do Sporting (todas as competições, sem filtro de liga). Escreve `matches` e só
- * `games` nas coleções antigas. Jogos guardados como LIVE/HT não são tocados: pertencem ao ticker
- * (evita a corrida de hashes e que um FT visto aqui fixe um `finishedAt` estimado).
+ * `games` nas coleções antigas. Jogos guardados como LIVE/HT não são tocados enquanto o kickoff tiver
+ * menos de `LIVE_OWNERSHIP_MS`: pertencem ao ticker (evita a corrida de hashes e que um FT visto aqui
+ * fixe um `finishedAt` estimado). Mais antigos estão presos e são corrigidos aqui.
  * Um fixture inválido não aborta o lote.
  */
 export async function syncFixtures(d: FootballDeps): Promise<{ count: number; remaining: number | null }> {
@@ -48,7 +55,7 @@ export async function syncFixtures(d: FootballDeps): Promise<{ count: number; re
   for (const [id, core] of byId) {
     try {
       const previous = await getMatch(d.db, id);
-      if (previous && LIVE_STATUSES.has(previous.status)) continue;
+      if (previous && LIVE_STATUSES.has(previous.status) && now.getTime() - previous.kickoff.getTime() < LIVE_OWNERSHIP_MS) continue;
       const full = asFull(core);
       const { match } = mapFixture(full, { now, previous, observedLive: false });
       const legacy = legacyFromFixture(full, match, null);

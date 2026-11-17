@@ -98,11 +98,13 @@ describe("syncFixtures", () => {
   });
 
   it("C6: jogo guardado como LIVE/HT não é tocado (o ticker é o dono), nem matches nem games", async () => {
-    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    // 1 h depois do kickoff do 1500002 (15/11 20:00): dentro da janela do ticker
+    const live = new Date("2026-11-15T21:00:00Z");
+    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]]), live));
     await db.doc("matches/1500002").set({ status: "LIVE", statusRaw: "2H", elapsed: 70, score: { home: 2, away: 1 } }, { merge: true });
     await db.doc("games/1500002").set({ scorehome: "2", scoreaway: "1", isActive: true }, { merge: true });
     const before = (await db.doc("matches/1500002").get()).get("updatedAt");
-    const r = await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    const r = await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]]), live));
     expect(r.count).toBe(3);
     const m = (await db.doc("matches/1500002").get()).data()!;
     expect(m.status).toBe("LIVE");
@@ -111,8 +113,20 @@ describe("syncFixtures", () => {
     expect((await db.doc("games/1500002").get()).get("scorehome")).toBe("2");
     // HT também
     await db.doc("matches/1500002").set({ status: "HT" }, { merge: true });
-    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]]), live));
     expect((await db.doc("matches/1500002").get()).get("status")).toBe("HT");
+  });
+
+  it("LIVE preso: com o kickoff há mais de 6 h (fora da janela do ticker) o calendário corrige-o", async () => {
+    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    // como o ticker o deixaria (via saveMatch, que atualiza os hashes)
+    const stuck = (await getMatch(db, "1500002"))!;
+    await saveMatch(db, { match: { ...stuck, status: "LIVE", statusRaw: "2H", elapsed: 70 } });
+    expect((await db.doc("matches/1500002").get()).get("status")).toBe("LIVE");
+    // NOW = 17/11 12:00, kickoff 15/11 20:00 (40 h): o ticker já não o vê
+    const r = await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    expect(r.count).toBe(4);
+    expect((await db.doc("matches/1500002").get()).get("status")).toBe("PST");
   });
 
   it("um fixture com data inválida não aborta o lote", async () => {
