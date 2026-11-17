@@ -1,0 +1,98 @@
+{
+  "get": "injuries",
+  "parameters": {
+    "fixture": "1500003"
+  },
+  "errors": [],
+  "results": 3,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "player": {
+        "id": 5007,
+        "name": "Trincão",
+        "photo": "https://media.api-sports.io/football/players/5007.png",
+        "type": "Missing Fixture",
+        "reason": "Muscle Injury"
+      },
+      "team": {
+        "id": 228,
+        "name": "Sporting CP",
+        "logo": "https://media.api-sports.io/football/teams/228.png"
+      },
+      "fixture": {
+        "id": 1500003,
+        "timezone": "UTC",
+        "date": "2026-11-22T20:00:00+00:00",
+        "timestamp": 1795377600
+      },
+      "league": {
+        "id": 94,
+        "season": 2026,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "x",
+        "flag": "x"
+      }
+    },
+    {
+      "player": {
+        "id": 5012,
+        "name": "Araújo",
+        "photo": "https://media.api-sports.io/football/players/5012.png",
+        "type": "Missing Fixture",
+        "reason": "Knee Injury"
+      },
+      "team": {
+        "id": 228,
+        "name": "Sporting CP",
+        "logo": "https://media.api-sports.io/football/teams/228.png"
+      },
+      "fixture": {
+        "id": 1500003,
+        "timezone": "UTC",
+        "date": "2026-11-22T20:00:00+00:00",
+        "timestamp": 1795377600
+      },
+      "league": {
+        "id": 94,
+        "season": 2026,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "x",
+        "flag": "x"
+      }
+    },
+    {
+      "player": {
+        "id": 6005,
+        "name": "Barreiro",
+        "photo": "https://media.api-sports.io/football/players/6005.png",
+        "type": "Missing Fixture",
+        "reason": "Muscle Injury"
+      },
+      "team": {
+        "id": 211,
+        "name": "Benfica",
+        "logo": "https://media.api-sports.io/football/teams/211.png"
+      },
+      "fixture": {
+        "id": 1500003,
+        "timezone": "UTC",
+        "date": "2026-11-22T20:00:00+00:00",
+        "timestamp": 1795377600
+      },
+      "league": {
+        "id": 94,
+        "season": 2026,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "x",
+        "flag": "x"
+      }
+    }
+  ]
+}

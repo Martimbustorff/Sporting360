@@ -42,12 +42,12 @@ export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSpo
     teamId: null,
     seasonFormat: "year",
     leagues: [
-      { id: null, name: "Campeonato Nacional", covered: null },
-      { id: null, name: "Taça de Portugal", covered: null },
-      { id: null, name: "Supertaça", covered: null },
-      { id: null, name: "CEV Champions League", covered: null },
-      { id: null, name: "CEV Cup", covered: null },
-      { id: null, name: "CEV Challenge Cup", covered: null },
+      { id: null, name: "Campeonato Nacional", covered: true },
+      { id: null, name: "Taça de Portugal", covered: true },
+      { id: null, name: "Supertaça", covered: true },
+      { id: null, name: "CEV Champions League", covered: true },
+      { id: null, name: "CEV Cup", covered: true },
+      { id: null, name: "CEV Challenge Cup", covered: true },
     ],
   },
   basketball: {

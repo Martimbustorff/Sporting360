@@ -1,0 +1,291 @@
+{
+  "get": "fixtures",
+  "parameters": {
+    "team": "228",
+    "season": "2026"
+  },
+  "errors": [],
+  "results": 4,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "fixture": {
+        "id": 1500001,
+        "referee": "Fábio Veríssimo, Portugal",
+        "timezone": "UTC",
+        "date": "2026-11-08T20:00:00+00:00",
+        "timestamp": 1794168000,
+        "periods": {
+          "first": 1794168000,
+          "second": 1794171600
+        },
+        "venue": {
+          "id": 1,
+          "name": "Estádio José Alvalade",
+          "city": "Lisboa"
+        },
+        "status": {
+          "long": "Match Finished",
+          "short": "FT",
+          "elapsed": 90,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 12"
+      },
+      "teams": {
+        "home": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "winner": null
+        },
+        "away": {
+          "id": 211,
+          "name": "Benfica",
+          "logo": "https://media.api-sports.io/football/teams/211.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": 2,
+        "away": 1
+      },
+      "score": {
+        "halftime": {
+          "home": 1,
+          "away": 0
+        },
+        "fulltime": {
+          "home": 2,
+          "away": 1
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1500002,
+        "referee": "Fábio Veríssimo, Portugal",
+        "timezone": "UTC",
+        "date": "2026-11-15T20:00:00+00:00",
+        "timestamp": 1794772800,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": 1,
+          "name": "Estádio José Alvalade",
+          "city": "Lisboa"
+        },
+        "status": {
+          "long": "Match Postponed",
+          "short": "PST",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 12"
+      },
+      "teams": {
+        "home": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "winner": null
+        },
+        "away": {
+          "id": 211,
+          "name": "Benfica",
+          "logo": "https://media.api-sports.io/football/teams/211.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1500003,
+        "referee": "Fábio Veríssimo, Portugal",
+        "timezone": "UTC",
+        "date": "2026-11-22T20:00:00+00:00",
+        "timestamp": 1795377600,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": 1,
+          "name": "Estádio José Alvalade",
+          "city": "Lisboa"
+        },
+        "status": {
+          "long": "Not Started",
+          "short": "NS",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 12"
+      },
+      "teams": {
+        "home": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "winner": null
+        },
+        "away": {
+          "id": 211,
+          "name": "Benfica",
+          "logo": "https://media.api-sports.io/football/teams/211.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    },
+    {
+      "fixture": {
+        "id": 1500004,
+        "referee": "Fábio Veríssimo, Portugal",
+        "timezone": "UTC",
+        "date": "2026-11-29T20:00:00+00:00",
+        "timestamp": 1795982400,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": 1,
+          "name": "Estádio José Alvalade",
+          "city": "Lisboa"
+        },
+        "status": {
+          "long": "Not Started",
+          "short": "NS",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 14"
+      },
+      "teams": {
+        "home": {
+          "id": 212,
+          "name": "FC Porto",
+          "logo": "https://media.api-sports.io/football/teams/212.png",
+          "winner": null
+        },
+        "away": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      }
+    }
+  ]
+}

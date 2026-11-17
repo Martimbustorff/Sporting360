@@ -1,0 +1,132 @@
+{
+  "get": "players/topscorers",
+  "parameters": {
+    "league": "94",
+    "season": "2026"
+  },
+  "errors": [],
+  "results": 3,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "player": {
+        "id": 5010,
+        "name": "Gyökeres",
+        "firstname": "Gyökeres",
+        "lastname": "Gyökeres",
+        "age": 27,
+        "nationality": "Sweden",
+        "photo": "https://media.api-sports.io/football/players/5010.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 11,
+            "minutes": 950,
+            "position": "Attacker"
+          },
+          "goals": {
+            "total": 12,
+            "assists": 3
+          },
+          "cards": {
+            "yellow": 2,
+            "red": 0
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5008,
+        "name": "Pedro Gonçalves",
+        "firstname": "Pedro",
+        "lastname": "Gonçalves",
+        "age": 27,
+        "nationality": "Sweden",
+        "photo": "https://media.api-sports.io/football/players/5008.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 11,
+            "minutes": 950,
+            "position": "Attacker"
+          },
+          "goals": {
+            "total": 8,
+            "assists": 2
+          },
+          "cards": {
+            "yellow": 2,
+            "red": 0
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 6008,
+        "name": "Pavlidis",
+        "firstname": "Pavlidis",
+        "lastname": "Pavlidis",
+        "age": 27,
+        "nationality": "Sweden",
+        "photo": "https://media.api-sports.io/football/players/6008.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 211,
+            "name": "Benfica",
+            "logo": "https://media.api-sports.io/football/teams/211.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 11,
+            "minutes": 950,
+            "position": "Attacker"
+          },
+          "goals": {
+            "total": 7,
+            "assists": 4
+          },
+          "cards": {
+            "yellow": 2,
+            "red": 0
+          }
+        }
+      ]
+    }
+  ]
+}

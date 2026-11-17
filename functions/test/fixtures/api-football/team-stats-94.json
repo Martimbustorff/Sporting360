@@ -1,0 +1,159 @@
+{
+  "get": "teams/statistics",
+  "parameters": {
+    "league": "94",
+    "season": "2026",
+    "team": "228"
+  },
+  "errors": [],
+  "results": 1,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": {
+    "league": {
+      "id": 94,
+      "name": "Primeira Liga",
+      "country": "Portugal",
+      "logo": "x",
+      "flag": "x",
+      "season": 2026
+    },
+    "team": {
+      "id": 228,
+      "name": "Sporting CP",
+      "logo": "https://media.api-sports.io/football/teams/228.png"
+    },
+    "form": "WWDWWWDWWLW",
+    "fixtures": {
+      "played": {
+        "home": 6,
+        "away": 5,
+        "total": 11
+      },
+      "wins": {
+        "home": 5,
+        "away": 3,
+        "total": 8
+      },
+      "draws": {
+        "home": 1,
+        "away": 1,
+        "total": 2
+      },
+      "loses": {
+        "home": 0,
+        "away": 1,
+        "total": 1
+      }
+    },
+    "goals": {
+      "for": {
+        "total": {
+          "home": 14,
+          "away": 11,
+          "total": 25
+        },
+        "average": {
+          "home": "2.3",
+          "away": "2.2",
+          "total": "2.3"
+        },
+        "minute": {
+          "0-15": {
+            "total": 3,
+            "percentage": "12.00%"
+          },
+          "16-30": {
+            "total": 4,
+            "percentage": "16.00%"
+          }
+        }
+      },
+      "against": {
+        "total": {
+          "home": 3,
+          "away": 6,
+          "total": 9
+        },
+        "average": {
+          "home": "0.5",
+          "away": "1.2",
+          "total": "0.8"
+        },
+        "minute": {
+          "0-15": {
+            "total": 3,
+            "percentage": "12.00%"
+          },
+          "16-30": {
+            "total": 4,
+            "percentage": "16.00%"
+          }
+        }
+      }
+    },
+    "biggest": {
+      "streak": {
+        "wins": 5,
+        "draws": 1,
+        "loses": 1
+      },
+      "wins": {
+        "home": "5-0",
+        "away": "0-3"
+      },
+      "loses": {
+        "home": null,
+        "away": "2-1"
+      },
+      "goals": {
+        "for": {
+          "home": 5,
+          "away": 3
+        },
+        "against": {
+          "home": 1,
+          "away": 2
+        }
+      }
+    },
+    "clean_sheet": {
+      "home": 3,
+      "away": 2,
+      "total": 5
+    },
+    "failed_to_score": {
+      "home": 0,
+      "away": 0,
+      "total": 0
+    },
+    "penalty": {
+      "scored": {
+        "total": 3,
+        "percentage": "100.00%"
+      },
+      "missed": {
+        "total": 0,
+        "percentage": "0%"
+      },
+      "total": 3
+    },
+    "lineups": [
+      {
+        "formation": "4-3-3",
+        "played": 10
+      }
+    ],
+    "cards": {
+      "yellow": {
+        "0-15": {
+          "total": 1,
+          "percentage": "5.00%"
+        }
+      },
+      "red": {}
+    }
+  }
+}

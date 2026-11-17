@@ -52,7 +52,7 @@ Notas para o parser (Task 17):
 
 ## API-Sports (plano gratuito)
 
-Confirmado em fontes públicas:
+Lido em fontes públicas (as páginas marcadas «não reverificado» em «Fontes consultadas» foram lidas numa primeira passagem e não foram abertas de novo; confirmar na primeira resposta real):
 - Hosts: `v1.handball.api-sports.io`, `v1.volleyball.api-sports.io`, `v1.basketball.api-sports.io` (o endpoint de andebol responde 403 "Missing application key", o que confirma o host).
 - Gratuito: 100 pedidos por dia, reposição às 00:00 UTC (páginas de preços de andebol e basquetebol). O limite de 10 por minuto não aparece nas páginas públicas.
 - Época: basquetebol em intervalo ("2023-2024", artigo oficial de lançamento); andebol e voleibol em ano (`2026`), formato a confirmar na primeira resposta real.

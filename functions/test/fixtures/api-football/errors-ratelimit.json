@@ -1,0 +1,16 @@
+{
+  "get": "fixtures",
+  "parameters": {
+    "team": "228",
+    "season": "2026"
+  },
+  "errors": {
+    "requests": "You have reached the request limit for the day, Upgrade your Plan or wait for the reset."
+  },
+  "results": 0,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": []
+}

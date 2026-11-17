@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel><title>Record - Sporting</title><link>https://www.record.pt</link><description>Fixture sintetica</description>
+<item><title>&lt;![CDATA[ Sporting vence o dérbi em Alvalade ]]&gt;</title><link>https://www.record.pt/futebol/sporting/exemplo-1</link><pubDate>Sun, 22 Nov 2026 22:40:00 +0000</pubDate>
+<description>&lt;![CDATA[ Golos de Gyökeres e Pedro Gonçalves decidem o jogo. ]]&gt;</description>
+<enclosure url="https://cdn.record.pt/images/exemplo-1.jpg" length="0" type="image/jpeg"/></item>
+<item><title>Treino aberto antes da Champions</title><link>https://www.record.pt/futebol/sporting/exemplo-2</link><pubDate>Mon, 23 Nov 2026 09:00:00 +0000</pubDate>
+<description>Plantel regressa ao trabalho.</description><enclosure url="https://cdn.record.pt/images/exemplo-2.jpg" length="0" type="image/jpeg"/></item>
+</channel></rss>

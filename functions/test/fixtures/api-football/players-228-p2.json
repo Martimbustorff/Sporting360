@@ -1,0 +1,646 @@
+{
+  "get": "players",
+  "parameters": {
+    "team": "228",
+    "season": "2026",
+    "page": "2"
+  },
+  "errors": [],
+  "results": 10,
+  "paging": {
+    "current": 2,
+    "total": 2
+  },
+  "response": [
+    {
+      "player": {
+        "id": 5020,
+        "name": "Quenda 20",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 25,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5020.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 820,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 0,
+            "conceded": 0,
+            "assists": 2,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 0,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5021,
+        "name": "Hjulmand 21",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 26,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5021.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 821,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 1,
+            "conceded": 0,
+            "assists": 0,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 1,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5022,
+        "name": "Morita 22",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 27,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5022.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 822,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 2,
+            "conceded": 0,
+            "assists": 1,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 2,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5023,
+        "name": "Trincão 23",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 28,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5023.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 823,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 3,
+            "conceded": 0,
+            "assists": 2,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 3,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5024,
+        "name": "Pedro Gonçalves 24",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 29,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5024.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 824,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 4,
+            "conceded": 0,
+            "assists": 0,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 0,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5025,
+        "name": "Luis Suárez 25",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 30,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5025.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 825,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 0,
+            "conceded": 0,
+            "assists": 1,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 1,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5026,
+        "name": "Gyökeres 26",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 31,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5026.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 826,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 1,
+            "conceded": 0,
+            "assists": 2,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 2,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5027,
+        "name": "Debast 27",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 32,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5027.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 827,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 2,
+            "conceded": 0,
+            "assists": 0,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 3,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5028,
+        "name": "Araújo 28",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 33,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5028.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 828,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 3,
+            "conceded": 0,
+            "assists": 1,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 0,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 5029,
+        "name": "Catamo 29",
+        "firstname": "A",
+        "lastname": "B",
+        "age": 34,
+        "birth": {
+          "date": "2000-01-01",
+          "place": "Lisboa",
+          "country": "Portugal"
+        },
+        "nationality": "Portugal",
+        "height": "180 cm",
+        "weight": "75 kg",
+        "injured": false,
+        "photo": "https://media.api-sports.io/football/players/5029.png"
+      },
+      "statistics": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png"
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "season": 2026
+          },
+          "games": {
+            "appearences": 10,
+            "lineups": 9,
+            "minutes": 829,
+            "number": null,
+            "position": "Midfielder",
+            "rating": "6.9",
+            "captain": false
+          },
+          "goals": {
+            "total": 4,
+            "conceded": 0,
+            "assists": 2,
+            "saves": null
+          },
+          "cards": {
+            "yellow": 1,
+            "yellowred": 0,
+            "red": 0
+          },
+          "shots": {
+            "total": 10,
+            "on": 5
+          },
+          "passes": {
+            "total": 400,
+            "key": 12,
+            "accuracy": 32
+          }
+        }
+      ]
+    }
+  ]
+}

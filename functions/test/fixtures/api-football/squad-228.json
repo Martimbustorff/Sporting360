@@ -1,0 +1,263 @@
+{
+  "get": "players/squads",
+  "parameters": {
+    "team": "228"
+  },
+  "errors": [],
+  "results": 1,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "team": {
+        "id": 228,
+        "name": "Sporting CP",
+        "logo": "https://media.api-sports.io/football/teams/228.png"
+      },
+      "players": [
+        {
+          "id": 5000,
+          "name": "Israel",
+          "age": 20,
+          "number": 1,
+          "position": "Goalkeeper",
+          "photo": "https://media.api-sports.io/football/players/5000.png"
+        },
+        {
+          "id": 5001,
+          "name": "Fresneda",
+          "age": 21,
+          "number": 2,
+          "position": "Goalkeeper",
+          "photo": "https://media.api-sports.io/football/players/5001.png"
+        },
+        {
+          "id": 5002,
+          "name": "Diomande",
+          "age": 22,
+          "number": 3,
+          "position": "Goalkeeper",
+          "photo": "https://media.api-sports.io/football/players/5002.png"
+        },
+        {
+          "id": 5003,
+          "name": "Inácio",
+          "age": 23,
+          "number": 4,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5003.png"
+        },
+        {
+          "id": 5004,
+          "name": "Quenda",
+          "age": 24,
+          "number": 5,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5004.png"
+        },
+        {
+          "id": 5005,
+          "name": "Hjulmand",
+          "age": 25,
+          "number": 6,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5005.png"
+        },
+        {
+          "id": 5006,
+          "name": "Morita",
+          "age": 26,
+          "number": 7,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5006.png"
+        },
+        {
+          "id": 5007,
+          "name": "Trincão",
+          "age": 27,
+          "number": 8,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5007.png"
+        },
+        {
+          "id": 5008,
+          "name": "Pedro Gonçalves",
+          "age": 28,
+          "number": 9,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5008.png"
+        },
+        {
+          "id": 5009,
+          "name": "Luis Suárez",
+          "age": 29,
+          "number": 10,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5009.png"
+        },
+        {
+          "id": 5010,
+          "name": "Gyökeres",
+          "age": 30,
+          "number": 11,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5010.png"
+        },
+        {
+          "id": 5011,
+          "name": "Debast",
+          "age": 31,
+          "number": 12,
+          "position": "Defender",
+          "photo": "https://media.api-sports.io/football/players/5011.png"
+        },
+        {
+          "id": 5012,
+          "name": "Araújo",
+          "age": 32,
+          "number": 13,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5012.png"
+        },
+        {
+          "id": 5013,
+          "name": "Catamo",
+          "age": 33,
+          "number": 14,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5013.png"
+        },
+        {
+          "id": 5014,
+          "name": "Kochorashvili",
+          "age": 34,
+          "number": 15,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5014.png"
+        },
+        {
+          "id": 5015,
+          "name": "Bragança",
+          "age": 20,
+          "number": 16,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5015.png"
+        },
+        {
+          "id": 5016,
+          "name": "Israel 16",
+          "age": 21,
+          "number": 17,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5016.png"
+        },
+        {
+          "id": 5017,
+          "name": "Fresneda 17",
+          "age": 22,
+          "number": 18,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5017.png"
+        },
+        {
+          "id": 5018,
+          "name": "Diomande 18",
+          "age": 23,
+          "number": 19,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5018.png"
+        },
+        {
+          "id": 5019,
+          "name": "Inácio 19",
+          "age": 24,
+          "number": 20,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5019.png"
+        },
+        {
+          "id": 5020,
+          "name": "Quenda 20",
+          "age": 25,
+          "number": 21,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5020.png"
+        },
+        {
+          "id": 5021,
+          "name": "Hjulmand 21",
+          "age": 26,
+          "number": 22,
+          "position": "Midfielder",
+          "photo": "https://media.api-sports.io/football/players/5021.png"
+        },
+        {
+          "id": 5022,
+          "name": "Morita 22",
+          "age": 27,
+          "number": 23,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5022.png"
+        },
+        {
+          "id": 5023,
+          "name": "Trincão 23",
+          "age": 28,
+          "number": 24,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5023.png"
+        },
+        {
+          "id": 5024,
+          "name": "Pedro Gonçalves 24",
+          "age": 29,
+          "number": 25,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5024.png"
+        },
+        {
+          "id": 5025,
+          "name": "Luis Suárez 25",
+          "age": 30,
+          "number": 26,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5025.png"
+        },
+        {
+          "id": 5026,
+          "name": "Gyökeres 26",
+          "age": 31,
+          "number": 27,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5026.png"
+        },
+        {
+          "id": 5027,
+          "name": "Debast 27",
+          "age": 32,
+          "number": 28,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5027.png"
+        },
+        {
+          "id": 5028,
+          "name": "Araújo 28",
+          "age": 33,
+          "number": 29,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5028.png"
+        },
+        {
+          "id": 5029,
+          "name": "Catamo 29",
+          "age": 34,
+          "number": 30,
+          "position": "Attacker",
+          "photo": "https://media.api-sports.io/football/players/5029.png"
+        }
+      ]
+    }
+  ]
+}

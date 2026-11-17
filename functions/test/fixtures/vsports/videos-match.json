@@ -1,0 +1,88 @@
+{
+  "pp": 0,
+  "match": {
+    "id": "1500003",
+    "dt": "2026-11-22",
+    "hr": "20:00",
+    "htgoal": "2",
+    "atgoal": "1",
+    "venue": {
+      "id": "1",
+      "id_st": null,
+      "name": "Estádio José Alvalade",
+      "city": "Lisboa",
+      "address": "",
+      "weather_local_id": ""
+    },
+    "season": {
+      "id": "31",
+      "name": "2026/2027"
+    },
+    "cp": {
+      "id": "1",
+      "slug": "liga-portugal",
+      "name": "Liga Portugal"
+    },
+    "mday": {
+      "id": "12",
+      "name": "Jornada 12"
+    },
+    "hteam": {
+      "id": "10",
+      "name": "Sporting CP"
+    },
+    "ateam": {
+      "id": "11",
+      "name": "SL Benfica"
+    },
+    "name": "Sporting CP - SL Benfica"
+  },
+  "n_vdos": 3,
+  "vdos": [
+    {
+      "id": "9001",
+      "dt": "2026-11-22 22:30:00",
+      "type": "goal",
+      "minute": "12",
+      "title": "Golo de Gyökeres",
+      "bigpic": "https://vsports.example/pic.jpg",
+      "vdo": "https://vsports.example/v.mp4",
+      "social": [],
+      "res": "720",
+      "links": {
+        "video": "https://vsports.example/v/9001.mp4",
+        "embed": "https://vsports.example/e/9001"
+      }
+    },
+    {
+      "id": "9002",
+      "dt": "2026-11-22 22:30:00",
+      "type": "goal",
+      "minute": "64",
+      "title": "Golo de Pedro Gonçalves (g.p.)",
+      "bigpic": "https://vsports.example/pic.jpg",
+      "vdo": "https://vsports.example/v.mp4",
+      "social": [],
+      "res": "720",
+      "links": {
+        "video": "https://vsports.example/v/9002.mp4",
+        "embed": "https://vsports.example/e/9002"
+      }
+    },
+    {
+      "id": "9003",
+      "dt": "2026-11-22 22:30:00",
+      "type": "summary",
+      "minute": "",
+      "title": "Resumo",
+      "bigpic": "https://vsports.example/pic.jpg",
+      "vdo": "https://vsports.example/v.mp4",
+      "social": [],
+      "res": "720",
+      "links": {
+        "video": "https://vsports.example/v/9003.mp4",
+        "embed": "https://vsports.example/e/9003"
+      }
+    }
+  ]
+}

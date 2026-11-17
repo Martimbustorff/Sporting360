@@ -1,0 +1,83 @@
+{
+  "pp": "0",
+  "cp": {
+    "id": "1",
+    "id_st": "",
+    "slug": "liga-portugal",
+    "name": "Liga Portugal",
+    "emblem": ""
+  },
+  "season": {
+    "id": "31",
+    "id_st": "",
+    "name": "2026/2027"
+  },
+  "matches": [
+    {
+      "id": "1500003",
+      "id_st": "",
+      "dt": "2026-11-22",
+      "hr": "20:00",
+      "n_vdos": "3",
+      "lst_vdo": null,
+      "status": {
+        "id": "2",
+        "name": "Finalizado"
+      },
+      "mday": {
+        "id": "12",
+        "index": "12",
+        "name": "Jornada 12"
+      },
+      "hteam": {
+        "id": "10",
+        "id_st": "",
+        "abbrv": "SPO",
+        "name": "Sporting CP",
+        "emblem": "https://vsports.example/emblem.png",
+        "home_kit": ""
+      },
+      "ateam": {
+        "id": "11",
+        "id_st": "",
+        "abbrv": "SL ",
+        "name": "SL Benfica",
+        "emblem": "https://vsports.example/emblem.png",
+        "home_kit": ""
+      }
+    },
+    {
+      "id": "1500004",
+      "id_st": "",
+      "dt": "2026-11-29",
+      "hr": "20:30",
+      "n_vdos": "0",
+      "lst_vdo": null,
+      "status": {
+        "id": "1",
+        "name": "Agendado"
+      },
+      "mday": {
+        "id": "13",
+        "index": "13",
+        "name": "Jornada 13"
+      },
+      "hteam": {
+        "id": "12",
+        "id_st": "",
+        "abbrv": "FC ",
+        "name": "FC Porto",
+        "emblem": "https://vsports.example/emblem.png",
+        "home_kit": ""
+      },
+      "ateam": {
+        "id": "10",
+        "id_st": "",
+        "abbrv": "SPO",
+        "name": "Sporting CP",
+        "emblem": "https://vsports.example/emblem.png",
+        "home_kit": ""
+      }
+    }
+  ]
+}

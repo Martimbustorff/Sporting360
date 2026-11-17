@@ -1,0 +1,26 @@
+{
+  "get": "trophies",
+  "parameters": {
+    "players": "5010"
+  },
+  "errors": [],
+  "results": 2,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "league": "Primeira Liga",
+      "country": "Portugal",
+      "season": "2024/2025",
+      "place": "Winner"
+    },
+    {
+      "league": "Taça de Portugal",
+      "country": "Portugal",
+      "season": "2023/2024",
+      "place": "2nd Place"
+    }
+  ]
+}

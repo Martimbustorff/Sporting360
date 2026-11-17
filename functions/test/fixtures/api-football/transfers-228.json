@@ -1,0 +1,64 @@
+{
+  "get": "transfers",
+  "parameters": {
+    "team": "228"
+  },
+  "errors": [],
+  "results": 2,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "player": {
+        "id": 9001,
+        "name": "J. Exemplo"
+      },
+      "update": "2026-08-30T10:00:00+00:00",
+      "transfers": [
+        {
+          "date": "2026-08-29",
+          "type": "€ 15M",
+          "teams": {
+            "in": {
+              "id": 228,
+              "name": "Sporting CP",
+              "logo": "https://media.api-sports.io/football/teams/228.png"
+            },
+            "out": {
+              "id": 500,
+              "name": "Clube X",
+              "logo": "x"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "player": {
+        "id": 9002,
+        "name": "K. Exemplo"
+      },
+      "update": "2026-07-10T10:00:00+00:00",
+      "transfers": [
+        {
+          "date": "2026-07-09",
+          "type": "Free",
+          "teams": {
+            "in": {
+              "id": 501,
+              "name": "Clube Y",
+              "logo": "x"
+            },
+            "out": {
+              "id": 228,
+              "name": "Sporting CP",
+              "logo": "https://media.api-sports.io/football/teams/228.png"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

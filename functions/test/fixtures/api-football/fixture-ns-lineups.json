@@ -1,0 +1,434 @@
+{
+  "get": "fixtures",
+  "parameters": {
+    "ids": "1500003"
+  },
+  "errors": [],
+  "results": 1,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "fixture": {
+        "id": 1500003,
+        "referee": "Fábio Veríssimo, Portugal",
+        "timezone": "UTC",
+        "date": "2026-11-22T20:00:00+00:00",
+        "timestamp": 1795377600,
+        "periods": {
+          "first": null,
+          "second": null
+        },
+        "venue": {
+          "id": 1,
+          "name": "Estádio José Alvalade",
+          "city": "Lisboa"
+        },
+        "status": {
+          "long": "Not Started",
+          "short": "NS",
+          "elapsed": null,
+          "extra": null
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 12"
+      },
+      "teams": {
+        "home": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "winner": null
+        },
+        "away": {
+          "id": 211,
+          "name": "Benfica",
+          "logo": "https://media.api-sports.io/football/teams/211.png",
+          "winner": null
+        }
+      },
+      "goals": {
+        "home": null,
+        "away": null
+      },
+      "score": {
+        "halftime": {
+          "home": null,
+          "away": null
+        },
+        "fulltime": {
+          "home": null,
+          "away": null
+        },
+        "extratime": {
+          "home": null,
+          "away": null
+        },
+        "penalty": {
+          "home": null,
+          "away": null
+        }
+      },
+      "events": [],
+      "lineups": [
+        {
+          "team": {
+            "id": 228,
+            "name": "Sporting CP",
+            "logo": "https://media.api-sports.io/football/teams/228.png",
+            "colors": {
+              "player": {
+                "primary": "00a859",
+                "number": "ffffff",
+                "border": "00a859"
+              },
+              "goalkeeper": {
+                "primary": "f5d000",
+                "number": "000000",
+                "border": "f5d000"
+              }
+            }
+          },
+          "formation": "4-3-3",
+          "startXI": [
+            {
+              "player": {
+                "id": 5000,
+                "name": "Israel",
+                "number": 1,
+                "pos": "G",
+                "grid": "1:1"
+              }
+            },
+            {
+              "player": {
+                "id": 5001,
+                "name": "Fresneda",
+                "number": 2,
+                "pos": "D",
+                "grid": "1:2"
+              }
+            },
+            {
+              "player": {
+                "id": 5002,
+                "name": "Diomande",
+                "number": 3,
+                "pos": "D",
+                "grid": "1:3"
+              }
+            },
+            {
+              "player": {
+                "id": 5003,
+                "name": "Inácio",
+                "number": 4,
+                "pos": "D",
+                "grid": "1:4"
+              }
+            },
+            {
+              "player": {
+                "id": 5004,
+                "name": "Quenda",
+                "number": 5,
+                "pos": "D",
+                "grid": "2:1"
+              }
+            },
+            {
+              "player": {
+                "id": 5005,
+                "name": "Hjulmand",
+                "number": 6,
+                "pos": "M",
+                "grid": "2:2"
+              }
+            },
+            {
+              "player": {
+                "id": 5006,
+                "name": "Morita",
+                "number": 7,
+                "pos": "M",
+                "grid": "2:3"
+              }
+            },
+            {
+              "player": {
+                "id": 5007,
+                "name": "Trincão",
+                "number": 8,
+                "pos": "M",
+                "grid": "2:4"
+              }
+            },
+            {
+              "player": {
+                "id": 5008,
+                "name": "Pedro Gonçalves",
+                "number": 9,
+                "pos": "F",
+                "grid": "3:1"
+              }
+            },
+            {
+              "player": {
+                "id": 5009,
+                "name": "Luis Suárez",
+                "number": 10,
+                "pos": "F",
+                "grid": "3:2"
+              }
+            },
+            {
+              "player": {
+                "id": 5010,
+                "name": "Gyökeres",
+                "number": 11,
+                "pos": "F",
+                "grid": "3:3"
+              }
+            }
+          ],
+          "substitutes": [
+            {
+              "player": {
+                "id": 5011,
+                "name": "Debast",
+                "number": 12,
+                "pos": "D",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 5012,
+                "name": "Araújo",
+                "number": 13,
+                "pos": "D",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 5013,
+                "name": "Catamo",
+                "number": 14,
+                "pos": "F",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 5014,
+                "name": "Kochorashvili",
+                "number": 15,
+                "pos": "M",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 5015,
+                "name": "Bragança",
+                "number": 16,
+                "pos": "F",
+                "grid": null
+              }
+            }
+          ],
+          "coach": {
+            "id": 4001,
+            "name": "R. Borges",
+            "photo": "https://media.api-sports.io/football/coachs/4001.png"
+          }
+        },
+        {
+          "team": {
+            "id": 211,
+            "name": "Benfica",
+            "logo": "https://media.api-sports.io/football/teams/211.png",
+            "colors": {
+              "player": {
+                "primary": "e30613",
+                "number": "ffffff",
+                "border": "00a859"
+              },
+              "goalkeeper": {
+                "primary": "f5d000",
+                "number": "000000",
+                "border": "f5d000"
+              }
+            }
+          },
+          "formation": "4-2-3-1",
+          "startXI": [
+            {
+              "player": {
+                "id": 6000,
+                "name": "Trubin",
+                "number": 1,
+                "pos": "G",
+                "grid": "1:1"
+              }
+            },
+            {
+              "player": {
+                "id": 6001,
+                "name": "Aursnes",
+                "number": 2,
+                "pos": "D",
+                "grid": "1:2"
+              }
+            },
+            {
+              "player": {
+                "id": 6002,
+                "name": "Otamendi",
+                "number": 3,
+                "pos": "D",
+                "grid": "1:3"
+              }
+            },
+            {
+              "player": {
+                "id": 6003,
+                "name": "Silva",
+                "number": 4,
+                "pos": "D",
+                "grid": "1:4"
+              }
+            },
+            {
+              "player": {
+                "id": 6004,
+                "name": "Carreras",
+                "number": 5,
+                "pos": "D",
+                "grid": "2:1"
+              }
+            },
+            {
+              "player": {
+                "id": 6005,
+                "name": "Barreiro",
+                "number": 6,
+                "pos": "M",
+                "grid": "2:2"
+              }
+            },
+            {
+              "player": {
+                "id": 6006,
+                "name": "Kokçu",
+                "number": 7,
+                "pos": "M",
+                "grid": "2:3"
+              }
+            },
+            {
+              "player": {
+                "id": 6007,
+                "name": "Di María",
+                "number": 8,
+                "pos": "M",
+                "grid": "2:4"
+              }
+            },
+            {
+              "player": {
+                "id": 6008,
+                "name": "Pavlidis",
+                "number": 9,
+                "pos": "F",
+                "grid": "3:1"
+              }
+            },
+            {
+              "player": {
+                "id": 6009,
+                "name": "Schjelderup",
+                "number": 10,
+                "pos": "F",
+                "grid": "3:2"
+              }
+            },
+            {
+              "player": {
+                "id": 6010,
+                "name": "Rollheiser",
+                "number": 11,
+                "pos": "F",
+                "grid": "3:3"
+              }
+            }
+          ],
+          "substitutes": [
+            {
+              "player": {
+                "id": 6011,
+                "name": "Tomás Araújo",
+                "number": 12,
+                "pos": "D",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 6012,
+                "name": "Florentino",
+                "number": 13,
+                "pos": "D",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 6013,
+                "name": "Prestianni",
+                "number": 14,
+                "pos": "F",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 6014,
+                "name": "Akturkoglu",
+                "number": 15,
+                "pos": "M",
+                "grid": null
+              }
+            },
+            {
+              "player": {
+                "id": 6015,
+                "name": "Belotti",
+                "number": 16,
+                "pos": "F",
+                "grid": null
+              }
+            }
+          ],
+          "coach": {
+            "id": 4002,
+            "name": "B. Lage",
+            "photo": "https://media.api-sports.io/football/coachs/4001.png"
+          }
+        }
+      ],
+      "statistics": [],
+      "players": []
+    }
+  ]
+}

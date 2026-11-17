@@ -1,0 +1,261 @@
+{
+  "get": "predictions",
+  "parameters": {
+    "fixture": "1500003"
+  },
+  "errors": [],
+  "results": 1,
+  "paging": {
+    "current": 1,
+    "total": 1
+  },
+  "response": [
+    {
+      "predictions": {
+        "winner": {
+          "id": 228,
+          "name": "Sporting CP",
+          "comment": "Win or draw"
+        },
+        "win_or_draw": true,
+        "under_over": "-3.5",
+        "goals": {
+          "home": "-2.5",
+          "away": "-1.5"
+        },
+        "advice": "Double chance : Sporting CP or draw",
+        "percent": {
+          "home": "45%",
+          "draw": "45%",
+          "away": "10%"
+        }
+      },
+      "league": {
+        "id": 94,
+        "name": "Primeira Liga",
+        "country": "Portugal",
+        "logo": "https://media.api-sports.io/football/leagues/94.png",
+        "flag": "https://media.api-sports.io/flags/pt.svg",
+        "season": 2026,
+        "round": "Regular Season - 12"
+      },
+      "teams": {
+        "home": {
+          "id": 228,
+          "name": "Sporting CP",
+          "logo": "https://media.api-sports.io/football/teams/228.png",
+          "last_5": {
+            "played": 5,
+            "form": "80%",
+            "att": "70%",
+            "def": "60%",
+            "goals": {
+              "for": {
+                "total": 12,
+                "average": "2.4"
+              },
+              "against": {
+                "total": 4,
+                "average": "0.8"
+              }
+            }
+          },
+          "league": {
+            "form": "78%",
+            "fixtures": {
+              "played": {
+                "home": 6,
+                "away": 5,
+                "total": 11
+              }
+            },
+            "goals": {
+              "for": {
+                "total": {
+                  "home": 14,
+                  "away": 11,
+                  "total": 25
+                },
+                "average": {
+                  "home": "2.3",
+                  "away": "2.2",
+                  "total": "2.3"
+                }
+              },
+              "against": {
+                "total": {
+                  "home": 3,
+                  "away": 6,
+                  "total": 9
+                },
+                "average": {
+                  "home": "0.5",
+                  "away": "1.2",
+                  "total": "0.8"
+                }
+              }
+            }
+          }
+        },
+        "away": {
+          "id": 211,
+          "name": "Benfica",
+          "logo": "https://media.api-sports.io/football/teams/211.png",
+          "last_5": {
+            "played": 5,
+            "form": "80%",
+            "att": "70%",
+            "def": "60%",
+            "goals": {
+              "for": {
+                "total": 12,
+                "average": "2.4"
+              },
+              "against": {
+                "total": 4,
+                "average": "0.8"
+              }
+            }
+          },
+          "league": {
+            "form": "78%",
+            "fixtures": {
+              "played": {
+                "home": 6,
+                "away": 5,
+                "total": 11
+              }
+            },
+            "goals": {
+              "for": {
+                "total": {
+                  "home": 14,
+                  "away": 11,
+                  "total": 25
+                },
+                "average": {
+                  "home": "2.3",
+                  "away": "2.2",
+                  "total": "2.3"
+                }
+              },
+              "against": {
+                "total": {
+                  "home": 3,
+                  "away": 6,
+                  "total": 9
+                },
+                "average": {
+                  "home": "0.5",
+                  "away": "1.2",
+                  "total": "0.8"
+                }
+              }
+            }
+          }
+        }
+      },
+      "comparison": {
+        "form": {
+          "home": "60%",
+          "away": "40%"
+        },
+        "att": {
+          "home": "58%",
+          "away": "42%"
+        },
+        "def": {
+          "home": "55%",
+          "away": "45%"
+        },
+        "poisson_distribution": {
+          "home": "50%",
+          "away": "50%"
+        },
+        "h2h": {
+          "home": "50%",
+          "away": "50%"
+        },
+        "goals": {
+          "home": "55%",
+          "away": "45%"
+        },
+        "total": {
+          "home": "55%",
+          "away": "45%"
+        }
+      },
+      "h2h": [
+        {
+          "fixture": {
+            "id": 1400001,
+            "referee": "Fábio Veríssimo, Portugal",
+            "timezone": "UTC",
+            "date": "2026-05-06T20:00:00+00:00",
+            "timestamp": 1778097600,
+            "periods": {
+              "first": 1778097600,
+              "second": 1778101200
+            },
+            "venue": {
+              "id": 1,
+              "name": "Estádio José Alvalade",
+              "city": "Lisboa"
+            },
+            "status": {
+              "long": "Match Finished",
+              "short": "FT",
+              "elapsed": 90,
+              "extra": null
+            }
+          },
+          "league": {
+            "id": 94,
+            "name": "Primeira Liga",
+            "country": "Portugal",
+            "logo": "https://media.api-sports.io/football/leagues/94.png",
+            "flag": "https://media.api-sports.io/flags/pt.svg",
+            "season": 2026,
+            "round": "Regular Season - 12"
+          },
+          "teams": {
+            "home": {
+              "id": 228,
+              "name": "Sporting CP",
+              "logo": "https://media.api-sports.io/football/teams/228.png",
+              "winner": null
+            },
+            "away": {
+              "id": 211,
+              "name": "Benfica",
+              "logo": "https://media.api-sports.io/football/teams/211.png",
+              "winner": null
+            }
+          },
+          "goals": {
+            "home": 1,
+            "away": 1
+          },
+          "score": {
+            "halftime": {
+              "home": 0,
+              "away": 1
+            },
+            "fulltime": {
+              "home": 1,
+              "away": 1
+            },
+            "extratime": {
+              "home": null,
+              "away": null
+            },
+            "penalty": {
+              "home": null,
+              "away": null
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
