@@ -13,6 +13,8 @@ const MAP: Record<string, string> = {
   divider: 'divider',
   primary: 'primary',
   white: 'white',
+  black: 'black',
+  positionCircle: 'positionCircle',
   textMuted: 'muted',
   textDisabled: 'disabled',
   cardYellow: 'yellow',

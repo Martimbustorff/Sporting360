@@ -17,8 +17,12 @@ export const colors = {
   // Brand
   primary: '#00835B', // titles, round badge (J16), "VERDE", button text
   white: '#FFFFFF',
+  black: '#000000', // text on light sheet (Figma 564:6981)
   textMuted: 'rgba(255, 255, 255, 0.7)', // dates under the round badge
   textDisabled: 'rgba(255, 255, 255, 0.4)', // inactive tabs
+
+  // Ranking position circle (Figma 500:29423)
+  positionCircle: '#FFF068',
 
   // Match events
   cardYellow: '#F7CF46',
@@ -51,6 +55,11 @@ export const type = {
   // Text field (Figma 564:6907 / 564:6938)
   fieldPlaceholder: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
   fieldLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
+  menuRow: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' }, // Figma 564:7096
+  sheetTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.black, textTransform: 'uppercase' }, // Figma 564:6981
+  sheetTitleOpen: { fontFamily: fonts.display, fontSize: 24, color: colors.primary, textTransform: 'uppercase' }, // Figma 564:7119
+  newsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
+  newsMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
 } as const;
 
@@ -68,7 +77,7 @@ export const radius = {
   sm: 4, // score boxes
   md: 8, // section bars, tab bar
   pill: 16, // round badge, event icons
-  sheet: 32, // GameBox bottom sheet
+  sheet: 48, // GameBox bottom sheet, top corners (Figma 564:6981 / 564:7119)
   hairline: 1, // tab underline ends (Figma 500:28818)
   line: 23, // text field underline (Figma 564:6913)
   button: 52, // primary / secondary buttons (Figma 564:7259), fully round at 51px height
@@ -112,5 +121,20 @@ export const layout = {
   cardRadius: 2,
   cardRotation: '9.07deg',
   subIcon: { width: 16, height: 18 }, // substitution arrows (Figma 655:31919)
+  menuRowIcon: 24, // Figma 564:7096 (icon and arrow)
+  menuRowGap: 16,
+  sheetPadXCollapsed: 40, // Figma 564:6981
+  sheetPadYCollapsed: 38,
+  sheetPadXOpen: 24, // Figma 564:7119
+  sheetPadYOpen: 32,
+  sheetChevron: 24,
+  sheetVelocity: 500, // px/s: a flick is enough to toggle
+  sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
+  // SEM FIGMA: news card and ranking row (built from tokens)
+  newsImage: { width: 96, height: 72 },
+  newsGap: 12,
+  positionCircle: 26, // Figma 500:29423
+  rankingRowMinHeight: 44,
+  avatarSize: 32,
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
 } as const;
