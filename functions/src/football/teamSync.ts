@@ -76,8 +76,14 @@ async function coachId(d: FootballDeps): Promise<string | null> {
   return currentCoach(await d.api.coachs(SPORTING_TEAM_ID))?.id.toString() ?? null;
 }
 
-function currentCoach<C extends { id: number; career: { team: { id: number }; end: string | null }[] }>(coachs: C[]): C | null {
-  return coachs.find((c) => c.career.some((k) => sportingId(k.team.id) && !k.end)) ?? null;
+const openStart = (c: { career: { team: { id: number }; start: string | null; end: string | null }[] }): string =>
+  c.career.filter((k) => sportingId(k.team.id) && !k.end).reduce((m, k) => ((k.start ?? "") > m ? (k.start ?? "") : m), "");
+
+/** Treinador com entrada aberta no 228; em caso de várias, a de `start` mais recente. */
+function currentCoach<C extends { id: number; career: { team: { id: number }; start: string | null; end: string | null }[] }>(coachs: C[]): C | null {
+  const open = coachs.filter((c) => c.career.some((k) => sportingId(k.team.id) && !k.end));
+  if (open.length === 0) return null;
+  return open.reduce((best, c) => (openStart(c) > openStart(best) ? c : best));
 }
 
 /** Plantel, treinador, estatísticas de jogadores e de equipa por competição, lesões. */
@@ -216,6 +222,7 @@ export async function syncTeamWeekly(d: FootballDeps): Promise<Out> {
         const items = [];
         for (const p of res) {
           for (const t of p.transfers) {
+            if (!sportingId(t.teams.in.id) && !sportingId(t.teams.out.id)) continue;
             if (!(Date.parse(t.date) >= sinceTs)) continue;
             items.push({
               playerId: String(p.player.id),
@@ -309,7 +316,7 @@ export async function syncTeamWeekly(d: FootballDeps): Promise<Out> {
           for (const id of batch) byPlayer[id] = [];
           for (const row of r) {
             const id = row.id !== undefined ? String(row.id) : batch.length === 1 ? batch[0] : null;
-            if (id === null) continue;
+            if (id === null || !batch.includes(id)) continue;
             byPlayer[id] = row.sidelined.map((s) => ({ type: s.type, start: s.start, end: s.end ?? null }));
           }
         };

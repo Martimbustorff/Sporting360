@@ -94,6 +94,19 @@ describe("syncTeamDaily", () => {
     expect(first.rating).toBe(7.02);
   });
 
+  it("treinador: com duas entradas abertas no 228 vence o start mais recente", async () => {
+    await seedLeague();
+    const co = load("coachs-228.json");
+    const old = JSON.parse(JSON.stringify(co.response[0]));
+    old.id = 4002;
+    old.name = "Interino";
+    old.career[0].start = "2025-01-01";
+    co.response.unshift(old);
+    const routes = dailyRoutes().map((x) => (/coachs/.test(String(x[0])) ? ([x[0], co] as [RegExp, object]) : x));
+    await syncTeamDaily(deps(fakeFetch(routes)));
+    expect(await get("coach")).toMatchObject({ id: "4001", since: "2026-01-01" });
+  });
+
   it("lesões: só os próximos 14 dias e os últimos 3", async () => {
     await seedLeague();
     const inj = load("injuries-team.json");
@@ -153,13 +166,21 @@ describe("syncTeamWeekly", () => {
     await syncTeamDaily(deps(fakeFetch(dailyRoutes())));
   }
 
-  it("transferências das últimas 2 épocas com o emblema novo do 228", async () => {
+  it("transferências: só as do 228 das últimas 2 épocas, com o emblema novo", async () => {
     await seedLeague();
     await seedSquadAndCoach();
-    const f = fakeFetch(weeklyRoutes());
+    const tr = load("transfers-228.json");
+    const mk = (id: number, date: string, inId: number, outId: number) => ({
+      player: { id, name: `P${id}` },
+      update: date,
+      transfers: [{ date, type: "Free", teams: { in: { id: inId, name: "A", logo: "x" }, out: { id: outId, name: "B", logo: "x" } } }],
+    });
+    tr.response.push(mk(9003, "2024-01-10", 228, 500), mk(9004, "2026-09-01", 600, 700));
+    const f = fakeFetch([[/transfers/, tr], ...weeklyRoutes().slice(1)] as Array<[RegExp, never]>);
     await syncTeamWeekly(deps(f));
     const t = (await get("transfers"))!.items;
     expect(t).toHaveLength(2);
+    expect(t.map((x: { playerId: string }) => x.playerId)).toEqual(["9001", "9002"]);
     expect(t[0]).toMatchObject({ playerId: "9001", direction: "in", date: "2026-08-29" });
     expect(t[0].in.logo).toBe(SPORTING_CREST_URL);
     expect(t[1].out.logo).toBe(SPORTING_CREST_URL);
@@ -201,5 +222,36 @@ describe("syncTeamWeekly", () => {
     expect(info).toHaveBeenCalledWith(expect.stringMatching(/troféus, 32 chamadas/));
     expect((await get("trophies"))!.byPlayer["5029"]).toHaveLength(2);
     expect((await get("sidelined"))!.byPlayer["5029"]).toEqual([{ type: "Flu", start: "2026-11-01", end: null }]);
+  });
+
+  it("troféus sem `player` num lote múltiplo: cai para uma chamada por jogador, com atribuição certa", async () => {
+    await seedLeague();
+    await seedSquadAndCoach();
+    const f = fakeFetch([
+      [/transfers/, "api-football/transfers-228.json"],
+      [/trophies\?coach=4001/, "api-football/trophies.json"],
+      [/trophies\?players=\d+-/, "api-football/trophies.json"],
+      [/trophies\?players=5003$/, "api-football/trophies.json"],
+      [/trophies\?players=\d+$/, envelope([])],
+      [/sidelined/, "api-football/sidelined.json"],
+    ]);
+    await syncTeamWeekly(deps(f));
+    expect(f.calls.filter((u) => /trophies\?players=\d+-/.test(u))).toHaveLength(2);
+    expect(f.calls.filter((u) => /trophies\?players=\d+$/.test(u))).toHaveLength(30);
+    const by = (await get("trophies"))!.byPlayer;
+    expect(by["5003"]).toHaveLength(2);
+    expect(by["5004"]).toEqual([]);
+  });
+
+  it("sidelined: ignora linhas com id fora do lote", async () => {
+    await seedLeague();
+    await seedSquadAndCoach();
+    const sd = load("sidelined.json");
+    sd.response.push({ id: 99999, sidelined: [{ type: "X", start: "2026-01-01", end: null }] });
+    const f = fakeFetch([...weeklyRoutes().filter((x) => !/sidelined/.test(String(x[0]))), [/sidelined/, sd]] as Array<[RegExp, never]>);
+    await syncTeamWeekly(deps(f));
+    const by = (await get("sidelined"))!.byPlayer;
+    expect(by["99999"]).toBeUndefined();
+    expect(by["5007"]).toHaveLength(1);
   });
 });
