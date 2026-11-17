@@ -13,3 +13,10 @@
 - Jogo: estádio com foto e capacidade; árbitro.
 - Outras modalidades: API-Sports de andebol, voleibol e basquetebol (calendário, resultados, classificações). Futsal e hóquei com outras fontes.
 - Odds: não (excluído).
+
+## Cartão de prognóstico partilhável (17/11, 21:07)
+- Recuperar o cartão "S360 MATCHDAY" (competição, jornada, data, emblemas, prognóstico, #JogoAJogoLadoALado, "Partilha o teu prognóstico") com o design do Figma.
+- Partilha = imagem + texto com link. A V2 atual só partilha a imagem (expo-sharing não leva texto); usar react-native-share (imagem e mensagem juntas).
+- Link único (ex.: página no Firebase Hosting) que deteta o sistema e abre a App Store ou a Google Play; se a app já estiver instalada, abre o jogo (universal links / app links). Firebase Dynamic Links já não existe.
+- Link ou QR curto também desenhado no próprio cartão, porque algumas apps (ex. Instagram stories, WhatsApp em certos casos) largam o texto.
+- Medir: parâmetro de origem no link (ex. ?src=share&game=...) para saber quantos downloads vêm das partilhas.
