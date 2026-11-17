@@ -168,6 +168,21 @@ describe("eliminatórias e vista", () => {
     expect((await db.doc(key(94)).get()).data()!.view).toMatchObject({ primary: "table", hasTable: true, hasBracket: false, currentStage: "J12" });
   });
 
+  it("2: competição acabada (tudo final) fica no quadro", async () => {
+    const done = load("fixtures-ucl-2.json");
+    for (const f of done.response) {
+      f.fixture.status = { long: "Match Finished", short: "FT", elapsed: 90, extra: null };
+      f.goals = { home: 1, away: 0 };
+      f.score.fulltime = { home: 1, away: 0 };
+      f.score.penalty = { home: null, away: null };
+      f.score.extratime = { home: null, away: null };
+    }
+    await refreshStandings(deps(fakeFetch([[/standings/, "api-football/standings-2.json"]])), 2, "2026");
+    const f = fakeFetch([[/fixtures\/rounds\?league=2&/, envelope(["League Stage - 8", "Knockout Round Play-offs", "Round of 16"])], [/fixtures\?league=2&season=2026$/, done], [/players\/top/, "api-football/topscorers-94.json"]]);
+    await refreshCompetition(deps(f), 2, "2026");
+    expect((await db.doc(`competitions/football_2_2026`).get()).data()!.view).toMatchObject({ primary: "bracket", currentStage: null });
+  });
+
   it("2: tabela da fase de liga e play-off/oitavos no quadro; a vista passa a quadro", async () => {
     await refreshStandings(deps(fakeFetch([[/standings/, "api-football/standings-2.json"]])), 2, "2026");
     await refreshCompetition(deps(fakeFetch(uclRoutes())), 2, "2026");

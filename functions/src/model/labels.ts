@@ -77,7 +77,8 @@ export function roundLabel(raw: string | null, type: CompetitionType): string | 
   if ((m = t.match(/^(\d+)\s*[.ªa]?\s*jornada$/i)) || (m = t.match(/^jornada\s*(\d+)$/i))) return `J${m[1]}`;
 
   if ((m = t.match(/^round of (\d+)$/i))) return avos(Number(m[1]) / 2);
-  if ((m = t.match(/^1\/(\d+)\s*(?:de\s*)?final$/i))) return avos(Number(m[1]));
+  if ((m = t.match(/^1\/(\d+)[\s-]*(?:de\s*)?finals?$/i))) return avos(Number(m[1]));
+  if ((m = t.match(/^(\d+)(?:st|nd|rd|th)\s+finals?$/i))) return avos(Number(m[1]));
   if ((m = t.match(/^(\d+)\s*avos\s*(?:de\s*)?final$/i))) return avos(Number(m[1]));
 
   if (/^quarter[- ]?finals?$/i.test(t) || /^quartos[- ]de[- ]final$/i.test(t)) return "Quartos de final";

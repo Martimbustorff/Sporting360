@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { SPORTING_CREST_URL } from "../../src/config/brand";
-import { buildBracket, competitionView, stageOf, toFixtureItems } from "../../src/football/bracket";
+import { logger } from "firebase-functions";
+import { buildBracket, classifyRound, competitionView, stageOf, toFixtureItems } from "../../src/football/bracket";
 import type { AfFixtureCore } from "../../src/sources/apiFootball.types";
 
 const FIX = path.join(__dirname, "..", "fixtures", "api-football");
@@ -20,7 +21,13 @@ describe("stageOf", () => {
     ["Quarter-finals", "knockout"],
     ["Semi-finals", "knockout"],
     ["Final", "knockout"],
-    ["Preliminary Round", null],
+    ["Preliminary Round", "knockout"],
+    ["1st Qualifying Round", "knockout"],
+    ["Qualifying Round", "knockout"],
+    ["8th Finals", "knockout"],
+    ["16th Finals", "knockout"],
+    ["1/8-finals", "knockout"],
+    ["1/16-finals", "knockout"],
     ["Qualificação", null],
     [null, null],
   ])("%s -> %s", (raw, expected) => {
@@ -108,5 +115,53 @@ describe("competitionView", () => {
   });
   it("sem ronda atual e com tabela: tabela", () => {
     expect(competitionView("league", null, true, false)).toMatchObject({ primary: "table", currentStage: null });
+  });
+});
+
+describe("classifyRound (rede de segurança)", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("taça: qualquer ronda não reconhecida é eliminatória, com aviso uma só vez", () => {
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    expect(classifyRound("Fase Estranha X1", "cup", [])).toBe("knockout");
+    expect(classifyRound("Fase Estranha X1", "cup", [])).toBe("knockout");
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+  it("supertaça: idem", () => {
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    expect(classifyRound("Fase Estranha X2", "supercup", [])).toBe("knockout");
+  });
+  it("europeia: depois da última ronda de tabela é eliminatória, antes não", () => {
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const order = ["Fase Estranha X3", "League Stage - 8", "Fase Estranha X4"];
+    expect(classifyRound("Fase Estranha X4", "europe", order)).toBe("knockout");
+    expect(classifyRound("Fase Estranha X3", "europe", order)).toBeNull();
+  });
+  it("liga: ronda não reconhecida fica null; ronda reconhecida não avisa", () => {
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    expect(classifyRound("Fase Estranha X5", "league", [])).toBeNull();
+    warn.mockClear();
+    expect(classifyRound("8th Finals", "cup", [])).toBe("knockout");
+    expect(warn).not.toHaveBeenCalled();
+  });
+  it("buildBracket com ronda desconhecida numa taça inclui-a", () => {
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const fx = load("fixtures-cup-96.json");
+    fx[0].league.round = "Fase Estranha X6";
+    const b = buildBracket(toFixtureItems(fx, "cup"), [], "cup");
+    expect(b.stages.map((s) => s.raw)).toContain("Fase Estranha X6");
+  });
+});
+
+describe("competitionView, casos de fronteira", () => {
+  const rounds = ["League Stage - 8", "Knockout Round Play-offs", "Round of 16"];
+  it("competição acabada (sem ronda atual) com última ronda de eliminatória: quadro", () => {
+    expect(competitionView("europe", null, true, true, rounds)).toMatchObject({ primary: "bracket", currentStage: null });
+  });
+  it("competição acabada com última ronda de tabela: tabela", () => {
+    expect(competitionView("league", null, true, false, ["Regular Season - 1", "Regular Season - 2"]).primary).toBe("table");
+  });
+  it("sem tabela e sem eliminatórias: tabela com hasTable false", () => {
+    expect(competitionView("cup", null, false, false)).toEqual({ primary: "table", hasTable: false, hasBracket: false, currentStage: null });
   });
 });

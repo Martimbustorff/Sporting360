@@ -185,8 +185,8 @@ export async function refreshCompetition(d: FootballDeps, leagueId: number, seas
     const std = await d.db.doc(`competitions/${key}/data/standings`).get();
     const groups = (std.get("groups") ?? []) as { rows?: unknown[] }[];
     const hasTableRows = groups.some((g) => (g.rows?.length ?? 0) > 0) || items.some((i) => stageOf(i.round) === "table");
-    const bracket = buildBracket(items, rounds);
-    const view = competitionView(label.type, current, hasTableRows, bracket.stages.length > 0);
+    const bracket = buildBracket(items, rounds, label.type);
+    const view = competitionView(label.type, current, hasTableRows, bracket.stages.length > 0, rounds);
     writes.push({ path: `competitions/${key}`, data: { ...competitionDoc(leagueId, rawName, fixtures[0].league.logo ?? null), view }, merge: true });
     writes.push({ path: `competitions/${key}/data/fixtures`, data: { items } });
     if (bracket.stages.length > 0) writes.push({ path: `competitions/${key}/data/bracket`, data: bracket });

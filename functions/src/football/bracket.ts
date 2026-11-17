@@ -1,3 +1,4 @@
+import { logger } from "firebase-functions";
 import { crestFor } from "../config/brand";
 import type { GameStatus } from "../game/types";
 import { roundLabel } from "../model/labels";
@@ -57,9 +58,35 @@ export function stageOf(rawRound: string | null): Stage | null {
     /^\d+(?:st|nd|rd|th)\s+round$/i.test(t) ||
     /^(?:knockout round )?play-?offs?$/i.test(t) ||
     /^(?:quarter|semi)[- ]?finals?$/i.test(t) ||
-    /^final$/i.test(t)
+    /^final$/i.test(t) ||
+    /^\d+(?:st|nd|rd|th)\s+finals?$/i.test(t) ||
+    /^1\/\d+[\s-]*finals?$/i.test(t) ||
+    /^(?:(?:\d+(?:st|nd|rd|th)\s+)?qualifying|preliminary) round$/i.test(t)
   ) {
     return "knockout";
+  }
+  return null;
+}
+
+const warned = new Set<string>();
+
+/**
+ * `stageOf` com rede de segurança para rondas que não se reconhecem: numa taça ou supertaça é
+ * eliminatória; numa europeia é eliminatória se vier depois (pela ordem da API) da última ronda de
+ * tabela. Avisa uma vez por ronda não reconhecida.
+ */
+export function classifyRound(raw: string | null, type: CompetitionType, order: string[]): Stage | null {
+  if (raw === null) return null;
+  const strict = stageOf(raw);
+  if (strict) return strict;
+  if (!warned.has(raw)) {
+    warned.add(raw);
+    logger.warn(`ronda não reconhecida: "${raw}" (${type})`);
+  }
+  if (type === "cup" || type === "supercup") return "knockout";
+  if (type === "europe") {
+    const lastTable = order.reduce((acc, r, i) => (stageOf(r) === "table" ? i : acc), -1);
+    if (lastTable >= 0 && order.indexOf(raw) > lastTable) return "knockout";
   }
   return null;
 }
@@ -138,10 +165,11 @@ function buildTie(stage: string, legs: FixtureItem[]): Tie {
  * estiverem seguem pela data do primeiro jogo. As duas mãos de uma eliminatória (mesmo par de equipas
  * na mesma etapa) ficam numa só `Tie`.
  */
-export function buildBracket(items: FixtureItem[], rawRounds: string[] = []): Bracket {
+export function buildBracket(items: FixtureItem[], rawRounds: string[] = [], type: CompetitionType = "league"): Bracket {
+  const order = rawRounds.length > 0 ? rawRounds : [...new Set([...items].sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime()).map((i) => i.round))];
   const byStage = new Map<string, FixtureItem[]>();
   for (const it of items) {
-    if (stageOf(it.round) !== "knockout") continue;
+    if (classifyRound(it.round, type, order) !== "knockout") continue;
     const list = byStage.get(it.round) ?? [];
     list.push(it);
     byStage.set(it.round, list);
@@ -172,8 +200,13 @@ export function buildBracket(items: FixtureItem[], rawRounds: string[] = []): Br
 
 export type CompetitionView = { primary: "table" | "bracket"; hasTable: boolean; hasBracket: boolean; currentStage: string | null };
 
-/** `bracket` quando a ronda atual é de eliminatória ou não há linhas de tabela; senão `table`. */
-export function competitionView(type: CompetitionType, currentRaw: string | null, hasTableRows: boolean, hasKnockout: boolean): CompetitionView {
-  const primary = stageOf(currentRaw) === "knockout" || !hasTableRows ? "bracket" : "table";
+/**
+ * `bracket` só havendo eliminatórias, e quando a ronda atual é de eliminatória, não há linhas de
+ * tabela, ou a competição acabou (sem ronda atual) e a última ronda é de eliminatória. Senão `table`.
+ */
+export function competitionView(type: CompetitionType, currentRaw: string | null, hasTableRows: boolean, hasKnockout: boolean, rounds: string[] = []): CompetitionView {
+  const cur = classifyRound(currentRaw, type, rounds);
+  const finishedInKnockout = currentRaw === null && rounds.length > 0 && classifyRound(rounds[rounds.length - 1], type, rounds) === "knockout";
+  const primary = hasKnockout && (cur === "knockout" || !hasTableRows || finishedInKnockout) ? "bracket" : "table";
   return { primary, hasTable: hasTableRows, hasBracket: hasKnockout, currentStage: roundLabel(currentRaw, type) };
 }
