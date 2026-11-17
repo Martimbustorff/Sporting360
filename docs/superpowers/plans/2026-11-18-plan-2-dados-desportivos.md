@@ -478,7 +478,7 @@ As fixtures deste passo seguem a forma documentada da API-Football v3 (copiar a 
 
 **Files:**
 - Create: `functions/src/football/liveTicker.ts`
-- Modify: `functions/src/index.ts` (`footballLiveTicker`: "every 1 minutes", `timeoutSeconds: 75`, `maxInstances: 1`, `retryCount: 0`, `secrets: [RAPIDAPI_KEY]`)
+- Modify: `functions/src/football/competitionSync.ts` (extrair `refreshCompetition`), `functions/src/index.ts` (`footballLiveTicker`: "every 1 minutes", `timeoutSeconds: 75`, `maxInstances: 1`, `retryCount: 0`, `secrets: [RAPIDAPI_KEY]`)
 - Test: `functions/test/unit/livePhase.test.ts`, `functions/test/emulator/liveTicker.test.ts`
 
 **Interfaces:**
@@ -491,6 +491,7 @@ As fixtures deste passo seguem a forma documentada da API-Football v3 (copiar a 
     - algum `live` → até 4 iterações alinhadas a 0, 15, 30 e 45 s desde o início da invocação, cada uma com **uma** chamada `fixturesByIds` com todos os ids ativos (prematch e postmatch incluídos na mesma chamada), `mapFixture(..., { observedLive: true })`, `legacyFromFixture` e `saveMatch`; para quando nenhum jogo continua `live` ou quando passaram 50 s;
     - só `prematch`, `postmatch` ou `ratings` → uma iteração;
     - na primeira iteração de um minuto múltiplo de 15, para cada jogo `live`, `refreshStandings(leagueId, season)` se a competição não for `friendly`.
+    - **fim de jogo do Sporting (Martim, 17/11):** na iteração em que um jogo passa a final (`FT`/`AET`/`PEN`), e outra vez quando sai de `postmatch` (`finishedAt + 25 min`, para apanhar o atraso da API), `refreshStandings(leagueId, season)` e `refreshCompetition(d, leagueId, season)` (rondas, calendário e, se liga/europa, os 4 tops) dessa competição, se não for `friendly`. `refreshCompetition` é extraída de `syncCompetitions` em `competitionSync.ts` (que passa a chamá-la por competição). Custo ≈14 chamadas por jogo.
   - Constantes `LIVE_INTERVAL_MS = 15_000`, `LIVE_ITERATIONS = 4`, `PREMATCH_LEAD_MS = 75 * 60_000`, `POSTMATCH_TAIL_MS = 25 * 60_000`, `RATINGS_REFRESH_MIN = [30, 60, 110]`.
 
 - [ ] **Step 1: Testes unitários de `phaseFor`:** NS a 80 min → idle; NS a 70 min → prematch; NS 5 min depois do kickoff → live; `HT` → live; `FT` com `finishedAt` há 10 min → postmatch; há 30 min → ratings; há 31 min → idle; `PST` com kickoff há 10 min → idle.
@@ -502,6 +503,7 @@ As fixtures deste passo seguem a forma documentada da API-Football v3 (copiar a 
   - **Review Focus 2:** a meio do jogo a API devolve `errors-ratelimit.json` → os detalhes existentes ficam, `ingestHealth/football_live.consecutiveFailures === 1`, e a iteração seguinte continua.
   - Jogo `NS` a 60 min do início → 1 chamada; com lineups na resposta → `details/lineups` e `lineups/*` escritos.
   - Minuto :15 com jogo `live` da liga 94 → 1 chamada extra de `standings`.
+  - Jogo da liga 94 passa de `2H` a `FT` → nessa iteração 1 chamada de `standings` + rondas, calendário e 4 tops da liga 94; `competitions/football_94_2026/data/standings` atualizado. Taça a terminar → standings e calendário, sem tops. Aos `finishedAt + 25 min` → repete uma vez; aos 26 não repete.
   - Jogo `PST` → 0 chamadas.
 - [ ] **Step 3:** `npm test -- livePhase && npm run test:emulator -- liveTicker`. Esperado: falha.
 - [ ] **Step 4:** Implementar e exportar.
