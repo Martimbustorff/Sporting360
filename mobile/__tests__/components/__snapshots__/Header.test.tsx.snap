@@ -1,34 +1,60 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`Header snapshot (default) 1`] = `
-<View
-  className="w-full overflow-hidden"
+<RNCSafeAreaProvider
+  onInsetsChange={[Function]}
   style={
-    {
-      "height": 96,
-    }
+    [
+      {
+        "flex": 1,
+      },
+      undefined,
+    ]
   }
 >
   <View
+    className="w-full overflow-hidden"
     style={
-      [
-        {
-          "backgroundColor": "transparent",
-        },
-        {
-          "bottom": 0,
-          "left": 0,
-          "position": "absolute",
-          "right": 0,
-          "top": 0,
-        },
-      ]
+      {
+        "height": 99,
+      }
     }
+    testID="header"
   >
-    <ViewManagerAdapter_ExpoBlur
-      blurMethod="none"
-      blurReductionFactor={4}
-      intensity={15}
+    <View
+      style={
+        [
+          {
+            "backgroundColor": "transparent",
+          },
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+          },
+        ]
+      }
+    >
+      <ViewManagerAdapter_ExpoBlur
+        blurMethod="none"
+        blurReductionFactor={4}
+        intensity={15}
+        style={
+          {
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+          }
+        }
+        tint="dark"
+      />
+    </View>
+    <View
+      className="bg-s360-header"
       style={
         {
           "bottom": 0,
@@ -38,73 +64,63 @@ exports[`Header snapshot (default) 1`] = `
           "top": 0,
         }
       }
-      tint="dark"
-    />
-  </View>
-  <View
-    className="bg-s360-header"
-    style={
-      {
-        "bottom": 0,
-        "left": 0,
-        "position": "absolute",
-        "right": 0,
-        "top": 0,
-      }
-    }
-  />
-  <View
-    className="absolute inset-x-0 bottom-0 flex-row items-center justify-between"
-    style={
-      {
-        "paddingBottom": 13,
-        "paddingHorizontal": 20,
-      }
-    }
-  >
-    <View
-      style={
-        {
-          "height": 24,
-          "width": 24,
-        }
-      }
     />
     <View
-      className="absolute inset-x-0 items-center"
-      pointerEvents="none"
+      className="absolute inset-x-0 bottom-0 flex-row items-center justify-between"
       style={
         {
-          "bottom": 13,
+          "paddingBottom": 13,
+          "paddingHorizontal": 20,
         }
       }
     >
-      <Text
+      <View
         style={
-          [
-            {
-              "color": "#00835B",
-              "fontFamily": "DinCondensedBold",
-              "fontSize": 24,
-              "textTransform": "uppercase",
-            },
-            {
-              "textTransform": "uppercase",
-            },
-            undefined,
-          ]
+          {
+            "height": 24,
+            "width": 24,
+          }
+        }
+      />
+      <View
+        className="absolute inset-x-0 items-center"
+        style={
+          {
+            "bottom": 13,
+            "paddingHorizontal": 44,
+            "pointerEvents": "none",
+          }
         }
       >
-        Nova Conta
-      </Text>
-    </View>
-    <View
-      style={
-        {
-          "minWidth": 24,
+        <Text
+          accessibilityRole="header"
+          numberOfLines={1}
+          style={
+            [
+              {
+                "color": "#00835B",
+                "fontFamily": "DinCondensedBold",
+                "fontSize": 24,
+                "textTransform": "uppercase",
+              },
+              {
+                "textTransform": "uppercase",
+              },
+              undefined,
+            ]
+          }
+        >
+          Nova Conta
+        </Text>
+      </View>
+      <View
+        style={
+          {
+            "minWidth": 24,
+          }
         }
-      }
-    />
+      />
+    </View>
   </View>
-</View>
+</RNCSafeAreaProvider>
 `;

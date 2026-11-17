@@ -13,11 +13,24 @@ exports[`TextField snapshot (default) 1`] = `
     <TextInput
       accessibilityLabel="Email"
       autoCapitalize="none"
-      className="flex-1 py-2 text-s360-white font-body text-[14px]"
+      autoCorrect={false}
+      className="flex-1 text-s360-white"
       onChangeText={[Function]}
       placeholder="Email"
       placeholderTextColor="rgba(255, 255, 255, 0.4)"
       secureTextEntry={false}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "Poppins",
+            "fontSize": 14,
+          },
+          {
+            "paddingVertical": 8,
+          },
+        ]
+      }
       value=""
     />
   </View>

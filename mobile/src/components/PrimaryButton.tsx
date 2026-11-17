@@ -27,11 +27,11 @@ export function PrimaryButton({
       disabled={inactive}
       onPress={onPress}
       className={primary ? 'items-center justify-center bg-s360-white' : 'items-center justify-center border border-s360-white'}
-      style={{
+      style={({ pressed }) => ({
         height: layout.buttonHeight,
         borderRadius: radius.button,
-        opacity: disabled ? 0.5 : 1,
-      }}
+        opacity: disabled ? layout.disabledOpacity : pressed ? layout.pressedOpacity : 1,
+      })}
     >
       {loading ? (
         <View testID="button-loading">

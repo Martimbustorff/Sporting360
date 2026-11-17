@@ -1,4 +1,4 @@
-import { colors, fonts } from '@/theme/tokens';
+import { colors, fonts, layout, radius } from '@/theme/tokens';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -54,7 +54,6 @@ describe('tokens <-> tailwind', () => {
   });
 });
 
-import { layout, radius } from '@/theme/tokens';
 
 describe('component tokens from Figma 564:6950 / 564:7259', () => {
   it('button radius is fully round at button height', () => {
@@ -65,5 +64,12 @@ describe('component tokens from Figma 564:6950 / 564:7259', () => {
     expect(layout.headerRowBottom).toBe(13);
     expect(layout.headerIcon).toBe(24);
     expect(layout.headerSideX).toBe(20);
+    expect(layout.statusBarHeight).toBe(44);
+  });
+  it('interaction tokens', () => {
+    expect(layout.minTouch).toBe(44);
+    expect(layout.tabUnderline).toBe(2);
+    expect(layout.disabledOpacity).toBe(0.5);
+    expect(layout.pressedOpacity).toBe(0.8);
   });
 });

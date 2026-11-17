@@ -25,9 +25,10 @@ exports[`Tabs snapshot (default) 1`] = `
       }
     }
     accessible={true}
-    className="items-center border-b-2 border-s360-primary flex-1"
+    className="items-center justify-center border-s360-primary flex-1"
     collapsable={false}
     focusable={true}
+    hitSlop={11}
     onBlur={[Function]}
     onClick={[Function]}
     onFocus={[Function]}
@@ -39,8 +40,9 @@ exports[`Tabs snapshot (default) 1`] = `
     onStartShouldSetResponder={[Function]}
     style={
       {
+        "borderBottomWidth": 2,
+        "minHeight": 44,
         "paddingHorizontal": 0,
-        "paddingVertical": 8,
       }
     }
   >
@@ -81,9 +83,10 @@ exports[`Tabs snapshot (default) 1`] = `
       }
     }
     accessible={true}
-    className="items-center border-b-2 border-s360-divider flex-1"
+    className="items-center justify-center border-s360-divider flex-1"
     collapsable={false}
     focusable={true}
+    hitSlop={11}
     onBlur={[Function]}
     onClick={[Function]}
     onFocus={[Function]}
@@ -95,8 +98,9 @@ exports[`Tabs snapshot (default) 1`] = `
     onStartShouldSetResponder={[Function]}
     style={
       {
+        "borderBottomWidth": 2,
+        "minHeight": 44,
         "paddingHorizontal": 0,
-        "paddingVertical": 8,
       }
     }
   >

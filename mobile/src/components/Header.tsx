@@ -4,8 +4,9 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Display } from '@/theme/typography';
-import { layout } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
 // Figma 564:6953: chevron para cima rodado -90 graus (seta para a esquerda).
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -20,8 +21,12 @@ export function Header({
   onBack?: () => void;
   right?: ReactNode;
 }) {
+  // Header owns the top inset: the 96px of Figma already include a 44px status bar area;
+  // devices with a taller inset (notch / Dynamic Island) grow the header by the difference.
+  const { top } = useSafeAreaInsets();
+  const height = layout.headerHeight + Math.max(0, top - layout.statusBarHeight);
   return (
-    <View style={{ height: layout.headerHeight }} className="w-full overflow-hidden">
+    <View testID="header" style={{ height }} className="w-full overflow-hidden">
       <BlurView intensity={layout.headerBlur} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={StyleSheet.absoluteFill} className="bg-s360-header" />
       <View
@@ -46,13 +51,17 @@ export function Header({
                   height: layout.headerIcon,
                   transform: [{ rotate: '-90deg' }],
                 }}
+                tintColor={colors.white}
                 accessible={false}
               />
             </Pressable>
           ) : null}
         </View>
-        <View className="absolute inset-x-0 items-center" style={{ bottom: layout.headerRowBottom }} pointerEvents="none">
-          <Display variant="screenTitle">{title}</Display>
+        <View
+          className="absolute inset-x-0 items-center"
+          style={{ bottom: layout.headerRowBottom, pointerEvents: 'none', paddingHorizontal: layout.headerSideX + layout.headerIcon }}
+        >
+          <Display variant="screenTitle" accessibilityRole="header" numberOfLines={1}>{title}</Display>
         </View>
         <View style={{ minWidth: layout.headerIcon }}>{right}</View>
       </View>

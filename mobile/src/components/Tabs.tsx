@@ -2,7 +2,7 @@
 // SEM FIGMA (provisório): tab ativa com sublinhado primary, inativas textDisabled sobre divider; rever contra os nós.
 import { Pressable, ScrollView, View } from 'react-native';
 import { Body } from '@/theme/typography';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, layout, spacing } from '@/theme/tokens';
 
 export function Tabs<K extends string>({
   items,
@@ -23,8 +23,13 @@ export function Tabs<K extends string>({
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
         onPress={() => onChange(it.key)}
-        className={`items-center border-b-2 ${active ? 'border-s360-primary' : 'border-s360-divider'} ${mode === 'equal' ? 'flex-1' : ''}`}
-        style={{ paddingVertical: spacing.sm, paddingHorizontal: mode === 'scroll' ? spacing.md : 0 }}
+        className={`items-center justify-center ${active ? 'border-s360-primary' : 'border-s360-divider'} ${mode === 'equal' ? 'flex-1' : ''}`}
+        hitSlop={layout.minTouch / 4}
+        style={{
+          minHeight: layout.minTouch,
+          borderBottomWidth: layout.tabUnderline,
+          paddingHorizontal: mode === 'scroll' ? spacing.md : 0,
+        }}
       >
         <Body variant="tab" style={{ color: active ? colors.white : colors.textDisabled }}>
           {it.label}

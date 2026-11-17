@@ -77,4 +77,9 @@ export const layout = {
   headerRowBottom: 13, // gap under the title/back row inside the 96px header (Figma 564:6950)
   headerIcon: 24, // back chevron
   headerSideX: 20, // back chevron left offset
+  statusBarHeight: 44, // status bar area included in the 96px header (Figma 564:6950)
+  minTouch: 44, // minimum touch target
+  tabUnderline: 2, // tab underline thickness
+  disabledOpacity: 0.5,
+  pressedOpacity: 0.8,
 } as const;
