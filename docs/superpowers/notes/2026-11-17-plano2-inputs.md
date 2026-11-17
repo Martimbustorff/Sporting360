@@ -24,3 +24,7 @@
 ## Emblema do Sporting (17/11, 21:33)
 - O emblema atual do Sporting é o de 2026 (escudo verde com o leão e "SCP" por cima): `brand/sporting-cp-2026.png` (fonte indicada pelo Martim: assets.football-logos.cc, sporting-cp 512x512).
 - O logo da API-Football para a equipa 228 pode ser o antigo. Plano 2: a ingestão substitui o logo da equipa 228 pelo emblema novo (alojado no Firebase Storage ou Hosting) em `matches`, `teams` e nas coleções antigas. Plano 3/4: a app usa o emblema local sempre que a equipa é o Sporting.
+
+## Leitor GameBox (17/11, 22:07)
+- O cartão GameBox físico tem um QR code. Na V2 o leitor não lê (bugs: `setStop` inexistente no "Corrigir", `onBarcodeScanned` nunca desligado depois da leitura, popups em cadeia). Sem hotfix da V2: corrige-se na app nova (Plano 4, ecrã GameBox).
+- App nova: expo-camera com QR (e, por segurança, code128/EAN/PDF417), parar a leitura depois do primeiro resultado, confirmar o número, retomar se o utilizador corrigir, entrada manual sempre disponível, permissão de câmara em pt-PT, teste em iOS e Android reais.
