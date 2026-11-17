@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { logger } from "firebase-functions";
 import { SPORTING_CREST_URL } from "../../src/config/brand";
 import { estimateFinishedAt, mapFixture } from "../../src/football/mapFixture";
 import type { AfFixture } from "../../src/sources/apiFootball.types";
@@ -62,7 +63,7 @@ describe("mapFixture: jogo", () => {
   it("jogo sem ronda nem estádio conhecido não rebenta", () => {
     const f = load("fixture-ns");
     const g = { ...f, fixture: { ...f.fixture, venue: { id: null, name: null, city: null } } };
-    expect(mapFixture(g, noPrev).match.venue).toBeNull();
+    expect(mapFixture(g, noPrev).match).not.toHaveProperty("venue");
   });
 });
 
@@ -126,15 +127,120 @@ describe("mapFixture: fim do jogo", () => {
 });
 
 describe("mapFixture: penáltis", () => {
+  let warn: jest.SpyInstance;
+  beforeEach(() => { warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined); });
+  afterEach(() => warn.mockRestore());
+
   it("resultado contado inclui prolongamento e exclui penáltis", () => {
     const f = load("fixture-pen");
     const { match } = mapFixture(f, { now: NOW, previous: null, observedLive: false });
     expect(match.status).toBe("PEN");
-    expect(match.score.home).toBe(f.goals.home);
-    expect(match.score.away).toBe(f.goals.away);
+    expect(match.score.home).toBe(2);
+    expect(match.score.away).toBe(2);
+    expect(warn).not.toHaveBeenCalled();
     expect(match.score.penalty).toEqual({ home: 4, away: 3 });
     expect(match.score.extratime).toEqual({ home: 0, away: 0 });
     expect(match.competition.roundLabel).toBe("Quartos de final");
+  });
+});
+
+describe("mapFixture: resultado contado em AET e PEN", () => {
+  let warn: jest.SpyInstance;
+  beforeEach(() => { warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined); });
+  afterEach(() => warn.mockRestore());
+
+  it("AET: fulltime + extratime", () => {
+    const f = load("fixture-et");
+    const g: AfFixture = {
+      ...f,
+      fixture: { ...f.fixture, status: { ...f.fixture.status, short: "AET", elapsed: 120 } },
+      goals: { home: 3, away: 2 },
+      score: { ...f.score, fulltime: { home: 2, away: 2 }, extratime: { home: 1, away: 0 }, penalty: { home: null, away: null } },
+    };
+    const { match } = mapFixture(g, noPrev);
+    expect(match.status).toBe("AET");
+    expect(match.score).toMatchObject({ home: 3, away: 2 });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("PEN com goals a incluir o desempate: conta fulltime + extratime e avisa", () => {
+    const f = load("fixture-pen");
+    const g: AfFixture = {
+      ...f,
+      goals: { home: 6, away: 5 },
+      score: { ...f.score, fulltime: { home: 1, away: 1 }, extratime: { home: 1, away: 1 }, penalty: { home: 4, away: 3 } },
+    };
+    const { match } = mapFixture(g, noPrev);
+    expect(match.score).toMatchObject({ home: 2, away: 2, penalty: { home: 4, away: 3 } });
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("PEN com resultado contado sem empate avisa mas grava", () => {
+    const f = load("fixture-pen");
+    const g: AfFixture = {
+      ...f,
+      goals: { home: 3, away: 2 },
+      score: { ...f.score, fulltime: { home: 2, away: 2 }, extratime: { home: 1, away: 0 } },
+    };
+    expect(mapFixture(g, noPrev).match.score).toMatchObject({ home: 3, away: 2 });
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("mapFixture: pormenores", () => {
+  let warn: jest.SpyInstance;
+  beforeEach(() => { warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined); });
+  afterEach(() => warn.mockRestore());
+
+  it("kickoff vem de timestamp; sem timestamp usa date", () => {
+    const f = load("fixture-ns");
+    expect(mapFixture(f, noPrev).match.kickoff).toEqual(new Date(f.fixture.timestamp * 1000));
+    const g = { ...f, fixture: { ...f.fixture, timestamp: undefined as unknown as number } };
+    expect(mapFixture(g, noPrev).match.kickoff).toEqual(new Date(f.fixture.date));
+    const bad = { ...f, fixture: { ...f.fixture, timestamp: undefined as unknown as number, date: "lixo" } };
+    expect(() => mapFixture(bad, noPrev)).toThrow(/data de início/);
+  });
+
+  it("aviso quando nenhuma equipa é a 228", () => {
+    const f = load("fixture-ns");
+    const g: AfFixture = { ...f, teams: { home: { ...f.teams.home, id: 1 }, away: { ...f.teams.away, id: 2 } } };
+    expect(mapFixture(g, noPrev).match.sportingSide).toBe("away");
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("AET sem histórico: estimativa soma 35 min", () => {
+    const f = load("fixture-et");
+    const g: AfFixture = { ...f, fixture: { ...f.fixture, status: { ...f.fixture.status, short: "AET", elapsed: 120 } } };
+    const { match } = mapFixture(g, { now: new Date("2026-11-23T09:00:00Z"), previous: null, observedLive: false });
+    expect(match.finishedAt).toEqual(new Date((f.fixture.periods.second! + 85 * 60) * 1000));
+    expect(match.finishedAtSource).toBe("estimated");
+  });
+
+  it("FT -> LIVE -> FT: nova observação define novo finishedAt", () => {
+    const ft = load("fixture-ft");
+    const live = mapFixture(load("fixture-live-2h"), {
+      now: NOW,
+      previous: { status: "FT", finishedAt: new Date("2026-11-22T22:00:00Z"), finishedAtSource: "estimated" },
+      observedLive: false,
+    }).match;
+    expect(live.finishedAt).toBeNull();
+    const again = mapFixture(ft, {
+      now: NOW,
+      previous: { status: live.status, finishedAt: live.finishedAt, finishedAtSource: live.finishedAtSource },
+      observedLive: true,
+    }).match;
+    expect(again.finishedAt).toEqual(NOW);
+    expect(again.finishedAtSource).toBe("observed");
+  });
+
+  it("rating não string não rebenta", () => {
+    const f = load("fixture-ft");
+    const p = f.players[0].players[0];
+    const g: AfFixture = {
+      ...f,
+      players: [{ ...f.players[0], players: [{ ...p, statistics: [{ ...p.statistics[0], games: { ...p.statistics[0].games, rating: 7.1 as unknown as string } }] }] }],
+    };
+    expect(mapFixture(g, noPrev).details.players!.teams[0].players[0].rating).toBe(7.1);
   });
 });
 

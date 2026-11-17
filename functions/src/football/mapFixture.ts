@@ -1,3 +1,4 @@
+import { logger } from "firebase-functions";
 import { SPORTING_TEAM_ID, crestFor } from "../config/brand";
 import { competitionKey, competitionLabel, roundLabel } from "../model/labels";
 import { FINAL_STATUSES, LIVE_STATUSES, footballStatus } from "../model/status";
@@ -97,10 +98,39 @@ function finish(f: AfFixture, status: MatchDoc["status"], ctx: MapContext): Pick
   if (!FINAL_STATUSES.has(status)) return { finishedAt: null, finishedAtSource: null };
   const prev = ctx.previous;
   if (prev?.finishedAt) return { finishedAt: prev.finishedAt, finishedAtSource: prev.finishedAtSource ?? "estimated" };
+  // Se o jogo só foi visto como final por um cálculo do calendário, "observed" pode chegar tarde (hora desse cálculo).
   if (ctx.observedLive || (prev !== null && LIVE_STATUSES.has(prev.status))) {
     return { finishedAt: ctx.now, finishedAtSource: "observed" };
   }
   return { finishedAt: estimateFinishedAt(f, ctx.now), finishedAtSource: "estimated" };
+}
+
+/**
+ * Resultado que conta. Em AET/PEN é tempo regulamentar + prolongamento (nunca os penáltis); se a API
+ * trouxer `goals` diferente disso, prevalece a soma e fica um aviso. Em PEN um resultado contado não
+ * empatado também avisa (a liquidação usa os golos tal como estão).
+ */
+function countedScore(f: AfFixture, status: MatchDoc["status"]): { home: number | null; away: number | null } {
+  const goals = { home: f.goals.home ?? null, away: f.goals.away ?? null };
+  if (status !== "AET" && status !== "PEN") return goals;
+  const ft = f.score.fulltime;
+  const et = f.score.extratime;
+  if (ft?.home == null || ft.away == null || et?.home == null || et.away == null) return goals;
+  const counted = { home: ft.home + et.home, away: ft.away + et.away };
+  if (counted.home !== goals.home || counted.away !== goals.away) {
+    logger.warn(`mapFixture: jogo ${f.fixture.id} com goals ${goals.home}-${goals.away} diferente de fulltime+extratime ${counted.home}-${counted.away}; usa-se a soma`);
+  }
+  if (status === "PEN" && counted.home !== counted.away) {
+    logger.warn(`mapFixture: jogo ${f.fixture.id} em PEN com resultado contado ${counted.home}-${counted.away} sem empate`);
+  }
+  return counted;
+}
+
+function kickoffOf(f: AfFixture): Date {
+  const ts = f.fixture.timestamp;
+  const d = typeof ts === "number" && Number.isFinite(ts) ? new Date(ts * 1000) : new Date(f.fixture.date);
+  if (Number.isNaN(d.getTime())) throw new Error(`mapFixture: fixture ${f.fixture.id} sem data de início válida`);
+  return d;
 }
 
 function eventType(t: string): EventItem["type"] {
@@ -149,12 +179,6 @@ function mapLineup(l: AfLineup) {
   };
 }
 
-function rating(v: string | null | undefined): number | null {
-  if (v === null || v === undefined || v.trim() === "") return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
 function num(v: unknown): number {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : 0;
@@ -181,7 +205,7 @@ function mapPlayers(t: AfFixturePlayers) {
         number: s?.games.number ?? null,
         position: s?.games.position ?? null,
         minutes: s?.games.minutes ?? null,
-        rating: rating(s?.games.rating),
+        rating: numOrNull(s?.games.rating),
         goals: num(s?.goals.total),
         assists: num(s?.goals.assists),
         saves: num(s?.goals.saves),
@@ -230,6 +254,10 @@ export function mapFixture(f: AfFixture, ctx: MapContext): { match: MatchDoc; de
   const season = String(f.league.season);
   const label = competitionLabel("football", f.league.id, f.league.name);
   const v = f.fixture.venue;
+  if (f.teams.home.id !== SPORTING_TEAM_ID && f.teams.away.id !== SPORTING_TEAM_ID) {
+    logger.warn(`mapFixture: jogo ${f.fixture.id} sem a equipa ${SPORTING_TEAM_ID}; sportingSide assume "away"`);
+  }
+  const counted = countedScore(f, status);
   const match: MatchDoc = {
     id: String(f.fixture.id),
     sport: "football",
@@ -245,22 +273,21 @@ export function mapFixture(f: AfFixture, ctx: MapContext): { match: MatchDoc; de
     home: teamRef(f.teams.home),
     away: teamRef(f.teams.away),
     sportingSide: f.teams.home.id === SPORTING_TEAM_ID ? "home" : "away",
-    kickoff: new Date(f.fixture.date),
+    kickoff: kickoffOf(f),
     status,
     statusRaw: f.fixture.status.short,
     elapsed: f.fixture.status.elapsed ?? null,
     elapsedExtra: f.fixture.status.extra ?? null,
-    // `goals` já inclui o prolongamento e exclui os penáltis.
     score: {
-      home: f.goals.home ?? null,
-      away: f.goals.away ?? null,
+      home: counted.home,
+      away: counted.away,
       halftime: pair(f.score.halftime),
       extratime: pair(f.score.extratime),
       penalty: pair(f.score.penalty),
     },
     ...finish(f, status, ctx),
-    // Sem capacity/image: são escritos pela Task 11 e o merge preserva-os.
-    venue: v && v.name ? { id: str(v.id), name: v.name, city: v.city ?? null } : null,
+    // Sem capacity/image: são escritos pela Task 11 e o merge preserva-os. Sem nome, o campo omite-se.
+    ...(v && v.name ? { venue: { id: str(v.id), name: v.name, city: v.city ?? null } } : {}),
     referee: f.fixture.referee ?? null,
     source: { provider: "api-football", id: String(f.fixture.id) },
   };

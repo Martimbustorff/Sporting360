@@ -43,7 +43,7 @@ export interface MatchDoc {
   };
   finishedAt: Date | null;
   finishedAtSource: "observed" | "estimated" | null;
-  venue: {
+  venue?: {
     id: string | null;
     name: string;
     city: string | null;
