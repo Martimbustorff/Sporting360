@@ -10,7 +10,8 @@
     "ios": {
       "bundleIdentifier": "com.scp360",
       "supportsTablet": false,
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.scp360",
@@ -38,6 +39,13 @@
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       "@react-native-firebase/app-check",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.394641993263-84tree10asc01anqldkhog14sbqq1k7b"
+        }
+      ],
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {

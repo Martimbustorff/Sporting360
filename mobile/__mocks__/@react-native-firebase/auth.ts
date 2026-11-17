@@ -5,3 +5,21 @@ export const createUserWithEmailAndPassword = jest.fn();
 export const signInWithEmailAndPassword = jest.fn();
 export const sendPasswordResetEmail = jest.fn();
 export const signOut = jest.fn(() => Promise.resolve());
+export const signInWithCredential = jest.fn();
+export const linkWithCredential = jest.fn();
+export const getAdditionalUserInfo = jest.fn(
+  (cred: { additionalUserInfo?: unknown } | null) => cred?.additionalUserInfo ?? null,
+);
+export const GoogleAuthProvider = {
+  PROVIDER_ID: 'google.com',
+  credential: jest.fn((idToken?: string | null) => ({ providerId: 'google.com', token: idToken })),
+};
+export class OAuthProvider {
+  providerId: string;
+  constructor(providerId: string) {
+    this.providerId = providerId;
+  }
+  credential(opts: { idToken?: string; rawNonce?: string }) {
+    return { providerId: this.providerId, token: opts.idToken, secret: opts.rawNonce };
+  }
+}

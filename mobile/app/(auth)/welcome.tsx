@@ -3,12 +3,14 @@
 // passos de 2,5 graus à volta do mesmo centro; gerado a partir do asset da elipse 564:7181, desenhado numa só view.
 // Fundo: no Figma é preto com um verde a 50% por cima (564:7179), que dá o mesmo verde do token bg.
 // R17: com `aviso=conta-apagada` mostra "Conta apagada." (SEM FIGMA: estado não desenhado).
+// Task 14 (SEM FIGMA): botões Google e, só em iOS, Apple, por baixo de "Criar uma conta".
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { SocialButtons } from '@/components/SocialButtons';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -55,6 +57,7 @@ export default function Welcome() {
         {aviso === 'conta-apagada' ? <FormMessage text="Conta apagada." tone="info" /> : null}
         <PrimaryButton label="Entrar" onPress={() => router.push('/entrar')} />
         <PrimaryButton label="Criar uma conta" onPress={() => router.push('/criar-conta')} />
+        <SocialButtons />
       </View>
     </View>
   );

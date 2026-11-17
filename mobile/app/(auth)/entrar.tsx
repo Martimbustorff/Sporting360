@@ -1,9 +1,11 @@
 // Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6896 (05_SignIn, título "Accesso" corrigido para "Acesso").
+// Task 14 (SEM FIGMA): botões Google e, só em iOS, Apple, entre "Entrar" e as ligações.
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthLinkRow, AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { SocialButtons } from '@/components/SocialButtons';
 import { TextField } from '@/components/TextField';
 import { signInEmail } from '@/services/auth';
 import { layout } from '@/theme/tokens';
@@ -46,6 +48,7 @@ export default function Entrar() {
         <>
           {error ? <FormMessage text={error} /> : null}
           <PrimaryButton label="Entrar" onPress={() => void submit()} loading={loading} />
+          <SocialButtons />
           <View style={{ gap: layout.authLinksRowGap }}>
             <AuthLinkRow
               text="Esqueceste-te da password?"

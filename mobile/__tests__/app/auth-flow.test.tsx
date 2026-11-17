@@ -12,10 +12,28 @@ jest.mock('@/services/auth', () => ({
   signUpEmail: jest.fn(),
   sendReset: jest.fn(),
 }));
+// Task 14: botões Google/Apple. O serviço é testado em services/social.test.ts; aqui só o ecrã.
+jest.mock('@/services/social', () => ({
+  signInWithGoogle: jest.fn(),
+  signInWithApple: jest.fn(),
+  NEEDS_EXISTING_LOGIN_MESSAGE: 'Já tens conta S360? Entra com o teu método habitual e liga a Apple nas Definições',
+}));
+jest.mock('expo-apple-authentication', () => {
+  const { Pressable } = require('react-native');
+  const R = require('react');
+  return {
+    AppleAuthenticationButton: (p: { onPress: () => void; testID?: string }) =>
+      R.createElement(Pressable, { testID: p.testID, onPress: p.onPress, accessibilityRole: 'button' }),
+    AppleAuthenticationButtonType: { SIGN_IN: 0, CONTINUE: 1, SIGN_UP: 2 },
+    AppleAuthenticationButtonStyle: { WHITE: 0, WHITE_OUTLINE: 1, BLACK: 2 },
+  };
+});
 
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { authErrorMessage } from '@/lib/authErrors';
+import { Platform } from 'react-native';
 import { sendReset, signInEmail, signUpEmail } from '@/services/auth';
+import { signInWithApple, signInWithGoogle } from '@/services/social';
 
 import AuthLayout from '../../app/(auth)/_layout';
 import Welcome from '../../app/(auth)/welcome';
@@ -94,6 +112,71 @@ describe('Welcome', () => {
   it('sem aviso não mostra "Conta apagada."', async () => {
     await renderRouter(ROUTES, { initialUrl: '/welcome' });
     expect(screen.queryByText('Conta apagada.')).toBeNull();
+  });
+});
+
+describe('Login Google e Apple (Task 14)', () => {
+  const RELAY_NOTE = 'Já tens conta S360? Entra com o teu método habitual e liga a Apple nas Definições';
+  const originalOS = Platform.OS;
+  afterEach(() => {
+    Platform.OS = originalOS;
+  });
+
+  it('iOS: Welcome mostra Google, Apple e a nota sobre o email oculto', async () => {
+    Platform.OS = 'ios';
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    expect(screen.getByRole('button', { name: 'Continuar com o Google' })).toBeTruthy();
+    expect(screen.getByTestId('apple-sign-in')).toBeTruthy();
+    expect(screen.getByText(RELAY_NOTE)).toBeTruthy();
+  });
+
+  it('Android: Welcome não mostra o botão Apple (nem a nota)', async () => {
+    Platform.OS = 'android';
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    expect(screen.getByRole('button', { name: 'Continuar com o Google' })).toBeTruthy();
+    expect(screen.queryByTestId('apple-sign-in')).toBeNull();
+    expect(screen.queryByText(RELAY_NOTE)).toBeNull();
+  });
+
+  it('Entrar também tem os botões', async () => {
+    Platform.OS = 'ios';
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    expect(screen.getByRole('button', { name: 'Continuar com o Google' })).toBeTruthy();
+    expect(screen.getByTestId('apple-sign-in')).toBeTruthy();
+  });
+
+  it('Google cancelado não mostra mensagem', async () => {
+    (signInWithGoogle as jest.Mock).mockResolvedValue({ status: 'cancelled' });
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuar com o Google' }));
+    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('needsExistingLogin mostra a mensagem devolvida', async () => {
+    Platform.OS = 'ios';
+    (signInWithApple as jest.Mock).mockResolvedValue({ status: 'needsExistingLogin', message: 'Mensagem X' });
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    await fireEvent.press(screen.getByTestId('apple-sign-in'));
+    expect(signInWithApple).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Mensagem X')).toBeTruthy();
+  });
+
+  it('erro mostra a mensagem PT como alerta', async () => {
+    (signInWithGoogle as jest.Mock).mockRejectedValue(new Error('Sem ligação à internet.'));
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Continuar com o Google' }));
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Sem ligação à internet.')).toBeTruthy();
+  });
+
+  it('dois toques rápidos chamam signInWithGoogle uma só vez', async () => {
+    const d = deferred();
+    (signInWithGoogle as jest.Mock).mockReturnValue(d.promise.then(() => ({ status: 'cancelled' })));
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    await doublePress(screen.getByRole('button', { name: 'Continuar com o Google' }) as never);
+    expect(signInWithGoogle).toHaveBeenCalledTimes(1);
+    await act(async () => d.resolve());
   });
 });
 
