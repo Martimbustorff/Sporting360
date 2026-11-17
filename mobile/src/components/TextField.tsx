@@ -1,6 +1,7 @@
 // Figma: nós 564:6907 (vazio: etiqueta display 18 como placeholder, linha 1px branca a 30%) e 564:6938 (preenchido: etiqueta display 14 a 50%, valor corpo 16, linha 2px primary).
-// SEM FIGMA (olho): o ativo ic_eye (564:6910) está vazio no Figma (sem vetores), por isso o alternador mantém o texto "Ver"/"Ocultar" até haver ícone.
+// Olho: o ativo ic_eye (564:6910) está vazio no Figma (sem vetores); usa-se Ionicons eye-outline / eye-off-outline tingido com token.
 import { useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Body } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
@@ -65,7 +66,7 @@ export function TextField({
             hitSlop={12}
             style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center', alignItems: 'center' }}
           >
-            <Body variant="strip" style={{ color: colors.textMuted }}>{hidden ? 'Ver' : 'Ocultar'}</Body>
+            <Ionicons name={hidden ? 'eye-outline' : 'eye-off-outline'} size={layout.headerIcon} color={colors.textMuted} />
           </Pressable>
         ) : null}
       </View>

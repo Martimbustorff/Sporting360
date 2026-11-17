@@ -47,6 +47,7 @@ export const type = {
   tab: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.white },
   badge: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
+  badgeSmall: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white }, // Figma 500:28830 / 500:28917
   // Text field (Figma 564:6907 / 564:6938)
   fieldPlaceholder: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
   fieldLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
@@ -94,4 +95,22 @@ export const layout = {
   fieldGapFilled: 12, // gap between label/value block and underline
   disabledOpacity: 0.5,
   pressedOpacity: 0.8,
+  // Game header (Figma 500:28956 / 655:31868)
+  teamColumnWidth: 100,
+  headerColumnsGap: 33, // between team columns and the centre column
+  headerCrestNameGap: 8,
+  headerDateGap: 6, // between date line and time / score boxes
+  scoreBoxGap: 5,
+  badgeSmallPadX: 6, // small competition badge (Figma 500:28830)
+  badgeSmallPadY: 2,
+  mutedOpacity: 0.7, // date line under the round badge
+  // Event rows (Figma 655:31908 / 655:31916)
+  eventRowGap: 16,
+  eventRowMinHeight: 40,
+  cardWidth: 13, // yellow / red card glyph inside the 32px icon
+  cardHeight: 19,
+  cardRadius: 2,
+  cardRotation: '9.07deg',
+  subIcon: { width: 16, height: 18 }, // substitution arrows (Figma 655:31919)
+  eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
 } as const;
