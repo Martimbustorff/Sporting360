@@ -328,6 +328,25 @@ describe("mapFixture: jogadores e onzes", () => {
     expect(lines[0]).toMatchObject({ playerId: String(p[0].id), name: p[0].name, goals: 0, minutes: 90, substitute: false });
   });
 
+  it("texto só com espaços não vira 0 (rating e precisão de passes ficam null)", () => {
+    const f = load("fixture-ft");
+    const p = f.players[0].players;
+    const g: AfFixture = {
+      ...f,
+      players: [
+        {
+          ...f.players[0],
+          players: [
+            { ...p[0], statistics: [{ ...p[0].statistics[0], games: { ...p[0].statistics[0].games, rating: "  " }, passes: { total: 10, key: 0, accuracy: "   " } }] },
+          ],
+        },
+      ],
+    };
+    const line = mapFixture(g, noPrev).details.players!.teams[0].players[0];
+    expect(line.rating).toBeNull();
+    expect(line.passesAccuracy).toBeNull();
+  });
+
   it("onzes", () => {
     const f = load("fixture-ft");
     const t = mapFixture(f, noPrev).details.lineups!.teams[0];

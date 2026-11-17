@@ -185,7 +185,7 @@ function num(v: unknown): number {
 }
 
 function numOrNull(v: unknown): number | null {
-  if (v === null || v === undefined || v === "") return null;
+  if (v === null || v === undefined || (typeof v === "string" && v.trim() === "")) return null;
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
