@@ -1,0 +1,99 @@
+{
+ "get": "games",
+ "parameters": {
+  "league": "0",
+  "season": "2026",
+  "team": "0"
+ },
+ "errors": [],
+ "results": 2,
+ "paging": {
+  "current": 1,
+  "total": 1
+ },
+ "response": [
+  {
+   "id": 1,
+   "date": "2026-10-10T18:00:00+00:00",
+   "time": "18:00",
+   "timestamp": 0,
+   "timezone": "UTC",
+   "week": null,
+   "status": {
+    "long": "Finished",
+    "short": "FT"
+   },
+   "country": {
+    "id": 0,
+    "name": "Portugal",
+    "code": "PT",
+    "flag": null
+   },
+   "league": {
+    "id": 0,
+    "name": "Campeonato Nacional (ID por confirmar)",
+    "type": "League",
+    "logo": null,
+    "season": "2026"
+   },
+   "teams": {
+    "home": {
+     "id": 0,
+     "name": "Sporting CP",
+     "logo": null
+    },
+    "away": {
+     "id": 1,
+     "name": "Adversario A",
+     "logo": null
+    }
+   },
+   "scores": {
+    "home": 30,
+    "away": 25
+   }
+  },
+  {
+   "id": 2,
+   "date": "2026-12-12T19:30:00+00:00",
+   "time": "19:30",
+   "timestamp": 0,
+   "timezone": "UTC",
+   "week": null,
+   "status": {
+    "long": "Not Started",
+    "short": "NS"
+   },
+   "country": {
+    "id": 0,
+    "name": "Portugal",
+    "code": "PT",
+    "flag": null
+   },
+   "league": {
+    "id": 0,
+    "name": "Campeonato Nacional (ID por confirmar)",
+    "type": "League",
+    "logo": null,
+    "season": "2026"
+   },
+   "teams": {
+    "home": {
+     "id": 1,
+     "name": "Adversario A",
+     "logo": null
+    },
+    "away": {
+     "id": 0,
+     "name": "Sporting CP",
+     "logo": null
+    }
+   },
+   "scores": {
+    "home": null,
+    "away": null
+   }
+  }
+ ],
+ "_note": "AMOSTRA SINTETICA com o envelope documentado da API-Sports (get, parameters, errors, results, paging, response). Substituir por resposta real na Task 21 (precisa de chave). Sem dados reais de equipa."
+}

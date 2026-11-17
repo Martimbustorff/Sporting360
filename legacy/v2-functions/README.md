@@ -24,7 +24,7 @@ Ficheiros omitidos de `src/`:
 | `src/services/todayGame.ts` | Contém a chave RapidAPI |
 | `src/services/backfill.ts` | Contém a chave RapidAPI |
 | `src/midleware/config.ts` | Contém a chave RapidAPI |
-| `src/midleware/videos.ts` | Contém um literal longo por classificar |
+| `src/midleware/videos.ts` | Contém a chave VSports como valor por omissão de `VSPORTS_KEY` |
 | `src/midleware/tweets.ts` | Contém um bearer token do Twitter/X como valor de fallback de `process.env.TWITTER_BEARER_TOKEN` |
 
 Esta pasta não compila de forma isolada: os ficheiros omitidos continuam referidos por imports (por exemplo, `src/services/tweets.ts` importa `midleware/tweets.ts`, e os serviços importam a configuração). Serve apenas para leitura.

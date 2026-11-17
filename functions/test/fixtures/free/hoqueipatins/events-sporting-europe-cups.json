@@ -1,0 +1,190 @@
+[
+ {
+  "id": 114280,
+  "date": "2026-10-29T22:00:00",
+  "date_gmt": "2026-10-29T22:00:00",
+  "status": "publish",
+  "title": {
+   "rendered": "Sporting vs Oliveirense (QF1)"
+  },
+  "leagues": [
+   535
+  ],
+  "venues": [
+   1171
+  ],
+  "teams": [
+   3860,
+   3590
+  ],
+  "main_results": [
+   "3",
+   "5"
+  ],
+  "outcome": {
+   "3860": "derrota",
+   "3590": "vitoria"
+  },
+  "day": "0300-Quartos de Final"
+ },
+ {
+  "id": 112841,
+  "date": "2026-11-07T12:00:00",
+  "date_gmt": "2026-11-07T12:00:00",
+  "status": "publish",
+  "title": {
+   "rendered": "Benfica x Sporting (FINAL)"
+  },
+  "leagues": [
+   538
+  ],
+  "venues": [
+   1171
+  ],
+  "teams": [
+   3580,
+   3860
+  ],
+  "main_results": [
+   "3",
+   "2"
+  ],
+  "outcome": {
+   "3580": "vitoria",
+   "3860": "derrota"
+  },
+  "day": "0100-FINAL"
+ },
+ {
+  "id": 109728,
+  "date": "2026-11-26T19:00:00",
+  "date_gmt": "2026-11-26T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Barcelos"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 109732,
+  "date": "2026-12-10T19:00:00",
+  "date_gmt": "2026-12-10T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Sporting"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   28
+  ],
+  "teams": [
+   3598,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 109738,
+  "date": "2027-01-07T19:00:00",
+  "date_gmt": "2027-01-07T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Sporting"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 109744,
+  "date": "2027-01-21T19:00:00",
+  "date_gmt": "2027-01-21T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Igualada"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3826
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 109750,
+  "date": "2027-02-11T19:00:00",
+  "date_gmt": "2027-02-11T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Liceo"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3828
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 109759,
+  "date": "2027-02-25T19:00:00",
+  "date_gmt": "2027-02-25T19:00:00",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Sporting"
+  },
+  "leagues": [
+   1123
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ }
+]

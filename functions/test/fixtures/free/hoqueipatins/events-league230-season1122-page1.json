@@ -1,0 +1,2680 @@
+[
+ {
+  "id": 110369,
+  "date": "2026-11-08T15:30:00",
+  "date_gmt": "2026-11-08T15:30:00",
+  "modified": "2026-11-08T15:35:38",
+  "status": "publish",
+  "title": {
+   "rendered": "Oliveirense vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3632
+  ],
+  "main_results": [
+   "7",
+   "2"
+  ],
+  "outcome": {
+   "3590": "vitoria",
+   "3632": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110368,
+  "date": "2026-11-08T16:00:00",
+  "date_gmt": "2026-11-08T16:00:00",
+  "modified": "2026-11-08T16:03:37",
+  "status": "publish",
+  "title": {
+   "rendered": "Pacense vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3592
+  ],
+  "main_results": [
+   "5",
+   "3"
+  ],
+  "outcome": {
+   "3652": "vitoria",
+   "3592": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110371,
+  "date": "2026-11-08T17:00:00",
+  "date_gmt": "2026-11-08T17:00:00",
+  "modified": "2026-11-08T17:03:41",
+  "status": "publish",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3608
+  ],
+  "main_results": [
+   "3",
+   "3"
+  ],
+  "outcome": {
+   "3640": "empate",
+   "3608": "empate"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110374,
+  "date": "2026-11-08T17:00:00",
+  "date_gmt": "2026-11-08T17:00:00",
+  "modified": "2026-11-09T23:13:17",
+  "status": "publish",
+  "title": {
+   "rendered": "Barcelos vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3620
+  ],
+  "main_results": [
+   "7",
+   "3"
+  ],
+  "outcome": {
+   "3594": "vitoria",
+   "3620": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110375,
+  "date": "2026-11-08T17:00:00",
+  "date_gmt": "2026-11-08T17:00:00",
+  "modified": "2026-11-09T23:24:38",
+  "status": "publish",
+  "title": {
+   "rendered": "Braga vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3606
+  ],
+  "main_results": [
+   "5",
+   "2"
+  ],
+  "outcome": {
+   "3598": "vitoria",
+   "3606": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110370,
+  "date": "2026-11-10T20:30:00",
+  "date_gmt": "2026-11-10T20:30:00",
+  "modified": "2026-11-10T22:14:21",
+  "status": "publish",
+  "title": {
+   "rendered": "Sporting vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3576
+  ],
+  "main_results": [
+   "5",
+   "0"
+  ],
+  "outcome": {
+   "3860": "vitoria",
+   "3576": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110373,
+  "date": "2026-11-11T20:00:00",
+  "date_gmt": "2026-11-11T20:00:00",
+  "modified": "2026-11-12T00:37:53",
+  "status": "publish",
+  "title": {
+   "rendered": "Porto vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3580
+  ],
+  "main_results": [
+   "3",
+   "2"
+  ],
+  "outcome": {
+   "3584": "vitoria",
+   "3580": "derrota"
+  },
+  "day": "0001-Jornada 1"
+ },
+ {
+  "id": 110382,
+  "date": "2026-11-14T18:00:00",
+  "date_gmt": "2026-11-14T18:00:00",
+  "modified": "2026-11-14T18:00:05",
+  "status": "publish",
+  "title": {
+   "rendered": "Oeiras vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3594
+  ],
+  "main_results": [
+   "3",
+   "8"
+  ],
+  "outcome": {
+   "3606": "derrota",
+   "3594": "vitoria"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110377,
+  "date": "2026-11-14T18:00:00",
+  "date_gmt": "2026-11-14T18:00:00",
+  "modified": "2026-11-14T18:00:04",
+  "status": "publish",
+  "title": {
+   "rendered": "Sanjoanense vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3652
+  ],
+  "main_results": [
+   "5",
+   "5"
+  ],
+  "outcome": {
+   "3632": "empate",
+   "3652": "empate"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110379,
+  "date": "2026-11-14T18:30:00",
+  "date_gmt": "2026-11-14T18:30:00",
+  "modified": "2026-11-15T14:21:31",
+  "status": "publish",
+  "title": {
+   "rendered": "Valongo vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3860
+  ],
+  "main_results": [
+   "1",
+   "3"
+  ],
+  "outcome": {
+   "3608": "derrota",
+   "3860": "vitoria"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110380,
+  "date": "2026-11-14T20:00:00",
+  "date_gmt": "2026-11-14T20:00:00",
+  "modified": "2026-11-14T20:00:04",
+  "status": "publish",
+  "title": {
+   "rendered": "Benfica vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3640
+  ],
+  "main_results": [
+   "4",
+   "0"
+  ],
+  "outcome": {
+   "3580": "vitoria",
+   "3640": "derrota"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110376,
+  "date": "2026-11-14T21:30:00",
+  "date_gmt": "2026-11-14T21:30:00",
+  "modified": "2026-11-14T21:30:04",
+  "status": "publish",
+  "title": {
+   "rendered": "Juventude de Viana vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3598
+  ],
+  "main_results": [
+   "1",
+   "4"
+  ],
+  "outcome": {
+   "3592": "derrota",
+   "3598": "vitoria"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110378,
+  "date": "2026-11-14T22:00:00",
+  "date_gmt": "2026-11-14T22:00:00",
+  "modified": "2026-11-14T22:00:04",
+  "status": "publish",
+  "title": {
+   "rendered": "Candelaria vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3590
+  ],
+  "main_results": [
+   "0",
+   "2"
+  ],
+  "outcome": {
+   "3576": "derrota",
+   "3590": "vitoria"
+  },
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110381,
+  "date": "2026-11-18T21:00:00",
+  "date_gmt": "2026-11-18T21:00:00",
+  "modified": "2026-11-06T19:17:23",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0002-Jornada 2"
+ },
+ {
+  "id": 110385,
+  "date": "2026-11-21T15:30:00",
+  "date_gmt": "2026-11-21T15:30:00",
+  "modified": "2026-08-07T12:33:00",
+  "status": "future",
+  "title": {
+   "rendered": "Oliveirense vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110384,
+  "date": "2026-11-21T17:00:00",
+  "date_gmt": "2026-11-21T17:00:00",
+  "modified": "2026-08-07T12:33:06",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3576
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110389,
+  "date": "2026-11-21T18:00:00",
+  "date_gmt": "2026-11-21T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110387,
+  "date": "2026-11-21T18:30:00",
+  "date_gmt": "2026-11-21T18:30:00",
+  "modified": "2026-11-06T19:19:27",
+  "status": "future",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110386,
+  "date": "2026-11-21T19:30:00",
+  "date_gmt": "2026-11-21T19:30:00",
+  "modified": "2026-11-06T19:19:15",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3580
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110383,
+  "date": "2026-11-21T21:30:00",
+  "date_gmt": "2026-11-21T21:30:00",
+  "modified": "2026-08-07T12:32:41",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3632
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110388,
+  "date": "2026-11-22T15:00:00",
+  "date_gmt": "2026-11-22T15:00:00",
+  "modified": "2026-11-06T19:19:02",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0003-Jornada 3"
+ },
+ {
+  "id": 110395,
+  "date": "2026-11-28T18:00:00",
+  "date_gmt": "2026-11-28T18:00:00",
+  "modified": "2026-07-30T20:20:41",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110396,
+  "date": "2026-11-28T18:00:00",
+  "date_gmt": "2026-11-28T18:00:00",
+  "modified": "2026-11-06T19:20:59",
+  "status": "future",
+  "title": {
+   "rendered": "Barcelos vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110392,
+  "date": "2026-11-28T18:30:00",
+  "date_gmt": "2026-11-28T18:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110391,
+  "date": "2026-11-28T22:00:00",
+  "date_gmt": "2026-11-28T22:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3592
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110390,
+  "date": "2026-11-29T18:30:00",
+  "date_gmt": "2026-11-29T18:30:00",
+  "modified": "2026-11-06T19:20:36",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110393,
+  "date": "2026-11-29T19:00:00",
+  "date_gmt": "2026-11-29T19:00:00",
+  "modified": "2026-08-07T12:34:08",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110401,
+  "date": "2026-12-01T14:30:00",
+  "date_gmt": "2026-12-01T14:30:00",
+  "modified": "2026-11-06T19:21:48",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110398,
+  "date": "2026-12-02T21:00:00",
+  "date_gmt": "2026-12-02T21:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110399,
+  "date": "2026-12-02T21:00:00",
+  "date_gmt": "2026-12-02T21:00:00",
+  "modified": "2026-08-07T12:35:16",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3580
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110400,
+  "date": "2026-12-02T21:00:00",
+  "date_gmt": "2026-12-02T21:00:00",
+  "modified": "2026-08-07T12:35:23",
+  "status": "future",
+  "title": {
+   "rendered": "Oliveirense vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110402,
+  "date": "2026-12-02T21:00:00",
+  "date_gmt": "2026-12-02T21:00:00",
+  "modified": "2026-08-07T12:35:30",
+  "status": "future",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110403,
+  "date": "2026-12-02T21:00:00",
+  "date_gmt": "2026-12-02T21:00:00",
+  "modified": "2026-08-07T12:35:34",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110406,
+  "date": "2026-12-05T17:00:00",
+  "date_gmt": "2026-12-05T17:00:00",
+  "modified": "2026-11-06T19:23:04",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3592
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110407,
+  "date": "2026-12-05T18:00:00",
+  "date_gmt": "2026-12-05T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110408,
+  "date": "2026-12-05T18:00:00",
+  "date_gmt": "2026-12-05T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110410,
+  "date": "2026-12-05T18:00:00",
+  "date_gmt": "2026-12-05T18:00:00",
+  "modified": "2026-11-06T19:22:44",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110405,
+  "date": "2026-12-05T18:30:00",
+  "date_gmt": "2026-12-05T18:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3632
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110409,
+  "date": "2026-12-05T21:30:00",
+  "date_gmt": "2026-12-05T21:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Barcelos vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110404,
+  "date": "2026-12-05T22:00:00",
+  "date_gmt": "2026-12-05T22:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0006-Jornada 6"
+ },
+ {
+  "id": 110397,
+  "date": "2026-12-08T16:00:00",
+  "date_gmt": "2026-12-08T16:00:00",
+  "modified": "2026-11-06T19:21:36",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3576
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0005-Jornada 5"
+ },
+ {
+  "id": 110413,
+  "date": "2026-12-12T21:30:00",
+  "date_gmt": "2026-12-12T21:30:00",
+  "modified": "2026-08-07T12:37:39",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110417,
+  "date": "2026-12-13T18:00:00",
+  "date_gmt": "2026-12-13T18:00:00",
+  "modified": "2026-08-07T12:37:31",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110416,
+  "date": "2026-12-13T19:30:00",
+  "date_gmt": "2026-12-13T19:30:00",
+  "modified": "2026-11-06T19:23:42",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110412,
+  "date": "2026-12-16T20:45:00",
+  "date_gmt": "2026-12-16T20:45:00",
+  "modified": "2026-08-07T12:37:13",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3580
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110414,
+  "date": "2026-12-16T21:00:00",
+  "date_gmt": "2026-12-16T21:00:00",
+  "modified": "2026-08-07T12:37:03",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110415,
+  "date": "2026-12-16T21:00:00",
+  "date_gmt": "2026-12-16T21:00:00",
+  "modified": "2026-08-07T12:37:21",
+  "status": "future",
+  "title": {
+   "rendered": "Oliveirense vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110411,
+  "date": "2026-12-16T22:00:00",
+  "date_gmt": "2026-12-16T22:00:00",
+  "modified": "2026-08-07T12:37:48",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0007-Jornada 7"
+ },
+ {
+  "id": 110394,
+  "date": "2027-01-02T18:00:00",
+  "date_gmt": "2027-01-02T18:00:00",
+  "modified": "2026-11-06T19:20:51",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0004-Jornada 4"
+ },
+ {
+  "id": 110419,
+  "date": "2027-01-09T15:00:00",
+  "date_gmt": "2027-01-09T15:00:00",
+  "modified": "2026-11-06T19:25:15",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3576
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110420,
+  "date": "2027-01-09T18:00:00",
+  "date_gmt": "2027-01-09T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3632
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110421,
+  "date": "2027-01-09T18:00:00",
+  "date_gmt": "2027-01-09T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3592
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110422,
+  "date": "2027-01-10T17:00:00",
+  "date_gmt": "2027-01-10T17:00:00",
+  "modified": "2026-11-06T19:25:27",
+  "status": "future",
+  "title": {
+   "rendered": "Barcelos vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110424,
+  "date": "2027-01-10T17:00:00",
+  "date_gmt": "2027-01-10T17:00:00",
+  "modified": "2026-11-06T19:24:37",
+  "status": "future",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110418,
+  "date": "2027-01-10T18:00:00",
+  "date_gmt": "2027-01-10T18:00:00",
+  "modified": "2026-11-06T19:25:06",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110423,
+  "date": "2027-01-10T18:30:00",
+  "date_gmt": "2027-01-10T18:30:00",
+  "modified": "2026-11-06T19:24:22",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0008-Jornada 8"
+ },
+ {
+  "id": 110426,
+  "date": "2027-01-23T22:00:00",
+  "date_gmt": "2027-01-23T22:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110431,
+  "date": "2027-01-24T18:00:00",
+  "date_gmt": "2027-01-24T18:00:00",
+  "modified": "2026-11-06T19:26:23",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110428,
+  "date": "2027-01-24T18:00:00",
+  "date_gmt": "2027-01-24T18:00:00",
+  "modified": "2026-11-06T19:26:13",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110427,
+  "date": "2027-01-27T20:45:00",
+  "date_gmt": "2027-01-27T20:45:00",
+  "modified": "2026-11-06T19:26:43",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110429,
+  "date": "2027-01-27T21:00:00",
+  "date_gmt": "2027-01-27T21:00:00",
+  "modified": "2026-11-06T19:26:57",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110430,
+  "date": "2027-01-27T21:00:00",
+  "date_gmt": "2027-01-27T21:00:00",
+  "modified": "2026-11-06T19:27:06",
+  "status": "future",
+  "title": {
+   "rendered": "Oliveirense vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110425,
+  "date": "2027-01-27T21:30:00",
+  "date_gmt": "2027-01-27T21:30:00",
+  "modified": "2026-11-06T19:26:32",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3580
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0009-Jornada 9"
+ },
+ {
+  "id": 110436,
+  "date": "2027-01-30T15:00:00",
+  "date_gmt": "2027-01-30T15:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3592
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110438,
+  "date": "2027-01-30T15:00:00",
+  "date_gmt": "2027-01-30T15:00:00",
+  "modified": "2026-11-06T19:28:02",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110433,
+  "date": "2027-01-30T18:00:00",
+  "date_gmt": "2027-01-30T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110434,
+  "date": "2027-01-30T18:00:00",
+  "date_gmt": "2027-01-30T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3576
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110437,
+  "date": "2027-01-30T18:30:00",
+  "date_gmt": "2027-01-30T18:30:00",
+  "modified": "2026-11-06T19:28:22",
+  "status": "future",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110432,
+  "date": "2027-01-30T19:00:00",
+  "date_gmt": "2027-01-30T19:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110435,
+  "date": "2027-01-30T21:30:00",
+  "date_gmt": "2027-01-30T21:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Barcelos vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3632
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0010-Jornada 10"
+ },
+ {
+  "id": 110451,
+  "date": "2027-02-02T19:45:00",
+  "date_gmt": "2027-02-02T19:45:00",
+  "modified": "2026-11-06T19:32:51",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Juventude de Viana"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3592
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110446,
+  "date": "2027-02-03T20:30:00",
+  "date_gmt": "2027-02-03T20:30:00",
+  "modified": "2026-11-06T19:33:06",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110447,
+  "date": "2027-02-03T21:00:00",
+  "date_gmt": "2027-02-03T21:00:00",
+  "modified": "2026-11-06T19:33:15",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Benfica"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3580
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110439,
+  "date": "2027-02-06T17:00:00",
+  "date_gmt": "2027-02-06T17:00:00",
+  "modified": "2026-11-06T19:31:10",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110444,
+  "date": "2027-02-06T17:00:00",
+  "date_gmt": "2027-02-06T17:00:00",
+  "modified": "2026-11-06T19:30:55",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110445,
+  "date": "2027-02-06T18:00:00",
+  "date_gmt": "2027-02-06T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Braga vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   414
+  ],
+  "teams": [
+   3598,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110442,
+  "date": "2027-02-06T18:00:00",
+  "date_gmt": "2027-02-06T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110440,
+  "date": "2027-02-06T18:30:00",
+  "date_gmt": "2027-02-06T18:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110443,
+  "date": "2027-02-06T21:30:00",
+  "date_gmt": "2027-02-06T21:30:00",
+  "modified": "2026-11-06T19:31:20",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110441,
+  "date": "2027-02-06T22:00:00",
+  "date_gmt": "2027-02-06T22:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0011-Jornada 11"
+ },
+ {
+  "id": 110448,
+  "date": "2027-02-09T17:00:00",
+  "date_gmt": "2027-02-09T17:00:00",
+  "modified": "2026-11-06T19:33:42",
+  "status": "future",
+  "title": {
+   "rendered": "Barcelos vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   23
+  ],
+  "teams": [
+   3594,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110450,
+  "date": "2027-02-09T17:00:00",
+  "date_gmt": "2027-02-09T17:00:00",
+  "modified": "2026-11-06T19:33:25",
+  "status": "future",
+  "title": {
+   "rendered": "Riba d&#8217;Ave vs Sanjoanense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   66
+  ],
+  "teams": [
+   3640,
+   3632
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110452,
+  "date": "2027-02-09T21:00:00",
+  "date_gmt": "2027-02-09T21:00:00",
+  "modified": "2026-11-06T19:33:33",
+  "status": "future",
+  "title": {
+   "rendered": "Oliveirense vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   21
+  ],
+  "teams": [
+   3590,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110449,
+  "date": "2027-02-17T20:00:00",
+  "date_gmt": "2027-02-17T20:00:00",
+  "modified": "2026-11-06T19:32:39",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Candelaria"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3576
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0012-Jornada 12"
+ },
+ {
+  "id": 110454,
+  "date": "2027-02-20T15:00:00",
+  "date_gmt": "2027-02-20T15:00:00",
+  "modified": "2026-11-06T19:34:22",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110459,
+  "date": "2027-02-20T17:00:00",
+  "date_gmt": "2027-02-20T17:00:00",
+  "modified": "2026-11-06T19:34:00",
+  "status": "future",
+  "title": {
+   "rendered": "Pacense vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   57
+  ],
+  "teams": [
+   3652,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110453,
+  "date": "2027-02-20T18:00:00",
+  "date_gmt": "2027-02-20T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Oeiras"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3606
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110457,
+  "date": "2027-02-20T18:00:00",
+  "date_gmt": "2027-02-20T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110455,
+  "date": "2027-02-20T18:30:00",
+  "date_gmt": "2027-02-20T18:30:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110458,
+  "date": "2027-02-20T21:30:00",
+  "date_gmt": "2027-02-20T21:30:00",
+  "modified": "2026-11-06T19:34:32",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110456,
+  "date": "2027-02-20T22:00:00",
+  "date_gmt": "2027-02-20T22:00:00",
+  "modified": "2026-07-30T20:16:19",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0013-Jornada 13"
+ },
+ {
+  "id": 110461,
+  "date": "2027-02-27T18:00:00",
+  "date_gmt": "2027-02-27T18:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Sanjoanense vs Oliveirense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   59
+  ],
+  "teams": [
+   3632,
+   3590
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110463,
+  "date": "2027-02-27T18:30:00",
+  "date_gmt": "2027-02-27T18:30:00",
+  "modified": "2026-07-30T20:15:59",
+  "status": "future",
+  "title": {
+   "rendered": "Valongo vs Riba d&#8217;Ave"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   22
+  ],
+  "teams": [
+   3608,
+   3640
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110460,
+  "date": "2027-02-27T21:00:00",
+  "date_gmt": "2027-02-27T21:00:00",
+  "modified": "2026-07-30T20:04:01",
+  "status": "future",
+  "title": {
+   "rendered": "Juventude de Viana vs Pacense"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   24
+  ],
+  "teams": [
+   3592,
+   3652
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110464,
+  "date": "2027-02-28T15:00:00",
+  "date_gmt": "2027-02-28T15:00:00",
+  "modified": "2026-11-06T19:36:51",
+  "status": "future",
+  "title": {
+   "rendered": "Benfica vs Porto"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   20
+  ],
+  "teams": [
+   3580,
+   3584
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110465,
+  "date": "2027-02-28T18:00:00",
+  "date_gmt": "2027-02-28T18:00:00",
+  "modified": "2026-11-06T19:36:01",
+  "status": "future",
+  "title": {
+   "rendered": "Tomar vs Barcelos"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   25
+  ],
+  "teams": [
+   3620,
+   3594
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110466,
+  "date": "2027-02-28T18:00:00",
+  "date_gmt": "2027-02-28T18:00:00",
+  "modified": "2026-11-06T19:36:41",
+  "status": "future",
+  "title": {
+   "rendered": "Oeiras vs Braga"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   69
+  ],
+  "teams": [
+   3606,
+   3598
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110462,
+  "date": "2027-02-28T19:00:00",
+  "date_gmt": "2027-02-28T19:00:00",
+  "modified": "2026-11-06T19:37:05",
+  "status": "future",
+  "title": {
+   "rendered": "Candelaria vs Sporting"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   79
+  ],
+  "teams": [
+   3576,
+   3860
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0014-Jornada 14"
+ },
+ {
+  "id": 110472,
+  "date": "2027-03-03T20:00:00",
+  "date_gmt": "2027-03-03T20:00:00",
+  "modified": "2026-11-06T19:38:12",
+  "status": "future",
+  "title": {
+   "rendered": "Porto vs Tomar"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   19
+  ],
+  "teams": [
+   3584,
+   3620
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0015-Jornada 15"
+ },
+ {
+  "id": 110470,
+  "date": "2027-03-03T20:30:00",
+  "date_gmt": "2027-03-03T20:30:00",
+  "modified": "2026-11-06T19:38:21",
+  "status": "future",
+  "title": {
+   "rendered": "Sporting vs Valongo"
+  },
+  "leagues": [
+   230
+  ],
+  "seasons": [
+   1122
+  ],
+  "venues": [
+   18
+  ],
+  "teams": [
+   3860,
+   3608
+  ],
+  "main_results": [],
+  "outcome": [],
+  "day": "0015-Jornada 15"
+ }
+]
