@@ -1,5 +1,5 @@
 // Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6926 (05_SignUp, "Nova Conta").
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
@@ -16,8 +16,11 @@ export default function CriarConta() {
   const [nameError, setNameError] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Guarda síncrona contra toques duplos (o estado `loading` só desativa o botão no próximo render).
+  const busy = useRef(false);
 
   const submit = async () => {
+    if (busy.current) return;
     const normalized = email.trim().toLowerCase();
     setError(null);
     if (!name.trim()) {
@@ -29,6 +32,7 @@ export default function CriarConta() {
       setError('Indica o email e a password.');
       return;
     }
+    busy.current = true;
     setLoading(true);
     try {
       // Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
@@ -37,6 +41,7 @@ export default function CriarConta() {
       // R18: o registo pode dizer que o email já tem conta.
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      busy.current = false;
       setLoading(false);
     }
   };
@@ -52,6 +57,7 @@ export default function CriarConta() {
           <Pressable
             accessibilityRole="link"
             accessibilityLabel="Termos e condições"
+            accessibilityHint="Abre os termos e condições"
             onPress={() => router.push('/termos')}
             style={{ alignSelf: 'center', width: layout.authNoteWidth }}
           >

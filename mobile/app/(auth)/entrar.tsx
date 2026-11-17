@@ -1,5 +1,5 @@
 // Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6896 (05_SignIn, título "Accesso" corrigido para "Acesso").
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthLinkRow, AuthScaffold, FormMessage } from '@/components/AuthForm';
@@ -14,14 +14,18 @@ export default function Entrar() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Guarda síncrona contra toques duplos (o estado `loading` só desativa o botão no próximo render).
+  const busy = useRef(false);
 
   const submit = async () => {
+    if (busy.current) return;
     const normalized = email.trim().toLowerCase();
     if (!normalized || !password) {
       setError('Indica o email e a password.');
       return;
     }
     setError(null);
+    busy.current = true;
     setLoading(true);
     try {
       // Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
@@ -30,6 +34,7 @@ export default function Entrar() {
       // R18: a mensagem nunca revela se o email existe (authErrors junta os três códigos).
       setError(e instanceof Error ? e.message : String(e));
     } finally {
+      busy.current = false;
       setLoading(false);
     }
   };

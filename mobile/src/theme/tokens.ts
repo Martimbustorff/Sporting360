@@ -149,11 +149,8 @@ export const layout = {
   avatarSize: 32,
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
   // Welcome (Figma 564:7178)
-  welcomeRings: 709, // ring group 564:7180, square
+  welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
-  welcomeRingEllipse: { width: 330.018, height: 627.252 }, // each ring, rotated in 2.5deg steps
-  welcomeRingCount: 72,
-  welcomeRingStep: 2.5,
   welcomeLogoGap: 32, // between "S360" and the tagline (564:7253)
   welcomeTaglineWidth: 302,
   welcomeButtonsGap: 20, // between "Entrar" and "Criar uma conta"

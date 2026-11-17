@@ -1,5 +1,6 @@
 // Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:7178 (Welcome screen); botões 564:7259 ("Entrar") e 564:7261 ("Criar uma conta").
-// Anéis (564:7180): 72 elipses iguais (asset welcome-ring.svg, 330x627) rodadas em passos de 2,5 graus à volta do mesmo centro.
+// Anéis (564:7180): um só SVG (welcome-rings.svg) com as 72 elipses iguais do Figma (330x627, traço 0,27) rodadas em
+// passos de 2,5 graus à volta do mesmo centro; gerado a partir do asset da elipse 564:7181, desenhado numa só view.
 // Fundo: no Figma é preto com um verde a 50% por cima (564:7179), que dá o mesmo verde do token bg.
 // R17: com `aviso=conta-apagada` mostra "Conta apagada." (SEM FIGMA: estado não desenhado).
 import { StyleSheet, Text, View } from 'react-native';
@@ -11,36 +12,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const RING = require('../../assets/images/welcome-ring.svg');
-const RING_ANGLES = Array.from({ length: layout.welcomeRingCount }, (_, i) => i * layout.welcomeRingStep);
-const RING_LEFT = (layout.welcomeRings - layout.welcomeRingEllipse.width) / 2;
-const RING_TOP = (layout.welcomeRings - layout.welcomeRingEllipse.height) / 2;
-
-function Rings() {
-  return (
-    <View
-      testID="welcome-rings"
-      accessible={false}
-      style={{ width: layout.welcomeRings, height: layout.welcomeRings, pointerEvents: 'none' }}
-    >
-      {RING_ANGLES.map((deg) => (
-        <Image
-          key={deg}
-          source={RING}
-          accessible={false}
-          style={{
-            position: 'absolute',
-            left: RING_LEFT,
-            top: RING_TOP,
-            width: layout.welcomeRingEllipse.width,
-            height: layout.welcomeRingEllipse.height,
-            transform: [{ rotate: `${deg}deg` }],
-          }}
-        />
-      ))}
-    </View>
-  );
-}
+const RINGS = require('../../assets/images/welcome-rings.svg');
 
 export default function Welcome() {
   const router = useRouter();
@@ -56,7 +28,12 @@ export default function Welcome() {
         style={[StyleSheet.absoluteFill, { paddingBottom: layout.welcomeRingsLift }]}
         className="items-center justify-center"
       >
-        <Rings />
+        <Image
+          testID="welcome-rings"
+          source={RINGS}
+          accessible={false}
+          style={{ width: layout.welcomeRings.width, height: layout.welcomeRings.height, pointerEvents: 'none' }}
+        />
       </View>
       <View
         style={[StyleSheet.absoluteFill, { paddingBottom: layout.welcomeRingsLift, gap: layout.welcomeLogoGap }]}

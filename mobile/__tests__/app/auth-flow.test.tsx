@@ -44,6 +44,16 @@ function authError(code: string) {
   return new Error(authErrorMessage(code));
 }
 
+// Dois toques no mesmo tick, antes de qualquer re-render (o `disabled` do botão ainda não mudou):
+// chama o handler nativo do Pressable duas vezes seguidas dentro de um único act.
+async function doublePress(el: { props: { onClick?: (e: unknown) => void } }) {
+  const ev = { nativeEvent: {}, persist: () => {} };
+  await act(async () => {
+    el.props.onClick?.(ev);
+    el.props.onClick?.(ev);
+  });
+}
+
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => {
@@ -74,6 +84,11 @@ describe('Welcome', () => {
   it('mostra "Conta apagada." com aviso=conta-apagada (R17)', async () => {
     await renderRouter(ROUTES, { initialUrl: '/welcome?aviso=conta-apagada' });
     expect(screen.getByText('Conta apagada.')).toBeTruthy();
+  });
+
+  it('os anéis são uma só imagem', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    expect(screen.getAllByTestId('welcome-rings')).toHaveLength(1);
   });
 
   it('sem aviso não mostra "Conta apagada."', async () => {
@@ -112,6 +127,18 @@ describe('Entrar', () => {
     expect(screen.queryByTestId('button-loading')).toBeNull();
   });
 
+  it('dois toques rápidos chamam signInEmail uma só vez', async () => {
+    const d = deferred();
+    (signInEmail as jest.Mock).mockReturnValue(d.promise);
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    const button = screen.getByRole('button', { name: 'Entrar' });
+    await doublePress(button);
+    expect(signInEmail).toHaveBeenCalledTimes(1);
+    await act(async () => d.resolve());
+  });
+
   it('tem links para recuperar a password e criar conta', async () => {
     const r = await renderRouter(ROUTES, { initialUrl: '/entrar' });
     expect(screen.getByText('Esqueceste-te da password?')).toBeTruthy();
@@ -146,6 +173,19 @@ describe('Criar conta', () => {
     expect(signUpEmail).toHaveBeenCalledWith('Zé Coelho', 'zecoelho@hotmail.com', 'secret1');
   });
 
+  it('dois toques rápidos chamam signUpEmail uma só vez', async () => {
+    const d = deferred();
+    (signUpEmail as jest.Mock).mockReturnValue(d.promise);
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Zé');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    const button = screen.getByRole('button', { name: 'Criar conta' });
+    await doublePress(button);
+    expect(signUpEmail).toHaveBeenCalledTimes(1);
+    await act(async () => d.resolve());
+  });
+
   it('o registo pode dizer que o email já tem conta (R18)', async () => {
     (signUpEmail as jest.Mock).mockRejectedValue(authError('auth/email-already-in-use'));
     await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
@@ -158,7 +198,9 @@ describe('Criar conta', () => {
 
   it('"Termos e condições" abre /termos', async () => {
     const r = await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
-    await fireEvent.press(screen.getByRole('link', { name: 'Termos e condições' }));
+    const link = screen.getByRole('link', { name: 'Termos e condições' });
+    expect(link.props.accessibilityHint).toBe('Abre os termos e condições');
+    await fireEvent.press(link);
     expect(r.getPathname()).toBe('/termos');
     expect(screen.getByText('1. ACEITAÇÃO DOS TERMOS E CONDIÇÕES')).toBeTruthy();
   });

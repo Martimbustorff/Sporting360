@@ -39,3 +39,6 @@ jest.mock('react-native-reanimated', () => {
     withTiming: jest.fn((v: unknown) => v),
   };
 });
+
+// react-native-keyboard-controller: mock oficial do pacote (KeyboardAvoidingView -> View, KeyboardProvider -> host).
+jest.mock('react-native-keyboard-controller', () => require('react-native-keyboard-controller/jest'));

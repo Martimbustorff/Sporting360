@@ -1,7 +1,8 @@
 // Estrutura comum de Entrar / Criar conta / Recuperar (Figma 564:6896, 564:6926, 564:6956):
 // Header com voltar, campos a 32px do header, rodapé (botão + links) encostado em baixo, acima do teclado.
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
@@ -26,8 +27,9 @@ export function AuthScaffold({
   return (
     <Screen padded="none">
       <Header title={title} onBack={back} />
-      {/* O teclado nunca tapa o botão: o rodapé sobe com ele (padding no iOS, resize no Android). */}
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* O teclado nunca tapa o botão: o rodapé sobe com ele nas duas plataformas (react-native-keyboard-controller:
+          o SDK 58 é edge-to-edge e a janela Android já não encolhe com o teclado). */}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{

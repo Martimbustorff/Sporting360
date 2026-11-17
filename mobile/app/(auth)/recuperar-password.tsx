@@ -1,5 +1,5 @@
 // Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6956 (05_Lost Pass, "Recuperar Pass").
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Text } from 'react-native';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -20,8 +20,11 @@ export default function RecuperarPassword() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Guarda síncrona contra toques duplos (o estado `loading` só desativa o botão no próximo render).
+  const busy = useRef(false);
 
   const submit = async () => {
+    if (busy.current) return;
     const normalized = email.trim().toLowerCase();
     setError(null);
     setSent(false);
@@ -30,6 +33,7 @@ export default function RecuperarPassword() {
       return;
     }
     setFieldError(undefined);
+    busy.current = true;
     setLoading(true);
     try {
       await sendReset(normalized);
@@ -38,6 +42,7 @@ export default function RecuperarPassword() {
       if (codeOf(e) === 'auth/user-not-found') setSent(true);
       else setError(e instanceof Error ? e.message : String(e));
     } finally {
+      busy.current = false;
       setLoading(false);
     }
   };
