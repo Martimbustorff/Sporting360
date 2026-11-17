@@ -1,6 +1,8 @@
 import { initializeApp, getApps, deleteApp } from "firebase-admin/app";
 import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
 import { getGameState, getPlayerLines, listFinishedUnsettled } from "../../src/data/gamesRepo";
+import { clearAll } from "../helpers/emulatorDb";
+import { seedFootballMatch, seedPlayers } from "../helpers/seedMatch";
 
 let db: Firestore;
 const NOW = new Date("2026-11-17T20:00:00Z");
@@ -16,39 +18,20 @@ afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
 beforeEach(async () => {
-  for (const c of ["games", "players", "settlements"]) {
-    const snap = await db.collection(c).get();
-    await Promise.all(snap.docs.map((d) => d.ref.delete()));
-  }
+  await clearAll(db);
 });
-
-const team = (api: number | string, name: string) => ({ api, name, logo: "x" });
-function game(over: Record<string, unknown> = {}) {
-  return {
-    api: "1001",
-    startTime: "2026-11-15T20:30:00+00:00",
-    endTime: "2026-11-15T22:20:00+00:00",
-    timestamp: Timestamp.fromDate(new Date("2026-11-15T20:30:00Z")),
-    elapsedTime: "90",
-    isActive: false,
-    scorehome: "2",
-    scoreaway: "1",
-    teamhome: team(228, "Sporting CP"),
-    teamaway: team(211, "Benfica"),
-    competition: "Primeira Liga",
-    journey: "12",
-    season: "2026",
-    ...over,
-  };
-}
 
 describe("getGameState", () => {
   it("devolve null se o jogo não existe", async () => {
     expect(await getGameState(db, "nope", NOW)).toBeNull();
   });
 
-  it("jogo terminado sem status: deriva FT com finishedAt = endTime", async () => {
-    await db.collection("games").doc("x").set(game());
+  it("jogo FT com finishedAt -> GameState completo", async () => {
+    await seedFootballMatch(db, {
+      id: "1001",
+      kickoff: new Date("2026-11-15T20:30:00Z"),
+      finishedAt: new Date("2026-11-15T22:20:00Z"),
+    });
     expect(await getGameState(db, "1001", NOW)).toEqual({
       gameId: "1001",
       kickoff: new Date("2026-11-15T20:30:00Z"),
@@ -61,92 +44,58 @@ describe("getGameState", () => {
     });
   });
 
-  it("sporting fora, kickoff por número em segundos, golos inválidos -> null", async () => {
-    await db.collection("games").doc("x").set(
-      game({
-        teamhome: team("211", "Benfica"),
-        teamaway: team("228", "Sporting CP"),
-        timestamp: 1_794_000_000,
-        scorehome: "",
-        scoreaway: undefined,
-      }),
-    );
-    const g = await getGameState(db, "1001", NOW);
-    expect(g?.sportingSide).toBe("away");
-    expect(g?.kickoff).toEqual(new Date(1_794_000_000 * 1000));
-    expect(g?.goalsHome).toBeNull();
-    expect(g?.goalsAway).toBeNull();
-  });
-
-  it("kickoff em milissegundos e sem timestamp (usa startTime)", async () => {
-    await db.collection("games").doc("a").set(game({ timestamp: 1_794_000_000_000 }));
-    expect((await getGameState(db, "1001", NOW))?.kickoff).toEqual(new Date(1_794_000_000_000));
-    await db.collection("games").doc("a").set(game({ timestamp: undefined }));
-    expect((await getGameState(db, "1001", NOW))?.kickoff).toEqual(new Date("2026-11-15T20:30:00Z"));
-  });
-
-  it("isActive -> LIVE com elapsed", async () => {
-    await db.collection("games").doc("x").set(game({ isActive: true, elapsedTime: "67", endTime: null }));
+  it("LIVE com elapsed 67 e sem finishedAt", async () => {
+    await seedFootballMatch(db, { id: "1001", status: "LIVE", statusRaw: "2H", elapsed: 67, finishedAt: null, finishedAtSource: null });
     const g = await getGameState(db, "1001", NOW);
     expect(g?.status).toBe("LIVE");
     expect(g?.elapsed).toBe(67);
     expect(g?.finishedAt).toBeNull();
   });
 
-  it("não ativo antes do kickoff -> NS", async () => {
-    await db.collection("games").doc("x").set(
-      game({ timestamp: Timestamp.fromDate(new Date("2026-11-20T20:00:00Z")), elapsedTime: "0", scorehome: "", scoreaway: "" }),
-    );
-    expect((await getGameState(db, "1001", NOW))?.status).toBe("NS");
-  });
-
-  it("não ativo, depois do kickoff, elapsed < 90 -> NS", async () => {
-    await db.collection("games").doc("x").set(game({ elapsedTime: "45" }));
-    expect((await getGameState(db, "1001", NOW))?.status).toBe("NS");
-  });
-
-  it("campo status explícito (e finishedAt Timestamp) tem prioridade", async () => {
-    await db.collection("games").doc("x").set(
-      game({ status: "AET", finishedAt: Timestamp.fromDate(new Date("2026-11-15T23:00:00Z")), isActive: true }),
-    );
+  it("sporting fora e golos nulos -> sportingSide away, goals null", async () => {
+    await seedFootballMatch(db, {
+      id: "1001",
+      sportingSide: "away",
+      home: { id: "211", name: "Benfica", logo: null },
+      away: { id: "228", name: "Sporting CP", logo: null },
+      score: { home: null, away: null, halftime: null, extratime: null, penalty: null },
+    });
     const g = await getGameState(db, "1001", NOW);
-    expect(g?.status).toBe("AET");
-    expect(g?.finishedAt).toEqual(new Date("2026-11-15T23:00:00Z"));
+    expect(g?.sportingSide).toBe("away");
+    expect(g?.goalsHome).toBeNull();
+    expect(g?.goalsAway).toBeNull();
   });
 
-  it("status FT explícito sem finishedAt usa endTime", async () => {
-    await db.collection("games").doc("x").set(game({ status: "FT" }));
-    expect((await getGameState(db, "1001", NOW))?.finishedAt).toEqual(new Date("2026-11-15T22:20:00Z"));
-  });
-
-  it("mapeia códigos da API-Football", async () => {
-    const cases: Array<[string, string]> = [
-      ["TBD", "NS"], ["2H", "LIVE"], ["ET", "LIVE"], ["BT", "LIVE"], ["P", "LIVE"], ["LIVE", "LIVE"], ["INT", "LIVE"],
-      ["HT", "HT"], ["PEN", "PEN"], ["SUSP", "PST"], ["PST", "PST"], ["ABD", "CANC"], ["AWD", "CANC"], ["WO", "CANC"], ["CANC", "CANC"],
-    ];
-    for (const [code, expected] of cases) {
-      await db.collection("games").doc("x").set(game({ status: code }));
-      expect((await getGameState(db, "1001", NOW))?.status).toBe(expected);
+  it("estado real da API: AET e PEN lidos diretamente, NS antes do kickoff", async () => {
+    for (const status of ["AET", "PEN", "HT", "PST", "CANC", "NS"] as const) {
+      await seedFootballMatch(db, { id: "1001", status, statusRaw: status });
+      expect((await getGameState(db, "1001", NOW))?.status).toBe(status);
     }
+  });
+
+  it("jogo de andebol hb_1 -> null", async () => {
+    await seedFootballMatch(db, { id: "hb_1", sport: "handball" });
+    expect(await getGameState(db, "hb_1", NOW)).toBeNull();
   });
 });
 
 describe("getPlayerLines", () => {
-  it("achata Players[] das duas equipas", async () => {
-    await db.collection("players").doc("228_1001").set({
-      GameId: "1001", teamId: 228,
-      Players: [
-        { playerId: 1, name: "Gyökeres", rating: "8.4", minutes: 90, substitute: false },
-        { playerId: 2, name: "Suplente", rating: "", substitute: true },
-      ],
-    });
-    await db.collection("players").doc("211_1001").set({
-      GameId: "1001", teamId: 211,
-      Players: [{ playerId: 9, name: "Rival", rating: "6.1", minutes: 70 }],
-    });
-    await db.collection("players").doc("228_2002").set({
-      GameId: "2002", teamId: 228, Players: [{ playerId: 3, name: "Outro Jogo", rating: "7", minutes: 90 }],
-    });
+  it("sem documento de jogadores -> lista vazia", async () => {
+    expect(await getPlayerLines(db, "1001")).toEqual([]);
+  });
+
+  it("achata as duas equipas e converte rating vazio em null", async () => {
+    await seedPlayers(db, "1001", [
+      {
+        teamId: "228",
+        players: [
+          { playerId: "1", name: "Gyökeres", rating: 8.4, minutes: 90 },
+          { playerId: "2", name: "Suplente", rating: null, minutes: null, substitute: true },
+        ],
+      },
+      { teamId: "211", players: [{ playerId: "9", name: "Rival", rating: 6.1, minutes: 70 }] },
+    ]);
+    await seedPlayers(db, "2002", [{ teamId: "228", players: [{ playerId: "3", name: "Outro Jogo", rating: 7, minutes: 90 }] }]);
     const lines = await getPlayerLines(db, "1001");
     expect(lines).toHaveLength(3);
     const by = Object.fromEntries(lines.map((l) => [l.playerId, l]));
@@ -157,26 +106,33 @@ describe("getPlayerLines", () => {
 });
 
 describe("listFinishedUnsettled", () => {
-  const finished = (api: string, endIso: string, ts: Date) =>
-    game({ api, endTime: endIso, timestamp: Timestamp.fromDate(ts) });
+  const finished = (id: string, finishedAt: Date, kickoff: Date) =>
+    seedFootballMatch(db, { id, kickoff, finishedAt });
 
-  it("devolve terminados há >= 2h e sem settledAt", async () => {
-    // terminou há 3h -> elegível
-    await db.collection("games").doc("a").set(finished("A", new Date(NOW.getTime() - 3 * H).toISOString(), new Date(NOW.getTime() - 5 * H)));
-    // terminou há 1h -> cedo demais
-    await db.collection("games").doc("b").set(finished("B", new Date(NOW.getTime() - 1 * H).toISOString(), new Date(NOW.getTime() - 3 * H)));
-    // elegível mas já liquidado
-    await db.collection("games").doc("c").set(finished("C", new Date(NOW.getTime() - 4 * H).toISOString(), new Date(NOW.getTime() - 6 * H)));
+  it("devolve terminados há >= 2h, sem settledAt e dentro de 7 dias", async () => {
+    // A: terminou há 3h -> elegível
+    await finished("A", new Date(NOW.getTime() - 3 * H), new Date(NOW.getTime() - 5 * H));
+    // B: terminou há 1h -> cedo demais
+    await finished("B", new Date(NOW.getTime() - 1 * H), new Date(NOW.getTime() - 3 * H));
+    // C: elegível mas já liquidado
+    await finished("C", new Date(NOW.getTime() - 4 * H), new Date(NOW.getTime() - 6 * H));
     await db.collection("settlements").doc("C").set({ settledAt: Timestamp.fromDate(NOW) });
-    // settlements sem settledAt não conta como liquidado
-    await db.collection("games").doc("d").set(finished("D", new Date(NOW.getTime() - 4 * H).toISOString(), new Date(NOW.getTime() - 6 * H)));
+    // D: settlements sem settledAt não conta como liquidado
+    await finished("D", new Date(NOW.getTime() - 4 * H), new Date(NOW.getTime() - 6 * H));
     await db.collection("settlements").doc("D").set({ other: 1 });
-    // fora da janela de 7 dias
-    await db.collection("games").doc("e").set(finished("E", "2026-11-01T22:00:00Z", new Date("2026-11-01T20:00:00Z")));
-    // ainda em jogo
-    await db.collection("games").doc("f").set(game({ api: "F", isActive: true, elapsedTime: "70", timestamp: Timestamp.fromDate(new Date(NOW.getTime() - 3 * H)) }));
+    // E: fora da janela de 7 dias
+    await finished("E", new Date("2026-11-01T22:00:00Z"), new Date("2026-11-01T20:00:00Z"));
+    // F: ainda em jogo
+    await seedFootballMatch(db, { id: "F", status: "LIVE", statusRaw: "2H", elapsed: 70, finishedAt: null, finishedAtSource: null, kickoff: new Date(NOW.getTime() - 3 * H) });
 
     const res = await listFinishedUnsettled(db, NOW);
     expect(res.map((g) => g.gameId).sort()).toEqual(["A", "D"]);
+  });
+
+  it("ignora outros desportos e estados não finais com finishedAt", async () => {
+    await seedFootballMatch(db, { id: "hb_1", sport: "handball", finishedAt: new Date(NOW.getTime() - 3 * H) });
+    await seedFootballMatch(db, { id: "P", status: "PST", statusRaw: "PST", finishedAt: new Date(NOW.getTime() - 3 * H) });
+    await seedFootballMatch(db, { id: "ET", status: "AET", statusRaw: "AET", finishedAt: new Date(NOW.getTime() - 3 * H) });
+    expect((await listFinishedUnsettled(db, NOW)).map((g) => g.gameId)).toEqual(["ET"]);
   });
 });

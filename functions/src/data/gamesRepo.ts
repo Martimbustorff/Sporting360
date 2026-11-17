@@ -1,136 +1,72 @@
 /*
- * Notas sobre os campos reais em produção (verificados via REST, só leitura).
+ * Adaptador do motor de pontos sobre o modelo novo.
  *
- * games/{docId}:
- *   api (string, id do fixture API-Football = o nosso gameId), startTime e endTime (string ISO),
- *   timestamp (Timestamp; aceitamos também número em segundos ou ms), elapsedTime (string),
- *   isActive (bool), scorehome/scoreaway (string, podem vir vazias), teamhome/teamaway {api, name, logo},
- *   competition, journey, season.
- *   NÃO existem hoje: status, finishedAt. O Plano 2 acrescenta-os; até lá derivamos:
- *     - `status` opcional (código curto API-Football) e `finishedAt` opcional (ISO ou Timestamp) são lidos se existirem;
- *     - sem status: isActive -> LIVE (elapsed = parseInt(elapsedTime)); inativo e now < kickoff -> NS;
- *       inativo, now >= kickoff e elapsed >= 90 -> FT com finishedAt = endTime; caso contrário NS.
- *   kickoff = timestamp, senão startTime. Sporting = teamhome.api == 228 (comparado como string).
+ * matches/{id} (ver src/model/types.ts): sport, status (GameStatus real da API), elapsed, score {home, away},
+ *   finishedAt (observado ou estimado), kickoff, sportingSide. O id do documento e o gameId do motor.
+ *   Só jogos de futebol (`sport == "football"`) entram no motor; os restantes desportos devolvem null.
+ *   O fallback antigo por isActive/endTime acabou: o estado vem diretamente de `matches`.
  *
- * players/{teamId}_{GameId}:
- *   GameId (string), teamId (int; Sporting = 228),
- *   Players[] { playerId, name, rating (string, pode ser vazia), minutes (int, pode faltar), substitute, ... }.
- *
- * Notas do legacy: endTime é uma estimativa fixa (kickoff+150min) e isActive = startTime<=now<=endTime,
- * logo o FT derivado só aparece depois de kickoff+150min (liquidação ~kickoff+4,5h, conservador).
- * Jogos fora da janela de 7 dias nunca são re-tentados.
+ * matches/{id}/details/players: { teams: [{ teamId, players: PlayerStatLine[] }] }.
+ *   Sporting = teamId "228".
  *
  * settlements/{gameId}: tem `settledAt` quando o jogo já foi liquidado.
+ * Jogos fora da janela de 7 dias nunca são re-tentados.
  */
-import { Firestore, Timestamp, DocumentData } from "firebase-admin/firestore";
-import { GameState, GameStatus } from "../game/types";
+import { Firestore, Timestamp } from "firebase-admin/firestore";
+import { GameState } from "../game/types";
 import { PlayerLine } from "../game/mvp";
 import { MVP_SETTLE_AFTER_MS } from "../game/windows";
+import type { MatchDoc } from "../model/types";
+import { getMatch } from "../store/writer";
 
 const SPORTING_TEAM_ID = "228";
 const DAY_MS = 24 * 60 * 60_000;
 const SETTLE_LOOKBACK_MS = 7 * DAY_MS;
-
-const STATUS_MAP: Record<string, GameStatus> = {
-  NS: "NS", TBD: "NS",
-  "1H": "LIVE", "2H": "LIVE", ET: "LIVE", BT: "LIVE", P: "LIVE", LIVE: "LIVE", INT: "LIVE",
-  HT: "HT", FT: "FT", AET: "AET", PEN: "PEN",
-  PST: "PST", SUSP: "PST",
-  CANC: "CANC", ABD: "CANC", AWD: "CANC", WO: "CANC",
-};
+const FINAL_STATUSES: ReadonlyArray<GameState["status"]> = ["FT", "AET", "PEN"];
 
 function toDate(v: unknown): Date | null {
-  if (v === null || v === undefined || v === "") return null;
   if (v instanceof Timestamp) return v.toDate();
-  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
-  if (typeof v === "number") {
-    if (!Number.isFinite(v)) return null;
-    return new Date(v < 1e11 ? v * 1000 : v); // segundos vs milissegundos
-  }
-  if (typeof v === "string") {
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
+  if (v instanceof Date) return v;
   return null;
 }
 
-function toInt(v: unknown): number | null {
-  const n = typeof v === "number" ? Math.trunc(v) : parseInt(String(v ?? ""), 10);
-  return Number.isNaN(n) ? null : n;
-}
-
-function toFloat(v: unknown): number | null {
-  const n = typeof v === "number" ? v : parseFloat(String(v ?? ""));
-  return Number.isNaN(n) ? null : n;
-}
-
-function mapGame(data: DocumentData, now: Date): GameState | null {
-  const gameId = data.api === undefined || data.api === null ? "" : String(data.api);
-  const kickoff = toDate(data.timestamp) ?? toDate(data.startTime);
-  if (!gameId || !kickoff) return null;
-
-  const elapsedParsed = toInt(data.elapsedTime);
-  let status: GameStatus;
-  let elapsed: number | null = elapsedParsed;
-  let finishedAt: Date | null = toDate(data.finishedAt);
-
-  const explicit = typeof data.status === "string" ? STATUS_MAP[data.status.trim().toUpperCase()] : undefined;
-  if (explicit) {
-    status = explicit;
-    if ((status === "FT" || status === "AET" || status === "PEN") && finishedAt === null) {
-      finishedAt = toDate(data.endTime);
-    }
-  } else if (data.isActive === true) {
-    status = "LIVE";
-  } else if (now.getTime() < kickoff.getTime()) {
-    status = "NS";
-  } else if (elapsedParsed !== null && elapsedParsed >= 90) {
-    status = "FT";
-    finishedAt = finishedAt ?? toDate(data.endTime);
-  } else {
-    status = "NS";
-  }
-
+function toState(m: MatchDoc): GameState {
   return {
-    gameId,
-    kickoff,
-    status,
-    elapsed,
-    goalsHome: toInt(data.scorehome),
-    goalsAway: toInt(data.scoreaway),
-    finishedAt,
-    sportingSide: String(data.teamhome?.api ?? "") === SPORTING_TEAM_ID ? "home" : "away",
+    gameId: m.id,
+    kickoff: m.kickoff,
+    status: m.status,
+    elapsed: m.elapsed,
+    goalsHome: m.score.home,
+    goalsAway: m.score.away,
+    finishedAt: m.finishedAt,
+    sportingSide: m.sportingSide,
   };
 }
 
-/**
- * Estado do jogo. `gameId` é o id API-Football (campo `api` em games).
- * `now` é injetável para testes (por omissão, a hora atual).
- */
+/** Estado do jogo (`matches/{gameId}`); null se não existe ou não é futebol. `now` mantido por compatibilidade. */
 export async function getGameState(
   db: Firestore,
   gameId: string,
-  now: Date = new Date(),
+  _now: Date = new Date(),
 ): Promise<GameState | null> {
-  const snap = await db.collection("games").where("api", "==", gameId).limit(1).get();
-  if (snap.empty) return null;
-  return mapGame(snap.docs[0].data(), now);
+  const m = await getMatch(db, gameId);
+  if (!m || m.sport !== "football") return null;
+  return toState(m);
 }
 
 export async function getPlayerLines(db: Firestore, gameId: string): Promise<PlayerLine[]> {
-  const snap = await db.collection("players").where("GameId", "==", gameId).get();
+  const snap = await db.doc(`matches/${gameId}/details/players`).get();
+  const teams = (snap.get("teams") ?? []) as { teamId: string; players?: { playerId: string; name?: string; minutes?: number | null; rating?: number | null }[] }[];
   const lines: PlayerLine[] = [];
-  for (const d of snap.docs) {
-    const data = d.data();
-    const teamIsSporting = String(data.teamId ?? "") === SPORTING_TEAM_ID;
-    const players: DocumentData[] = Array.isArray(data.Players) ? data.Players : [];
-    for (const p of players) {
+  for (const t of teams) {
+    const teamIsSporting = String(t.teamId ?? "") === SPORTING_TEAM_ID;
+    for (const p of t.players ?? []) {
       lines.push({
         playerId: String(p.playerId),
         name: String(p.name ?? ""),
         teamIsSporting,
-        minutes: toInt(p.minutes),
-        rating: toFloat(p.rating),
+        minutes: p.minutes ?? null,
+        rating: p.rating ?? null,
       });
     }
   }
@@ -138,34 +74,29 @@ export async function getPlayerLines(db: Firestore, gameId: string): Promise<Pla
 }
 
 /**
- * Jogos FT/AET/PEN terminados há pelo menos MVP_SETTLE_AFTER_MS e ainda sem `settledAt`.
- * Firestore não filtra por estado derivado: consulta uma janela por kickoff (últimos 7 dias até now-2h)
- * e filtra em memória. Em produção `timestamp` é sempre Timestamp (a conversão defensiva de números fica só em toDate).
+ * Jogos de futebol FT/AET/PEN com finishedAt entre now-7d e now-MVP_SETTLE_AFTER_MS e ainda sem `settledAt`.
+ * Usa o índice (sport, finishedAt).
  */
 export async function listFinishedUnsettled(db: Firestore, now: Date): Promise<GameState[]> {
   const to = now.getTime() - MVP_SETTLE_AFTER_MS;
   const from = now.getTime() - SETTLE_LOOKBACK_MS;
-  const games = db.collection("games");
+  const snap = await db
+    .collection("matches")
+    .where("sport", "==", "football")
+    .where("finishedAt", ">=", Timestamp.fromMillis(from))
+    .where("finishedAt", "<=", Timestamp.fromMillis(to))
+    .get();
 
-  const snaps = [
-    await games
-      .where("timestamp", ">=", Timestamp.fromMillis(from))
-      .where("timestamp", "<=", Timestamp.fromMillis(to))
-      .get(),
-  ];
-
-  const byId = new Map<string, GameState>();
-  for (const s of snaps) {
-    for (const d of s.docs) {
-      const g = mapGame(d.data(), now);
-      if (!g) continue;
-      if (g.status !== "FT" && g.status !== "AET" && g.status !== "PEN") continue;
-      if (g.finishedAt === null || g.finishedAt.getTime() > to) continue;
-      byId.set(g.gameId, g);
-    }
+  const candidates: GameState[] = [];
+  for (const d of snap.docs) {
+    const data = d.data();
+    const finishedAt = toDate(data.finishedAt);
+    if (!finishedAt) continue;
+    const m = { ...(data as MatchDoc), id: d.id, kickoff: toDate(data.kickoff) ?? new Date(NaN), finishedAt } as MatchDoc;
+    if (!FINAL_STATUSES.includes(m.status)) continue;
+    candidates.push(toState(m));
   }
 
-  const candidates = [...byId.values()];
   const settled = await Promise.all(
     candidates.map(async (g) => {
       const s = await db.collection("settlements").doc(g.gameId).get();

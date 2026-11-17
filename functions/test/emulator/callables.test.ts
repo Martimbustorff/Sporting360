@@ -1,5 +1,8 @@
 import { initializeApp, getApps, deleteApp } from "firebase-admin/app";
 import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
+import type { MatchDoc } from "../../src/model/types";
+import { clearAll } from "../helpers/emulatorDb";
+import { seedFootballMatch, seedPlayers as seedPlayerLines } from "../helpers/seedMatch";
 import { handleSubmitPrediction } from "../../src/callables/submitPrediction";
 import { handleVoteMvp } from "../../src/callables/voteMvp";
 
@@ -17,39 +20,32 @@ afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
 beforeEach(async () => {
-  for (const c of ["games", "players", "predictions", "matchPredictions", "mvpVotes", "pointEvents", "users"]) {
-    const snap = await db.collection(c).get();
-    await Promise.all(snap.docs.map((d) => d.ref.delete()));
-  }
-  const lbs = await db.collection("leaderboards").listDocuments();
-  for (const lb of lbs) await db.recursiveDelete(lb);
+  await clearAll(db);
 });
 
-const team = (api: number, name: string) => ({ api, name, logo: "x" });
-async function seedGame(over: Record<string, unknown> = {}) {
-  await db.collection("games").doc("doc1").set({
-    api: "m1",
-    startTime: KICKOFF.toISOString(),
-    endTime: new Date(KICKOFF.getTime() + 150 * MIN).toISOString(),
-    timestamp: Timestamp.fromDate(KICKOFF),
-    elapsedTime: "",
-    isActive: false,
-    scorehome: "",
-    scoreaway: "",
-    teamhome: team(228, "Sporting CP"),
-    teamaway: team(211, "Benfica"),
+async function seedGame(over: Partial<MatchDoc> = {}) {
+  await seedFootballMatch(db, {
+    id: "m1",
+    kickoff: KICKOFF,
+    status: "NS",
+    statusRaw: "NS",
+    elapsed: null,
+    score: { home: null, away: null, halftime: null, extratime: null, penalty: null },
+    finishedAt: null,
+    finishedAtSource: null,
     ...over,
   });
 }
 async function seedPlayers() {
-  await db.collection("players").doc("228_m1").set({
-    GameId: "m1",
-    teamId: 228,
-    Players: [
-      { playerId: 10, name: "Gyokeres", rating: "8.1", minutes: 90 },
-      { playerId: 11, name: "Banco", rating: "", minutes: 0 },
-    ],
-  });
+  await seedPlayerLines(db, "m1", [
+    {
+      teamId: "228",
+      players: [
+        { playerId: "10", name: "Gyokeres", rating: 8.1, minutes: 90 },
+        { playerId: "11", name: "Banco", rating: null, minutes: 0 },
+      ],
+    },
+  ]);
 }
 const code = async (p: Promise<unknown>) => {
   try {
@@ -136,16 +132,16 @@ describe("handleSubmitPrediction", () => {
 });
 
 describe("handleVoteMvp", () => {
-  const live = (elapsed: string) => seedGame({ isActive: true, elapsedTime: elapsed });
+  const live = (elapsed: number) => seedGame({ status: "LIVE", statusRaw: "2H", elapsed });
   const now = new Date(KICKOFF.getTime() + 85 * MIN);
 
   it("sem sessão -> unauthenticated", async () => {
-    await live("80");
+    await live(80);
     expect((await code(handleVoteMvp(db, undefined, { gameId: "m1", playerId: "10" }, now)))?.code).toBe("unauthenticated");
   });
 
   it("minuto 79 -> MVP_NOT_OPEN", async () => {
-    await live("79");
+    await live(79);
     await seedPlayers();
     expect(await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now))).toEqual({
       code: "failed-precondition",
@@ -154,7 +150,7 @@ describe("handleVoteMvp", () => {
   });
 
   it("minuto 80 com candidato válido -> ok, doc exato e 1 ponto", async () => {
-    await live("80");
+    await live(80);
     await seedPlayers();
     expect(await handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now)).toEqual({ ok: true });
     const d = (await db.doc("mvpVotes/m1_alice").get()).data()!;
@@ -164,7 +160,7 @@ describe("handleVoteMvp", () => {
   });
 
   it("segundo voto -> already-exists, pontos continuam em 1", async () => {
-    await live("85");
+    await live(85);
     await seedPlayers();
     await handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now);
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now)))?.code).toBe("already-exists");
@@ -172,7 +168,7 @@ describe("handleVoteMvp", () => {
   });
 
   it("voto v2027 sem pointEvent (falha anterior) -> already-exists e o ponto é recuperado", async () => {
-    await live("85");
+    await live(85);
     await seedPlayers();
     await db.doc("mvpVotes/m1_alice").set({ gameId: "m1", userId: "alice", playerId: "10", source: "v2027" });
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now)))?.code).toBe("already-exists");
@@ -180,7 +176,7 @@ describe("handleVoteMvp", () => {
   });
 
   it("jogador que não jogou ou desconhecido -> invalid-argument", async () => {
-    await live("85");
+    await live(85);
     await seedPlayers();
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "11" }, now)))?.code).toBe("invalid-argument");
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "999" }, now)))?.code).toBe("invalid-argument");
@@ -188,7 +184,7 @@ describe("handleVoteMvp", () => {
 
   it("depois de finishedAt + 20 min -> MVP_CLOSED; dentro da janela -> ok", async () => {
     const fin = new Date(KICKOFF.getTime() + 110 * MIN);
-    await seedGame({ status: "FT", finishedAt: fin.toISOString(), elapsedTime: "90" });
+    await seedGame({ status: "FT", statusRaw: "FT", finishedAt: fin, elapsed: 90 });
     await seedPlayers();
     expect(await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, new Date(fin.getTime() + 21 * MIN)))).toEqual({
       code: "failed-precondition",

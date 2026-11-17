@@ -1,5 +1,8 @@
 import { initializeApp, getApps, deleteApp } from "firebase-admin/app";
 import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
+import type { MatchDoc } from "../../src/model/types";
+import { clearAll } from "../helpers/emulatorDb";
+import { seedFootballMatch, seedPlayers as seedPlayerLines } from "../helpers/seedMatch";
 import { logger } from "firebase-functions";
 import { settleDue, settleGame } from "../../src/scheduled/settle";
 import { awardPoints } from "../../src/points/ledger";
@@ -19,27 +22,20 @@ afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
 beforeEach(async () => {
-  for (const c of ["games", "players", "predictions", "matchPredictions", "mvpVotes", "pointEvents", "users", "settlements"]) {
-    const snap = await db.collection(c).get();
-    await Promise.all(snap.docs.map((d) => d.ref.delete()));
-  }
-  const lbs = await db.collection("leaderboards").listDocuments();
-  for (const lb of lbs) await db.recursiveDelete(lb);
+  await clearAll(db);
 });
 
-async function seedGame(over: Record<string, unknown> = {}, id = "m1", finishedMinAgo = 180) {
-  await db.collection("games").doc(`doc_${id}`).set({
-    api: id,
-    startTime: KICKOFF.toISOString(),
-    timestamp: Timestamp.fromDate(KICKOFF),
+type Seed = Partial<MatchDoc> & { scorehome?: number | null; scoreaway?: number | null };
+async function seedGame(over: Seed = {}, id = "m1", finishedMinAgo = 180) {
+  const { scorehome = 2, scoreaway = 1, ...rest } = over;
+  await seedFootballMatch(db, {
+    id,
+    kickoff: KICKOFF,
     status: "FT",
-    finishedAt: new Date(NOW.getTime() - finishedMinAgo * MIN).toISOString(),
-    scorehome: "2",
-    scoreaway: "1",
-    isActive: false,
-    teamhome: { api: 228, name: "Sporting CP", logo: "x" },
-    teamaway: { api: 211, name: "Benfica", logo: "x" },
-    ...over,
+    statusRaw: "FT",
+    finishedAt: new Date(NOW.getTime() - finishedMinAgo * MIN),
+    score: { home: scorehome, away: scoreaway, halftime: null, extratime: null, penalty: null },
+    ...rest,
   });
 }
 /** Prognóstico v2027 como a callable o escreve (com a participação já atribuída). */
@@ -60,13 +56,15 @@ async function seedVote(uid: string, playerId: number, gameId = "m1", participat
   }
 }
 async function seedPlayers(gameId = "m1") {
-  await db.collection("players").doc(`228_${gameId}`).set({
-    GameId: gameId, teamId: 228,
-    Players: [
-      { playerId: 10, name: "Gyokeres", rating: "8.05", minutes: 90 },
-      { playerId: 11, name: "Trincão", rating: "7.2", minutes: 90 },
-    ],
-  });
+  await seedPlayerLines(db, gameId, [
+    {
+      teamId: "228",
+      players: [
+        { playerId: "10", name: "Gyokeres", rating: 8.05, minutes: 90 },
+        { playerId: "11", name: "Trincão", rating: 7.2, minutes: 90 },
+      ],
+    },
+  ]);
 }
 const total = async (uid: string): Promise<number | undefined> =>
   (await db.doc(`leaderboards/${SEASON}/entries/${uid}`).get()).data()?.points;
@@ -88,7 +86,7 @@ describe("settleDue", () => {
   });
 
   it("PEN com golos 1-1 e prognóstico 1-1 → bónus 3", async () => {
-    await seedGame({ status: "PEN", scorehome: "1", scoreaway: "1" });
+    await seedGame({ status: "PEN", statusRaw: "PEN", scorehome: 1, scoreaway: 1 });
     await seedPlayers();
     await seedPrediction("a", 1, 1);
     await settleDue(db, NOW);
@@ -164,7 +162,7 @@ describe("settleDue", () => {
   });
 
   it("jogo sem resultado contado é saltado; falha de um jogo não bloqueia os outros", async () => {
-    await seedGame({ scorehome: "", scoreaway: "" }, "bad");
+    await seedGame({ scorehome: null, scoreaway: null }, "bad");
     await seedGame({}, "ok");
     await seedPlayers("ok");
     await seedPrediction("a", 2, 1, "ok");
@@ -185,7 +183,7 @@ describe("settleDue", () => {
 
   it("jogo sem resultado há mais de 24h gera aviso e é saltado", async () => {
     const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
-    await seedGame({ scorehome: "", scoreaway: "" }, "old", 25 * 60);
+    await seedGame({ scorehome: null, scoreaway: null }, "old", 25 * 60);
     expect(await settleDue(db, NOW)).toBe(0);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
