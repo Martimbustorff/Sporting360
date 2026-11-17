@@ -115,6 +115,66 @@ describe('useDocument', () => {
   });
 });
 
+describe('stale data on input change', () => {
+  it('never returns the previous path data on the first render after a change', async () => {
+    const seen: string[] = [];
+    function Spy({ path }: { path: string }) {
+      const v = useDocument(path, ItemSchema);
+      seen.push(`${path}:${v.status === 'ready' ? v.data.name : v.status}`);
+      return null;
+    }
+    const view = await render(<Spy path="users/a" />);
+    await act(async () => lastSubscription().next(docSnap({ name: 'A-private' })));
+    seen.length = 0;
+    await view.rerender(<Spy path="users/b" />);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((s) => s === 'users/b:loading')).toBe(true);
+  });
+
+  it('same for collections when the query changes', async () => {
+    const q1 = { id: 1 } as unknown as Parameters<typeof useCollection>[0];
+    const q2 = { id: 2 } as unknown as Parameters<typeof useCollection>[0];
+    const seen: string[] = [];
+    function Spy({ query, tag }: { query: typeof q1; tag: string }) {
+      const v = useCollection(query, ItemSchema);
+      seen.push(`${tag}:${v.status}`);
+      return null;
+    }
+    const view = await render(<Spy query={q1} tag="q1" />);
+    await act(async () => lastSubscription().next(querySnap([{ id: 'a', data: { name: 'A' } }])));
+    seen.length = 0;
+    await view.rerender(<Spy query={q2} tag="q2" />);
+    expect(seen.every((s) => s === 'q2:loading')).toBe(true);
+  });
+
+  it('a stable query reference subscribes once across re-renders', async () => {
+    const q = { id: 1 } as unknown as Parameters<typeof useCollection>[0];
+    function C({ n }: { n: number }) {
+      useCollection(q, ItemSchema);
+      return <Text>{n}</Text>;
+    }
+    const view = await render(<C n={1} />);
+    await view.rerender(<C n={2} />);
+    await view.rerender(<C n={3} />);
+    expect(snapMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the same invalid path to Crashlytics only once', async () => {
+    const bad = { __k: 'dedupe' } as unknown as Parameters<typeof useCollection>[0];
+    function C() {
+      useCollection(bad, ItemSchema);
+      return null;
+    }
+    await render(<C />);
+    const snap = {
+      docs: [{ id: 'bad', ref: { path: 'dedupe/bad' }, data: () => ({ name: 1 }) }],
+    };
+    await act(async () => lastSubscription().next(snap));
+    await act(async () => lastSubscription().next(snap));
+    expect(recordError).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('useCollection', () => {
   const q = { __kind: 'collection', path: 'things' } as unknown as Parameters<typeof useCollection>[0];
   function ColProbe({ query }: { query: typeof q }) {

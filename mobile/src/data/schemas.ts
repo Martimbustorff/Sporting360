@@ -11,12 +11,12 @@ const stringOrNumber = z.union([z.string(), z.number()]);
  */
 export const AppConfigSchema = z.looseObject({
   minVersion: z.object({ ios: z.string(), android: z.string() }),
-  storeUrls: z.object({ ios: z.string().optional(), android: z.string().optional() }).optional(),
+  storeUrls: z.object({ ios: z.string().nullish(), android: z.string().nullish() }).optional(),
   texts: z
     .object({
-      updateRequiredTitle: z.string().optional(),
-      updateRequiredBody: z.string().optional(),
-      updateButton: z.string().optional(),
+      updateRequiredTitle: z.string().nullish(),
+      updateRequiredBody: z.string().nullish(),
+      updateButton: z.string().nullish(),
     })
     .optional(),
 });

@@ -50,5 +50,8 @@
     "jest-expo": "^58.0.15",
     "react-test-renderer": "^19.3.0",
     "typescript": "~6.0.3"
+  },
+  "engines": {
+    "node": ">=22.18"
   }
 }

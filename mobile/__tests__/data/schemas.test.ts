@@ -21,6 +21,15 @@ describe('AppConfigSchema', () => {
     expect(parsed.texts?.updateButton).toBe('Atualizar');
   });
 
+  it('accepts null storeUrls and texts entries', () => {
+    const parsed = AppConfigSchema.safeParse({
+      minVersion: { ios: '7.0.0', android: '7.0.0' },
+      storeUrls: { ios: null, android: null },
+      texts: { updateRequiredTitle: null, updateRequiredBody: null, updateButton: null },
+    });
+    expect(parsed.success).toBe(true);
+  });
+
   it.each([
     ['no minVersion', {}],
     ['minVersion without android', { minVersion: { ios: '7.0.0' } }],

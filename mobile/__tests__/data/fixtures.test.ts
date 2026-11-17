@@ -59,4 +59,32 @@ describe('seed-emulator.mjs', () => {
     expect(res.status).toBe(1);
     expect(res.stderr).toContain('FIRESTORE_EMULATOR_HOST');
   });
+
+  it('refuses a non-local FIRESTORE_EMULATOR_HOST', () => {
+    const res = spawnSync(
+      process.execPath,
+      [path.join(__dirname, '..', '..', 'scripts', 'seed-emulator.mjs')],
+      { env: { ...process.env, FIRESTORE_EMULATOR_HOST: 'firestore.googleapis.com:443' }, encoding: 'utf8' },
+    );
+    expect(res.status).toBe(1);
+    expect(res.stderr).toContain('not a local emulator host');
+  });
+});
+
+describe('fixtures follow backend contracts', () => {
+  const docs = buildFixtures(new Date('2026-11-17T12:00:00Z'));
+  const byPath = new Map(docs.map((d) => [d.path, d.data]));
+
+  it('uses Plan 2 roundLabel output and the publicName fallback', () => {
+    expect((byPath.get('matches/9000') as { competition: { roundLabel: string } }).competition.roundLabel).toBe('J11');
+    expect((byPath.get('matches/9001') as { competition: { roundLabel: string } }).competition.roundLabel).toBe('J12');
+    expect((byPath.get('publicProfiles/seed-user-4') as { displayName: string }).displayName).toBe('Sportinguista #er-4');
+  });
+
+  it('player lines carry every PlayerStatLine field', () => {
+    const lines = (byPath.get('matches/9000/details/players') as { teams: { players: Record<string, unknown>[] }[] }).teams[0]!.players;
+    for (const f of ['playerId','name','photo','number','position','minutes','rating','goals','assists','saves','passesAccuracy','tackles','foulsCommitted','cardsYellow','cardsRed','substitute']) {
+      for (const l of lines) expect(l).toHaveProperty(f);
+    }
+  });
 });

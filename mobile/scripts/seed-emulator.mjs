@@ -1,11 +1,6 @@
 // Seeds the local Firebase emulators with config/app, a test user and the fixtures.
 // Usage (emulators running): FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node scripts/seed-emulator.mjs
 // Refuses to run without FIRESTORE_EMULATOR_HOST so it can never write to production.
-import { initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore } from 'firebase-admin/firestore';
-import { PROJECT_ID, TEST_USER, buildFixtures } from '../src/data/fixtures.ts';
-
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 if (!host) {
   console.error(
@@ -16,8 +11,20 @@ if (!host) {
   process.exit(1);
 }
 
+const hostname = host.replace(/:\d+$/, '');
+if (!['localhost', '127.0.0.1', '10.0.2.2'].includes(hostname)) {
+  console.error(`seed-emulator: FIRESTORE_EMULATOR_HOST=${host} is not a local emulator host. Refusing.`);
+  process.exit(1);
+}
+
 // Never let the Admin SDK pick up real credentials: the emulator needs none.
 delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+// Imported only after the guard so a refused run loads nothing.
+const { initializeApp } = await import('firebase-admin/app');
+const { getAuth } = await import('firebase-admin/auth');
+const { getFirestore } = await import('firebase-admin/firestore');
+const { PROJECT_ID, TEST_USER, buildFixtures } = await import('../src/data/fixtures.ts');
 
 const app = initializeApp({ projectId: PROJECT_ID });
 const firestore = getFirestore(app);

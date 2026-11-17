@@ -20,6 +20,9 @@ export type Loadable<T> =
 
 const LOADING: Loadable<never> = { status: 'loading' };
 
+/** Invalid documents are sent to Crashlytics once per path per app run. */
+const reportedPaths = new Set<string>();
+
 function toError(e: unknown): Error {
   return e instanceof Error ? e : new Error(String(e));
 }
@@ -39,12 +42,17 @@ function report(e: unknown, context: string): void {
  * and never subscribes. `schema` should be a stable (module-level) value.
  */
 export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loadable<T> {
-  const [state, setState] = useState<Loadable<T>>(LOADING);
+  // The state remembers which path produced it: after the path changes, the first render
+  // returns LOADING instead of the previous (possibly another user's) data.
+  const [held, setHeld] = useState<{ key: string | null; value: Loadable<T> }>({
+    key: null,
+    value: LOADING,
+  });
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
+  const setState = (value: Loadable<T>) => setHeld({ key: path, value });
 
   useEffect(() => {
-    setState(LOADING);
     if (path === null) return undefined;
     return onSnapshot(
       doc(db(), path),
@@ -58,7 +66,10 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
           setState({ status: 'ready', data: parsed.data });
         } else {
           const error = new Error(`Documento inválido em ${path}: ${parsed.error.message}`);
-          report(error, `invalid document ${path}`);
+          if (!reportedPaths.has(path)) {
+            reportedPaths.add(path);
+            report(error, `invalid document ${path}`);
+          }
           setState({ status: 'error', error });
         }
       },
@@ -69,7 +80,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
     );
   }, [path]);
 
-  return state;
+  return path !== null && held.key === path ? held.value : LOADING;
 }
 
 /**
@@ -80,24 +91,37 @@ export function useCollection<T>(
   query: Query | null,
   schema: z.ZodType<T>,
 ): Loadable<Array<T & { id: string }>> {
-  const [state, setState] = useState<Loadable<Array<T & { id: string }>>>(LOADING);
+  const [held, setHeld] = useState<{
+    key: Query | null;
+    value: Loadable<Array<T & { id: string }>>;
+  }>({ key: null, value: LOADING });
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
 
   useEffect(() => {
-    setState(LOADING);
     if (query === null) return undefined;
+    const setState = (value: Loadable<Array<T & { id: string }>>) => setHeld({ key: query, value });
     return onSnapshot(
       query,
       (snap) => {
         const items: Array<T & { id: string }> = [];
         let dropped = 0;
+        const badPaths: string[] = [];
         for (const d of snap.docs) {
           const parsed = schemaRef.current.safeParse(d.data());
           if (parsed.success) items.push({ ...parsed.data, id: d.id });
-          else dropped += 1;
+          else {
+            dropped += 1;
+            const p = d.ref?.path ?? d.id;
+            if (!reportedPaths.has(p)) {
+              reportedPaths.add(p);
+              badPaths.push(p);
+            }
+          }
         }
-        if (dropped > 0) report(new Error(`${dropped} documento(s) inválido(s) descartado(s)`), 'collection');
+        if (dropped > 0 && badPaths.length > 0) {
+          report(new Error(`${dropped} documento(s) inválido(s) descartado(s): ${badPaths.join(', ')}`), 'collection');
+        }
         setState({ status: 'ready', data: items });
       },
       (e) => {
@@ -107,7 +131,7 @@ export function useCollection<T>(
     );
   }, [query]);
 
-  return state;
+  return query !== null && held.key === query ? held.value : LOADING;
 }
 
 export function useAppConfig(): Loadable<AppConfig> {

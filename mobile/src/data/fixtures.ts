@@ -53,7 +53,7 @@ const BOARD_ENTRIES = [
   { uid: TEST_USER.uid, displayName: TEST_USER.name, points: 12 },
   { uid: 'seed-user-2', displayName: 'Ana Silva', points: 18 },
   { uid: 'seed-user-3', displayName: 'Rui Costa', points: 15 },
-  { uid: 'seed-user-4', displayName: 'Sportinguista 0004', points: 9 },
+  { uid: 'seed-user-4', displayName: `Sportinguista #${'seed-user-4'.slice(-4)}`, points: 9 },
   { uid: 'seed-user-5', displayName: 'Inês Pereira', points: 3 },
 ] as const;
 
@@ -102,7 +102,7 @@ export function buildFixtures(now: Date = new Date()): SeedDoc[] {
       type: 'league',
       season: '2026',
       round: 'Regular Season - 12',
-      roundLabel: 'Jornada 12',
+      roundLabel: 'J12',
     },
     home: team(SPORTING_TEAM_ID, 'Sporting CP'),
     away: team('211', 'Benfica'),
@@ -123,7 +123,7 @@ export function buildFixtures(now: Date = new Date()): SeedDoc[] {
   const finished = {
     ...upcoming,
     id: '9000',
-    competition: { ...upcoming.competition, round: 'Regular Season - 11', roundLabel: 'Jornada 11' },
+    competition: { ...upcoming.competition, round: 'Regular Season - 11', roundLabel: 'J11' },
     home: team('212', 'FC Porto'),
     away: team(SPORTING_TEAM_ID, 'Sporting CP'),
     sportingSide: 'away',
@@ -152,8 +152,8 @@ export function buildFixtures(now: Date = new Date()): SeedDoc[] {
         {
           teamId: SPORTING_TEAM_ID,
           players: [
-            { playerId: '1001', name: 'Jogador Um', photo: null, number: 9, position: 'F', minutes: 90, rating: 8.1, goals: 1, assists: 0, substitute: false },
-            { playerId: '1002', name: 'Jogador Dois', photo: null, number: 8, position: 'M', minutes: 90, rating: 7.4, goals: 1, assists: 1, substitute: false },
+            { playerId: '1001', name: 'Jogador Um', photo: null, number: 9, position: 'F', minutes: 90, rating: 8.1, goals: 1, assists: 0, saves: 0, passesAccuracy: 84, tackles: 1, foulsCommitted: 2, cardsYellow: 0, cardsRed: 0, substitute: false },
+            { playerId: '1002', name: 'Jogador Dois', photo: null, number: 8, position: 'M', minutes: 90, rating: 7.4, goals: 1, assists: 1, saves: 0, passesAccuracy: 91, tackles: 3, foulsCommitted: 1, cardsYellow: 1, cardsRed: 0, substitute: false },
           ],
         },
       ],
