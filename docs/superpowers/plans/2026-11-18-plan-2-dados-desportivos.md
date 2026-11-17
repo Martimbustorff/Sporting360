@@ -757,4 +757,4 @@ As Tasks 13 a 17 só dependem das Tasks 1, 2, 3 e 6 e podem trocar de ordem. A 1
 ## Respostas do Martim (17/11/2026)
 1. Apagar também as functions HTTP antigas `games` e `backfill` no corte.
 2. Alertas para martimbustorff@gmail.com.
-3. RapidAPI: proposta em análise pelo Martim: API-Football Pro (7.500 pedidos/dia, chega para ~800 em dia de jogo); andebol, voleibol e basquetebol no plano gratuito (100/dia, uso previsto ~40/dia cada), subindo só se faltar.
+3. RapidAPI (confirmado pelo Martim, já subscreveu a API-Football Pro): API-Football Pro (7.500 pedidos/dia, chega para ~800 em dia de jogo); andebol, voleibol e basquetebol no plano gratuito (100/dia, uso previsto ~40/dia cada), subindo só se faltar.
