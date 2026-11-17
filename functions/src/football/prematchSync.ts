@@ -53,32 +53,34 @@ function prematchDoc(p: AfPrediction, now: Date) {
   };
 }
 
-async function needsRefresh(d: FootballDeps, id: string, nowMs: number): Promise<boolean> {
-  const at = (await d.db.doc(`matches/${id}/details/prematch`).get()).get("fetchedAt") as { toMillis(): number } | undefined;
-  return !at || nowMs - at.toMillis() > REFRESH_MS;
+/** Parte (`details/{name}`) inexistente ou com `fetchedAt` de há 12 h ou mais. */
+async function stale(d: FootballDeps, id: string, name: string, nowMs: number): Promise<boolean> {
+  const at = (await d.db.doc(`matches/${id}/details/${name}`).get()).get("fetchedAt") as { toMillis(): number } | undefined;
+  return !at || nowMs - at.toMillis() >= REFRESH_MS;
 }
 
 const write = (d: FootballDeps, id: string, path: string, data: Record<string, unknown>, merge = false) =>
   writeDocs(d.db, [{ path, data, merge }], { stateKey: `prematch_${id}` });
 
 /** Estádio: usa `venues/{id}` se existir (sem chamada); senão 1 chamada. Só toca em venue.capacity e image. */
-async function syncVenue(d: FootballDeps, m: MatchDoc): Promise<void> {
+async function syncVenue(d: FootballDeps, m: MatchDoc): Promise<boolean> {
   const vid = m.venue?.id;
-  if (!vid) return;
+  if (!vid) return false;
   const ref = d.db.doc(`venues/${vid}`);
   let v = (await ref.get()).data() as { capacity?: number | null; image?: string | null } | undefined;
   if (!v) {
     const res = await d.api.venue(Number(vid));
     const x = res[0];
-    if (!x) return;
+    if (!x) return false;
     v = { capacity: x.capacity ?? null, image: x.image ?? null };
     await write(d, `venue_${vid}`, `venues/${vid}`, { name: x.name, city: x.city ?? null, address: x.address ?? null, capacity: x.capacity ?? null, surface: x.surface ?? null, image: x.image ?? null });
   }
   const capacity = v.capacity ?? null;
   const image = v.image ?? null;
-  if (m.venue?.capacity === capacity && m.venue?.image === image) return;
+  if (m.venue?.capacity === capacity && m.venue?.image === image) return false;
   // Merge só dos campos aninhados: saveMatch/mapFixture nunca os escrevem, por isso sobrevivem.
   await write(d, m.id, `matches/${m.id}`, { venue: { capacity, image } }, true);
+  return true;
 }
 
 /**
@@ -88,16 +90,22 @@ async function syncVenue(d: FootballDeps, m: MatchDoc): Promise<void> {
 export async function syncPrematch(d: FootballDeps): Promise<Out> {
   const now = d.now();
   const window = await listFootballWindow(d.db, now, new Date(now.getTime() + AHEAD_MS));
-  const due: MatchDoc[] = [];
-  for (const m of window) if (m.status === "NS" && (await needsRefresh(d, m.id, now.getTime()))) due.push(m);
+  const due: { m: MatchDoc; pre: boolean; inj: boolean }[] = [];
+  for (const m of window) {
+    if (m.status !== "NS") continue;
+    const pre = await stale(d, m.id, "prematch", now.getTime());
+    const inj = await stale(d, m.id, "injuries", now.getTime());
+    // O estádio é sempre verificado: só custa uma chamada quando `venues/{id}` ainda não existe.
+    if (pre || inj || (m.venue?.id && !(await d.db.doc(`venues/${m.venue.id}`).get()).exists)) due.push({ m, pre, inj });
+  }
 
   let count = 0;
   let failed = 0;
   for (let i = 0; i < due.length; i++) {
-    const m = due[i];
+    const { m, pre, inj } = due[i];
     let bad = false;
     let quota = false;
-    const step = async (name: string, fn: () => Promise<void>) => {
+    const step = async (name: string, fn: () => Promise<unknown>) => {
       if (quota) return;
       try {
         await fn();
@@ -107,15 +115,18 @@ export async function syncPrematch(d: FootballDeps): Promise<Out> {
         if (isQuotaError(e)) quota = true;
       }
     };
-    await step("previsões", async () => {
-      const p = (await d.api.predictions(m.id))[0];
-      if (p) await write(d, m.id, `matches/${m.id}/details/prematch`, prematchDoc(p, now));
-    });
-    await step("lesões", async () => {
-      const res = await d.api.injuries({ fixture: m.id });
-      const items = res.map((x) => ({ teamId: String(x.team.id), playerId: String(x.player.id), name: x.player.name, photo: x.player.photo ?? null, type: x.player.type, reason: x.player.reason }));
-      if (items.length > 0) await write(d, m.id, `matches/${m.id}/details/injuries`, { items });
-    });
+    if (pre)
+      await step("previsões", async () => {
+        const p = (await d.api.predictions(m.id))[0];
+        // Resposta vazia: marca-a para a validade de 12 h se aplicar (a app lê `empty` como "sem previsões").
+        await write(d, m.id, `matches/${m.id}/details/prematch`, p ? prematchDoc(p, now) : { fetchedAt: now, empty: true });
+      });
+    if (inj)
+      await step("lesões", async () => {
+        const res = await d.api.injuries({ fixture: m.id });
+        const items = res.map((x) => ({ teamId: String(x.team.id), playerId: String(x.player.id), name: x.player.name, photo: x.player.photo ?? null, type: x.player.type, reason: x.player.reason }));
+        await write(d, m.id, `matches/${m.id}/details/injuries`, { items, fetchedAt: now });
+      });
     await step("estádio", () => syncVenue(d, m));
     if (bad) failed++;
     else count++;

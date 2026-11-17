@@ -58,8 +58,8 @@ describe("syncPrematch", () => {
     expect(p.percent).toEqual({ home: 45, draw: 45, away: 10 });
     expect(p.advice).toBe("Double chance : Sporting CP or draw");
     expect(p.winner).toEqual({ id: "228", name: "Sporting CP", comment: "Win or draw" });
-    expect(p.form).toEqual({ home: "78%", away: "78%" });
-    expect(p.last5.home).toMatchObject({ played: 5 });
+    expect(p.form).toEqual({ home: "WWDLW", away: "LDWWD" });
+    expect(p.last5.home).toMatchObject({ played: 5, form: "80%" });
     expect(p.fetchedAt.toMillis()).toBe(NOW.getTime());
     expect(p.h2h).toHaveLength(1);
     expect(p.h2h[0]).toMatchObject({ id: "1400001", home: { id: "228", logo: SPORTING_CREST_URL }, away: { id: "211" }, score: { home: 1, away: 1 } });
@@ -112,13 +112,60 @@ describe("syncPrematch", () => {
     expect((await db.doc("matches/1500003").get()).get("venue")).toMatchObject({ capacity: 50095, image: "https://x/1.png" });
   });
 
-  it("previsões vazias: não escreve prematch nem conta falha; lesões e estádio seguem", async () => {
+  it("previsões vazias: marca empty; segunda execução 1 h depois faz 0 chamadas", async () => {
     await seedNs("1500003", 30);
-    const f = fakeFetch([[/predictions/, envelope([])], ...routes().slice(1)]);
-    const r = await syncPrematch(deps(f));
+    const mk = () => fakeFetch([[/predictions/, envelope([])], ...routes().slice(1)]);
+    const r = await syncPrematch(deps(mk()));
     expect(r.failed).toBe(0);
-    expect((await db.doc("matches/1500003/details/prematch").get()).exists).toBe(false);
+    const p = (await db.doc("matches/1500003/details/prematch").get()).data()!;
+    expect(p.empty).toBe(true);
     expect((await db.doc("matches/1500003/details/injuries").get()).exists).toBe(true);
+    clock = new Date(NOW.getTime() + HOUR);
+    const f = mk();
+    await syncPrematch(deps(f));
+    expect(f.calls).toHaveLength(0);
+  });
+
+  it("lesões falham uma vez: a execução seguinte repete só as lesões (1 chamada)", async () => {
+    await seedNs("1500003", 30);
+    const f1 = fakeFetch([[/injuries/, { status: 500, body: "boom" }], ...routes().filter((_, i) => i !== 1)]);
+    await expect(syncPrematch(deps(f1))).rejects.toThrow();
+    expect((await db.doc("matches/1500003/details/prematch").get()).exists).toBe(true);
+    clock = new Date(NOW.getTime() + HOUR);
+    const f2 = fakeFetch(routes());
+    const r = await syncPrematch(deps(f2));
+    expect(f2.calls).toHaveLength(1);
+    expect(f2.calls[0]).toMatch(/injuries/);
+    expect(r).toMatchObject({ count: 1, failed: 0 });
+  });
+
+  it("estádio em falta é repetido mesmo com previsões e lesões frescas", async () => {
+    await seedNs("1500003", 30);
+    const f1 = fakeFetch([[/venues/, { status: 500, body: "boom" }], ...routes().slice(0, 2)]);
+    await expect(syncPrematch(deps(f1))).rejects.toThrow();
+    clock = new Date(NOW.getTime() + HOUR);
+    const f2 = fakeFetch(routes());
+    await syncPrematch(deps(f2));
+    expect(f2.calls).toHaveLength(1);
+    expect(f2.calls[0]).toMatch(/venues/);
+  });
+
+  it("lesões que passam a zero limpam a lista", async () => {
+    await seedNs("1500003", 30);
+    await syncPrematch(deps(fakeFetch(routes())));
+    expect((await db.doc("matches/1500003/details/injuries").get()).get("items")).toHaveLength(3);
+    clock = new Date(NOW.getTime() + 13 * HOUR);
+    await syncPrematch(deps(fakeFetch([[/injuries/, envelope([])], ...routes().filter((_, i) => i !== 1)])));
+    expect((await db.doc("matches/1500003/details/injuries").get()).get("items")).toEqual([]);
+  });
+
+  it("exatamente 12 h depois já atualiza", async () => {
+    await seedNs("1500003", 30);
+    await syncPrematch(deps(fakeFetch(routes())));
+    clock = new Date(NOW.getTime() + 12 * HOUR);
+    const f = fakeFetch(routes());
+    await syncPrematch(deps(f));
+    expect(f.calls).toHaveLength(2);
   });
 
   it("um jogo que falha não bloqueia os outros; falha conta em failed", async () => {
@@ -137,9 +184,11 @@ describe("syncPrematch", () => {
     await seedNs("1500003", 20);
     await seedNs("1500004", 30);
     await seedNs("1500005", 40);
-    const f = fakeFetch([[/predictions/, { status: 429, body: "" }], ...routes().slice(1)]);
-    await expect(syncPrematch(deps(f))).rejects.toThrow();
-    expect(f.calls.filter((u) => /predictions/.test(u)).length).toBeLessThan(3);
+    const f = fakeFetch([[/predictions/, (_u: string, n: number) => (n === 0 ? "api-football/predictions.json" : { status: 429, body: "" })], ...routes().slice(1)]);
+    const r = await syncPrematch(deps(f));
+    expect(r).toMatchObject({ count: 1, failed: 2 });
+    expect(r).toHaveProperty("remaining");
+    expect(f.calls.filter((u) => /predictions/.test(u))).toHaveLength(2);
   });
 
   it("saveMatch posterior do mesmo fixture mantém venue.capacity e image", async () => {
