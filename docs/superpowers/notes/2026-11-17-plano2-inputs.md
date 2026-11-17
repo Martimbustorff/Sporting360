@@ -6,3 +6,10 @@
 - Live: servidor faz polling no máximo a cada 15 s durante o jogo, grava uma vez no Firestore, a app ouve em tempo real (onSnapshot). Fora de jogo, chamadas raras.
 - Extras escolhidos: lances ao minuto e estatísticas (incl. xG); onzes, tática e notas dos jogadores; lesionados e suspensos; pré-jogo (confrontos, forma, previsão da API).
 - Martim quer ver o resto do catálogo da API-Football antes de escolher mais.
+
+## Extras adicionais escolhidos (17/11, 21:02)
+- Época e competição: classificação ao vivo de cada competição; melhores marcadores, assistências e cartões; jornadas e calendário completo de cada competição.
+- Equipa e jogadores: plantel com fotos, números, posições e treinador; estatísticas da época por jogador (golos, assistências, minutos, nota média); estatísticas da época da equipa (forma, golos por período, marcados e sofridos em casa e fora); transferências; troféus; histórico de lesões por jogador.
+- Jogo: estádio com foto e capacidade; árbitro.
+- Outras modalidades: API-Sports de andebol, voleibol e basquetebol (calendário, resultados, classificações). Futsal e hóquei com outras fontes.
+- Odds: não (excluído).
