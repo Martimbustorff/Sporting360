@@ -18,8 +18,8 @@ beforeEach(async () => {
     const snap = await db.collection(c).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
-  const lbs = await db.collection("leaderboards").get();
-  for (const lb of lbs.docs) await db.recursiveDelete(lb.ref);
+  const lbs = await db.collection("leaderboards").listDocuments();
+  for (const lb of lbs) await db.recursiveDelete(lb);
 });
 
 const pts = async (board: string, uid: string): Promise<number | undefined> =>
@@ -36,8 +36,6 @@ describe("awardPoints", () => {
     const entry = (await db.doc("leaderboards/week_2026-W47/entries/alice").get()).data()!;
     expect(entry.displayName).toBe("Alice");
     expect(entry.uid).toBe("alice");
-    const parent = (await db.doc("leaderboards/week_2026-W47").get()).data()!;
-    expect(parent).toMatchObject({ kind: "week", key: "2026-W47" });
     const ev = (await db.doc("pointEvents/alice_g1_prediction_exact").get()).data()!;
     expect(ev).toMatchObject({
       uid: "alice", gameId: "g1", type: "prediction_exact", points: 3,
@@ -84,8 +82,7 @@ describe("awardPoints", () => {
     expect((await db.doc("leaderboards/week_2026-W47/entries/bob12345").get()).data()!.displayName).toBe("Sportinguista #2345");
     expect((await db.doc("leaderboards/week_2026-W47/entries/nouser9999").get()).data()!.displayName).toBe("Sportinguista #9999");
     const all = await db.collectionGroup("entries").get();
-    const parents = await db.collection("leaderboards").get();
-    for (const d of [...all.docs, ...parents.docs]) expect(JSON.stringify(d.data())).not.toContain("@");
+    for (const d of all.docs) expect(JSON.stringify(d.data())).not.toContain("@");
   });
 
   it("renomear propaga no award seguinte", async () => {

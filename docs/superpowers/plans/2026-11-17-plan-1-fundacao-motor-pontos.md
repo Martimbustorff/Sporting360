@@ -122,7 +122,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 - [ ] **Step 3:** Escrever `firestore.rules` (`rules_version = '2'`). O id dos documentos de `rankings` é `uid_season`; validar com `docId.split('_')[0] == request.auth.uid` e `request.resource.data.userId == request.auth.uid`. O incremento valida `request.resource.data.points == resource.data.points + 1` (no create, `== 1`).
 - [ ] **Step 4:** Repetir o Step 2. Esperado: todos passam.
 - [ ] **Step 5:** Commit `feat(rules): phase-1 transition rules with emulator tests`.
-- [ ] **Step 6 (só com o OK explícito do Martim):** `firebase deploy --only firestore:rules --project scp360-37a74`. Logo a seguir, num telemóvel com a app V2 atual: entrar com email, entrar por PIN, abrir a Home, a GameBox, fazer um prognóstico e votar no MVP num jogo de teste. Se algo falhar, reverter na consola Firebase → Firestore → Regras → versão anterior.
+- [ ] **Step 6 (só com o OK explícito do Martim):** Adiado para o Plano 2 (ver ledger: regras partiriam os schedulers V2 que usam o SDK cliente). `firebase deploy --only firestore:rules --project scp360-37a74`. Logo a seguir, num telemóvel com a app V2 atual: entrar com email, entrar por PIN, abrir a Home, a GameBox, fazer um prognóstico e votar no MVP num jogo de teste. Se algo falhar, reverter na consola Firebase → Firestore → Regras → versão anterior.
 
 ### Task 4: Períodos, resultado e scoring (lógica pura)
 
@@ -307,7 +307,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 - Modify: `functions/src/index.ts` (já exporta tudo)
 
 - [ ] **Step 1:** `npm run lint && npm test && npm run test:emulator`. Esperado: tudo passa.
-- [ ] **Step 2 (só com o OK explícito do Martim):** Criar o segredo `RAPIDAPI_KEY` com a chave **nova** (rodada no painel da RapidAPI): `firebase functions:secrets:set RAPIDAPI_KEY`.
-- [ ] **Step 3 (só com o OK explícito do Martim):** `firebase deploy --only functions:submitPrediction,functions:voteMvp,functions:settle --project scp360-37a74`. **Nunca** usar `firebase deploy --only functions` sem nomes: apagaria as 11 functions atuais, que não estão neste código.
-- [ ] **Step 4:** Verificar na consola que as 11 functions antigas continuam ativas e que a `settle` corre a cada 10 minutos sem erros (sem jogos por liquidar, devolve 0).
-- [ ] **Step 5:** Commit e push do branch `v2027`.
+- [ ] **Step 2 (só com o OK explícito do Martim):** Adiado para o Plano 2 (ver ledger: regras partiriam os schedulers V2 que usam o SDK cliente). Criar o segredo `RAPIDAPI_KEY` com a chave **nova** (rodada no painel da RapidAPI): `firebase functions:secrets:set RAPIDAPI_KEY`.
+- [ ] **Step 3 (só com o OK explícito do Martim):** Adiado para o Plano 2 (ver ledger: regras partiriam os schedulers V2 que usam o SDK cliente). `firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:settleScheduler --project scp360-37a74`. **Nunca** usar `firebase deploy --only functions` sem nomes: apagaria as 11 functions atuais, que não estão neste código.
+- [ ] **Step 4:** Adiado para o Plano 2 (ver ledger: regras partiriam os schedulers V2 que usam o SDK cliente). Verificar na consola que as 11 functions antigas continuam ativas e que a `settleScheduler` corre a cada 10 minutos sem erros (sem jogos por liquidar, devolve 0).
+- [ ] **Step 5:** Adiado para o Plano 2 (ver ledger: regras partiriam os schedulers V2 que usam o SDK cliente). Commit e push do branch `v2027`.

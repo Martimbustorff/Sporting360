@@ -17,12 +17,12 @@ afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
 beforeEach(async () => {
-  for (const c of ["games", "players", "predictions", "mvpVotes", "pointEvents", "users"]) {
+  for (const c of ["games", "players", "predictions", "matchPredictions", "mvpVotes", "pointEvents", "users"]) {
     const snap = await db.collection(c).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
-  const lbs = await db.collection("leaderboards").get();
-  for (const lb of lbs.docs) await db.recursiveDelete(lb.ref);
+  const lbs = await db.collection("leaderboards").listDocuments();
+  for (const lb of lbs) await db.recursiveDelete(lb);
 });
 
 const team = (api: number, name: string) => ({ api, name, logo: "x" });
@@ -73,7 +73,7 @@ describe("handleSubmitPrediction", () => {
     await seedGame();
     const r = await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
     expect(r).toEqual({ ok: true });
-    const d = (await db.doc("predictions/m1_alice").get()).data()!;
+    const d = (await db.doc("matchPredictions/m1_alice").get()).data()!;
     expect(Object.keys(d).sort()).toEqual(["away", "createdAt", "gameId", "home", "source", "userId"]);
     expect(d).toMatchObject({ gameId: "m1", userId: "alice", home: 2, away: 1, source: "v2027" });
     expect(await pts("alice_m1_prediction_participation")).toBe(1);
@@ -82,7 +82,7 @@ describe("handleSubmitPrediction", () => {
   it("nao escreve scored/scorehome/scoreaway (compatibilidade com legacy/V2)", async () => {
     await seedGame();
     await handleSubmitPrediction(db, alice, { gameId: "m1", home: 0, away: 0 }, before);
-    const d = (await db.doc("predictions/m1_alice").get()).data()!;
+    const d = (await db.doc("matchPredictions/m1_alice").get()).data()!;
     for (const f of ["scored", "scorehome", "scoreaway"]) expect(d).not.toHaveProperty(f);
   });
 
@@ -91,21 +91,23 @@ describe("handleSubmitPrediction", () => {
     await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
     expect((await code(handleSubmitPrediction(db, alice, { gameId: "m1", home: 3, away: 3 }, before)))?.code).toBe("already-exists");
     expect(await pts("alice_m1_prediction_participation")).toBe(1);
-    expect((await db.doc("predictions/m1_alice").get()).data()!.home).toBe(2);
+    expect((await db.doc("matchPredictions/m1_alice").get()).data()!.home).toBe(2);
   });
 
   it("doc v2027 sem pointEvent (falha anterior) -> already-exists e o ponto é recuperado", async () => {
     await seedGame();
-    await db.doc("predictions/m1_alice").set({ gameId: "m1", userId: "alice", home: 1, away: 0, source: "v2027" });
+    await db.doc("matchPredictions/m1_alice").set({ gameId: "m1", userId: "alice", home: 1, away: 0, source: "v2027" });
     expect((await code(handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 2 }, before)))?.code).toBe("already-exists");
     expect(await pts("alice_m1_prediction_participation")).toBe(1);
   });
 
-  it("doc V2 já existente -> already-exists e sem pontos", async () => {
+  it("um doc V2 em predictions não bloqueia a submissão v2027", async () => {
     await seedGame();
     await db.doc("predictions/m1_alice").set({ scorehome: "1", scoreaway: "0", scored: false, userName: "A", season: "2026" });
-    expect((await code(handleSubmitPrediction(db, alice, { gameId: "m1", home: 1, away: 0 }, before)))?.code).toBe("already-exists");
-    expect(await pts("alice_m1_prediction_participation")).toBeUndefined();
+    expect(await handleSubmitPrediction(db, alice, { gameId: "m1", home: 1, away: 0 }, before)).toEqual({ ok: true });
+    expect((await db.doc("matchPredictions/m1_alice").get()).data()).toMatchObject({ source: "v2027", home: 1, away: 0 });
+    expect((await db.doc("predictions/m1_alice").get()).data()!.scorehome).toBe("1");
+    expect(await pts("alice_m1_prediction_participation")).toBe(1);
   });
 
   it("depois do kickoff -> PREDICTION_CLOSED", async () => {

@@ -13,7 +13,7 @@
 
 ## Segredos e ficheiros omitidos
 
-Os ficheiros que continham a chave RapidAPI, o bearer token do Twitter/X, a apiKey web do Firebase ou literais por classificar **não foram copiados** para este repositório. Estas credenciais estavam no código original e **têm de ser rodadas (rotated)**, porque estiveram expostas: a chave RapidAPI no painel da RapidAPI, e o bearer token do Twitter/X no portal de programadores do Twitter/X.
+Os ficheiros que continham a chave RapidAPI, o bearer token do Twitter/X, a apiKey web do Firebase ou literais por classificar **não foram copiados** para este repositório. Estas credenciais estavam no código original e **é recomendado rodá-las (rotation)**, porque estiveram expostas: a chave RapidAPI no painel da RapidAPI, e o bearer token do Twitter/X no portal de programadores do Twitter/X. Decisão do dono: o repositório privado mantém-se e as chaves não são rodadas por agora; nunca entram no código novo, e a chave RapidAPI passa para o Secret Manager no Plano 2.
 
 Ficheiros omitidos de `src/`:
 

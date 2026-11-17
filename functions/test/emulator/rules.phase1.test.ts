@@ -56,13 +56,13 @@ describe("public-read data collections", () => {
 });
 
 describe("backend-owned collections", () => {
-  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x"])(
+  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x", "matchPredictions/x"])(
     "anonymous can read %s",
     async (p) => {
       await assertSucceeds(getDoc(doc(anon(), p)));
     },
   );
-  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x"])(
+  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x", "matchPredictions/x"])(
     "authenticated cannot write %s",
     async (p) => {
       await assertFails(setDoc(doc(as("alice"), p), { a: 1 }));

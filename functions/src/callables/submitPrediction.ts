@@ -30,8 +30,8 @@ export async function handleSubmitPrediction(
   if (!game) throw new HttpsError("not-found", "Jogo não encontrado.");
   if (!predictionOpen(game, now)) throw new HttpsError("failed-precondition", "PREDICTION_CLOSED");
 
-  // Mesmo id que a V2 usa; o doc v2027 não tem scored/scorehome/scoreaway para o legacy o ignorar.
-  const ref = db.doc(`predictions/${gameId}_${auth.uid}`);
+  // Coleção própria da v2027: não colide com os docs `predictions` da V2.
+  const ref = db.doc(`matchPredictions/${gameId}_${auth.uid}`);
   const found: { data: Record<string, unknown> | null } = { data: null };
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);

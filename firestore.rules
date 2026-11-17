@@ -4,11 +4,16 @@
 // Known phase-1 concessions (all to be closed at cutover, Plan 5):
 //   - `users` is publicly readable: the V2 PIN login reads it without a session.
 //   - `gamebox` is publicly readable: V2 queries where('userid','==',uid), possibly without a session.
-// Data collections are written only by the backend (Admin SDK bypasses rules).
+//
+// DO NOT DEPLOY THESE RULES YET. The legacy V2 schedulers write games, players, news, standings,
+// summary, videos, lineups, statistics and tweets through the UNAUTHENTICATED web client SDK, so
+// these rules would break all of them. They MUST NOT be deployed until Plan 2 moves those writers
+// to the Admin SDK (which bypasses rules). Until then production keeps its current rules.
 //
 // Accepted phase-1 risk: `rankings` allows unlimited +1 increments by the owner. V2 increments
 // points client-side (one +1 per prediction transaction), so this cannot be tightened without
-// breaking V2. Closed at cutover (Plan 5), when points move server-side.
+// breaking V2. Closed at cutover (Plan 5), when points move server-side. (+1 inflation risk
+// stays documented and accepted for phase 1.)
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -30,6 +35,7 @@ service cloud.firestore {
     match /pointEvents/{id} { allow read: if true; }
     match /settlements/{id} { allow read: if true; }
     match /mvpVotes/{id} { allow read: if true; }
+    match /matchPredictions/{id} { allow read: if true; }
     match /leaderboards/{id} { allow read: if true; }
     match /leaderboards/{id}/entries/{entry} { allow read: if true; }
 

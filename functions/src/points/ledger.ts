@@ -57,7 +57,6 @@ export async function awardPoints(db: Firestore, e: AwardInput): Promise<boolean
 
     for (const k of kinds) {
       const boardRef = db.doc(`leaderboards/${k}_${keys[k]}`);
-      tx.set(boardRef, { kind: k, key: keys[k] }, { merge: true });
       tx.set(
         boardRef.collection("entries").doc(e.uid),
         {

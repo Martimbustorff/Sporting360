@@ -88,7 +88,7 @@ export async function settleGame(
   }
 
   const preds = await db
-    .collection("predictions").where("gameId", "==", gameId).where("source", "==", "v2027").get();
+    .collection("matchPredictions").where("gameId", "==", gameId).where("source", "==", "v2027").get();
   const predCands: Candidate[] = [];
   for (const d of preds.docs) {
     const p = d.data();
@@ -138,7 +138,7 @@ export async function settleDue(db: Firestore, now: Date): Promise<number> {
       const r = await settleGame(db, g.gameId, now);
       if (r.settled) n++;
     } catch (err) {
-      console.error(`settleDue: falha ao liquidar o jogo ${g.gameId}`, err);
+      logger.error(`settleDue: falha ao liquidar o jogo ${g.gameId}`, err);
     }
   }
   return n;

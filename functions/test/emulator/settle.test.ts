@@ -19,12 +19,12 @@ afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
 beforeEach(async () => {
-  for (const c of ["games", "players", "predictions", "mvpVotes", "pointEvents", "users", "settlements"]) {
+  for (const c of ["games", "players", "predictions", "matchPredictions", "mvpVotes", "pointEvents", "users", "settlements"]) {
     const snap = await db.collection(c).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
-  const lbs = await db.collection("leaderboards").get();
-  for (const lb of lbs.docs) await db.recursiveDelete(lb.ref);
+  const lbs = await db.collection("leaderboards").listDocuments();
+  for (const lb of lbs) await db.recursiveDelete(lb);
 });
 
 async function seedGame(over: Record<string, unknown> = {}, id = "m1", finishedMinAgo = 180) {
@@ -44,7 +44,7 @@ async function seedGame(over: Record<string, unknown> = {}, id = "m1", finishedM
 }
 /** Prognóstico v2027 como a callable o escreve (com a participação já atribuída). */
 async function seedPrediction(uid: string, home: number, away: number, gameId = "m1", participation = true) {
-  await db.doc(`predictions/${gameId}_${uid}`).set({
+  await db.doc(`matchPredictions/${gameId}_${uid}`).set({
     gameId, userId: uid, home, away, createdAt: Timestamp.fromDate(KICKOFF), source: "v2027",
   });
   if (participation) {
@@ -133,7 +133,7 @@ describe("settleDue", () => {
   it("prognóstico antigo sem source é ignorado", async () => {
     await seedGame();
     await seedPlayers();
-    await db.doc("predictions/old1").set({ gameId: "m1", userId: "old", home: 2, away: 1 });
+    await db.doc("matchPredictions/old1").set({ gameId: "m1", userId: "old", home: 2, away: 1 });
     await settleDue(db, NOW);
     expect(await total("old")).toBeUndefined();
     expect((await db.doc("pointEvents/old_m1_prediction_exact").get()).exists).toBe(false);
