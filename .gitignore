@@ -84,3 +84,9 @@ dist/
 dist/
 web-build/
 .superpowers/
+
+# Firebase functions
+functions/lib/
+functions/node_modules/
+*.log
+.firebase/

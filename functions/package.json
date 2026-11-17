@@ -1,0 +1,30 @@
+{
+  "name": "s360-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "jest",
+    "test:emulator": "node scripts/test-emulator.js"
+  },
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "date-fns-tz": "^3.2.0",
+    "firebase-admin": "^13.10.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.20.5",
+    "firebase": "^13.4.0",
+    "firebase-tools": "^15.36.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.15",
+    "typescript": "^5.9.3"
+  }
+}
