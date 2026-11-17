@@ -6,6 +6,8 @@ const HOUR = 60 * MIN;
 const dayNumber = (p: LisbonParts) => Math.floor(Date.UTC(p.year, p.month - 1, p.day) / 86_400_000);
 
 export function relativeTime(date: Date, now: Date): string {
+  // Data inválida (publishedAt malformado) não pode rebentar a lista: Intl lançaria RangeError.
+  if (Number.isNaN(date.getTime()) || Number.isNaN(now.getTime())) return '';
   const elapsed = now.getTime() - date.getTime();
   if (elapsed < MIN) return 'agora';
   if (elapsed < HOUR) return `há ${Math.floor(elapsed / MIN)} min`;

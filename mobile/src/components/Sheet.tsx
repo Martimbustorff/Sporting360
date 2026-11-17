@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { resolveSheetEnd } from '@/lib/sheetEnd';
 import { colors, layout, radius, type } from '@/theme/tokens';
 
 export type SheetProps = {
@@ -51,14 +52,19 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
     })
     .onEnd((e) => {
       'worklet';
-      const wantOpen =
-        Math.abs(e.velocityY) > layout.sheetVelocity ? e.velocityY < 0 : y.get() < range / 2;
+      const { wantOpen, changed } = resolveSheetEnd({
+        position: y.get(),
+        velocity: e.velocityY,
+        open,
+        range,
+        flickVelocity: layout.sheetVelocity,
+      });
       y.set(
         reduced
           ? withTiming(wantOpen ? 0 : range, { duration: 0 })
           : withSpring(wantOpen ? 0 : range, { duration: 300, dampingRatio: 0.8, velocity: e.velocityY }),
       );
-      if (wantOpen !== open) scheduleOnRN(onOpenChange, wantOpen);
+      if (changed) scheduleOnRN(onOpenChange, wantOpen);
     });
 
   const animated = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
@@ -69,6 +75,7 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
 
   return (
     <GestureDetector gesture={pan}>
+      {/* Vista exterior leva a sombra (iOS corta a sombra numa vista com overflow hidden); a interior recorta. */}
       <Animated.View
         testID="sheet"
         style={[
@@ -81,30 +88,39 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
             backgroundColor: colors.white,
             borderTopLeftRadius: radius.sheet,
             borderTopRightRadius: radius.sheet,
-            overflow: 'hidden',
             ...layout.sheetShadow,
-            ...pad,
           },
           animated,
         ]}
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={title}
-          accessibilityState={{ expanded: open }}
-          onPress={() => onOpenChange(!open)}
-          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: layout.minTouch }}
-        >
-          <Text style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
-          <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.black} />
-        </Pressable>
         <View
-          testID="sheet-content"
-          accessibilityElementsHidden={!open}
-          importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
-          style={{ flex: 1 }}
+          testID="sheet-clip"
+          style={{
+            flex: 1,
+            borderTopLeftRadius: radius.sheet,
+            borderTopRightRadius: radius.sheet,
+            overflow: 'hidden',
+            ...pad,
+          }}
         >
-          {children}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={title}
+            accessibilityState={{ expanded: open }}
+            onPress={() => onOpenChange(!open)}
+            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: layout.minTouch }}
+          >
+            <Text style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
+            <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.black} />
+          </Pressable>
+          <View
+            testID="sheet-content"
+            accessibilityElementsHidden={!open}
+            importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
+            style={{ flex: 1 }}
+          >
+            {children}
+          </View>
         </View>
       </Animated.View>
     </GestureDetector>

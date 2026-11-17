@@ -14,7 +14,7 @@ export type RankingVM = {
 };
 
 export function RankingRow({ row, highlighted, avatarUri }: { row: RankingVM; highlighted: boolean; avatarUri?: string }) {
-  const label = `${highlighted ? 'Tu, ' : ''}${row.position}.º, ${row.displayName}, ${row.points} pontos`;
+  const label = `${highlighted ? 'Tu, ' : ''}${row.position}.º, ${row.displayName}, ${row.points} ${row.points === 1 ? 'ponto' : 'pontos'}`;
   return (
     <View
       testID="ranking-row"

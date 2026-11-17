@@ -13,4 +13,8 @@ describe('relativeTime', () => {
   it('dias', () => expect(rt('2026-11-13T12:00:00Z')).toBe('há 4 dias'));
   it('7 dias ou mais: data curta pt-PT', () => expect(rt('2026-11-05T12:00:00Z')).toBe('5 nov.'));
   it('usa a tabela fixa de meses (R8)', () => expect(rt('2026-09-14T12:00:00Z')).toBe('14 set.'));
+  it('data inválida devolve string vazia em vez de lançar', () => {
+    expect(relativeTime(new Date('lixo'), now)).toBe('');
+    expect(relativeTime(now, new Date('lixo'))).toBe('');
+  });
 });

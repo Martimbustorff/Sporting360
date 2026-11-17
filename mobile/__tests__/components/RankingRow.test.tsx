@@ -18,4 +18,8 @@ describe('RankingRow', () => {
     await render(<RankingRow row={row} highlighted={false} />);
     expect(screen.getByTestId('ranking-row').props.accessibilityLabel).not.toMatch(/Tu/);
   });
+  it('singular: 1 ponto', async () => {
+    await render(<RankingRow row={{ ...row, points: 1 }} highlighted={false} />);
+    expect(screen.getByTestId('ranking-row').props.accessibilityLabel).toMatch(/1 ponto$/);
+  });
 });

@@ -31,11 +31,11 @@ jest.mock('react-native-reanimated', () => {
     default: { View, createAnimatedComponent: (c: unknown) => c },
     useSharedValue: (v: unknown) => require('react').useRef(sv(v)).current,
     useAnimatedStyle: (fn: () => object) => fn(),
-    useReducedMotion: () => false,
+    useReducedMotion: jest.fn(() => false),
     useEvent: () => () => {},
     useHandler: () => ({ context: {}, doDependenciesDiffer: false, useWeb: false }),
     makeMutable: (v: unknown) => ({ get: () => v, set: () => {} }),
-    withSpring: (v: unknown) => v,
-    withTiming: (v: unknown) => v,
+    withSpring: jest.fn((v: unknown) => v),
+    withTiming: jest.fn((v: unknown) => v),
   };
 });
