@@ -9,6 +9,7 @@
     "build": "tsc",
     "lint": "tsc --noEmit",
     "test": "jest",
+    "pretest:emulator": "npm run build",
     "test:emulator": "node scripts/test-emulator.js"
   },
   "dependencies": {

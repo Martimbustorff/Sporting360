@@ -1,0 +1,187 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import {
+  initializeTestEnvironment,
+  assertFails,
+  assertSucceeds,
+  RulesTestEnvironment,
+} from "@firebase/rules-unit-testing";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+
+let env: RulesTestEnvironment;
+
+const anon = () => env.unauthenticatedContext().firestore();
+const as = (uid: string) => env.authenticatedContext(uid).firestore();
+
+async function seed(path: string, data: Record<string, unknown>) {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), path), data);
+  });
+}
+
+beforeAll(async () => {
+  env = await initializeTestEnvironment({
+    projectId: "demo-scp360",
+    firestore: { rules: readFileSync(resolve(__dirname, "../../../firestore.rules"), "utf8") },
+  });
+});
+afterAll(async () => {
+  await env.cleanup();
+});
+beforeEach(async () => {
+  await env.clearFirestore();
+});
+
+describe("public-read data collections", () => {
+  const cols = [
+    "games", "news", "players", "standings", "videos", "lineups", "summaries",
+    "stastistics", "manofmatch", "tweets", "predictions",
+  ];
+  it.each(cols)("anonymous can read %s/x", async (c) => {
+    await assertSucceeds(getDoc(doc(anon(), `${c}/x`)));
+  });
+  it.each(["games", "news", "players", "standings", "videos", "lineups", "summaries", "stastistics", "tweets"])(
+    "authenticated cannot write %s/x",
+    async (c) => {
+      await assertFails(setDoc(doc(as("alice"), `${c}/x`), { a: 1 }));
+    },
+  );
+  it("authenticated cannot update or delete an existing games/x", async () => {
+    await seed("games/x", { a: 1 });
+    await assertFails(updateDoc(doc(as("alice"), "games/x"), { a: 2 }));
+    await assertFails(deleteDoc(doc(as("alice"), "games/x")));
+  });
+});
+
+describe("backend-owned collections", () => {
+  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x"])(
+    "anonymous can read %s",
+    async (p) => {
+      await assertSucceeds(getDoc(doc(anon(), p)));
+    },
+  );
+  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x"])(
+    "authenticated cannot write %s",
+    async (p) => {
+      await assertFails(setDoc(doc(as("alice"), p), { a: 1 }));
+    },
+  );
+  it("authenticated cannot update or delete leaderboards entries", async () => {
+    await seed("leaderboards/a/entries/b", { a: 1 });
+    await assertFails(updateDoc(doc(as("alice"), "leaderboards/a/entries/b"), { a: 2 }));
+    await assertFails(deleteDoc(doc(as("alice"), "leaderboards/a/entries/b")));
+  });
+});
+
+describe("users", () => {
+  it("anonymous can read users/alice (phase 1, closes in Plan 5)", async () => {
+    await assertSucceeds(getDoc(doc(anon(), "users/alice")));
+  });
+  it("owner can create users/alice; others and anonymous cannot", async () => {
+    await assertFails(setDoc(doc(as("bob"), "users/alice"), { n: 1 }));
+    await assertFails(setDoc(doc(anon(), "users/alice"), { n: 1 }));
+    await assertSucceeds(setDoc(doc(as("alice"), "users/alice"), { n: 1 }));
+  });
+  it("update by bob denied, by alice allowed", async () => {
+    await seed("users/alice", { n: 1 });
+    await assertFails(updateDoc(doc(as("bob"), "users/alice"), { n: 2 }));
+    await assertSucceeds(updateDoc(doc(as("alice"), "users/alice"), { n: 2 }));
+  });
+  it("delete by bob denied, by alice allowed", async () => {
+    await seed("users/alice", { n: 1 });
+    await assertFails(deleteDoc(doc(as("bob"), "users/alice")));
+    await assertSucceeds(deleteDoc(doc(as("alice"), "users/alice")));
+  });
+});
+
+describe("gamebox", () => {
+  it("anonymous can read", async () => {
+    await assertSucceeds(getDoc(doc(anon(), "gamebox/g1")));
+  });
+  it("create: alice with userid alice ok; bob with userid alice denied; anonymous denied", async () => {
+    await assertFails(setDoc(doc(as("bob"), "gamebox/g1"), { userid: "alice" }));
+    await assertFails(setDoc(doc(anon(), "gamebox/g1"), { userid: "alice" }));
+    await assertSucceeds(setDoc(doc(as("alice"), "gamebox/g1"), { userid: "alice" }));
+  });
+  it("update: alice ok, bob denied, changing userid denied", async () => {
+    await seed("gamebox/g1", { userid: "alice", v: 1 });
+    await assertFails(updateDoc(doc(as("bob"), "gamebox/g1"), { v: 2 }));
+    await assertFails(updateDoc(doc(as("alice"), "gamebox/g1"), { userid: "bob" }));
+    await assertSucceeds(updateDoc(doc(as("alice"), "gamebox/g1"), { v: 2 }));
+  });
+  it("delete: bob denied, alice ok", async () => {
+    await seed("gamebox/g1", { userid: "alice" });
+    await assertFails(deleteDoc(doc(as("bob"), "gamebox/g1")));
+    await assertSucceeds(deleteDoc(doc(as("alice"), "gamebox/g1")));
+  });
+});
+
+describe.each(["predictions", "manofmatch"])("%s", (col) => {
+  it("create by alice with userId alice on m1_alice ok", async () => {
+    await assertSucceeds(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "alice" }));
+  });
+  it("create with userId bob denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "bob" }));
+  });
+  it("create with doc id not ending in _alice denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), `${col}/m1_bob`), { userId: "alice" }));
+  });
+  it("create by anonymous denied", async () => {
+    await assertFails(setDoc(doc(anon(), `${col}/m1_alice`), { userId: "alice" }));
+  });
+  it("update and delete by alice denied", async () => {
+    await seed(`${col}/m1_alice`, { userId: "alice" });
+    await assertFails(updateDoc(doc(as("alice"), `${col}/m1_alice`), { x: 1 }));
+    await assertFails(deleteDoc(doc(as("alice"), `${col}/m1_alice`)));
+  });
+});
+
+describe("rankings", () => {
+  const path = "rankings/alice_2026-2027";
+  it("create by alice with points 1 ok (with extra fields)", async () => {
+    await assertSucceeds(
+      setDoc(doc(as("alice"), path), { userId: "alice", points: 1, userName: "A", season: "2026-2027" }),
+    );
+  });
+  it("create with points other than 1 denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), path), { userId: "alice", points: 50 }));
+  });
+  it("create with wrong userId or wrong doc id prefix denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), path), { userId: "bob", points: 1 }));
+    await assertFails(setDoc(doc(as("alice"), "rankings/bob_2026-2027"), { userId: "alice", points: 1 }));
+  });
+  it("create by bob on alice's doc denied", async () => {
+    await assertFails(setDoc(doc(as("bob"), path), { userId: "alice", points: 1 }));
+  });
+  it("update points 5 -> 6 ok; 5 -> 9 denied; 5 -> 5 denied; by bob denied", async () => {
+    await seed(path, { userId: "alice", points: 5 });
+    await assertFails(updateDoc(doc(as("alice"), path), { points: 9 }));
+    await assertFails(updateDoc(doc(as("alice"), path), { points: 5 }));
+    await assertFails(updateDoc(doc(as("bob"), path), { points: 6 }));
+    await assertSucceeds(updateDoc(doc(as("alice"), path), { points: 6 }));
+  });
+  it("merge-set increment (V2 transaction style) works for create and update", async () => {
+    const ref = doc(as("alice"), path);
+    await assertSucceeds(setDoc(ref, { userId: "alice", points: 1 }, { merge: true }));
+    await assertSucceeds(setDoc(ref, { userId: "alice", points: 2 }, { merge: true }));
+  });
+  it("update cannot change userId", async () => {
+    await seed(path, { userId: "alice", points: 5 });
+    await assertFails(updateDoc(doc(as("alice"), path), { points: 6, userId: "bob" }));
+  });
+  it("delete denied", async () => {
+    await seed(path, { userId: "alice", points: 5 });
+    await assertFails(deleteDoc(doc(as("alice"), path)));
+  });
+  it("anonymous can read", async () => {
+    await assertSucceeds(getDoc(doc(anon(), path)));
+  });
+});
+
+describe("unlisted collections", () => {
+  it("read and write denied on foo/x", async () => {
+    await assertFails(getDoc(doc(as("alice"), "foo/x")));
+    await assertFails(getDoc(doc(anon(), "foo/x")));
+    await assertFails(setDoc(doc(as("alice"), "foo/x"), { a: 1 }));
+  });
+});

@@ -1,8 +1,77 @@
+// S360 Firestore rules, PHASE 1 (transition).
+//
+// Goal: close everything that can be closed without breaking the deployed V2 app.
+// Known phase-1 concessions (all to be closed at cutover, Plan 5):
+//   - `users` is publicly readable: the V2 PIN login reads it without a session.
+//   - `gamebox` is publicly readable: V2 queries where('userid','==',uid), possibly without a session.
+// Data collections are written only by the backend (Admin SDK bypasses rules).
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    function signedIn() { return request.auth != null; }
+    // Doc id ends with '_' + uid (literal compare, no regex on the uid).
+    function idEndsWithUid(id) {
+      return id.size() > request.auth.uid.size()
+          && id[id.size() - request.auth.uid.size() - 1:] == '_' + request.auth.uid;
     }
+
+    // Public-read data, backend-written only.
+    match /{col}/{id} {
+      allow read: if col in ['games', 'news', 'players', 'standings', 'videos', 'lineups',
+                             'summaries', 'stastistics', 'tweets'];
+    }
+
+    // Backend-owned results (public names only), read-only for clients.
+    match /pointEvents/{id} { allow read: if true; }
+    match /settlements/{id} { allow read: if true; }
+    match /mvpVotes/{id} { allow read: if true; }
+    match /leaderboards/{id} { allow read: if true; }
+    match /leaderboards/{id}/entries/{entry} { allow read: if true; }
+
+    // users: public read (phase 1), owner-only writes.
+    match /users/{uid} {
+      allow read: if true;
+      allow create, update, delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // gamebox: field `userid` (lowercase).
+    match /gamebox/{id} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.userid == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.userid == request.auth.uid
+                    && request.resource.data.userid == resource.data.userid;
+      allow delete: if signedIn() && resource.data.userid == request.auth.uid;
+    }
+
+    // predictions and manofmatch: id is {gameId}_{uid}, create-only.
+    match /predictions/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && idEndsWithUid(id);
+    }
+    match /manofmatch/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && request.resource.data.userId == request.auth.uid
+                    && idEndsWithUid(id);
+    }
+
+    // rankings: id is {uid}_{season}; V2 increments points by 1 (merge-set in a transaction).
+    match /rankings/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+                    && id.split('_')[0] == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.points == 1;
+      allow update: if signedIn()
+                    && id.split('_')[0] == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.points == resource.data.points + 1;
+    }
+
+    // Everything else: denied by default.
   }
 }
