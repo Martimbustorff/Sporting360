@@ -45,7 +45,8 @@
             "useFrameworks": "dynamic"
           }
         }
-      ]
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

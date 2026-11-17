@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`TextField snapshot (default) 1`] = `
+<View>
+  <View
+    className="flex-row items-center border-b border-s360-divider"
+    style={
+      {
+        "gap": 8,
+      }
+    }
+  >
+    <TextInput
+      accessibilityLabel="Email"
+      autoCapitalize="none"
+      className="flex-1 py-2 text-s360-white font-body text-[14px]"
+      onChangeText={[Function]}
+      placeholder="Email"
+      placeholderTextColor="rgba(255, 255, 255, 0.4)"
+      secureTextEntry={false}
+      value=""
+    />
+  </View>
+</View>
+`;

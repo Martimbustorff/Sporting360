@@ -63,7 +63,8 @@ export const radius = {
   sm: 4, // score boxes
   md: 8, // section bars, tab bar
   pill: 16, // round badge, event icons
-  sheet: 32, // GameBox bottom sheet, primary buttons
+  sheet: 32, // GameBox bottom sheet
+  button: 52, // primary / secondary buttons (Figma 564:7259), fully round at 51px height
 } as const;
 
 export const layout = {
@@ -73,4 +74,7 @@ export const layout = {
   crestSmall: { width: 30, height: 35 }, // crest in calendar rows
   eventIcon: 32,
   buttonHeight: 51,
+  headerRowBottom: 13, // gap under the title/back row inside the 96px header (Figma 564:6950)
+  headerIcon: 24, // back chevron
+  headerSideX: 20, // back chevron left offset
 } as const;

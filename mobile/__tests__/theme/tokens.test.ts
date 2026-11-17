@@ -53,3 +53,17 @@ describe('tokens <-> tailwind', () => {
     expect(Object.keys(FONT_ASSETS).sort()).toEqual(Object.values(fonts).sort());
   });
 });
+
+import { layout, radius } from '@/theme/tokens';
+
+describe('component tokens from Figma 564:6950 / 564:7259', () => {
+  it('button radius is fully round at button height', () => {
+    expect(radius.button).toBeGreaterThanOrEqual(layout.buttonHeight / 2);
+    expect(radius.button).toBe(52);
+  });
+  it('header row layout', () => {
+    expect(layout.headerRowBottom).toBe(13);
+    expect(layout.headerIcon).toBe(24);
+    expect(layout.headerSideX).toBe(20);
+  });
+});
