@@ -6,7 +6,9 @@ import {
   assertSucceeds,
   RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction, increment,
+} from "firebase/firestore";
 
 let env: RulesTestEnvironment;
 
@@ -137,44 +139,83 @@ describe.each(["predictions", "manofmatch"])("%s", (col) => {
 });
 
 describe("rankings", () => {
-  const path = "rankings/alice_2026-2027";
+  const S = "2026-2027";
+  const path = `rankings/alice_${S}`;
+  const row = (over: Record<string, unknown> = {}) => ({
+    userId: "alice", userName: "Alice", season: S, points: 1, ...over,
+  });
   it("create by alice with points 1 ok (with extra fields)", async () => {
-    await assertSucceeds(
-      setDoc(doc(as("alice"), path), { userId: "alice", points: 1, userName: "A", season: "2026-2027" }),
-    );
+    await assertSucceeds(setDoc(doc(as("alice"), path), row()));
   });
   it("create with points other than 1 denied", async () => {
-    await assertFails(setDoc(doc(as("alice"), path), { userId: "alice", points: 50 }));
+    await assertFails(setDoc(doc(as("alice"), path), row({ points: 50 })));
   });
-  it("create with wrong userId or wrong doc id prefix denied", async () => {
-    await assertFails(setDoc(doc(as("alice"), path), { userId: "bob", points: 1 }));
-    await assertFails(setDoc(doc(as("alice"), "rankings/bob_2026-2027"), { userId: "alice", points: 1 }));
+  it("create with wrong userId denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), path), row({ userId: "bob" })));
   });
-  it("create by bob on alice's doc denied", async () => {
-    await assertFails(setDoc(doc(as("bob"), path), { userId: "alice", points: 1 }));
+  it("create on another user's doc id denied", async () => {
+    await assertFails(setDoc(doc(as("alice"), `rankings/bob_${S}`), row()));
+    await assertFails(setDoc(doc(as("bob"), path), row()));
+  });
+  it("create with doc id not matching uid_season denied (fake leaderboard row)", async () => {
+    await assertFails(setDoc(doc(as("alice"), "rankings/alice_x"), row({ userName: "Bob" })));
+    await assertFails(setDoc(doc(as("alice"), "rankings/alice_2025-2026"), row()));
+  });
+  it("create with missing or malformed season denied", async () => {
+    const { season: _s, ...noSeason } = row();
+    await assertFails(setDoc(doc(as("alice"), "rankings/alice_"), noSeason));
+    await assertFails(setDoc(doc(as("alice"), "rankings/alice_x"), row({ season: "x" })));
   });
   it("update points 5 -> 6 ok; 5 -> 9 denied; 5 -> 5 denied; by bob denied", async () => {
-    await seed(path, { userId: "alice", points: 5 });
+    await seed(path, row({ points: 5 }));
     await assertFails(updateDoc(doc(as("alice"), path), { points: 9 }));
     await assertFails(updateDoc(doc(as("alice"), path), { points: 5 }));
     await assertFails(updateDoc(doc(as("bob"), path), { points: 6 }));
     await assertSucceeds(updateDoc(doc(as("alice"), path), { points: 6 }));
   });
-  it("merge-set increment (V2 transaction style) works for create and update", async () => {
-    const ref = doc(as("alice"), path);
-    await assertSucceeds(setDoc(ref, { userId: "alice", points: 1 }, { merge: true }));
-    await assertSucceeds(setDoc(ref, { userId: "alice", points: 2 }, { merge: true }));
-  });
-  it("update cannot change userId", async () => {
-    await seed(path, { userId: "alice", points: 5 });
+  it("update cannot change userId or season", async () => {
+    await seed(path, row({ points: 5 }));
     await assertFails(updateDoc(doc(as("alice"), path), { points: 6, userId: "bob" }));
+    await assertFails(updateDoc(doc(as("alice"), path), { points: 6, season: "2027-2028" }));
+  });
+  it("update denied when stored userId is not the caller", async () => {
+    await seed(path, row({ userId: "bob", points: 5 }));
+    await assertFails(updateDoc(doc(as("alice"), path), { points: 6 }));
   });
   it("delete denied", async () => {
-    await seed(path, { userId: "alice", points: 5 });
+    await seed(path, row({ points: 5 }));
     await assertFails(deleteDoc(doc(as("alice"), path)));
   });
   it("anonymous can read", async () => {
     await assertSucceeds(getDoc(doc(anon(), path)));
+  });
+
+  // Real V2 write: runTransaction(get prediction -> set prediction -> merge-set ranking +1).
+  const v2Write = (uid: string, inc: number) => {
+    const db = as(uid);
+    const pRef = doc(db, `predictions/m1_${uid}`);
+    const rRef = doc(db, `rankings/${uid}_${S}`);
+    return runTransaction(db, async (tx) => {
+      await tx.get(pRef);
+      tx.set(pRef, { userId: uid, gameId: "m1" });
+      tx.set(
+        rRef,
+        { points: increment(inc), userId: uid, userName: "Alice", season: S },
+        { merge: true },
+      );
+    });
+  };
+  it("V2 transaction: create path (no ranking doc yet) succeeds", async () => {
+    await assertSucceeds(v2Write("alice", 1));
+  });
+  it("V2 transaction: update path (existing ranking) succeeds", async () => {
+    await seed(path, row({ points: 5 }));
+    await assertSucceeds(v2Write("alice", 1));
+  });
+  it("V2 transaction with increment(2) denied (create and update)", async () => {
+    await assertFails(v2Write("alice", 2));
+    await seed(path, row({ points: 5 }));
+    await assertFails(v2Write("alice", 2));
   });
 });
 

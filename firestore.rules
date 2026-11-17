@@ -5,6 +5,10 @@
 //   - `users` is publicly readable: the V2 PIN login reads it without a session.
 //   - `gamebox` is publicly readable: V2 queries where('userid','==',uid), possibly without a session.
 // Data collections are written only by the backend (Admin SDK bypasses rules).
+//
+// Accepted phase-1 risk: `rankings` allows unlimited +1 increments by the owner. V2 increments
+// points client-side (one +1 per prediction transaction), so this cannot be tightened without
+// breaking V2. Closed at cutover (Plan 5), when points move server-side.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -59,16 +63,22 @@ service cloud.firestore {
                     && idEndsWithUid(id);
     }
 
-    // rankings: id is {uid}_{season}; V2 increments points by 1 (merge-set in a transaction).
+    // rankings: id is exactly {uid}_{season} (V2 rankingDocId); V2 increments points by 1
+    // (merge-set in a transaction). Id and `season` field are tied together so a user cannot
+    // create extra rows; exact-id compare avoids '_' ambiguity in uids.
     match /rankings/{id} {
       allow read: if true;
       allow create: if signedIn()
-                    && id.split('_')[0] == request.auth.uid
+                    && request.resource.data.season is string
+                    && request.resource.data.season.matches('^[0-9]{4}-[0-9]{4}$')
+                    && id == request.auth.uid + '_' + request.resource.data.season
                     && request.resource.data.userId == request.auth.uid
                     && request.resource.data.points == 1;
       allow update: if signedIn()
-                    && id.split('_')[0] == request.auth.uid
+                    && resource.data.userId == request.auth.uid
                     && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.season == resource.data.season
+                    && id == request.auth.uid + '_' + resource.data.season
                     && request.resource.data.points == resource.data.points + 1;
     }
 
