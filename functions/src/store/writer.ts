@@ -39,7 +39,7 @@ function toFirestore<T>(v: T): T {
 }
 
 /** Converte `Timestamp` em `Date`, em profundidade. */
-function fromFirestore<T>(v: T): T {
+export function fromFirestore<T>(v: T): T {
   if (v instanceof Timestamp) return v.toDate() as unknown as T;
   if (Array.isArray(v)) return v.map(fromFirestore) as unknown as T;
   if (isPlainObject(v)) {
@@ -77,8 +77,13 @@ const hashKey = (path: string) => path.replace(/[/.]/g, "|");
 /**
  * Escreve só os documentos cujo conteúdo mudou desde a última vez (hash por caminho em
  * `ingestState/{stateKey}.hashes`). Os hashes só são guardados depois do lote confirmado.
+ * Com `force` ignora os hashes guardados e escreve tudo (backfill, arranque do ensaio em sombra).
  */
-export async function writeDocs(db: Firestore, writes: DocWrite[], o: { stateKey: string }): Promise<{ written: number; skipped: number }> {
+export async function writeDocs(
+  db: Firestore,
+  writes: DocWrite[],
+  o: { stateKey: string; force?: boolean },
+): Promise<{ written: number; skipped: number }> {
   if (writes.length === 0) return { written: 0, skipped: 0 };
   const stateRef = db.doc(`ingestState/${o.stateKey}`);
   const stored = ((await stateRef.get()).get("hashes") ?? {}) as Record<string, string>;
@@ -89,7 +94,7 @@ export async function writeDocs(db: Firestore, writes: DocWrite[], o: { stateKey
     const key = hashKey(w.path);
     const hashed = w.hashOmit ? Object.fromEntries(Object.entries(w.data).filter(([k]) => !w.hashOmit!.includes(k))) : w.data;
     const hash = stableHash(hashed);
-    if (stored[key] === hash) skipped++;
+    if (!o.force && stored[key] === hash) skipped++;
     else changed.push({ w, key, hash });
   }
 
@@ -124,7 +129,7 @@ const LEGACY_NAMES = ["summaries", "stastistics", "lineups", "players"] as const
 export async function saveMatch(
   db: Firestore,
   m: { match: MatchDoc; details?: FootballDetails | null; legacy?: Partial<LegacyDocs> | null },
-  o?: { prefix?: string },
+  o?: { prefix?: string; force?: boolean },
 ): Promise<{ written: number; skipped: number; locked: boolean }> {
   const id = m.match.id;
   const existing = await db.doc(`matches/${id}`).get();
@@ -157,7 +162,7 @@ export async function saveMatch(
     }
   }
 
-  const res = await writeDocs(db, writes, { stateKey: `match_${id}` });
+  const res = await writeDocs(db, writes, { stateKey: `match_${id}`, force: o?.force });
 
   const summaries = legacy?.summaries;
   if (summaries && Object.keys(summaries).length > 0) {

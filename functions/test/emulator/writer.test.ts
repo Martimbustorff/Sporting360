@@ -175,3 +175,25 @@ describe("writeDocs", () => {
     expect(await writeDocs(db, [w[0], { path: "teams/b", data: { n: 3 } }], { stateKey: "k" })).toEqual({ written: 1, skipped: 1 });
   });
 });
+
+describe("force", () => {
+  it("writeDocs com force ignora os hashes guardados", async () => {
+    const w = [{ path: "teams/a", data: { n: 1 } }];
+    await writeDocs(db, w, { stateKey: "f" });
+    await db.doc("teams/a").delete();
+    expect(await writeDocs(db, w, { stateKey: "f" })).toEqual({ written: 0, skipped: 1 });
+    expect(await writeDocs(db, w, { stateKey: "f", force: true })).toEqual({ written: 1, skipped: 0 });
+    expect((await db.doc("teams/a").get()).exists).toBe(true);
+  });
+
+  it("saveMatch com force repõe documentos apagados mesmo sem mudanças", async () => {
+    await saveMatch(db, { match: match(), details: details(3), legacy: legacy(3) });
+    await db.doc("matches/1001/details/events").delete();
+    await db.doc("games/1001").delete();
+    expect((await saveMatch(db, { match: match(), details: details(3), legacy: legacy(3) })).written).toBe(0);
+    const r = await saveMatch(db, { match: match(), details: details(3), legacy: legacy(3) }, { force: true });
+    expect(r.written).toBeGreaterThan(0);
+    expect((await db.doc("matches/1001/details/events").get()).exists).toBe(true);
+    expect((await db.doc("games/1001").get()).exists).toBe(true);
+  });
+});
