@@ -5,6 +5,20 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // S360 design tokens (see src/theme/tokens.ts). Use these in new code.
+        s360: {
+          bg: '#001B13',
+          header: 'rgba(0, 28, 19, 0.7)',
+          surface10: 'rgba(255, 255, 255, 0.1)',
+          surface20: 'rgba(255, 255, 255, 0.2)',
+          divider: '#334942',
+          primary: '#00835B',
+          muted: 'rgba(255, 255, 255, 0.7)',
+          disabled: 'rgba(255, 255, 255, 0.4)',
+          yellow: '#F7CF46',
+          red: '#F74C66',
+        },
+        // Legacy colours, kept until every screen is migrated.
         primary: '#003625',
         secondary:'#373737',
         bgauth:'#001B13',
@@ -19,6 +33,12 @@ module.exports = {
         background_800:'#121212',
       },
       fontFamily: {
+        // S360 design tokens
+        display: ["DinCondensedBold"],
+        body: ["Poppins"],
+        bodyMedium: ["PoppinsMedium"],
+        bodySemiBold: ["PoppinsSemiBold"],
+        // Legacy
         dinBold: "DinBold",
         dinRegular: ["DinRegular"],
         dinLight: ["DinLight"],

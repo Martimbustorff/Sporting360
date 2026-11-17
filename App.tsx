@@ -59,8 +59,8 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     'DinBold': require('./src/assets/fonts/DIN-Bold.ttf'),
     'DinLight': require('./src/assets/fonts/DIN-Light.ttf'),
-    'DinRegular': require('./src/assets/fonts/DIN-Medium.ttf'),
-    'DinMedium': require('./src/assets/fonts/DIN-Regular.ttf'),
+    'DinRegular': require('./src/assets/fonts/DIN-Regular.ttf'),
+    'DinMedium': require('./src/assets/fonts/DIN-Medium.ttf'),
     'DinCondensed': require('./src/assets/fonts/DINCondensed-Regular.ttf'),
     'DinCondensedLight': require('./src/assets/fonts/DINCondensed-Light.ttf'),
     'Poppins': require('./src/assets/fonts/Poppins-Regular.ttf'),
