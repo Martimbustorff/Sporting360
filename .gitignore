@@ -83,3 +83,4 @@ dist/
 .expo
 dist/
 web-build/
+.superpowers/
