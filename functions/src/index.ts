@@ -4,6 +4,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { settleDue } from "./scheduled/settle";
 
 if (getApps().length === 0) initializeApp();
+getFirestore().settings({ ignoreUndefinedProperties: true });
 
 export { submitPrediction } from "./callables/submitPrediction";
 export { voteMvp } from "./callables/voteMvp";
