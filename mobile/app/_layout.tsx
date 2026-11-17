@@ -5,13 +5,24 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { FONT_ASSETS } from '@/theme/fontAssets';
+import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { SessionProvider } from '@/providers/SessionProvider';
 import { initFirebase } from '@/services/firebase';
 import { legacyCleanup } from '@/services/legacyCleanup';
 
 SplashScreen.preventAutoHideAsync();
 // Uma vez no arranque do módulo (não em cada render).
-initFirebase();
+try {
+  initFirebase();
+} catch (e) {
+  // Nunca bloquear o arranque (ex.: emulador "already used" em dev).
+  console.warn('[firebase] init failed', e);
+  try {
+    recordError(getCrashlytics(), e instanceof Error ? e : new Error(String(e)));
+  } catch {
+    // nada mais a fazer
+  }
+}
 legacyCleanup();
 
 export default function RootLayout() {

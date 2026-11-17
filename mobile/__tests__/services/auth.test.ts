@@ -25,6 +25,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authInstance } from '@/services/firebase';
 import { signInEmail, signUpEmail, sendReset, signOut } from '@/services/auth';
 import { ensureProfile } from '@/services/profile';
+import { claimProfileEnsure, resetProfileEnsured } from '@/lib/profileEnsured';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -70,6 +71,20 @@ describe('signUpEmail', () => {
     expect((setDoc as jest.Mock).mock.invocationCallOrder[0]!).toBeLessThan(
       mockUpdateProfileCall.mock.invocationCallOrder[0]!,
     );
+  });
+  it('setDoc rejects: ensureProfile still called once, uid marked, resolves', async () => {
+    resetProfileEnsured();
+    (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue({ user: { uid: 'u9' } });
+    (setDoc as jest.Mock).mockRejectedValueOnce(new Error('rules'));
+    await expect(signUpEmail('Zé', 'z@x.pt', 'secret1')).resolves.toBeUndefined();
+    expect(mockUpdateProfileCall).toHaveBeenCalledTimes(1);
+    expect(claimProfileEnsure('u9')).toBe(false); // already marked
+  });
+  it('createUser failing clears the sign-up flag so a later inherited session is ensured', async () => {
+    resetProfileEnsured();
+    (createUserWithEmailAndPassword as jest.Mock).mockRejectedValue({ code: 'auth/weak-password' });
+    await expect(signUpEmail('Zé', 'z@x.pt', '1')).rejects.toThrow();
+    expect(claimProfileEnsure('u10')).toBe(true);
   });
   it('says the email already exists on sign-up', async () => {
     (createUserWithEmailAndPassword as jest.Mock).mockRejectedValue({ code: 'auth/email-already-in-use' });

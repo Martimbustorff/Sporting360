@@ -4,6 +4,7 @@ import {
   signInWithEmailAndPassword,
   signOut as fbSignOut,
 } from '@react-native-firebase/auth';
+import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authErrorMessage } from '@/lib/authErrors';
@@ -33,11 +34,20 @@ export async function signUpEmail(name: string, email: string, password: string)
     const cred = await createUserWithEmailAndPassword(authInstance(), email.trim(), password);
     const uid = cred.user.uid;
     // users/{uid}: perfil privado (inclui email, nunca mostrado em público). Sem displayName (R22).
-    await setDoc(
-      doc(db(), `users/${uid}`),
-      { name: name.trim(), email: email.trim(), createdAt: serverTimestamp() },
-      { merge: true },
-    );
+    try {
+      await setDoc(
+        doc(db(), `users/${uid}`),
+        { name: name.trim(), email: email.trim(), createdAt: serverTimestamp() },
+        { merge: true },
+      );
+    } catch (e) {
+      // A conta já existe e a sessão está aberta: não falhar. O nome cai para o fallback do uid.
+      try {
+        recordError(getCrashlytics(), e instanceof Error ? e : new Error(String(e)));
+      } catch {
+        // nada mais a fazer
+      }
+    }
     await ensureProfile();
     markProfileEnsured(uid);
   } catch (e) {
