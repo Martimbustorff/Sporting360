@@ -257,7 +257,7 @@ Objetivo: fechar o que dá para fechar **sem partir a app V2**. A V2 lê `users`
 **Interfaces:**
 - Consumes: `getGameState`, `getPlayerLines`, `predictionOpen`, `mvpWindow`, `mvpCandidates`, `awardPoints`, `POINTS`
 - Produces (contrato para a app no Plano 4):
-  - `submitPrediction({ gameId: string, home: number, away: number }) → { ok: true }`, que escreve `predictions/{gameId}_{uid}` com `{ gameId, userId, home, away, createdAt, source: 'v2027' }` e atribui `prediction_participation`
+  - `submitPrediction({ gameId: string, home: number, away: number }) → { ok: true }`, que escreve `matchPredictions/{gameId}_{uid}` com `{ gameId, userId, home, away, createdAt, source: 'v2027' }` e atribui `prediction_participation`
   - `voteMvp({ gameId: string, playerId: string }) → { ok: true }`, que escreve `mvpVotes/{gameId}_{uid}` com `{ gameId, userId, playerId, createdAt, source: 'v2027' }` e atribui `mvp_participation`
   - Erros `HttpsError`: `unauthenticated`; `invalid-argument` (golos fora de 0 a 20 ou não inteiros; jogador fora dos candidatos); `failed-precondition` com a mensagem `PREDICTION_CLOSED`, `MVP_NOT_OPEN` ou `MVP_CLOSED`; `already-exists`.
 
