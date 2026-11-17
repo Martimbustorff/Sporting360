@@ -32,8 +32,13 @@ export async function handleSubmitPrediction(
 
   // Mesmo id que a V2 usa; o doc v2027 não tem scored/scorehome/scoreaway para o legacy o ignorar.
   const ref = db.doc(`predictions/${gameId}_${auth.uid}`);
+  const found: { data: Record<string, unknown> | null } = { data: null };
   await db.runTransaction(async (tx) => {
-    if ((await tx.get(ref)).exists) throw new HttpsError("already-exists", "Já submeteste este prognóstico.");
+    const snap = await tx.get(ref);
+    if (snap.exists) {
+      found.data = snap.data() ?? {};
+      return;
+    }
     tx.create(ref, {
       gameId,
       userId: auth.uid,
@@ -43,6 +48,22 @@ export async function handleSubmitPrediction(
       source: "v2027",
     });
   });
+
+  const existing = found.data;
+  if (existing) {
+    // Recupera o ponto se um doc v2027 do próprio utilizador ficou sem pontos (falha entre create e award).
+    // awardPoints é idempotente.
+    if (existing.source === "v2027" && existing.userId === auth.uid) {
+      await awardPoints(db, {
+        uid: auth.uid,
+        gameId,
+        type: "prediction_participation",
+        points: POINTS.participation,
+        gameDate: game.kickoff,
+      });
+    }
+    throw new HttpsError("already-exists", "Já submeteste este prognóstico.");
+  }
 
   await awardPoints(db, {
     uid: auth.uid,

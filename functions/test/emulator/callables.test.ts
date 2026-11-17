@@ -94,6 +94,13 @@ describe("handleSubmitPrediction", () => {
     expect((await db.doc("predictions/m1_alice").get()).data()!.home).toBe(2);
   });
 
+  it("doc v2027 sem pointEvent (falha anterior) -> already-exists e o ponto é recuperado", async () => {
+    await seedGame();
+    await db.doc("predictions/m1_alice").set({ gameId: "m1", userId: "alice", home: 1, away: 0, source: "v2027" });
+    expect((await code(handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 2 }, before)))?.code).toBe("already-exists");
+    expect(await pts("alice_m1_prediction_participation")).toBe(1);
+  });
+
   it("doc V2 já existente -> already-exists e sem pontos", async () => {
     await seedGame();
     await db.doc("predictions/m1_alice").set({ scorehome: "1", scoreaway: "0", scored: false, userName: "A", season: "2026" });
@@ -158,6 +165,14 @@ describe("handleVoteMvp", () => {
     await live("85");
     await seedPlayers();
     await handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now);
+    expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now)))?.code).toBe("already-exists");
+    expect(await pts("alice_m1_mvp_participation")).toBe(1);
+  });
+
+  it("voto v2027 sem pointEvent (falha anterior) -> already-exists e o ponto é recuperado", async () => {
+    await live("85");
+    await seedPlayers();
+    await db.doc("mvpVotes/m1_alice").set({ gameId: "m1", userId: "alice", playerId: "10", source: "v2027" });
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, now)))?.code).toBe("already-exists");
     expect(await pts("alice_m1_mvp_participation")).toBe(1);
   });

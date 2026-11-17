@@ -122,6 +122,16 @@ describe.each(["predictions", "manofmatch"])("%s", (col) => {
   it("create by alice with userId alice on m1_alice ok", async () => {
     await assertSucceeds(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "alice" }));
   });
+  it("create with a source field denied (reserved for the v2027 callables)", async () => {
+    await assertFails(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "alice", source: "v2027" }));
+    await assertFails(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "alice", source: "x" }));
+  });
+  it("V2-shaped create (no source) still ok", async () => {
+    const v2 = col === "predictions"
+      ? { gameId: "m1", userId: "alice", userName: "A", scorehome: "1", scoreaway: "0", scored: false, season: "2026-2027" }
+      : { GameId: "m1", playerId: "10", userId: "alice", season: "2026-2027", id: "m1_alice" };
+    await assertSucceeds(setDoc(doc(as("alice"), `${col}/m1_alice`), v2));
+  });
   it("create with userId bob denied", async () => {
     await assertFails(setDoc(doc(as("alice"), `${col}/m1_alice`), { userId: "bob" }));
   });

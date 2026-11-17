@@ -49,17 +49,20 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userid == request.auth.uid;
     }
 
-    // predictions and manofmatch: id is {gameId}_{uid}, create-only.
+    // predictions and manofmatch: id is {gameId}_{uid}, create-only. `source` is reserved for
+    // server-written (v2027 callable) docs; clients cannot set it.
     match /predictions/{id} {
       allow read: if true;
       allow create: if signedIn()
                     && request.resource.data.userId == request.auth.uid
+                    && !('source' in request.resource.data)
                     && idEndsWithUid(id);
     }
     match /manofmatch/{id} {
       allow read: if true;
       allow create: if signedIn()
                     && request.resource.data.userId == request.auth.uid
+                    && !('source' in request.resource.data)
                     && idEndsWithUid(id);
     }
 
