@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
-import { SessionProvider } from '@/providers/SessionProvider';
+import { SessionProvider, useSession } from '@/providers/SessionProvider';
 import { initFirebase } from '@/services/firebase';
 import { legacyCleanup } from '@/services/legacyCleanup';
 
@@ -25,20 +25,29 @@ try {
 }
 legacyCleanup();
 
+// Guardas de rota: (auth)/_layout e (app)/_layout redirecionam conforme a sessão.
+// Enquanto a sessão está em `loading` não se mostra nada: o splash nativo continua (V2 entra já com sessão).
+function RootStack({ fontsReady }: { fontsReady: boolean }) {
+  const { status } = useSession();
+  const ready = fontsReady && status !== 'loading';
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts(FONT_ASSETS);
 
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
-
-  if (!loaded && !error) return null;
   // GestureHandlerRootView: obrigatório para os gestos do Sheet (e de qualquer GestureDetector).
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* fontes/splash > (UpdateGate, T17) > SessionProvider > guardas de rota > (BiometricGate, T15) */}
       <SessionProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <RootStack fontsReady={loaded || !!error} />
       </SessionProvider>
     </GestureHandlerRootView>
   );

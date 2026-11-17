@@ -1,0 +1,206 @@
+// Ecrãs de autenticação e guardas de rotas (Task 13). Serviços mockados; router real (expo-router/testing-library).
+jest.unmock('expo-router');
+
+const mockSession: { current: { status: 'loading' | 'signedOut' | 'signedIn'; user: unknown } } = {
+  current: { status: 'signedOut', user: null },
+};
+jest.mock('@/providers/SessionProvider', () => ({
+  useSession: () => mockSession.current,
+}));
+jest.mock('@/services/auth', () => ({
+  signInEmail: jest.fn(),
+  signUpEmail: jest.fn(),
+  sendReset: jest.fn(),
+}));
+
+import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { authErrorMessage } from '@/lib/authErrors';
+import { sendReset, signInEmail, signUpEmail } from '@/services/auth';
+
+import AuthLayout from '../../app/(auth)/_layout';
+import Welcome from '../../app/(auth)/welcome';
+import Entrar from '../../app/(auth)/entrar';
+import CriarConta from '../../app/(auth)/criar-conta';
+import Recuperar from '../../app/(auth)/recuperar-password';
+import Termos from '../../app/(auth)/termos';
+import AppLayout from '../../app/(app)/_layout';
+import Home from '../../app/(app)/index';
+
+const ROUTES = {
+  '(auth)/_layout': AuthLayout,
+  '(auth)/welcome': Welcome,
+  '(auth)/entrar': Entrar,
+  '(auth)/criar-conta': CriarConta,
+  '(auth)/recuperar-password': Recuperar,
+  '(auth)/termos': Termos,
+  '(app)/_layout': AppLayout,
+  '(app)/index': Home,
+};
+
+const RESET_MSG = 'Se existir uma conta com este email, vais receber um link para mudar a password.';
+
+function authError(code: string) {
+  // Os serviços já convertem o código em mensagem PT (auth.ts > fail()).
+  return new Error(authErrorMessage(code));
+}
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockSession.current = { status: 'signedOut', user: null };
+});
+
+describe('Welcome', () => {
+  it('"Entrar" navega para /entrar', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    expect(screen.getByText('A tua ligação ao universo', { exact: false })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(r.getPathname()).toBe('/entrar');
+  });
+
+  it('"Criar uma conta" navega para /criar-conta', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar uma conta' }));
+    expect(r.getPathname()).toBe('/criar-conta');
+  });
+
+  it('mostra "Conta apagada." com aviso=conta-apagada (R17)', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/welcome?aviso=conta-apagada' });
+    expect(screen.getByText('Conta apagada.')).toBeTruthy();
+  });
+
+  it('sem aviso não mostra "Conta apagada."', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    expect(screen.queryByText('Conta apagada.')).toBeNull();
+  });
+});
+
+describe('Entrar', () => {
+  it('com campos vazios não chama signInEmail e pede email e password', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(signInEmail).not.toHaveBeenCalled();
+    expect(screen.getByText('Indica o email e a password.')).toBeTruthy();
+  });
+
+  it('com auth/invalid-credential mostra "Email ou password incorretos."', async () => {
+    (signInEmail as jest.Mock).mockRejectedValue(authError('auth/invalid-credential'));
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(screen.getByText('Email ou password incorretos.')).toBeTruthy();
+  });
+
+  it('o botão fica em loading durante o pedido; email em minúsculas e sem espaços', async () => {
+    const d = deferred();
+    (signInEmail as jest.Mock).mockReturnValue(d.promise);
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    await fireEvent.changeText(screen.getByLabelText('Email'), '  Z@X.PT ');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Entrar' }));
+    expect(signInEmail).toHaveBeenCalledWith('z@x.pt', 'secret1');
+    expect(screen.getByTestId('button-loading')).toBeTruthy();
+    await act(async () => d.resolve());
+    expect(screen.queryByTestId('button-loading')).toBeNull();
+  });
+
+  it('tem links para recuperar a password e criar conta', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    expect(screen.getByText('Esqueceste-te da password?')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('link', { name: 'Recupera-a' }));
+    expect(r.getPathname()).toBe('/recuperar-password');
+  });
+
+  it('com sessão signedIn, abrir /entrar redireciona para /', async () => {
+    mockSession.current = { status: 'signedIn', user: { uid: 'u1', email: null, providers: [] } };
+    const r = await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    expect(r.getPathname()).toBe('/');
+  });
+});
+
+describe('Criar conta', () => {
+  it('com nome vazio mostra "Indica o teu nome." e não chama signUpEmail', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(signUpEmail).not.toHaveBeenCalled();
+    expect(screen.getByText('Indica o teu nome.')).toBeTruthy();
+  });
+
+  it('sucesso chama signUpEmail(nome, email em minúsculas sem espaços, password)', async () => {
+    (signUpEmail as jest.Mock).mockResolvedValue(undefined);
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Zé Coelho');
+    await fireEvent.changeText(screen.getByLabelText('Email'), ' ZeCoelho@Hotmail.com ');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(signUpEmail).toHaveBeenCalledWith('Zé Coelho', 'zecoelho@hotmail.com', 'secret1');
+  });
+
+  it('o registo pode dizer que o email já tem conta (R18)', async () => {
+    (signUpEmail as jest.Mock).mockRejectedValue(authError('auth/email-already-in-use'));
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Zé');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'secret1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    expect(screen.getByText('Já existe uma conta com este email.')).toBeTruthy();
+  });
+
+  it('"Termos e condições" abre /termos', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    await fireEvent.press(screen.getByRole('link', { name: 'Termos e condições' }));
+    expect(r.getPathname()).toBe('/termos');
+    expect(screen.getByText('1. ACEITAÇÃO DOS TERMOS E CONDIÇÕES')).toBeTruthy();
+  });
+});
+
+describe('Recuperar password', () => {
+  it('sucesso mostra a mensagem neutra', async () => {
+    (sendReset as jest.Mock).mockResolvedValue(undefined);
+    await renderRouter(ROUTES, { initialUrl: '/recuperar-password' });
+    expect(screen.getByText('Indica o teu email para receberes uma nova password.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Email'), ' Z@X.pt ');
+    await fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+    expect(sendReset).toHaveBeenCalledWith('z@x.pt');
+    expect(screen.getByText(RESET_MSG)).toBeTruthy();
+  });
+
+  it('auth/user-not-found mostra a mesma mensagem (R18)', async () => {
+    (sendReset as jest.Mock).mockRejectedValue(Object.assign(new Error('x'), { code: 'auth/user-not-found' }));
+    await renderRouter(ROUTES, { initialUrl: '/recuperar-password' });
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+    expect(screen.getByText(RESET_MSG)).toBeTruthy();
+  });
+
+  it('com email vazio não chama sendReset', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/recuperar-password' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+    expect(sendReset).not.toHaveBeenCalled();
+    expect(screen.getByText('Indica o teu email.')).toBeTruthy();
+  });
+});
+
+describe('Guardas', () => {
+  it('signedOut em / vai para /welcome', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/' });
+    expect(r.getPathname()).toBe('/welcome');
+  });
+
+  it('loading não mostra nem a app nem o welcome', async () => {
+    mockSession.current = { status: 'loading', user: null };
+    await renderRouter(ROUTES, { initialUrl: '/' });
+    expect(screen.queryByText('S360')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Entrar' })).toBeNull();
+  });
+});

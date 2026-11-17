@@ -61,6 +61,16 @@ export const type = {
   newsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
   newsMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
+  // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)
+  welcomeLogo: { fontFamily: fonts.display, fontSize: 110, color: colors.white, textTransform: 'uppercase' }, // 565:8145
+  welcomeTagline: { fontFamily: fonts.display, fontSize: 30, color: colors.white, textTransform: 'uppercase', textAlign: 'center' }, // 564:7256
+  authLink: { fontFamily: fonts.body, fontSize: 12, color: colors.white }, // 564:6901 (white at 50%)
+  authLinkAction: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primary }, // 564:6902
+  authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
+  // Figma uses Poppins Light (not bundled): Regular stands in.
+  authIntro: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
+  termsBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
+  termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
 export const spacing = {
@@ -71,6 +81,7 @@ export const spacing = {
   xl: 32,
   screenX: 14, // horizontal padding on match screens (347px content on 375px)
   screenXWide: 32, // horizontal padding on home / menu screens
+  authX: 30, // horizontal padding on auth screens (315px content on 375px, Figma 564:6906)
 } as const;
 
 export const radius = {
@@ -137,4 +148,28 @@ export const layout = {
   rankingRowMinHeight: 44,
   avatarSize: 32,
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
+  // Welcome (Figma 564:7178)
+  welcomeRings: 709, // ring group 564:7180, square
+  welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
+  welcomeRingEllipse: { width: 330.018, height: 627.252 }, // each ring, rotated in 2.5deg steps
+  welcomeRingCount: 72,
+  welcomeRingStep: 2.5,
+  welcomeLogoGap: 32, // between "S360" and the tagline (564:7253)
+  welcomeTaglineWidth: 302,
+  welcomeButtonsGap: 20, // between "Entrar" and "Criar uma conta"
+  welcomeBottom: 16, // under "Criar uma conta", above the home indicator
+  homeIndicator: 34, // iOS home indicator area included in Figma bottoms
+  // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)
+  authContentTop: 32, // header bottom to the first field
+  authIntroTop: 24, // header bottom to the intro text (564:6971)
+  authFieldsGap: 32,
+  authButtonGap: 16, // button to links / terms note
+  authLinksRowGap: 8,
+  authLinkGap: 8,
+  authBottom: 16, // last footer line to keyboard / bottom
+  authRecoverBottom: 30, // "Enviar" to keyboard / bottom
+  authMutedOpacity: 0.5,
+  authNoteWidth: 267, // terms note under "Criar conta"
+  termsTop: 16, // header bottom to text (564:7169)
+  termsSectionGap: 12,
 } as const;
