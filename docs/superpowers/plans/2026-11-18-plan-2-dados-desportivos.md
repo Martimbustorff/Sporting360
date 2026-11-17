@@ -429,6 +429,35 @@ As fixtures deste passo seguem a forma documentada da API-Football v3 (copiar a 
 - [ ] **Step 4:** Repetir. Esperado: passa.
 - [ ] **Step 5:** Commit `feat(football): standings, rounds, competition fixtures and top players`.
 
+### Task 9b: Eliminatórias e vista por competição (Martim, 17/11)
+
+Na Taça de Portugal só há eliminatórias; na Liga dos Campeões há fase de liga e depois play-off e eliminatórias; na Taça da Liga há fase de grupos e depois final four. A app tem de mostrar tabela ou quadro de eliminatórias consoante a competição e o momento. Sem chamadas novas: tudo sai de `data/fixtures` e `data/standings`, já pedidos na Task 9.
+
+**Files:**
+- Create: `functions/src/football/bracket.ts`
+- Modify: `functions/src/football/competitionSync.ts` (`refreshCompetition` escreve `data/bracket` e `competitions/{key}.view`)
+- Test: `functions/test/unit/bracket.test.ts`, `functions/test/emulator/competitionSync.test.ts`; fixtures sintéticas `functions/test/fixtures/api-football/fixtures-cup-96.json` (3.ª eliminatória a final, jogos únicos, um decidido nos penáltis) e `fixtures-ucl-2.json` (fase de liga, play-off a duas mãos com empate no agregado decidido no prolongamento, oitavos por jogar). Substituídas por gravações reais na paragem da Task 21.
+
+**Interfaces:**
+- Consumes: `roundLabel`, `crestFor`, o formato `data/fixtures.items` e `data/standings.groups` da Task 9, `refreshCompetition` (exportada na Task 9).
+- Produces:
+  - `stageOf(rawRound: string | null): "table" | "knockout" | null`: `table` para `Regular Season - N`, `League Stage - N`, `Group ... - N`; `knockout` para `Round of N`, `Nth Round`, `Play-offs`, `Knockout Round Play-offs`, quartos, meias e final; `null` no resto.
+  - `type Tie = { id: string; stage: string; home: TeamRef; away: TeamRef; legs: { matchId: string; kickoff: string; status: string; score: { home: number | null; away: number | null; penaltyHome: number | null; penaltyAway: number | null } }[]; aggregate: { home: number; away: number } | null; winnerTeamId: string | null; sportingInvolved: boolean }` (`home` é a equipa da casa na 1.ª mão).
+  - `buildBracket(items): { stages: { label: string; raw: string; ties: Tie[] }[] }`: só jogos `knockout`, etapas pela ordem das rondas na API, jogos agrupados pelo par de equipas (as duas mãos numa só eliminatória). `aggregate` só quando todas as mãos são finais; vencedor pelo agregado (golos com prolongamento), senão pelos penáltis da última mão; `null` enquanto houver mão por jogar.
+  - `competitionView(type, currentRaw: string | null, hasTableRows: boolean, hasKnockout: boolean): { primary: "table" | "bracket"; hasTable: boolean; hasBracket: boolean; currentStage: string | null }`: `primary` é `bracket` quando a ronda atual é `knockout` ou quando não há linhas de tabela; senão `table`. `currentStage` é o `roundLabel` da ronda atual.
+  - `refreshCompetition` escreve `competitions/{key}/data/bracket` (só se houver eliminatórias) e o campo `view` em `competitions/{key}`.
+
+- [ ] **Step 1: Escrever os testes.**
+  - Unit `stageOf`: `"Regular Season - 11"` → table; `"League Stage - 8"` → table; `"Round of 16"`, `"3rd Round"`, `"Knockout Round Play-offs"`, `"Final"` → knockout.
+  - Unit `buildBracket` com `fixtures-ucl-2.json`: play-off com 2 mãos numa só `Tie`, `aggregate` com golos do prolongamento, `winnerTeamId` correto; oitavos por jogar → `aggregate: null`, `winnerTeamId: null`; jogos da fase de liga ignorados; logo do 228 = `SPORTING_CREST_URL`; `sportingInvolved` true só nas do 228.
+  - Unit `buildBracket` com `fixtures-cup-96.json`: uma `Tie` por jogo; empate decidido nos penáltis → vencedor pelos penáltis.
+  - Unit `competitionView`: Taça de Portugal (sem tabela) → `bracket`; Liga dos Campeões com ronda atual `League Stage - 6` → `table`, `hasBracket` false; com ronda atual `Knockout Round Play-offs` → `bracket`, `hasTable` true; Liga Portugal → `table`.
+  - Emulator: `refreshCompetition(96, "2026")` → `data/bracket.stages` com as rondas por ordem e `competitions/football_96_2026.view.primary === "bracket"`; liga 94 → sem `data/bracket` e `view.primary === "table"`.
+- [ ] **Step 2:** `npm test -- bracket && npm run test:emulator -- competitionSync`. Esperado: falha.
+- [ ] **Step 3:** Implementar.
+- [ ] **Step 4:** Repetir. Esperado: passa. `npm run lint` sem erros.
+- [ ] **Step 5:** Commit `feat(football): knockout bracket and per-competition view`.
+
 ### Task 10: Plantel, treinador, época, transferências, troféus e lesões
 
 **Files:**

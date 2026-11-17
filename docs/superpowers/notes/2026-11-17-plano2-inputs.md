@@ -28,3 +28,10 @@
 ## Leitor GameBox (17/11, 22:07)
 - O cartão GameBox físico tem um QR code. Na V2 o leitor não lê (bugs: `setStop` inexistente no "Corrigir", `onBarcodeScanned` nunca desligado depois da leitura, popups em cadeia). Sem hotfix da V2: corrige-se na app nova (Plano 4, ecrã GameBox).
 - App nova: expo-camera com QR (e, por segurança, code128/EAN/PDF417), parar a leitura depois do primeiro resultado, confirmar o número, retomar se o utilizador corrigir, entrada manual sempre disponível, permissão de câmara em pt-PT, teste em iOS e Android reais.
+
+## Classificações por competição (Martim, 17/11)
+
+- A classificação, jornadas, calendário e tops atualizam no fim de cada jogo do Sporting (e outra vez 25 min depois), além do ciclo de 6 h e dos 15 min durante o jogo.
+- Taça de Portugal: só quadro de eliminatórias. Liga dos Campeões: tabela na fase de liga, quadro de eliminatórias a partir do play-off (tabela continua acessível). Taça da Liga: fase de grupos e depois final four. Liga Portugal: tabela.
+- Backend (Plano 2, Task 9b): `competitions/{key}.view` (`primary` tabela ou quadro, `hasTable`, `hasBracket`, `currentStage`) e `data/bracket` com eliminatórias a duas mãos, agregado e vencedor.
+- Plano 4: o ecrã de classificação lê `view.primary` para abrir na vista certa e mostra o seletor tabela/quadro quando há as duas.
