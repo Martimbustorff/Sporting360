@@ -133,6 +133,51 @@ describe("syncCompetitions", () => {
   });
 });
 
+describe("eliminatórias e vista", () => {
+  const key = (id: number) => `competitions/football_${id}_2026`;
+  const cupRoutes = (): Array<[RegExp, any]> => [
+    [/fixtures\/rounds\?league=96/, envelope(["3rd Round", "Quarter-finals", "Final"])],
+    [/fixtures\?league=96&season=2026$/, "api-football/fixtures-cup-96.json"],
+  ];
+  const uclRoutes = (): Array<[RegExp, any]> => [
+    [/fixtures\/rounds\?league=2&/, envelope(["League Stage - 8", "Knockout Round Play-offs", "Round of 16"])],
+    [/fixtures\?league=2&season=2026$/, "api-football/fixtures-ucl-2.json"],
+    [/players\/top/, "api-football/topscorers-94.json"],
+  ];
+
+  it("96: bracket com as rondas por ordem e vista no quadro", async () => {
+    await refreshCompetition(deps(fakeFetch(cupRoutes())), 96, "2026");
+    const b = (await db.doc(`${key(96)}/data/bracket`).get()).data()!;
+    expect(b.stages.map((s: any) => s.raw)).toEqual(["3rd Round", "Quarter-finals", "Final"]);
+    expect(b.stages[0].ties).toHaveLength(3);
+    expect(b.stages[0].ties[0]).toMatchObject({ sportingInvolved: true, winnerTeamId: "228", aggregate: { home: 0, away: 2 } });
+    expect(b.stages[0].ties[0].legs[0].kickoff).toEqual(expect.any(String));
+    expect((await db.doc(key(96)).get()).data()!.view).toEqual({ primary: "bracket", hasTable: false, hasBracket: true, currentStage: "Quartos de final" });
+    const fx = (await db.doc(`${key(96)}/data/fixtures`).get()).data()!;
+    expect(fx.items[1].score).toEqual({ home: 1, away: 1, extraHome: 0, extraAway: 0, penaltyHome: 4, penaltyAway: 3 });
+  });
+
+  it("94: sem bracket e vista na tabela", async () => {
+    const f = fakeFetch([
+      [/fixtures\/rounds\?league=94/, "api-football/rounds-94.json"],
+      [/fixtures\?league=94&season=2026$/, "api-football/fixtures-league.json"],
+      [/players\/top/, "api-football/topscorers-94.json"],
+    ]);
+    await refreshCompetition(deps(f), 94, "2026");
+    expect((await db.doc(`${key(94)}/data/bracket`).get()).exists).toBe(false);
+    expect((await db.doc(key(94)).get()).data()!.view).toMatchObject({ primary: "table", hasTable: true, hasBracket: false, currentStage: "J12" });
+  });
+
+  it("2: tabela da fase de liga e play-off/oitavos no quadro; a vista passa a quadro", async () => {
+    await refreshStandings(deps(fakeFetch([[/standings/, "api-football/standings-2.json"]])), 2, "2026");
+    await refreshCompetition(deps(fakeFetch(uclRoutes())), 2, "2026");
+    const b = (await db.doc(`${key(2)}/data/bracket`).get()).data()!;
+    expect(b.stages.map((s: any) => s.raw)).toEqual(["Knockout Round Play-offs", "Round of 16"]);
+    expect((await db.doc(key(2)).get()).data()!.view).toEqual({ primary: "bracket", hasTable: true, hasBracket: true, currentStage: "Oitavos de final" });
+    expect((await db.doc(key(2)).get()).data()).toMatchObject({ name: "Liga dos Campeões", type: "europe" });
+  });
+});
+
 describe("falhas parciais", () => {
   const cup = { key: "football_96_2026", id: "96", name: "Taça de Portugal", type: "cup" as const, season: "2026", round: null, roundLabel: null };
   const seedBoth = async () => {

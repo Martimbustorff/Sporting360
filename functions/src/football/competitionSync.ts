@@ -2,6 +2,7 @@ import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { SourceError } from "../sources/http";
 import { crestFor } from "../config/brand";
+import { buildBracket, competitionView, stageOf, toFixtureItems } from "./bracket";
 import { LEGACY_STANDINGS_LEAGUES, legacyStandings } from "../legacy/standingsLegacy";
 import { competitionKey, competitionLabel, roundLabel } from "../model/labels";
 import { footballApiSeason } from "../model/seasons";
@@ -175,26 +176,27 @@ export async function refreshCompetition(d: FootballDeps, leagueId: number, seas
   const writes: DocWrite[] = [];
   let count = 0;
 
+  const items = toFixtureItems(fixtures, label.type);
+  const rounds = rawRounds.length > 0 ? rawRounds : [...new Set(items.map((i) => i.round))];
+  const current = rawRounds.length > 0 ? currentRound(rawRounds, fixtures) : null;
+
   if (fixtures.length > 0) {
-    writes.push({ path: `competitions/${key}`, data: competitionDoc(leagueId, rawName, fixtures[0].league.logo ?? null), merge: true });
-    const items = fixtures.map((f) => ({
-      id: String(f.fixture.id),
-      kickoff: new Date(f.fixture.date),
-      round: f.league.round,
-      roundLabel: roundLabel(f.league.round, label.type),
-      home: { id: String(f.teams.home.id), name: f.teams.home.name, logo: crestFor(f.teams.home.id, f.teams.home.logo ?? null) },
-      away: { id: String(f.teams.away.id), name: f.teams.away.name, logo: crestFor(f.teams.away.id, f.teams.away.logo ?? null) },
-      status: footballStatus(f.fixture.status.short),
-      score: { home: f.goals.home, away: f.goals.away },
-    }));
+    // A vista lê a classificação já guardada (sem pedidos novos); sem ela, bastam jornadas de tabela no calendário.
+    const std = await d.db.doc(`competitions/${key}/data/standings`).get();
+    const groups = (std.get("groups") ?? []) as { rows?: unknown[] }[];
+    const hasTableRows = groups.some((g) => (g.rows?.length ?? 0) > 0) || items.some((i) => stageOf(i.round) === "table");
+    const bracket = buildBracket(items, rounds);
+    const view = competitionView(label.type, current, hasTableRows, bracket.stages.length > 0);
+    writes.push({ path: `competitions/${key}`, data: { ...competitionDoc(leagueId, rawName, fixtures[0].league.logo ?? null), view }, merge: true });
     writes.push({ path: `competitions/${key}/data/fixtures`, data: { items } });
+    if (bracket.stages.length > 0) writes.push({ path: `competitions/${key}/data/bracket`, data: bracket });
     count += items.length;
   }
 
   if (rawRounds.length > 0) {
     writes.push({
       path: `competitions/${key}/data/rounds`,
-      data: { items: rawRounds.map((raw) => ({ raw, label: roundLabel(raw, label.type) ?? raw })), current: currentRound(rawRounds, fixtures) },
+      data: { items: rawRounds.map((raw) => ({ raw, label: roundLabel(raw, label.type) ?? raw })), current },
     });
   }
   await writeDocs(d.db, writes, { stateKey: `competition_${key}` });
