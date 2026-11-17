@@ -9,7 +9,7 @@ export { submitPrediction } from "./callables/submitPrediction";
 export { voteMvp } from "./callables/voteMvp";
 
 export const settleScheduler = onSchedule(
-  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon" },
+  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 540, memory: "512MiB" },
   async () => {
     await settleDue(getFirestore(), new Date());
   },

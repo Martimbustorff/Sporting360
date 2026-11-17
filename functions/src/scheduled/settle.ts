@@ -3,7 +3,8 @@ import { listFinishedUnsettled, getGameState, getPlayerLines } from "../data/gam
 import { countedScore } from "../game/result";
 import { POINTS, predictionBonus, mvpBonus } from "../game/scoring";
 import { officialMvpIds } from "../game/mvp";
-import { awardPoints } from "../points/ledger";
+import { logger } from "firebase-functions";
+import { awardPoints, type PointType } from "../points/ledger";
 
 const DAY_MS = 24 * 60 * 60_000;
 
@@ -14,8 +15,51 @@ export interface SettleResult {
   settled: boolean;
 }
 
-async function hasParticipation(db: Firestore, uid: string, gameId: string, type: string): Promise<boolean> {
-  return (await db.doc(`pointEvents/${uid}_${gameId}_${type}`).get()).exists;
+const CHUNK = 100;
+const CONCURRENCY = 10;
+
+interface Candidate {
+  uid: string;
+  type: PointType;
+  points: number;
+  participationType: PointType;
+  /** Tipo de bónus alternativo; se já existir, não se atribui este (feed corrigido entre execuções). */
+  otherType?: PointType;
+}
+
+async function runLimited<T>(items: T[], limit: number, fn: (t: T) => Promise<unknown>): Promise<void> {
+  let i = 0;
+  const worker = async () => {
+    while (i < items.length) {
+      const item = items[i++];
+      await fn(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+}
+
+/** Filtra por participação do servidor (getAll em lotes) e atribui com concorrência limitada. Devolve quantos passaram. */
+async function awardCandidates(db: Firestore, gameId: string, gameDate: Date, cands: Candidate[]): Promise<number> {
+  const approved: Candidate[] = [];
+  for (let i = 0; i < cands.length; i += CHUNK) {
+    const chunk = cands.slice(i, i + CHUNK);
+    const refs = chunk.flatMap((c) => {
+      const r = [db.doc(`pointEvents/${c.uid}_${gameId}_${c.participationType}`)];
+      if (c.otherType) r.push(db.doc(`pointEvents/${c.uid}_${gameId}_${c.otherType}`));
+      return r;
+    });
+    const snaps = await db.getAll(...refs);
+    let k = 0;
+    for (const c of chunk) {
+      const hasPart = snaps[k++].exists;
+      const hasOther = c.otherType ? snaps[k++].exists : false;
+      if (hasPart && !hasOther) approved.push(c);
+    }
+  }
+  await runLimited(approved, CONCURRENCY, (c) =>
+    awardPoints(db, { uid: c.uid, gameId, gameDate, type: c.type, points: c.points }),
+  );
+  return approved.length;
 }
 
 /**
@@ -30,8 +74,12 @@ export async function settleGame(
   const skipped: SettleResult = { predictions: 0, votes: 0, officialMvp: [], settled: false };
   const game = await getGameState(db, gameId, now);
   if (!game) return skipped;
+  const stale = game.finishedAt !== null && now.getTime() - game.finishedAt.getTime() > DAY_MS;
   const final = countedScore(game);
-  if (!final) return skipped;
+  if (!final) {
+    if (stale) logger.warn(`settle: jogo ${gameId} sem resultado contado há mais de 24h`);
+    return skipped;
+  }
 
   const lines = await getPlayerLines(db, gameId);
   const official = officialMvpIds(lines);
@@ -39,36 +87,37 @@ export async function settleGame(
     return skipped;
   }
 
-  let predictions = 0;
   const preds = await db
     .collection("predictions").where("gameId", "==", gameId).where("source", "==", "v2027").get();
+  const predCands: Candidate[] = [];
   for (const d of preds.docs) {
     const p = d.data();
     const uid = String(p.userId ?? "");
     if (!uid || !Number.isInteger(p.home) || !Number.isInteger(p.away)) continue;
-    if (!(await hasParticipation(db, uid, gameId, "prediction_participation"))) continue;
     const bonus = predictionBonus({ home: p.home, away: p.away }, final);
     if (bonus <= 0) continue;
-    await awardPoints(db, {
-      uid, gameId, gameDate: game.kickoff, points: bonus,
-      type: bonus === POINTS.exact ? "prediction_exact" : "prediction_outcome",
+    const exact = bonus === POINTS.exact;
+    predCands.push({
+      uid, points: bonus,
+      type: exact ? "prediction_exact" : "prediction_outcome",
+      otherType: exact ? "prediction_outcome" : "prediction_exact",
+      participationType: "prediction_participation",
     });
-    predictions++;
   }
+  const predictions = await awardCandidates(db, gameId, game.kickoff, predCands);
 
-  let votes = 0;
   const vs = await db
     .collection("mvpVotes").where("gameId", "==", gameId).where("source", "==", "v2027").get();
+  const voteCands: Candidate[] = [];
   for (const d of vs.docs) {
     const v = d.data();
     const uid = String(v.userId ?? "");
     if (!uid || v.playerId === undefined || v.playerId === null) continue;
-    if (!(await hasParticipation(db, uid, gameId, "mvp_participation"))) continue;
     const bonus = mvpBonus(String(v.playerId), official);
     if (bonus <= 0) continue;
-    await awardPoints(db, { uid, gameId, gameDate: game.kickoff, points: bonus, type: "mvp_correct" });
-    votes++;
+    voteCands.push({ uid, points: bonus, type: "mvp_correct", participationType: "mvp_participation" });
   }
+  const votes = await awardCandidates(db, gameId, game.kickoff, voteCands);
 
   // Só depois de todas as atribuições: um crash a meio deixa o jogo por liquidar (os awards são idempotentes).
   await db.doc(`settlements/${gameId}`).set({

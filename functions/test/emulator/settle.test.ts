@@ -1,5 +1,6 @@
 import { initializeApp, getApps, deleteApp } from "firebase-admin/app";
 import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { settleDue, settleGame } from "../../src/scheduled/settle";
 import { awardPoints } from "../../src/points/ledger";
 
@@ -171,4 +172,36 @@ describe("settleDue", () => {
     expect((await db.doc("settlements/bad").get()).exists).toBe(false);
     expect((await db.doc("settlements/ok").get()).exists).toBe(true);
   });
+
+  it("não atribui outcome se o exact já existe (feed corrigido entre execuções)", async () => {
+    await seedGame(); // 2-1
+    await seedPlayers();
+    await seedPrediction("a", 1, 0); // agora só acerta no resultado
+    await awardPoints(db, { uid: "a", gameId: "m1", type: "prediction_exact", points: 3, gameDate: KICKOFF });
+    await settleDue(db, NOW);
+    expect((await db.doc("pointEvents/a_m1_prediction_outcome").get()).exists).toBe(false);
+    expect(await total("a")).toBe(1 + 3);
+  });
+
+  it("jogo sem resultado há mais de 24h gera aviso e é saltado", async () => {
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    await seedGame({ scorehome: "", scoreaway: "" }, "old", 25 * 60);
+    expect(await settleDue(db, NOW)).toBe(0);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("250 prognósticos num jogo (lotes de getAll)", async () => {
+    await seedGame();
+    await seedPlayers();
+    const ids = Array.from({ length: 250 }, (_, i) => `u${i}`);
+    for (let i = 0; i < ids.length; i += 25) {
+      await Promise.all(ids.slice(i, i + 25).map((u, j) => seedPrediction(u, (i + j) % 2 ? 2 : 1, 1)));
+    }
+    expect(await settleDue(db, NOW)).toBe(1);
+    // (2,1) exato = 4; (1,1) empate vs 2-1: sem bónus = 1
+    expect(await total("u1")).toBe(4);
+    expect(await total("u0")).toBe(1);
+    expect(await total("u249")).toBe(4);
+  }, 120_000);
 });
