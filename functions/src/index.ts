@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { RAPIDAPI_KEY } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
+import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
 import { settleDue } from "./scheduled/settle";
 import { apiFootball } from "./sources/apiFootball";
@@ -48,5 +49,20 @@ export const footballStandingsSync = onSchedule(
   async () => {
     await runJob(getFirestore(), "football_standings", () => syncStandings(footballDeps()), { minRemaining: 500 });
     await runJob(getFirestore(), "football_competitions", () => syncCompetitions(footballDeps()), { minRemaining: 500 });
+  },
+);
+
+// Task 9 já corre syncCompetitions de 6 em 6 horas: aqui só a equipa.
+export const footballSeasonSync = onSchedule(
+  { schedule: "0 5 * * *", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300, secrets: [RAPIDAPI_KEY] },
+  async () => {
+    await runJob(getFirestore(), "football_team_daily", () => syncTeamDaily(footballDeps()), { expectNonZero: true, minRemaining: 500 });
+  },
+);
+
+export const footballWeeklySync = onSchedule(
+  { schedule: "30 5 * * 1", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300, secrets: [RAPIDAPI_KEY] },
+  async () => {
+    await runJob(getFirestore(), "football_team_weekly", () => syncTeamWeekly(footballDeps()), { minRemaining: 500 });
   },
 );

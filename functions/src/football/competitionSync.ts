@@ -80,7 +80,7 @@ export async function refreshStandings(d: FootballDeps, leagueId: number, season
 }
 
 /** 429 / quota esgotada: continuar só gasta pedidos que vão falhar. */
-function isQuotaError(e: unknown): boolean {
+export function isQuotaError(e: unknown): boolean {
   return e instanceof SourceError && (e.status === 429 || (e.kind === "api" && /rate|limit|quota/i.test(e.message)));
 }
 
