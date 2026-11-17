@@ -6,3 +6,5 @@ export const collection = jest.fn((_db: unknown, path: string) => ({ __kind: 'co
 export const onSnapshot = jest.fn(
   (_ref: unknown, _next: unknown, _error?: unknown) => jest.fn(),
 );
+export const setDoc = jest.fn(() => Promise.resolve());
+export const serverTimestamp = jest.fn(() => ({ __kind: 'serverTimestamp' }));
