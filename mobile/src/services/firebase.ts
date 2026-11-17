@@ -5,6 +5,7 @@ import { connectFirestoreEmulator, getFirestore } from '@react-native-firebase/f
 import { connectFunctionsEmulator, getFunctions } from '@react-native-firebase/functions';
 import {
   getCrashlytics,
+  recordError,
   setCrashlyticsCollectionEnabled,
 } from '@react-native-firebase/crashlytics';
 import { getAnalytics, setUserId } from '@react-native-firebase/analytics';
@@ -39,6 +40,19 @@ export function authInstance() {
   return getAuth();
 }
 
+function reportError(e: unknown, context: string): void {
+  const err = e instanceof Error ? e : new Error(String(e));
+  if (__DEV__) {
+    console.warn(`[firebase] ${context}`, err);
+    return;
+  }
+  try {
+    recordError(getCrashlytics(), err);
+  } catch {
+    // nothing else to do
+  }
+}
+
 function setupAppCheck(): void {
   const provider = new ReactNativeFirebaseAppCheckProvider();
   provider.configure({
@@ -49,8 +63,8 @@ function setupAppCheck(): void {
   // No enforcement on the backend yet: failures must never block the app.
   try {
     initializeAppCheck(getApp(), { provider, isTokenAutoRefreshEnabled: true });
-  } catch {
-    // ignore
+  } catch (e) {
+    reportError(e, 'app-check init failed');
   }
 }
 
@@ -58,7 +72,11 @@ export function initFirebase(): void {
   if (initialized) return;
   initialized = true;
 
-  if (process.env.EXPO_PUBLIC_USE_EMULATOR === '1') {
+  const wantsEmulator = process.env.EXPO_PUBLIC_USE_EMULATOR === '1';
+  if (wantsEmulator && !__DEV__) {
+    console.warn('[firebase] EXPO_PUBLIC_USE_EMULATOR ignored outside __DEV__');
+  }
+  if (__DEV__ && wantsEmulator) {
     const os: 'ios' | 'android' = Platform.OS === 'android' ? 'android' : 'ios';
     const host = emulatorHost(os, process.env.EXPO_PUBLIC_EMULATOR_HOST);
     connectAuthEmulator(getAuth(), `http://${host}:${AUTH_PORT}`);
@@ -67,7 +85,9 @@ export function initFirebase(): void {
   }
 
   setupAppCheck();
-  void setCrashlyticsCollectionEnabled(getCrashlytics(), !__DEV__);
+  setCrashlyticsCollectionEnabled(getCrashlytics(), !__DEV__).catch((e) =>
+    reportError(e, 'crashlytics collection toggle failed'),
+  );
 }
 
 /** Only the uid is ever sent to analytics: never email or name. */
