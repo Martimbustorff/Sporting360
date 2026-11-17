@@ -1,5 +1,6 @@
 import type { DocumentData, Firestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
+import { SourceError } from "../sources/http";
 import { crestFor } from "../config/brand";
 import { LEGACY_STANDINGS_LEAGUES, legacyStandings } from "../legacy/standingsLegacy";
 import { competitionKey, competitionLabel, roundLabel } from "../model/labels";
@@ -77,21 +78,51 @@ export async function refreshStandings(d: FootballDeps, leagueId: number, season
   return { count: groups.reduce((n, g) => n + g.rows.length, 0) };
 }
 
-/** Todas as competições atuais: um pedido de classificação por competição. Falha só se todas falharem. */
-export async function syncStandings(d: FootballDeps): Promise<{ count: number; remaining: number | null }> {
+/** 429 / quota esgotada: continuar só gasta pedidos que vão falhar. */
+function isQuotaError(e: unknown): boolean {
+  return e instanceof SourceError && (e.status === 429 || (e.kind === "api" && /rate|limit|quota/i.test(e.message)));
+}
+
+/**
+ * Corre `fn` por competição. Falhas contam-se e saem como INGEST_ALERT; num erro de quota pára e as
+ * restantes contam como falhadas. Só lança se todas falharem.
+ */
+async function eachCompetition(
+  d: FootballDeps,
+  job: string,
+  fn: (c: { leagueId: number; season: string }) => Promise<{ count: number; failed?: number }>,
+): Promise<{ count: number; remaining: number | null; failed: number }> {
   const comps = await currentCompetitions(d.db, footballApiSeason(d.now()));
   let count = 0;
   let failed = 0;
-  for (const c of comps) {
+  let allFailed = 0;
+  for (let i = 0; i < comps.length; i++) {
+    const c = comps[i];
     try {
-      count += (await refreshStandings(d, c.leagueId, c.season)).count;
+      const r = await fn(c);
+      count += r.count;
+      failed += r.failed ?? 0;
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       failed++;
-      logger.warn(`syncStandings: liga ${c.leagueId} ignorada: ${e instanceof Error ? e.message : String(e)}`);
+      allFailed++;
+      logger.warn(`${job}: liga ${c.leagueId} ignorada: ${msg}`);
+      if (isQuotaError(e)) {
+        const rest = comps.length - i - 1;
+        failed += rest;
+        allFailed += rest;
+        break;
+      }
     }
   }
-  if (failed > 0 && failed === comps.length) throw new Error(`syncStandings: todas as ${failed} competições falharam`);
-  return { count, remaining: d.api.remaining };
+  if (comps.length > 0 && allFailed === comps.length) throw new Error(`${job}: todas as ${allFailed} competições falharam`);
+  if (failed > 0) logger.error("INGEST_ALERT", { source: job, reason: `${failed} falhas em ${comps.length} competições` });
+  return { count, remaining: d.api.remaining, failed };
+}
+
+/** Todas as competições atuais: um pedido de classificação por competição. */
+export async function syncStandings(d: FootballDeps): Promise<{ count: number; remaining: number | null; failed: number }> {
+  return eachCompetition(d, "syncStandings", (c) => refreshStandings(d, c.leagueId, c.season));
 }
 
 /** Primeira ronda (pela ordem da API) com um jogo por terminar; `null` se não houver. */
@@ -127,23 +158,15 @@ function topItems(kind: TopKind, players: AfTopPlayer[]) {
  * Para cada competição atual: rondas, calendário e (ligas e europeias) os 4 tops. Respostas vazias
  * não tocam no documento existente. Uma competição que falha não aborta as outras.
  */
-export async function syncCompetitions(d: FootballDeps): Promise<{ count: number; remaining: number | null }> {
-  const comps = await currentCompetitions(d.db, footballApiSeason(d.now()));
-  let count = 0;
-  let failed = 0;
-  for (const { leagueId, season } of comps) {
-    try {
-      count += await syncOne(d, leagueId, season);
-    } catch (e) {
-      failed++;
-      logger.warn(`syncCompetitions: liga ${leagueId} ignorada: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  }
-  if (failed > 0 && failed === comps.length) throw new Error(`syncCompetitions: todas as ${failed} competições falharam`);
-  return { count, remaining: d.api.remaining };
+export async function syncCompetitions(d: FootballDeps): Promise<{ count: number; remaining: number | null; failed: number }> {
+  return eachCompetition(d, "syncCompetitions", (c) => refreshCompetition(d, c.leagueId, c.season));
 }
 
-async function syncOne(d: FootballDeps, leagueId: number, season: string): Promise<number> {
+/**
+ * Uma competição: competição, rondas e calendário escrevem-se primeiro; cada pedido de tops tem o seu
+ * try/catch (falha conta em `failed` mas não bloqueia o calendário). Quota esgotada nos tops relança.
+ */
+export async function refreshCompetition(d: FootballDeps, leagueId: number, season: string): Promise<{ count: number; failed: number }> {
   const key = keyOf(leagueId, season);
   const rawRounds = await d.api.rounds(leagueId, season);
   const fixtures = await d.api.fixturesByLeague(leagueId, season);
@@ -174,14 +197,20 @@ async function syncOne(d: FootballDeps, leagueId: number, season: string): Promi
       data: { items: rawRounds.map((raw) => ({ raw, label: roundLabel(raw, label.type) ?? raw })), current: currentRound(rawRounds, fixtures) },
     });
   }
+  await writeDocs(d.db, writes, { stateKey: `competition_${key}` });
 
+  let failed = 0;
   if (label.type === "league" || label.type === "europe") {
     for (const kind of TOP_KINDS) {
-      const items = topItems(kind, await d.api.topPlayers(kind, leagueId, season));
-      if (items.length > 0) writes.push({ path: `competitions/${key}/data/${kind}`, data: { items } });
+      try {
+        const items = topItems(kind, await d.api.topPlayers(kind, leagueId, season));
+        if (items.length > 0) await writeDocs(d.db, [{ path: `competitions/${key}/data/${kind}`, data: { items } }], { stateKey: `competition_${key}_${kind}` });
+      } catch (e) {
+        if (isQuotaError(e)) throw e;
+        failed++;
+        logger.warn(`refreshCompetition: ${kind} da liga ${leagueId} falhou: ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
   }
-
-  await writeDocs(d.db, writes, { stateKey: `competition_${key}` });
-  return count;
+  return { count, failed };
 }

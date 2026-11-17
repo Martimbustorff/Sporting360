@@ -1,7 +1,7 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 
-type RunResult = { ok: true; count: number; remaining?: number | null } | { ok: false; error: string };
+type RunResult = { ok: true; count: number; remaining?: number | null; failed?: number } | { ok: false; error: string };
 export interface RunOptions {
   expectNonZero?: boolean;
   minRemaining?: number;
@@ -25,6 +25,8 @@ export async function recordRun(db: Firestore, source: string, r: RunResult, o?:
     data.lastError = null;
     data.consecutiveFailures = 0;
     data.remaining = r.remaining ?? null;
+    data.lastFailed = r.failed ?? 0;
+    if (r.failed) alerts.push(`${r.failed} itens falharam nesta execução`);
     if (o?.expectNonZero && r.count === 0) alerts.push("0 registos numa fonte que devia devolver dados");
     if (o?.minRemaining !== undefined && r.remaining !== null && r.remaining !== undefined && r.remaining < o.minRemaining) {
       alerts.push(`quota baixa: restam ${r.remaining} pedidos (mínimo ${o.minRemaining})`);
@@ -43,12 +45,12 @@ export async function recordRun(db: Firestore, source: string, r: RunResult, o?:
 export async function runJob(
   db: Firestore,
   source: string,
-  fn: () => Promise<{ count: number; remaining?: number | null }>,
+  fn: () => Promise<{ count: number; remaining?: number | null; failed?: number }>,
   o?: RunOptions,
 ): Promise<void> {
   try {
     const out = await fn();
-    await recordRun(db, source, { ok: true, count: out.count, remaining: out.remaining }, o);
+    await recordRun(db, source, { ok: true, count: out.count, remaining: out.remaining, failed: out.failed }, o);
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     try {

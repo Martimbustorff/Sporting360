@@ -3,7 +3,8 @@ import * as path from "path";
 import { deleteApp, getApps } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
 import { SPORTING_CREST_URL } from "../../src/config/brand";
-import { currentCompetitions, refreshStandings, syncCompetitions, syncStandings } from "../../src/football/competitionSync";
+import { logger } from "firebase-functions";
+import { currentCompetitions, refreshCompetition, refreshStandings, syncCompetitions, syncStandings } from "../../src/football/competitionSync";
 import type { FootballDeps } from "../../src/football/fixturesSync";
 import { apiFootball } from "../../src/sources/apiFootball";
 import { runJob } from "../../src/store/health";
@@ -129,5 +130,71 @@ describe("syncCompetitions", () => {
     await syncCompetitions(deps(empty));
     expect((await db.doc("competitions/football_94_2026/data/rounds").get()).data()).toEqual(before);
     expect((await db.doc("competitions/football_94_2026/data/topscorers").get()).exists).toBe(true);
+  });
+});
+
+describe("falhas parciais", () => {
+  const cup = { key: "football_96_2026", id: "96", name: "Taça de Portugal", type: "cup" as const, season: "2026", round: null, roundLabel: null };
+  const seedBoth = async () => {
+    await seedFootballMatch(db, { id: "1" });
+    await seedFootballMatch(db, { id: "9", competition: cup });
+  };
+  const okCup: Array<[RegExp, any]> = [
+    [/fixtures\/rounds\?league=96/, "api-football/rounds-94.json"],
+    [/fixtures\?league=96&season=2026$/, "api-football/fixtures-league.json"],
+  ];
+  const alerts = () => jest.spyOn(logger, "error").mockImplementation(() => undefined);
+  afterEach(() => jest.restoreAllMocks());
+
+  it("uma competição a falhar é saltada, as outras escrevem-se e há alerta e failed na saúde", async () => {
+    await seedBoth();
+    const spy = alerts();
+    const f = fakeFetch([[/league=94/, { status: 500 }], ...okCup]);
+    await runJob(db, "football_competitions", () => syncCompetitions(deps(f)));
+    expect((await db.doc("competitions/football_96_2026/data/fixtures").get()).exists).toBe(true);
+    expect((await db.doc("competitions/football_94_2026/data/fixtures").get()).exists).toBe(false);
+    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "syncCompetitions" }));
+    expect((await db.doc("ingestHealth/football_competitions").get()).data()).toMatchObject({ lastFailed: 1, consecutiveFailures: 0 });
+  });
+
+  it("429 pára o ciclo e as restantes contam como falhadas", async () => {
+    await seedBoth();
+    alerts();
+    const f = fakeFetch([[/./, { status: 429 }]]);
+    await expect(syncCompetitions(deps(f))).rejects.toThrow(/todas/);
+    expect(f.calls.filter((u) => u.includes("fixtures/rounds"))).toHaveLength(1);
+  });
+
+  it("todas a falhar: runJob regista consecutiveFailures", async () => {
+    await seedBoth();
+    alerts();
+    const f = fakeFetch([[/./, { status: 500 }]]);
+    await runJob(db, "football_competitions", () => syncCompetitions(deps(f)));
+    await runJob(db, "football_competitions", () => syncCompetitions(deps(f)));
+    expect((await db.doc("ingestHealth/football_competitions").get()).data()).toMatchObject({ consecutiveFailures: 2 });
+  });
+
+  it("um tops a falhar não bloqueia rondas e calendário", async () => {
+    await seedFootballMatch(db, { id: "1" });
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const f = fakeFetch([
+      [/players\/topscorers/, { status: 500 }],
+      [/players\/top/, "api-football/topscorers-94.json"],
+      [/fixtures\/rounds\?league=94/, "api-football/rounds-94.json"],
+      [/fixtures\?league=94&season=2026$/, "api-football/fixtures-league.json"],
+    ]);
+    const r = await refreshCompetition(deps(f), 94, "2026");
+    expect(r.failed).toBe(1);
+    expect((await db.doc("competitions/football_94_2026/data/rounds").get()).exists).toBe(true);
+    expect((await db.doc("competitions/football_94_2026/data/fixtures").get()).exists).toBe(true);
+    expect((await db.doc("competitions/football_94_2026/data/topscorers").get()).exists).toBe(false);
+    expect((await db.doc("competitions/football_94_2026/data/topassists").get()).exists).toBe(true);
+  });
+
+  it("modo sombra: standings antigos vão para o prefixo e nenhum para standings", async () => {
+    const f = fakeFetch([[/standings/, "api-football/standings-94.json"]]);
+    await refreshStandings({ ...deps(f), prefix: "_shadow_" }, 94, "2026");
+    expect((await db.collection("_shadow_standings").get()).size).toBe(8);
+    expect((await db.collection("standings").get()).size).toBe(0);
   });
 });
