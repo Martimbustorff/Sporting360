@@ -10,7 +10,7 @@ export interface ApiSportsClient {
   standings(q: { league: number; season: string }): Promise<unknown[]>;
 }
 
-/** Cliente fino da API-Sports (andebol, voleibol, basquetebol). Os ids reais ficam por confirmar (ver sourcesConfig). */
+/** Cliente fino da API-Sports via RapidAPI (andebol, voleibol, basquetebol); `key` é a RAPIDAPI_KEY. Os ids reais ficam por confirmar (ver sourcesConfig). */
 export function apiSports(o: { sport: ApiSportsSport; key: string; fetch?: FetchFn; host?: string; timeoutMs?: number }): ApiSportsClient {
   const f = o.fetch ?? fetch;
   const host = o.host ?? API_SPORTS[o.sport].host;
@@ -21,7 +21,7 @@ export function apiSports(o: { sport: ApiSportsSport; key: string; fetch?: Fetch
     const qs = params.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join("&");
     const { body, headers } = await getJson<ApiEnvelope<unknown[]>>(f, `https://${host}/${path}?${qs}`, {
       source,
-      headers: { "x-apisports-key": o.key },
+      headers: { "x-rapidapi-key": o.key, "x-rapidapi-host": host },
       timeoutMs: o.timeoutMs,
     });
     quota.note(headers);

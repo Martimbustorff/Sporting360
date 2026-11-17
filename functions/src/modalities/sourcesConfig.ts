@@ -27,7 +27,7 @@ export interface ApiSportsSport {
 
 export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSportsSport> = {
   handball: {
-    host: "v1.handball.api-sports.io",
+    host: "api-handball.p.rapidapi.com",
     enabled: false,
     teamId: null,
     seasonFormat: "year",
@@ -37,7 +37,7 @@ export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSpo
     ],
   },
   volleyball: {
-    host: "v1.volleyball.api-sports.io",
+    host: "api-volleyball.p.rapidapi.com",
     enabled: false,
     teamId: null,
     seasonFormat: "year",
@@ -51,7 +51,7 @@ export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSpo
     ],
   },
   basketball: {
-    host: "v1.basketball.api-sports.io",
+    host: "api-basketball.p.rapidapi.com",
     enabled: false,
     teamId: null,
     seasonFormat: "span",

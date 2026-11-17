@@ -53,7 +53,7 @@ Notas para o parser (Task 17):
 ## API-Sports (plano gratuito)
 
 Lido em fontes públicas (as páginas marcadas «não reverificado» em «Fontes consultadas» foram lidas numa primeira passagem e não foram abertas de novo; confirmar na primeira resposta real):
-- Hosts: `v1.handball.api-sports.io`, `v1.volleyball.api-sports.io`, `v1.basketball.api-sports.io` (o endpoint de andebol responde 403 "Missing application key", o que confirma o host).
+- Hosts: a decisão é usar a RapidAPI com a mesma `RAPIDAPI_KEY`: `api-handball.p.rapidapi.com`, `api-volleyball.p.rapidapi.com`, `api-basketball.p.rapidapi.com` (cabeçalhos `x-rapidapi-key` e `x-rapidapi-host`). Estes hosts seguem o padrão `api-{modalidade}.p.rapidapi.com` e NÃO foram confirmados com uma chamada; os hosts diretos `v1.{modalidade}.api-sports.io` (o de andebol responde 403 "Missing application key") não são usados. Confirmar o host e a subscrição na primeira chamada real.
 - Gratuito: 100 pedidos por dia, reposição às 00:00 UTC (páginas de preços de andebol e basquetebol). O limite de 10 por minuto não aparece nas páginas públicas.
 - Época: basquetebol em intervalo ("2023-2024", artigo oficial de lançamento); andebol e voleibol em ano (`2026`), formato a confirmar na primeira resposta real.
 - Voleibol, competições portuguesas na tabela de cobertura: Campeonato Nacional, Taça de Portugal, Super Cup (e femininas). Europa: Champions League, CEV Cup, Challenge Cup.

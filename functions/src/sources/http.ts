@@ -95,5 +95,5 @@ export interface ApiEnvelope<T> {
 export function assertNoApiErrors(source: string, body: ApiEnvelope<unknown>): void {
   const e = body.errors;
   const has = Array.isArray(e) ? e.length > 0 : e !== null && typeof e === "object" && Object.keys(e).length > 0;
-  if (has) throw new SourceError(source, "api", `erro da API: ${JSON.stringify(e)}`);
+  if (has) throw new SourceError(source, "api", `erro da API: ${JSON.stringify(e).slice(0, 300)}`);
 }
