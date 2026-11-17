@@ -24,6 +24,14 @@ export async function handleDeleteAccount(
     throw new HttpsError("failed-precondition", "REAUTH_REQUIRED");
   }
 
+  // Invalida sessões antigas antes de apagar, para um cliente desatualizado não voltar a escrever.
+  try {
+    await authAdmin.revokeRefreshTokens(uid);
+  } catch (e) {
+    if ((e as { code?: string }).code !== "auth/user-not-found") throw new HttpsError("internal", "AUTH_REVOKE_FAILED");
+  }
+
+  // Janela de corrida conhecida: um settlement a correr em paralelo pode recriar pointEvents/entries; repetir a chamada limpa-os.
   const refs = new Map<string, DocumentReference>();
   const add = (r: DocumentReference) => refs.set(r.path, r);
 
@@ -39,6 +47,7 @@ export async function handleDeleteAccount(
     db.collection("manofmatch").where("userId", "==", uid),
     db.collection("rankings").where("userId", "==", uid),
     db.collection("pointEvents").where("uid", "==", uid),
+    db.collection("point_events").where("userId", "==", uid),
     db.collectionGroup("entries").where("uid", "==", uid),
   ];
   for (const snap of await Promise.all(queries.map((q) => q.get()))) {
@@ -60,7 +69,7 @@ export async function handleDeleteAccount(
   try {
     await authAdmin.deleteUser(uid);
   } catch (e) {
-    if ((e as { code?: string }).code !== "auth/user-not-found") throw e;
+    if ((e as { code?: string }).code !== "auth/user-not-found") throw new HttpsError("internal", "AUTH_DELETE_FAILED");
   }
   return { ok: true, deleted: refs.size };
 }

@@ -147,6 +147,7 @@ describe("deleteAccount", () => {
     `predictions/p1_${u}`,
     `manofmatch/m1_${u}`,
     `rankings/${u}_2026`,
+    `point_events/exact_score_m1_${u}`,
   ];
   const FIELD: Record<string, [string, string]> = {
     gamebox: ["userid", ""],
@@ -157,6 +158,7 @@ describe("deleteAccount", () => {
     predictions: ["userId", ""],
     manofmatch: ["userId", ""],
     rankings: ["userId", ""],
+    point_events: ["userId", ""],
   };
   async function seed(u: string) {
     for (const path of OWNED(u)) {
@@ -174,7 +176,7 @@ describe("deleteAccount", () => {
     return out;
   }
   beforeEach(async () => {
-    for (const c of ["gamebox", "matchPredictions", "mvpVotes", "pointEvents", "predictions", "manofmatch", "rankings", "settlements"]) {
+    for (const c of ["gamebox", "matchPredictions", "mvpVotes", "pointEvents", "predictions", "manofmatch", "rankings", "point_events", "settlements"]) {
       const snap = await db.collection(c).get();
       await Promise.all(snap.docs.map((d) => d.ref.delete()));
     }
