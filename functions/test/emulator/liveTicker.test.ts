@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { deleteApp, getApps } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
-import { liveTickerJob, tick, type TickDeps } from "../../src/football/liveTicker";
+import { LIVE_REQUEST_TIMEOUT_MS, TICK_DEADLINE_MS, liveTickerJob, tick, type TickDeps } from "../../src/football/liveTicker";
 import { mapFixture } from "../../src/football/mapFixture";
 import { legacyFromFixture } from "../../src/legacy/footballLegacy";
 import { apiFootball } from "../../src/sources/apiFootball";
@@ -61,6 +61,12 @@ function fx(name: string, o: { elapsed?: number; league?: number } = {}) {
     f.league.id = o.league;
     f.league.name = o.league === 96 ? "Taça de Portugal" : o.league === 667 ? "Friendlies Clubs" : f.league.name;
   }
+  return f;
+}
+/** Golos no prolongamento: `extratime` e `goals` = 90' + prolongamento. */
+function withEt(f: ReturnType<typeof fx>, home: number, away: number) {
+  f.score.extratime = { home, away };
+  f.goals = { home: f.score.fulltime.home + home, away: f.score.fulltime.away + away };
   return f;
 }
 const envelope = (response: unknown) => ({ get: "x", parameters: {}, errors: [], results: 1, paging: { current: 1, total: 1 }, response });
@@ -132,14 +138,39 @@ describe("tick: jogo a decorrer", () => {
     expect(sleeps).toEqual([14_000, 14_000, 14_000]);
   });
 
-  it("pedidos lentos (20 s): sem esperas e pára aos 50 s (3 chamadas)", async () => {
+  it("pedidos lentos (20 s): nenhuma iteração começa se puder acabar depois dos 60 s (3 chamadas, sem esperas)", async () => {
     clock = KO + 67 * MIN;
     fetchMs = 20_000;
     await seedFrom(fx("fixture-live-2h.json"), clock);
-    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    const begins: number[] = [];
+    const start = clock;
+    const f = fakeFetch([[byIds, () => (begins.push(clock - fetchMs - start), envelope([fx("fixture-live-2h.json")]))]]);
     const r = await tick(deps(f));
     expect(r.calls).toBe(3);
     expect(sleeps).toEqual([]);
+    expect(begins).toEqual([0, 20_000, 40_000]);
+    for (const b of begins) expect(b + LIVE_REQUEST_TIMEOUT_MS).toBeLessThanOrEqual(TICK_DEADLINE_MS);
+  });
+
+  it("pedidos de 12 s: a 4.ª iteração (começaria aos 56 s) não arranca", async () => {
+    clock = KO + 67 * MIN;
+    fetchMs = 12_000;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    const r = await tick(deps(f));
+    // 0-12, 15-27, 30-42; a seguinte seria aos 45 s: 45 + 5 <= 60, arranca (45-57); depois não há mais
+    expect(r.calls).toBe(4);
+    expect(sleeps).toEqual([3_000, 3_000, 3_000]);
+    fetchMs = 16_000;
+    clock = KO + 70 * MIN;
+    const f2 = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    // 0-16, 16-32, 32-48; a 4.ª começaria aos 48 s (48 + 5 <= 60): arranca e acaba aos 64; a regra é pelo timeout de 5 s
+    expect((await tick(deps(f2))).calls).toBe(4);
+    fetchMs = 19_000;
+    clock = KO + 71 * MIN;
+    const f3 = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    // 0-19, 19-38, 38-57; a 4.ª começaria aos 57 s: 57 + 5 > 60, não arranca
+    expect((await tick(deps(f3))).calls).toBe(3);
   });
 
   it("duas respostas iguais seguidas: a segunda iteração escreve 0 documentos", async () => {
@@ -156,15 +187,17 @@ describe("tick: jogo a decorrer", () => {
     await seedFrom(fx("fixture-live-2h.json", { elapsed: 90 }), clock);
     const seq = (_u: string, n: number) => {
       if (n === 0) return envelope([fx("fixture-live-2h.json", { elapsed: 90 })]);
-      if (n < 8) return envelope([fx("fixture-et.json")]);
-      if (n < 12) return envelope([fx("fixture-p.json")]);
-      return envelope([fx("fixture-pen.json")]);
+      if (n < 4) return envelope([withEt(fx("fixture-et.json"), 1, 0)]);
+      if (n < 8) return envelope([withEt(fx("fixture-et.json"), 1, 1)]);
+      if (n < 12) return envelope([withEt(fx("fixture-p.json"), 1, 1)]);
+      return envelope([withEt(fx("fixture-pen.json"), 1, 1)]);
     };
     const f = fakeFetch([[byIds, seq], ...competitionRoutes(94)]);
     const d = deps(f);
 
     // minuto 1: 2H → ET; minuto 2: ET
     expect((await tick(d)).calls).toBe(4);
+    expect((await db.doc(`matches/${ID}`).get()).get("score")).toMatchObject({ home: 3, away: 2 });
     clock = KO + 113 * MIN;
     expect((await tick(d)).calls).toBe(4);
     expect((await db.doc(`matches/${ID}`).get()).get("statusRaw")).toBe("ET");
@@ -184,10 +217,11 @@ describe("tick: jogo a decorrer", () => {
     expect(m.status).toBe("PEN");
     expect(m.finishedAt.toMillis()).toBe(penNow);
     expect(m.finishedAtSource).toBe("observed");
-    expect(m.score).toMatchObject({ home: 2, away: 2, penalty: { home: 4, away: 3 }, extratime: { home: 0, away: 0 } });
+    // resultado que conta = 90' (2-2) + prolongamento (1-1), sem os penáltis
+    expect(m.score).toMatchObject({ home: 3, away: 3, penalty: { home: 4, away: 3 }, extratime: { home: 1, away: 1 } });
     const g = (await db.doc(`games/${ID}`).get()).data()!;
-    expect(g.scorehome).toBe("2");
-    expect(g.scoreaway).toBe("2");
+    expect(g.scorehome).toBe("3");
+    expect(g.scoreaway).toBe("3");
     expect(g.isActive).toBe(false);
   });
 
@@ -248,6 +282,28 @@ describe("tick: antes do jogo", () => {
     expect((await db.doc(`matches/${ID}/details/lineups`).get()).get("teams")).toHaveLength(2);
     const legacy = await db.collection("lineups").where("GameId", "==", ID).get();
     expect(legacy.size).toBe(2);
+  });
+
+  it("NS 25 min depois do kickoff: 1 chamada por minuto (ritmo lento)", async () => {
+    clock = KO + 25 * MIN;
+    await seedFrom(fx("fixture-ns.json"), KO - 60 * MIN);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-ns.json")])]]);
+    expect((await tick(deps(f))).calls).toBe(1);
+    expect(sleeps).toEqual([]);
+    clock = KO + 239 * MIN;
+    expect((await tick(deps(f))).calls).toBe(1);
+    clock = KO + 240 * MIN;
+    expect((await tick(deps(f))).calls).toBe(0);
+  });
+
+  it("LIVE (INT) com kickoff há mais de 4 h: 1 chamada por minuto, sem standings", async () => {
+    clock = KO + 4 * 60 * MIN + 15 * MIN; // minuto :15
+    const int = fx("fixture-live-2h.json");
+    int.fixture.status.short = "INT";
+    await seedFrom(int, KO + 60 * MIN);
+    const f = fakeFetch([[byIds, envelope([int])]]);
+    expect((await tick(deps(f))).calls).toBe(1);
+    expect(sleeps).toEqual([]);
   });
 
   it("NS 5 min depois do kickoff (atraso) conta como live: 4 chamadas", async () => {
@@ -333,13 +389,81 @@ describe("tick: fim de jogo", () => {
     expect(only(f, /standings/)).toHaveLength(2);
   });
 
-  it("FT há 30 min (ratings) → 1 chamada", async () => {
+  it("ratings: ticks em X+0:40 e X+1:20 → 1 só pedido; X+10 já fora da janela", async () => {
     clock = KO + 110 * MIN;
     await seedFrom(fx("fixture-ft.json"), clock);
+    const fin = clock;
     await db.doc(`ingestState/match_${ID}`).set({ ticker: { endRefresh: true, postRefresh: true } }, { merge: true });
-    clock += 30 * MIN;
     const f = fakeFetch([[byIds, "api-football/fixture-ft.json"]]);
+    clock = fin + 30 * MIN + 40_000;
     expect((await tick(deps(f))).calls).toBe(1);
+    clock = fin + 31 * MIN + 20_000;
+    expect((await tick(deps(f))).calls).toBe(0);
+    expect((await db.doc(`ingestState/match_${ID}`).get()).get("ticker.ratings30")).toBe(true);
+    // 60: tick perdido em X, o de X+1 faz o refresco
+    clock = fin + 61 * MIN;
+    expect((await tick(deps(f))).calls).toBe(1);
+    clock = fin + 62 * MIN;
+    expect((await tick(deps(f))).calls).toBe(0);
+    // 110: perdido até X+10 → já não se faz
+    clock = fin + 120 * MIN;
+    expect((await tick(deps(f))).calls).toBe(0);
+    expect(only(f, byIds)).toHaveLength(2);
+  });
+
+  it("ratings que falham repetem no minuto seguinte (a marca só fica com o jogo guardado)", async () => {
+    clock = KO + 110 * MIN;
+    await seedFrom(fx("fixture-ft.json"), clock);
+    const fin = clock;
+    await db.doc(`ingestState/match_${ID}`).set({ ticker: { endRefresh: true, postRefresh: true } }, { merge: true });
+    const f = fakeFetch([[byIds, [{ status: 500 }, "api-football/fixture-ft.json"]]]);
+    clock = fin + 30 * MIN;
+    expect((await tick(deps(f))).failed).toBe(1);
+    clock = fin + 31 * MIN;
+    expect((await tick(deps(f))).calls).toBe(1);
+    clock = fin + 32 * MIN;
+    expect((await tick(deps(f))).calls).toBe(0);
+  });
+
+  it("FT na 4.ª iteração (aos 45 s): o refresco de fim de jogo fica para o minuto seguinte", async () => {
+    clock = KO + 112 * MIN;
+    await seedFrom(fx("fixture-live-2h.json", { elapsed: 90 }), clock);
+    const live = envelope([fx("fixture-live-2h.json", { elapsed: 90 })]);
+    const f = fakeFetch([[byIds, [live, live, live, envelope([fx("fixture-ft.json")])]], ...competitionRoutes(94)]);
+    const r = await tick(deps(f));
+    expect(r.calls).toBe(4);
+    expect(r.deferred).toEqual([ID]);
+    expect(only(f, /standings/)).toHaveLength(0);
+    expect((await db.doc(`matches/${ID}`).get()).get("status")).toBe("FT");
+
+    clock = KO + 113 * MIN;
+    const r2 = await tick(deps(f));
+    expect(r2.calls).toBe(1 + 7);
+    expect(r2.deferred).toEqual([]);
+    clock = KO + 114 * MIN;
+    expect((await tick(deps(f))).calls).toBe(1);
+  });
+
+  it("refresco pendente de um jogo idle não atrasa a iteração 1 do jogo ao vivo (corre depois, ou fica adiado)", async () => {
+    // jogo anterior terminado há 25 min (postRefresh pendente) e o jogo atual a decorrer
+    clock = KO + 67 * MIN;
+    await seedFootballMatch(db, { id: "1500009", kickoff: new Date(clock - 140 * MIN), finishedAt: new Date(clock - 25 * MIN), finishedAtSource: "observed" });
+    await db.doc("ingestState/match_1500009").set({ ticker: { endRefresh: true } }, { merge: true });
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])], ...competitionRoutes(94)]);
+    const r = await tick(deps(f));
+    expect(f.calls[0]).toMatch(byIds);
+    expect(sleeps).toEqual([15_000, 15_000, 15_000]);
+    expect(r.calls).toBe(4);
+    expect(r.deferred).toEqual(["1500009"]);
+
+    // sem jogo ao vivo, o refresco corre (depois da única iteração)
+    await db.doc(`matches/${ID}`).delete();
+    clock += MIN;
+    const r2 = await tick(deps(f));
+    expect(r2.calls).toBe(7);
+    clock += MIN;
+    expect((await tick(deps(f))).calls).toBe(0);
   });
 
   it("jogo terminado só pelo calendário (sem ticker): o refresco de fim de jogo corre no postmatch", async () => {

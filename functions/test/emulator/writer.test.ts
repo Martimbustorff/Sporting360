@@ -123,6 +123,17 @@ describe("saveMatch", () => {
     expect((await db.doc("summaries/other").get()).exists).toBe(true);
   });
 
+  it("resposta igual não faz a query de limpeza de lances; um lance removido continua a ser limpo", async () => {
+    await saveMatch(db, { match: match(), details: details(3), legacy: legacy(3) });
+    const spy = jest.spyOn(db, "collection");
+    await saveMatch(db, { match: match({ elapsed: 61 }), details: details(3), legacy: legacy(3) });
+    expect(spy.mock.calls.filter(([name]) => name === "summaries")).toHaveLength(0);
+    await saveMatch(db, { match: match({ elapsed: 62 }), details: details(2), legacy: legacy(2) });
+    expect(spy.mock.calls.filter(([name]) => name === "summaries")).toHaveLength(1);
+    spy.mockRestore();
+    expect((await db.collection("summaries").get()).docs.map((d) => d.id).sort()).toEqual(["s1", "s2"]);
+  });
+
   it("games preserva predictionsSettled e channel existentes", async () => {
     await db.doc("games/1001").set({ api: "1001", predictionsSettled: true, channel: "SPTV" });
     await saveMatch(db, { match: match(), details: details(1), legacy: legacy(1, "") });
@@ -171,8 +182,8 @@ describe("saveMatch", () => {
 describe("writeDocs", () => {
   it("só escreve o que mudou", async () => {
     const w = [{ path: "teams/a", data: { n: 1 } }, { path: "teams/b", data: { n: 2 } }];
-    expect(await writeDocs(db, w, { stateKey: "k" })).toEqual({ written: 2, skipped: 0 });
-    expect(await writeDocs(db, [w[0], { path: "teams/b", data: { n: 3 } }], { stateKey: "k" })).toEqual({ written: 1, skipped: 1 });
+    expect(await writeDocs(db, w, { stateKey: "k" })).toEqual({ written: 2, skipped: 0, changed: ["teams/a", "teams/b"] });
+    expect(await writeDocs(db, [w[0], { path: "teams/b", data: { n: 3 } }], { stateKey: "k" })).toMatchObject({ written: 1, skipped: 1 });
   });
 });
 
@@ -181,8 +192,8 @@ describe("force", () => {
     const w = [{ path: "teams/a", data: { n: 1 } }];
     await writeDocs(db, w, { stateKey: "f" });
     await db.doc("teams/a").delete();
-    expect(await writeDocs(db, w, { stateKey: "f" })).toEqual({ written: 0, skipped: 1 });
-    expect(await writeDocs(db, w, { stateKey: "f", force: true })).toEqual({ written: 1, skipped: 0 });
+    expect(await writeDocs(db, w, { stateKey: "f" })).toMatchObject({ written: 0, skipped: 1 });
+    expect(await writeDocs(db, w, { stateKey: "f", force: true })).toMatchObject({ written: 1, skipped: 0 });
     expect((await db.doc("teams/a").get()).exists).toBe(true);
   });
 

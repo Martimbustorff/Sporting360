@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { RAPIDAPI_KEY } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
-import { liveTickerJob } from "./football/liveTicker";
+import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
@@ -78,6 +78,8 @@ export const footballPrematchSync = onSchedule(
 
 // Ticker ao vivo: cada minuto lê a janela de jogos; só pede à API com um jogo em prematch/live/postmatch
 // (até 4 pedidos por minuto, de 15 em 15 s, com jogo a decorrer). Sem retry: o minuto seguinte é o retry.
+// concurrency 1 + maxInstances 1: duas invocações nunca correm ao mesmo tempo (a seguinte é recusada,
+// não fica em paralelo); pedidos com timeout de 5 s para cada tick acabar antes do minuto seguinte.
 export const footballLiveTicker = onSchedule(
   {
     schedule: "every 1 minutes",
@@ -85,10 +87,18 @@ export const footballLiveTicker = onSchedule(
     timeZone: "Europe/Lisbon",
     timeoutSeconds: 75,
     maxInstances: 1,
+    concurrency: 1,
     retryCount: 0,
     secrets: [RAPIDAPI_KEY],
   },
   async () => {
-    await liveTickerJob({ ...footballDeps(), sleep: (ms) => new Promise((r) => setTimeout(r, ms)) }, { minRemaining: 500 });
+    await liveTickerJob(
+      {
+        ...footballDeps(),
+        api: apiFootball({ key: RAPIDAPI_KEY.value(), timeoutMs: LIVE_REQUEST_TIMEOUT_MS }),
+        sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+      },
+      { minRemaining: 500 },
+    );
   },
 );

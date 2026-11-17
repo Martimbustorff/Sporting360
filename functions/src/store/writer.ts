@@ -83,8 +83,8 @@ export async function writeDocs(
   db: Firestore,
   writes: DocWrite[],
   o: { stateKey: string; force?: boolean },
-): Promise<{ written: number; skipped: number }> {
-  if (writes.length === 0) return { written: 0, skipped: 0 };
+): Promise<{ written: number; skipped: number; changed: string[] }> {
+  if (writes.length === 0) return { written: 0, skipped: 0, changed: [] };
   const stateRef = db.doc(`ingestState/${o.stateKey}`);
   const stored = ((await stateRef.get()).get("hashes") ?? {}) as Record<string, string>;
 
@@ -111,7 +111,7 @@ export async function writeDocs(
     for (const { key, hash } of chunk) hashes[key] = hash;
     await stateRef.set({ hashes, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
   }
-  return { written: changed.length, skipped };
+  return { written: changed.length, skipped, changed: changed.map((c) => c.w.path) };
 }
 
 export async function getMatch(db: Firestore, id: string): Promise<MatchDoc | null> {
@@ -164,8 +164,11 @@ export async function saveMatch(
 
   const res = await writeDocs(db, writes, { stateKey: `match_${id}`, force: o?.force });
 
+  // A limpeza de lances antigos (uma query por jogo) só corre quando os lances mudaram nesta escrita:
+  // o ticker chama isto de 15 em 15 s e quase sempre nada mudou.
   const summaries = legacy?.summaries;
-  if (summaries && Object.keys(summaries).length > 0) {
+  const eventsChanged = res.changed.some((p) => p === `matches/${id}/details/events` || p.startsWith(`${col("summaries")}/`));
+  if (eventsChanged && summaries && Object.keys(summaries).length > 0) {
     const stale = await db.collection(col("summaries")).where("GameId", "==", id).get();
     const gone = stale.docs.filter((d) => !(d.id in summaries));
     if (gone.length > 0) {
@@ -180,5 +183,5 @@ export async function saveMatch(
     }
   }
 
-  return { ...res, locked: false };
+  return { written: res.written, skipped: res.skipped, locked: false };
 }
