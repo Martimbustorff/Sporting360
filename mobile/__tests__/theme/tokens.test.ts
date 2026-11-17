@@ -1,4 +1,4 @@
-import { colors, fonts, layout, radius } from '@/theme/tokens';
+import { colors, fonts, layout, radius, type } from '@/theme/tokens';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -71,5 +71,25 @@ describe('component tokens from Figma 564:6950 / 564:7259', () => {
     expect(layout.tabUnderline).toBe(2);
     expect(layout.disabledOpacity).toBe(0.5);
     expect(layout.pressedOpacity).toBe(0.8);
+  });
+});
+
+describe('component tokens from Figma 564:6907 / 564:6938 / 500:28814 / 500:28976', () => {
+  it('text field', () => {
+    expect(type.fieldPlaceholder.fontSize).toBe(18);
+    expect(type.fieldLabel.fontSize).toBe(14);
+    expect(type.fieldValue.fontSize).toBe(16);
+    expect(type.fieldPlaceholder.fontFamily).toBe(fonts.display);
+    expect(type.fieldValue.fontFamily).toBe(fonts.body);
+    expect(layout.fieldLineWidth).toBe(1);
+    expect(layout.fieldLineWidthActive).toBe(2);
+    expect(layout.fieldLineOpacity).toBe(0.3);
+    expect(layout.fieldLabelOpacity).toBe(0.5);
+    expect(layout.fieldGapEmpty).toBe(13);
+    expect(layout.fieldGapFilled).toBe(12);
+    expect(radius.line).toBe(23);
+  });
+  it('tab underline ends', () => {
+    expect(radius.hairline).toBe(1);
   });
 });

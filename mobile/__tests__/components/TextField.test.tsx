@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { colors, layout } from '@/theme/tokens';
 import { TextField } from '@/components/TextField';
 
 describe('TextField', () => {
@@ -27,6 +29,23 @@ describe('TextField', () => {
     await render(<TextField label="Email" value="x" onChangeText={() => {}} error="Email inválido" />);
     expect(screen.getByText('Email inválido')).toBeTruthy();
     expect(screen.getByLabelText('Email').props.accessibilityHint).toBe('Email inválido');
+  });
+
+  it('empty: uppercase placeholder, thin faint line, no small label', async () => {
+    await render(<TextField label="Email" value="" onChangeText={() => {}} />);
+    expect(screen.getByLabelText('Email').props.placeholder).toBe('EMAIL');
+    expect(screen.queryByTestId('field-label')).toBeNull();
+    const line = StyleSheet.flatten(screen.getByTestId('field-line').props.style);
+    expect(line.height).toBe(layout.fieldLineWidth);
+    expect(line.opacity).toBe(layout.fieldLineOpacity);
+  });
+
+  it('filled: small label above and 2px primary line', async () => {
+    await render(<TextField label="Email" value="a@b.pt" onChangeText={() => {}} />);
+    expect(screen.getByTestId('field-label')).toBeTruthy();
+    const line = StyleSheet.flatten(screen.getByTestId('field-line').props.style);
+    expect(line.height).toBe(layout.fieldLineWidthActive);
+    expect(line.backgroundColor).toBe(colors.primary);
   });
 
   it('snapshot (default)', async () => {

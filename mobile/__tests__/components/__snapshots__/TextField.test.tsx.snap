@@ -3,7 +3,7 @@
 exports[`TextField snapshot (default) 1`] = `
 <View>
   <View
-    className="flex-row items-center border-b border-s360-divider"
+    className="flex-row items-center"
     style={
       {
         "gap": 8,
@@ -14,17 +14,18 @@ exports[`TextField snapshot (default) 1`] = `
       accessibilityLabel="Email"
       autoCapitalize="none"
       autoCorrect={false}
-      className="flex-1 text-s360-white"
+      className="flex-1"
       onChangeText={[Function]}
-      placeholder="Email"
-      placeholderTextColor="rgba(255, 255, 255, 0.4)"
+      placeholder="EMAIL"
+      placeholderTextColor="#FFFFFF"
       secureTextEntry={false}
       style={
         [
           {
             "color": "#FFFFFF",
-            "fontFamily": "Poppins",
-            "fontSize": 14,
+            "fontFamily": "DinCondensedBold",
+            "fontSize": 18,
+            "textTransform": "uppercase",
           },
           {
             "paddingVertical": 8,
@@ -34,5 +35,17 @@ exports[`TextField snapshot (default) 1`] = `
       value=""
     />
   </View>
+  <View
+    style={
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 23,
+        "height": 1,
+        "marginTop": 13,
+        "opacity": 0.3,
+      }
+    }
+    testID="field-line"
+  />
 </View>
 `;

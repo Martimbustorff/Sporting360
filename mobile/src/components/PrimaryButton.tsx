@@ -1,5 +1,5 @@
 // Figma: nós 564:7259 ("Entrar") e 564:7261 ("Criar uma conta"): ambos fundo branco, raio 52, texto DIN 24 primary.
-// SEM FIGMA: a variante 'secondary' (contorno branco, texto branco) não existe no Figma, onde os dois botões são iguais; a validar pelo Martim.
+// SEM FIGMA (variante secondary): verificadas as páginas "Last Version S360" (22:1192) e "Calendário" (489:5623); não existe botão de contorno/secundário no Figma, ambos os botões são iguais. A validar pelo Martim.
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import { Display } from '@/theme/typography';
 import { colors, layout, radius } from '@/theme/tokens';

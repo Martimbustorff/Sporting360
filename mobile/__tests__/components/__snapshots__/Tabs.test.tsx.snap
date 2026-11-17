@@ -3,7 +3,18 @@
 exports[`Tabs snapshot (default) 1`] = `
 <View
   accessibilityRole="tablist"
-  className="flex-row"
+  style={
+    [
+      {
+        "backgroundColor": "rgba(255, 255, 255, 0.2)",
+        "borderRadius": 8,
+        "overflow": "hidden",
+      },
+      {
+        "flexDirection": "row",
+      },
+    ]
+  }
 >
   <View
     accessibilityRole="tab"
@@ -25,7 +36,6 @@ exports[`Tabs snapshot (default) 1`] = `
       }
     }
     accessible={true}
-    className="items-center justify-center border-s360-primary flex-1"
     collapsable={false}
     focusable={true}
     hitSlop={11}
@@ -40,9 +50,11 @@ exports[`Tabs snapshot (default) 1`] = `
     onStartShouldSetResponder={[Function]}
     style={
       {
-        "borderBottomWidth": 2,
+        "alignItems": "center",
+        "flex": 1,
+        "justifyContent": "space-between",
         "minHeight": 44,
-        "paddingHorizontal": 0,
+        "paddingTop": 8,
       }
     }
   >
@@ -62,6 +74,17 @@ exports[`Tabs snapshot (default) 1`] = `
     >
       Resultados
     </Text>
+    <View
+      style={
+        {
+          "alignSelf": "stretch",
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": 1,
+          "height": 2,
+        }
+      }
+      testID="tab-underline"
+    />
   </View>
   <View
     accessibilityRole="tab"
@@ -83,7 +106,6 @@ exports[`Tabs snapshot (default) 1`] = `
       }
     }
     accessible={true}
-    className="items-center justify-center border-s360-divider flex-1"
     collapsable={false}
     focusable={true}
     hitSlop={11}
@@ -98,9 +120,11 @@ exports[`Tabs snapshot (default) 1`] = `
     onStartShouldSetResponder={[Function]}
     style={
       {
-        "borderBottomWidth": 2,
+        "alignItems": "center",
+        "flex": 1,
+        "justifyContent": "space-between",
         "minHeight": 44,
-        "paddingHorizontal": 0,
+        "paddingTop": 8,
       }
     }
   >
@@ -113,13 +137,24 @@ exports[`Tabs snapshot (default) 1`] = `
             "fontSize": 14,
           },
           {
-            "color": "rgba(255, 255, 255, 0.4)",
+            "color": "#FFFFFF",
           },
         ]
       }
     >
       Classificação
     </Text>
+    <View
+      style={
+        {
+          "alignSelf": "stretch",
+          "backgroundColor": "#334942",
+          "borderRadius": 1,
+          "height": 2,
+        }
+      }
+      testID="tab-underline"
+    />
   </View>
 </View>
 `;

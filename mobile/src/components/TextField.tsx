@@ -1,9 +1,9 @@
-// Figma: nós 564:6907 (vazio, com olho) e 564:6938 (preenchido, com etiqueta): NÃO consultados (limite de chamadas do MCP Figma atingido).
-// SEM FIGMA (provisório): composto com tokens; rever contra os dois nós quando o limite repuser.
+// Figma: nós 564:6907 (vazio: etiqueta display 18 como placeholder, linha 1px branca a 30%) e 564:6938 (preenchido: etiqueta display 14 a 50%, valor corpo 16, linha 2px primary).
+// SEM FIGMA (olho): o ativo ic_eye (564:6910) está vazio no Figma (sem vetores), por isso o alternador mantém o texto "Ver"/"Ocultar" até haver ícone.
 import { useState } from 'react';
-import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Body } from '@/theme/typography';
-import { colors, layout, spacing, type } from '@/theme/tokens';
+import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
 export function TextField({
   label,
@@ -29,17 +29,25 @@ export function TextField({
   autoCorrect?: boolean;
 }) {
   const [hidden, setHidden] = useState(true);
+  const filled = value.length > 0;
   return (
     <View>
-      {value ? <Body variant="sectionLabel" style={{ color: colors.textMuted }}>{label}</Body> : null}
-      <View className="flex-row items-center border-b border-s360-divider" style={{ gap: spacing.sm }}>
+      {filled ? (
+        <Text
+          testID="field-label"
+          style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity, marginBottom: spacing.sm }]}
+        >
+          {label}
+        </Text>
+      ) : null}
+      <View className="flex-row items-center" style={{ gap: spacing.sm }}>
         <TextInput
-          className="flex-1 text-s360-white"
-          style={[type.body, { paddingVertical: spacing.sm }]}
+          className="flex-1"
+          style={[filled ? type.fieldValue : type.fieldPlaceholder, { paddingVertical: spacing.sm }]}
           accessibilityLabel={label}
           accessibilityHint={error}
-          placeholder={label}
-          placeholderTextColor={colors.textDisabled}
+          placeholder={label.toLocaleUpperCase('pt-PT')}
+          placeholderTextColor={colors.white}
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={secure && hidden}
@@ -61,6 +69,16 @@ export function TextField({
           </Pressable>
         ) : null}
       </View>
+      <View
+        testID="field-line"
+        style={{
+          marginTop: filled ? layout.fieldGapFilled : layout.fieldGapEmpty,
+          height: filled ? layout.fieldLineWidthActive : layout.fieldLineWidth,
+          borderRadius: radius.line,
+          backgroundColor: filled ? colors.primary : colors.white,
+          opacity: filled ? 1 : layout.fieldLineOpacity,
+        }}
+      />
       {error ? (
         <Body variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.cardRed }}>
           {error}

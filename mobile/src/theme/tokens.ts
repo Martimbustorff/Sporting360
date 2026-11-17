@@ -47,6 +47,10 @@ export const type = {
   tab: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.white },
   badge: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
+  // Text field (Figma 564:6907 / 564:6938)
+  fieldPlaceholder: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
+  fieldLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
+  fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
 } as const;
 
 export const spacing = {
@@ -64,6 +68,8 @@ export const radius = {
   md: 8, // section bars, tab bar
   pill: 16, // round badge, event icons
   sheet: 32, // GameBox bottom sheet
+  hairline: 1, // tab underline ends (Figma 500:28818)
+  line: 23, // text field underline (Figma 564:6913)
   button: 52, // primary / secondary buttons (Figma 564:7259), fully round at 51px height
 } as const;
 
@@ -80,6 +86,12 @@ export const layout = {
   statusBarHeight: 44, // status bar area included in the 96px header (Figma 564:6950)
   minTouch: 44, // minimum touch target
   tabUnderline: 2, // tab underline thickness
+  fieldLineWidth: 1, // empty text field underline (Figma 564:6913)
+  fieldLineWidthActive: 2, // filled text field underline (Figma 564:6942)
+  fieldLineOpacity: 0.3, // empty underline is white at 30%
+  fieldLabelOpacity: 0.5, // small label above a filled value is white at 50%
+  fieldGapEmpty: 13, // gap between placeholder row and underline
+  fieldGapFilled: 12, // gap between label/value block and underline
   disabledOpacity: 0.5,
   pressedOpacity: 0.8,
 } as const;
