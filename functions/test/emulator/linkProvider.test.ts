@@ -102,8 +102,81 @@ describe("linkProviderByEmail", () => {
     expect(u.emailVerified).toBe(true);
     expect(u.providerData.find((p) => p.providerId === "apple.com")?.uid).toBe("apple-sub-1");
     expect(await signInWithPassword("a@x.pt", PASSWORD)).toBe(false);
-    expect(revoke).toHaveBeenCalledTimes(1);
+    expect(revoke).toHaveBeenCalled();
+    for (const call of revoke.mock.calls) expect(call).toEqual([uid]);
+  });
+
+  it("unverified account: revokes BEFORE changing it, even when the update fails", async () => {
+    const { uid } = await authAdmin.createUser({ email: "a@x.pt", password: PASSWORD, emailVerified: false });
+    const revoke = jest.spyOn(authAdmin, "revokeRefreshTokens");
+    const update = jest.spyOn(authAdmin, "updateUser").mockRejectedValue(Object.assign(new Error("boom"), { code: "auth/internal-error" }));
+    const r = await code(handleLinkProviderByEmail(authAdmin, APPLE_REQ, stub(identity())));
+    expect(r.code).toBe("internal");
     expect(revoke).toHaveBeenCalledWith(uid);
+    expect(update).toHaveBeenCalled();
+    expect(revoke.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
+  });
+
+  it("unverified account: attacker's google.com identity and phone are unlinked, Apple is linked", async () => {
+    const { uid } = await authAdmin.createUser({
+      email: "a@x.pt",
+      password: PASSWORD,
+      emailVerified: false,
+      phoneNumber: "+351910000001",
+    });
+    await authAdmin.updateUser(uid, { providerToLink: { providerId: "google.com", uid: "atk-google", email: "atk@evil.pt" } });
+    expect((await authAdmin.getUser(uid)).providerData.map((p) => p.providerId).sort()).toEqual(["google.com", "password", "phone"]);
+
+    await expect(handleLinkProviderByEmail(authAdmin, APPLE_REQ, stub(identity()))).resolves.toEqual({ linked: true });
+
+    const u = await authAdmin.getUser(uid);
+    expect(u.providerData.map((p) => p.providerId).sort()).toEqual(["apple.com", "password"]);
+    expect(u.providerData.find((p) => p.providerId === "apple.com")?.uid).toBe("apple-sub-1");
+    expect(u.phoneNumber).toBeUndefined();
+    await expect(authAdmin.getUserByProviderUid("google.com", "atk-google")).rejects.toMatchObject({ code: "auth/user-not-found" });
+  });
+
+  it("unverified account: attacker's apple.com identity is replaced by the victim's", async () => {
+    const { uid } = await authAdmin.createUser({ email: "a@x.pt", password: PASSWORD, emailVerified: false });
+    await authAdmin.updateUser(uid, { providerToLink: { providerId: "apple.com", uid: "atk-apple", email: "atk@evil.pt" } });
+
+    await expect(handleLinkProviderByEmail(authAdmin, APPLE_REQ, stub(identity()))).resolves.toEqual({ linked: true });
+
+    const u = await authAdmin.getUser(uid);
+    const apples = u.providerData.filter((p) => p.providerId === "apple.com");
+    expect(apples.map((p) => p.uid)).toEqual(["apple-sub-1"]);
+    expect(u.emailVerified).toBe(true);
+    expect(await signInWithPassword("a@x.pt", PASSWORD)).toBe(false);
+  });
+
+  it("unverified account that already holds this exact identity: still neutralized, ALREADY_LINKED", async () => {
+    const { uid } = await authAdmin.createUser({ email: "a@x.pt", password: PASSWORD, emailVerified: false });
+    await authAdmin.updateUser(uid, { providerToLink: { providerId: "apple.com", uid: "apple-sub-1", email: "a@x.pt" } });
+    await authAdmin.updateUser(uid, { providerToLink: { providerId: "google.com", uid: "atk-google", email: "atk@evil.pt" } });
+
+    await expect(handleLinkProviderByEmail(authAdmin, APPLE_REQ, stub(identity()))).resolves.toEqual({
+      linked: false,
+      reason: "ALREADY_LINKED",
+    });
+    const u = await authAdmin.getUser(uid);
+    expect(u.providerData.map((p) => p.providerId).sort()).toEqual(["apple.com", "password"]);
+    expect(u.providerData.find((p) => p.providerId === "apple.com")?.uid).toBe("apple-sub-1");
+    expect(u.emailVerified).toBe(true);
+    expect(await signInWithPassword("a@x.pt", PASSWORD)).toBe(false);
+  });
+
+  it("verified account with an extra provider: extra provider untouched, Apple added", async () => {
+    const { uid } = await authAdmin.createUser({ email: "a@x.pt", password: PASSWORD, emailVerified: true });
+    await authAdmin.updateUser(uid, { providerToLink: { providerId: "google.com", uid: "own-google", email: "a2@x.pt" } });
+    const revoke = jest.spyOn(authAdmin, "revokeRefreshTokens");
+
+    await expect(handleLinkProviderByEmail(authAdmin, APPLE_REQ, stub(identity()))).resolves.toEqual({ linked: true });
+
+    const u = await authAdmin.getUser(uid);
+    expect(u.providerData.map((p) => p.providerId).sort()).toEqual(["apple.com", "google.com", "password"]);
+    expect(u.providerData.find((p) => p.providerId === "google.com")?.uid).toBe("own-google");
+    expect(revoke).not.toHaveBeenCalled();
+    expect(await signInWithPassword("a@x.pt", PASSWORD)).toBe(true);
   });
 
   it("private relay email -> PRIVATE_RELAY, nothing changes", async () => {

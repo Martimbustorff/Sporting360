@@ -34,8 +34,10 @@ const errCode = (e: unknown) => (e as { code?: string }).code;
  * `account-exists-with-different-credential`). A prova de posse é o próprio ID token.
  *
  * Pre-hijack: se a conta existente tem `emailVerified === false`, pode ter sido criada por outra
- * pessoa com este email. Nesse caso a ligação marca o email como verificado, troca a password por
- * uma aleatória (o dono real usa "recuperar password") e revoga as sessões existentes.
+ * pessoa com este email. Nesse caso revoga as sessões, desliga todos os outros providers
+ * (incluindo telefone e um Apple/Google do mesmo tipo com outro `sub`), marca o email como
+ * verificado, troca a password por uma aleatória (o dono real usa "recuperar password"), liga a
+ * identidade e revoga de novo.
  *
  * Nunca registar o idToken, o email ou a password gerada.
  */
@@ -65,41 +67,79 @@ export async function handleLinkProviderByEmail(
     throw new HttpsError("internal", "LOOKUP_FAILED");
   }
 
-  if (user.providerData.some((p) => p.providerId === id.provider)) return { linked: false, reason: "ALREADY_LINKED" };
-  // A identidade já pertence a outra conta: não a duplicar (o signInWithCredential entra nessa conta).
+  // A identidade já pertence a outra conta: não lhe tocar (o signInWithCredential entra nessa conta).
+  let owner: UserRecord | undefined;
   try {
-    await authAdmin.getUserByProviderUid(id.provider, id.sub);
-    return { linked: false, reason: "ALREADY_LINKED" };
+    owner = await authAdmin.getUserByProviderUid(id.provider, id.sub);
   } catch (e) {
     if (errCode(e) !== "auth/user-not-found") throw new HttpsError("internal", "LOOKUP_FAILED");
   }
+  if (owner && owner.uid !== user.uid) return { linked: false, reason: "ALREADY_LINKED" };
 
-  const unverified = user.emailVerified === false;
+  const link = { providerId: id.provider, uid: id.sub, email: id.email };
+
+  if (user.emailVerified) {
+    // Conta verificada: só acrescenta a identidade; password, outros providers e sessões ficam iguais.
+    if (user.providerData.some((p) => p.providerId === id.provider)) return { linked: false, reason: "ALREADY_LINKED" };
+    return (await linkOrConflict(authAdmin, user.uid, link)) ? { linked: true } : { linked: false, reason: "ALREADY_LINKED" };
+  }
+
+  // Conta não verificada (pre-hijack): quem a criou pode não ser o dono do email.
+  // 1. Revogar primeiro: se um passo seguinte falhar, o pior caso é um logout inofensivo e um retry
+  //    volta a passar por aqui. ID tokens já emitidos continuam válidos até 1 h depois da revogação.
+  await revoke(authAdmin, user.uid);
+  // 2. Tirar tudo o que o criador possa ter ligado (outro Google/Apple, telefone...), exceto a
+  //    password (que é substituída) e esta mesma identidade, marcar verificado e trocar a password.
+  const hasThisIdentity = user.providerData.some((p) => p.providerId === id.provider && p.uid === id.sub);
+  const toUnlink = [
+    ...new Set(
+      user.providerData
+        .filter((p) => p.providerId !== "password" && !(p.providerId === id.provider && p.uid === id.sub))
+        .map((p) => p.providerId),
+    ),
+  ];
   const hasPassword = user.providerData.some((p) => p.providerId === "password");
   try {
-    // Um só pedido: a ligação e a neutralização da password ficam atómicas.
     await authAdmin.updateUser(user.uid, {
-      providerToLink: { providerId: id.provider, uid: id.sub, email: id.email },
-      ...(unverified ? { emailVerified: true } : {}),
-      ...(unverified && hasPassword ? { password: randomBytes(32).toString("base64url") } : {}),
+      emailVerified: true,
+      ...(hasPassword ? { password: randomBytes(32).toString("base64url") } : {}),
+      ...(toUnlink.length ? { providersToUnlink: toUnlink } : {}),
     });
+  } catch {
+    throw new HttpsError("internal", "NEUTRALIZE_FAILED");
+  }
+  // 3. Ligar a identidade em pedido separado (desligar e ligar o mesmo providerId num só pedido
+  //    não tem ordem garantida). Se falhar, a conta já está limpa e verificada: o retry liga-a.
+  const linked = !hasThisIdentity && (await linkOrConflict(authAdmin, user.uid, link));
+  // 4. Revogar de novo: fecha a janela entre o passo 1 e o passo 2 (login com credenciais antigas).
+  await revoke(authAdmin, user.uid);
+  return linked ? { linked: true } : { linked: false, reason: "ALREADY_LINKED" };
+}
+
+async function revoke(authAdmin: Auth, uid: string): Promise<void> {
+  try {
+    await authAdmin.revokeRefreshTokens(uid);
+  } catch {
+    throw new HttpsError("internal", "AUTH_REVOKE_FAILED");
+  }
+}
+
+/** Liga a identidade; `false` se entretanto ficou ligada (a esta ou a outra conta). */
+async function linkOrConflict(
+  authAdmin: Auth,
+  uid: string,
+  link: { providerId: string; uid: string; email: string },
+): Promise<boolean> {
+  try {
+    await authAdmin.updateUser(uid, { providerToLink: link });
+    return true;
   } catch (e) {
     const c = errCode(e);
-    // A identidade já está ligada (corrida, ou ligada a outra conta): o signInWithCredential resolve.
     if (c === "auth/provider-already-linked" || c === "auth/credential-already-in-use" || c === "auth/uid-already-exists") {
-      return { linked: false, reason: "ALREADY_LINKED" };
+      return false;
     }
     throw new HttpsError("internal", "LINK_FAILED");
   }
-
-  if (unverified) {
-    try {
-      await authAdmin.revokeRefreshTokens(user.uid);
-    } catch {
-      throw new HttpsError("internal", "AUTH_REVOKE_FAILED");
-    }
-  }
-  return { linked: true };
 }
 
 export const linkProviderByEmail = onCall({ region: "europe-west1" }, async (req) => {

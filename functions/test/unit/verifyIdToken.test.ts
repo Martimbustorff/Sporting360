@@ -40,10 +40,10 @@ const RAW_NONCE = "raw-nonce-123";
 
 async function appleToken(
   over: Record<string, unknown> = {},
-  opts: { key?: Keys; kid?: string; exp?: number; iat?: number } = {},
+  opts: { key?: Keys; kid?: string; exp?: number; iat?: number; noSub?: boolean; noIat?: boolean } = {},
 ): Promise<string> {
   const iat = opts.iat ?? nowS();
-  return new SignJWT({
+  const jwt = new SignJWT({
     email: "a@x.pt",
     email_verified: "true",
     nonce: sha256hex(RAW_NONCE),
@@ -52,10 +52,10 @@ async function appleToken(
     .setProtectedHeader({ alg: "RS256", kid: opts.kid ?? "apple-k1" })
     .setIssuer((over.iss as string) ?? APPLE_ISSUER)
     .setAudience((over.aud as string) ?? APPLE_AUDIENCE)
-    .setSubject("apple-sub-1")
-    .setIssuedAt(iat)
-    .setExpirationTime(opts.exp ?? iat + 600)
-    .sign((opts.key ?? appleKeys).privateKey);
+    .setExpirationTime(opts.exp ?? iat + 600);
+  if (!opts.noSub) jwt.setSubject("apple-sub-1");
+  if (!opts.noIat) jwt.setIssuedAt(iat);
+  return jwt.sign((opts.key ?? appleKeys).privateKey);
 }
 
 async function googleToken(over: Record<string, unknown> = {}, opts: { exp?: number; iat?: number } = {}): Promise<string> {
@@ -135,6 +135,19 @@ describe("verifyIdToken('apple')", () => {
   it("rejects an expired token", async () => {
     const iat = nowS() - 3600;
     await expect(apple(await appleToken({}, { iat, exp: iat + 600 }))).rejects.toThrow();
+  });
+
+  it("rejects a token without sub", async () => {
+    await expect(apple(await appleToken({}, { noSub: true }))).rejects.toThrow();
+  });
+
+  it("rejects a token without iat", async () => {
+    await expect(apple(await appleToken({}, { noIat: true }))).rejects.toThrow();
+  });
+
+  it("rejects a token issued more than 10 minutes ago even if not expired", async () => {
+    const iat = nowS() - 11 * 60;
+    await expect(apple(await appleToken({}, { iat, exp: nowS() + 3600 }))).rejects.toThrow();
   });
 
   it("rejects a token signed by another key", async () => {
