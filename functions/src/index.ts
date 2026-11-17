@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { RAPIDAPI_KEY } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
+import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
 import { settleDue } from "./scheduled/settle";
@@ -64,5 +65,12 @@ export const footballWeeklySync = onSchedule(
   { schedule: "30 5 * * 1", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300, secrets: [RAPIDAPI_KEY] },
   async () => {
     await runJob(getFirestore(), "football_team_weekly", () => syncTeamWeekly(footballDeps()), { minRemaining: 500 });
+  },
+);
+
+export const footballPrematchSync = onSchedule(
+  { schedule: "every 6 hours", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300, secrets: [RAPIDAPI_KEY] },
+  async () => {
+    await runJob(getFirestore(), "football_prematch", () => syncPrematch(footballDeps()), { minRemaining: 500 });
   },
 );
