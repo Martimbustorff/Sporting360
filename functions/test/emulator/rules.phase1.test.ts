@@ -7,7 +7,7 @@ import {
   RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import {
-  doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction, increment,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction, increment, deleteField,
 } from "firebase/firestore";
 
 let env: RulesTestEnvironment;
@@ -72,6 +72,37 @@ describe("backend-owned collections", () => {
     await seed("leaderboards/a/entries/b", { a: 1 });
     await assertFails(updateDoc(doc(as("alice"), "leaderboards/a/entries/b"), { a: 2 }));
     await assertFails(deleteDoc(doc(as("alice"), "leaderboards/a/entries/b")));
+  });
+});
+
+describe("publicProfiles", () => {
+  it("anonymous can read publicProfiles/u1", async () => {
+    await assertSucceeds(getDoc(doc(anon(), "publicProfiles/u1")));
+  });
+  it("nobody can write publicProfiles, not even the owner", async () => {
+    await assertFails(setDoc(doc(as("u1"), "publicProfiles/u1"), { displayName: "X" }));
+    await assertFails(setDoc(doc(anon(), "publicProfiles/u1"), { displayName: "X" }));
+    await seed("publicProfiles/u1", { displayName: "Y" });
+    await assertFails(updateDoc(doc(as("u1"), "publicProfiles/u1"), { displayName: "X" }));
+    await assertFails(deleteDoc(doc(as("u1"), "publicProfiles/u1")));
+  });
+});
+
+describe("users displayName is server-only", () => {
+  it("owner cannot create users/alice with displayName", async () => {
+    await assertFails(setDoc(doc(as("alice"), "users/alice"), { name: "A", displayName: "Leão 77" }));
+    await assertSucceeds(setDoc(doc(as("alice"), "users/alice"), { name: "A", email: "a@x.pt" }));
+  });
+  it("owner cannot update displayName but can update other fields (V2 compatible)", async () => {
+    await seed("users/alice", { name: "A" });
+    await assertFails(updateDoc(doc(as("alice"), "users/alice"), { displayName: "Leão 77" }));
+    await assertSucceeds(updateDoc(doc(as("alice"), "users/alice"), { name: "B" }));
+  });
+  it("owner can still update other fields when the server already set displayName", async () => {
+    await seed("users/alice", { name: "A", displayName: "Leão 77" });
+    await assertSucceeds(updateDoc(doc(as("alice"), "users/alice"), { name: "B" }));
+    await assertFails(updateDoc(doc(as("alice"), "users/alice"), { displayName: "Outro" }));
+    await assertFails(updateDoc(doc(as("alice"), "users/alice"), { displayName: deleteField() }));
   });
 });
 
