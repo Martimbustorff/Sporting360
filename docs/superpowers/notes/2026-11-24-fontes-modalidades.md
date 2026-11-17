@@ -4,6 +4,8 @@ Investigação feita a 2026-11-17 (o ficheiro mantém o nome da calendarização
 
 ## Decisão
 
+Aceite pelo Martim: futsalportugal.com; hp.fpp.pt com hoqueipatins.pt; Liga dos Campeões WSE via hoqueipatins.pt com a fonte indicada na app.
+
 | Modalidade | Principal | Recurso | Estado |
 |---|---|---|---|
 | Futsal | futsalportugal.com (Zona Técnica Futsal), HTML | mesmo editor, JSON-LD de `/pt/gamesheet/{id}` | Termos não escritos, sem fonte independente de recurso |
@@ -64,7 +66,7 @@ Não confirmado (a tabela de cobertura de andebol e basquetebol só mostra 15 li
 2. `GET /leagues?country=Portugal` e `GET /leagues?team={id}&season=...`: preencher `leagues` e `covered` (campo `coverage`). Para andebol e basquetebol decidir o que entra em `API_SPORTS_GAPS`.
 3. `GET /games?team={id}&season=2026` (basquetebol `2026-2027`): substituir as amostras sintéticas de `test/fixtures/api-sports/*` por respostas reais.
 
-Os valores `0` em `sourcesConfig.ts` marcam estes campos. A Task 2 e a Task 16 não devem ser fechadas com `teamId: 0`.
+Em `sourcesConfig.ts`, `null` marca estes campos e as três modalidades API-Sports estão com `enabled: false`; `test/unit/sourcesConfig.test.ts` falha se alguma for ativada com ids por confirmar.
 
 ## Fontes consultadas
 
@@ -73,8 +75,8 @@ Os valores `0` em `sourcesConfig.ts` marcam estes campos. A Task 2 e a Task 16 n
 - https://europe.worldskate.org/the-complete-schedule-of-the-wse-rink-hockey-european-cups/ (via `wp-json/wp/v2/posts/50343`), https://wse.sidgad.com/
 - https://futsalportugal.com/pt/maincompetition/26, https://futsalportugal.com/robots.txt, https://futsalportugal.com/pt/estatuto-editorial
 - https://fpf.pt/robots.txt, https://www.sporting.pt/robots.txt, https://sporting.pt/termos
-- https://api-sports.io/sports/handball, https://api-sports.io/sports/basketball, https://api-sports.io/sports/volleyball
-- https://www.api-football.com/news/post/api-basketball-new-release-available
+- https://api-sports.io/sports/handball, https://api-sports.io/sports/basketball, https://api-sports.io/sports/volleyball (não reverificado)
+- https://www.api-football.com/news/post/api-basketball-new-release-available (não reverificado)
 
 ## Fixtures guardadas
 

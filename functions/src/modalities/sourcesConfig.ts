@@ -9,16 +9,18 @@ export interface FreeSourceRef {
 }
 
 export interface ApiSportsLeague {
-  id: number;
   name: string;
-  /** true quando a API-Sports declara cobertura (calendário e classificação) para a liga. */
-  covered: boolean;
+  /** null = por confirmar com uma chamada real; true/false só depois de confirmado. */
+  id: number | null;
+  covered: boolean | null;
 }
 
 export interface ApiSportsSport {
   host: string;
-  /** 0 = por confirmar com uma chamada real (ver nota, secção "Pendentes"). */
-  teamId: number;
+  /** Desligado até os ids estarem confirmados (ver nota, secção "Pendentes"). */
+  enabled: boolean;
+  /** null = por confirmar com uma chamada real. */
+  teamId: number | null;
   seasonFormat: "year" | "span";
   leagues: ApiSportsLeague[];
 }
@@ -26,33 +28,36 @@ export interface ApiSportsSport {
 export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSportsSport> = {
   handball: {
     host: "v1.handball.api-sports.io",
-    teamId: 0,
+    enabled: false,
+    teamId: null,
     seasonFormat: "year",
     leagues: [
-      { id: 0, name: "Andebol 1", covered: false },
-      { id: 0, name: "EHF European League", covered: false },
+      { id: null, name: "Andebol 1", covered: null },
+      { id: null, name: "EHF European League", covered: null },
     ],
   },
   volleyball: {
     host: "v1.volleyball.api-sports.io",
-    teamId: 0,
+    enabled: false,
+    teamId: null,
     seasonFormat: "year",
     leagues: [
-      { id: 0, name: "Campeonato Nacional", covered: true },
-      { id: 0, name: "Taça de Portugal", covered: true },
-      { id: 0, name: "Supertaça", covered: true },
-      { id: 0, name: "CEV Champions League", covered: true },
-      { id: 0, name: "CEV Cup", covered: true },
-      { id: 0, name: "CEV Challenge Cup", covered: true },
+      { id: null, name: "Campeonato Nacional", covered: null },
+      { id: null, name: "Taça de Portugal", covered: null },
+      { id: null, name: "Supertaça", covered: null },
+      { id: null, name: "CEV Champions League", covered: null },
+      { id: null, name: "CEV Cup", covered: null },
+      { id: null, name: "CEV Challenge Cup", covered: null },
     ],
   },
   basketball: {
     host: "v1.basketball.api-sports.io",
-    teamId: 0,
+    enabled: false,
+    teamId: null,
     seasonFormat: "span",
     leagues: [
-      { id: 0, name: "Liga Portuguesa de Basquetebol", covered: false },
-      { id: 0, name: "Taça de Portugal", covered: false },
+      { id: null, name: "Liga Portuguesa de Basquetebol", covered: null },
+      { id: null, name: "Taça de Portugal", covered: null },
     ],
   },
 };

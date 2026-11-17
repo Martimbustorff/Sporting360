@@ -1,0 +1,1 @@
+Estas fixtures são sintéticas: seguem o envelope documentado da API-Sports mas os ids e dados são inventados. Substituir por respostas reais quando forem gravadas (paragem de gravação das fixtures, com a chave).
