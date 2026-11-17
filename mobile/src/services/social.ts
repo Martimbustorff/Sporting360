@@ -10,7 +10,7 @@ import {
   signInWithCredential,
 } from '@react-native-firebase/auth';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
-import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { authErrorMessage } from '@/lib/authErrors';
@@ -51,9 +51,11 @@ function codeOf(e: unknown): string | undefined {
   return typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : undefined;
 }
 
-function report(e: unknown): void {
+/** Crashlytics só recebe o código do erro: nunca a mensagem (pode conter email), tokens ou nonces. */
+function reportCode(tag: string, e: unknown): void {
+  const code = (codeOf(e) ?? 'unknown').replace(/[^\w/.-]/g, '').slice(0, 64) || 'unknown';
   try {
-    recordError(getCrashlytics(), e instanceof Error ? e : new Error(String(e)));
+    recordError(getCrashlytics(), new Error(`${tag} ${code}`));
   } catch {
     // nada mais a fazer
   }
@@ -134,20 +136,25 @@ function credentialFor(provider: Provider, tok: ProviderToken) {
 
 type SignInCred = Awaited<ReturnType<typeof signInWithCredential>>;
 
-/** Primeira vez: users/{uid} com { name, email } em merge (sem name se não houver). R10: garante o perfil. */
+/**
+ * Primeira vez: users/{uid} com { name, email } em merge (sem name se não houver). Paridade com a V2: utilizador
+ * existente sem documento users/{uid} também o recebe; com documento, não se toca. R10: garante o perfil.
+ */
 async function afterSignIn(cred: SignInCred, tok: ProviderToken): Promise<void> {
   const uid = cred.user.uid;
-  if (getAdditionalUserInfo(cred)?.isNewUser === true) {
-    const data: Record<string, unknown> = { createdAt: serverTimestamp() };
-    if (tok.name) data.name = tok.name;
-    const email = cred.user.email ?? tok.email;
-    if (email) data.email = email;
-    try {
-      await setDoc(doc(db(), `users/${uid}`), data, { merge: true });
-    } catch (e) {
-      // A sessão já está aberta: não falhar (o nome cai para o fallback do uid).
-      report(e);
+  const ref = doc(db(), `users/${uid}`);
+  try {
+    const isNew = getAdditionalUserInfo(cred)?.isNewUser === true;
+    if (isNew || !(await getDoc(ref)).exists()) {
+      const data: Record<string, unknown> = { createdAt: serverTimestamp() };
+      if (tok.name) data.name = tok.name;
+      const email = cred.user.email ?? tok.email;
+      if (email) data.email = email;
+      await setDoc(ref, data, { merge: true });
     }
+  } catch (e) {
+    // A sessão já está aberta: não falhar (o nome cai para o fallback do uid).
+    reportCode('SOCIAL_USERS_DOC_FAILED', e);
   }
   await ensureProfile();
   markProfileEnsured(uid);
@@ -160,33 +167,49 @@ async function linkByEmail(provider: Provider, tok: ProviderToken): Promise<Link
   return res.data;
 }
 
+/**
+ * Depois de ligar: Google pede um token novo (signInSilently). Apple reutiliza o mesmo identityToken + rawNonce
+ * (ainda válido, só saiu do aparelho para o Firebase e para a nossa callable) e só volta a abrir a folha da Apple
+ * se o Firebase o recusar com auth/invalid-credential.
+ */
 async function socialSignIn(
   provider: Provider,
   getToken: (retry: boolean) => Promise<ProviderToken>,
   needsExistingMessage: string,
+  reuseTokenAfterLink: boolean,
 ): Promise<SocialResult> {
   const needsExisting: SocialResult = { status: 'needsExistingLogin', message: needsExistingMessage };
   beginSignUp();
   try {
     let tok = await getToken(false);
     let linkedOnce = false;
+    let reusedToken = false;
     for (;;) {
       try {
         const cred = await signInWithCredential(authInstance(), credentialFor(provider, tok));
         await afterSignIn(cred, tok);
         return { status: 'signedIn' };
       } catch (e) {
-        if (codeOf(e) !== 'auth/account-exists-with-different-credential') throw e;
+        const code = codeOf(e);
+        if (reusedToken && code === 'auth/invalid-credential') {
+          // Uma só vez: token reutilizado recusado → novo pedido (novo nonce).
+          reusedToken = false;
+          tok = await getToken(true);
+          continue;
+        }
+        if (code !== 'auth/account-exists-with-different-credential') throw e;
         // T11: nunca repetir em ciclo. Depois de uma ligação, um segundo conflito é terminal.
         if (linkedOnce) return needsExisting;
         const link = await linkByEmail(provider, tok);
         if (!link?.linked) return needsExisting;
         linkedOnce = true;
-        tok = await getToken(true);
+        if (reuseTokenAfterLink) reusedToken = true;
+        else tok = await getToken(true);
       }
     }
   } catch (e) {
     if (e instanceof Cancelled) return { status: 'cancelled' };
+    reportCode(`SOCIAL_SIGN_IN_FAILED ${provider}`, e);
     throw new Error(authErrorMessage(codeOf(e)));
   } finally {
     endSignUp();
@@ -194,7 +217,7 @@ async function socialSignIn(
 }
 
 export async function signInWithGoogle(): Promise<SocialResult> {
-  const result = await socialSignIn('google', googleToken, GOOGLE_NEEDS_EXISTING_LOGIN_MESSAGE);
+  const result = await socialSignIn('google', googleToken, GOOGLE_NEEDS_EXISTING_LOGIN_MESSAGE, false);
   if (result.status === 'needsExistingLogin') {
     // Deixa escolher outra conta Google na próxima tentativa.
     GoogleSignin.signOut().catch(() => {});
@@ -203,7 +226,7 @@ export async function signInWithGoogle(): Promise<SocialResult> {
 }
 
 export function signInWithApple(): Promise<SocialResult> {
-  return socialSignIn('apple', () => appleToken(), NEEDS_EXISTING_LOGIN_MESSAGE);
+  return socialSignIn('apple', () => appleToken(), NEEDS_EXISTING_LOGIN_MESSAGE, true);
 }
 
 /** Definições (Plano 4): liga a Apple à conta com sessão aberta. */

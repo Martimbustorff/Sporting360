@@ -8,3 +8,4 @@ export const onSnapshot = jest.fn(
 );
 export const setDoc = jest.fn(() => Promise.resolve());
 export const serverTimestamp = jest.fn(() => ({ __kind: 'serverTimestamp' }));
+export const getDoc = jest.fn(() => Promise.resolve({ exists: () => false, data: () => undefined }));

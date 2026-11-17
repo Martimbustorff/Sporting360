@@ -11,7 +11,11 @@
       "bundleIdentifier": "com.scp360",
       "supportsTablet": false,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "pt-PT",
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "com.scp360",

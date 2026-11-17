@@ -39,7 +39,8 @@ jest.mock('@/services/firebase', () => ({
 
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { linkWithCredential, signInWithCredential } from '@react-native-firebase/auth';
-import { setDoc } from '@react-native-firebase/firestore';
+import { getDoc, setDoc } from '@react-native-firebase/firestore';
+import { recordError } from '@react-native-firebase/crashlytics';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { claimProfileEnsure, resetProfileEnsured } from '@/lib/profileEnsured';
@@ -74,6 +75,8 @@ beforeEach(() => {
   );
   mockUpdateProfileCall.mockResolvedValue({ data: {} });
   (setDoc as jest.Mock).mockResolvedValue(undefined);
+  // Por omissão o documento users/{uid} já existe (utilizadores existentes não são reescritos).
+  (getDoc as jest.Mock).mockResolvedValue({ exists: () => true, data: () => ({ name: 'Antigo' }) });
 });
 
 describe('constantes', () => {
@@ -114,12 +117,51 @@ describe('signInWithGoogle', () => {
     expect((setDoc as jest.Mock).mock.calls[0][1]).not.toHaveProperty('name');
   });
 
-  it('utilizador existente: não reescreve users/{uid}', async () => {
+  it('utilizador existente com documento: não reescreve users/{uid}', async () => {
     (GoogleSignin.signIn as jest.Mock).mockResolvedValue(googleSuccess());
     (signInWithCredential as jest.Mock).mockResolvedValue(userCred('u1', false));
     await expect(signInWithGoogle()).resolves.toEqual({ status: 'signedIn' });
+    expect((getDoc as jest.Mock).mock.calls[0][0].path).toBe('users/u1');
     expect(setDoc).not.toHaveBeenCalled();
     expect(mockUpdateProfileCall).toHaveBeenCalledTimes(1);
+  });
+
+  it('paridade V2: utilizador existente sem documento users/{uid} → cria { name, email } em merge', async () => {
+    (GoogleSignin.signIn as jest.Mock).mockResolvedValue(googleSuccess());
+    (signInWithCredential as jest.Mock).mockResolvedValue(userCred('u1', false));
+    (getDoc as jest.Mock).mockResolvedValue({ exists: () => false, data: () => undefined });
+    await expect(signInWithGoogle()).resolves.toEqual({ status: 'signedIn' });
+    expect(setDoc).toHaveBeenCalledTimes(1);
+    const [ref, data, opts] = (setDoc as jest.Mock).mock.calls[0];
+    expect(ref.path).toBe('users/u1');
+    expect(data).toEqual(expect.objectContaining({ name: 'Zé Leão', email: 'ze@x.pt' }));
+    expect(opts).toEqual({ merge: true });
+  });
+
+  it('erro inesperado: Crashlytics só recebe o código (sem mensagem, token nem email)', async () => {
+    (GoogleSignin.signIn as jest.Mock).mockResolvedValue(googleSuccess('secret-id-token'));
+    (signInWithCredential as jest.Mock).mockRejectedValue({
+      code: 'auth/internal-error',
+      message: 'boom for ze@x.pt with secret-id-token',
+    });
+    await expect(signInWithGoogle()).rejects.toThrow('Algo correu mal. Tenta outra vez.');
+    expect(recordError).toHaveBeenCalledTimes(1);
+    const err = (recordError as jest.Mock).mock.calls[0][1] as Error;
+    expect(err.message).toBe('SOCIAL_SIGN_IN_FAILED google auth/internal-error');
+    expect(err.message).not.toContain('ze@x.pt');
+    expect(err.message).not.toContain('secret-id-token');
+  });
+
+  it('erro sem código: Crashlytics recebe "unknown"', async () => {
+    (GoogleSignin.signIn as jest.Mock).mockRejectedValue(new Error('token abc ze@x.pt'));
+    await expect(signInWithGoogle()).rejects.toThrow();
+    expect(((recordError as jest.Mock).mock.calls[0][1] as Error).message).toBe('SOCIAL_SIGN_IN_FAILED google unknown');
+  });
+
+  it('cancelar não vai para o Crashlytics', async () => {
+    (GoogleSignin.signIn as jest.Mock).mockResolvedValue({ type: 'cancelled', data: null });
+    await signInWithGoogle();
+    expect(recordError).not.toHaveBeenCalled();
   });
 
   it('se a escrita em users falhar, garante o perfil e entra na mesma', async () => {
@@ -178,22 +220,58 @@ describe('signInWithApple', () => {
     expect(callArg).toEqual({ provider: 'apple', idToken: 'a-1', rawNonce: fbCred.secret });
   });
 
-  it('Review Focus 4: account-exists + linked:true → segunda tentativa com token novo e signedIn', async () => {
-    (AppleAuthentication.signInAsync as jest.Mock)
-      .mockResolvedValueOnce(appleCredential('a-1'))
-      .mockResolvedValueOnce(appleCredential('a-2'));
+  it('Review Focus 4: account-exists + linked:true → uma só folha Apple, reutiliza token e rawNonce, signedIn', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue(appleCredential('a-1'));
     (signInWithCredential as jest.Mock).mockRejectedValueOnce(EXISTS).mockResolvedValueOnce(userCred('u1', false));
     mockLinkCall.mockResolvedValue({ data: { linked: true } });
 
     await expect(signInWithApple()).resolves.toEqual({ status: 'signedIn' });
-    expect(AppleAuthentication.signInAsync).toHaveBeenCalledTimes(2);
+    expect(AppleAuthentication.signInAsync).toHaveBeenCalledTimes(1);
     expect(signInWithCredential).toHaveBeenCalledTimes(2);
     const first = (signInWithCredential as jest.Mock).mock.calls[0][1];
     const second = (signInWithCredential as jest.Mock).mock.calls[1][1];
-    expect(second.token).toBe('a-2');
-    expect(second.secret).not.toBe(first.secret);
-    expect((AppleAuthentication.signInAsync as jest.Mock).mock.calls[1][0].nonce).toBe(sha256hex(second.secret));
+    expect(second).toEqual(first);
+    expect(second.token).toBe('a-1');
     expect(setDoc).not.toHaveBeenCalled();
+  });
+
+  it('token reutilizado recusado (auth/invalid-credential) → volta a pedir à Apple com nonce novo', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock)
+      .mockResolvedValueOnce(appleCredential('a-1'))
+      .mockResolvedValueOnce(appleCredential('a-2'));
+    (signInWithCredential as jest.Mock)
+      .mockRejectedValueOnce(EXISTS)
+      .mockRejectedValueOnce({ code: 'auth/invalid-credential' })
+      .mockResolvedValueOnce(userCred('u1', false));
+    mockLinkCall.mockResolvedValue({ data: { linked: true } });
+
+    await expect(signInWithApple()).resolves.toEqual({ status: 'signedIn' });
+    expect(AppleAuthentication.signInAsync).toHaveBeenCalledTimes(2);
+    expect(signInWithCredential).toHaveBeenCalledTimes(3);
+    expect(mockLinkCall).toHaveBeenCalledTimes(1);
+    const first = (signInWithCredential as jest.Mock).mock.calls[0][1];
+    const third = (signInWithCredential as jest.Mock).mock.calls[2][1];
+    expect(third.token).toBe('a-2');
+    expect(third.secret).not.toBe(first.secret);
+    expect((AppleAuthentication.signInAsync as jest.Mock).mock.calls[1][0].nonce).toBe(sha256hex(third.secret));
+  });
+
+  it('invalid-credential sem ligação prévia não volta a pedir (erro PT)', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue(appleCredential('a-1'));
+    (signInWithCredential as jest.Mock).mockRejectedValue({ code: 'auth/invalid-credential' });
+    await expect(signInWithApple()).rejects.toThrow();
+    expect(AppleAuthentication.signInAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('o novo pedido só acontece uma vez: segundo invalid-credential é erro', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue(appleCredential('a-1'));
+    (signInWithCredential as jest.Mock)
+      .mockRejectedValueOnce(EXISTS)
+      .mockRejectedValue({ code: 'auth/invalid-credential' });
+    mockLinkCall.mockResolvedValue({ data: { linked: true } });
+    await expect(signInWithApple()).rejects.toThrow();
+    expect(AppleAuthentication.signInAsync).toHaveBeenCalledTimes(2);
+    expect(signInWithCredential).toHaveBeenCalledTimes(3);
   });
 
   it('Review Focus 4: PRIVATE_RELAY → needsExistingLogin com a mensagem exata', async () => {
@@ -266,11 +344,13 @@ describe('signInWithApple', () => {
     expect(signInWithCredential).not.toHaveBeenCalled();
   });
 
-  it('cancelar o segundo pedido Apple → cancelled', async () => {
+  it('cancelar o segundo pedido Apple (após invalid-credential) → cancelled', async () => {
     (AppleAuthentication.signInAsync as jest.Mock)
       .mockResolvedValueOnce(appleCredential('a-1'))
       .mockRejectedValueOnce({ code: 'ERR_REQUEST_CANCELED' });
-    (signInWithCredential as jest.Mock).mockRejectedValueOnce(EXISTS);
+    (signInWithCredential as jest.Mock)
+      .mockRejectedValueOnce(EXISTS)
+      .mockRejectedValueOnce({ code: 'auth/invalid-credential' });
     mockLinkCall.mockResolvedValue({ data: { linked: true } });
     await expect(signInWithApple()).resolves.toEqual({ status: 'cancelled' });
   });
