@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "394641993263",
+    "firebase_url": "https://scp360-37a74-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "scp360-37a74",
+    "storage_bucket": "scp360-37a74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394641993263:android:2ac911930d9666c44b20da",
+        "android_client_info": {
+          "package_name": "com.scp360"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "394641993263-m82d9jj7m2do7204davvqo5k1f09epoh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4vQ8cEg3mcB7worVkOIPsjdYDBzKVQxM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "394641993263-m82d9jj7m2do7204davvqo5k1f09epoh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "394641993263-84tree10asc01anqldkhog14sbqq1k7b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.scp360"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

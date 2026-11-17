@@ -9,7 +9,8 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "com.scp360",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.scp360",
@@ -18,7 +19,8 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",
@@ -30,7 +32,20 @@
           "imageWidth": 240
         }
       ],
-      "expo-font"
+      "expo-font",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/crashlytics",
+      "@react-native-firebase/analytics",
+      "@react-native-firebase/app-check",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "dynamic"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
