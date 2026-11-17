@@ -114,6 +114,11 @@ describe("getGameState", () => {
     expect(g?.finishedAt).toEqual(new Date("2026-11-15T23:00:00Z"));
   });
 
+  it("status FT explícito sem finishedAt usa endTime", async () => {
+    await db.collection("games").doc("x").set(game({ status: "FT" }));
+    expect((await getGameState(db, "1001", NOW))?.finishedAt).toEqual(new Date("2026-11-15T22:20:00Z"));
+  });
+
   it("mapeia códigos da API-Football", async () => {
     const cases: Array<[string, string]> = [
       ["TBD", "NS"], ["2H", "LIVE"], ["ET", "LIVE"], ["BT", "LIVE"], ["P", "LIVE"], ["LIVE", "LIVE"], ["INT", "LIVE"],

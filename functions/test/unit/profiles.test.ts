@@ -18,4 +18,8 @@ describe("publicName", () => {
     expect(publicName({}, "abcd1234")).toBe("Sportinguista #1234");
     expect(publicName({ displayName: null, name: null }, "abcd1234")).toBe("Sportinguista #1234");
   });
+  it("displayName com @ é ignorado e cai para name ou uid", () => {
+    expect(publicName({ displayName: "joao@mail.com", name: "ana pinto" }, "u1")).toBe("Ana Pinto");
+    expect(publicName({ displayName: "joao@mail.com" }, "abcd1234")).toBe("Sportinguista #1234");
+  });
 });

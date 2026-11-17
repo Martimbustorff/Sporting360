@@ -16,6 +16,10 @@
  *   GameId (string), teamId (int; Sporting = 228),
  *   Players[] { playerId, name, rating (string, pode ser vazia), minutes (int, pode faltar), substitute, ... }.
  *
+ * Notas do legacy: endTime é uma estimativa fixa (kickoff+150min) e isActive = startTime<=now<=endTime,
+ * logo o FT derivado só aparece depois de kickoff+150min (liquidação ~kickoff+4,5h, conservador).
+ * Jogos fora da janela de 7 dias nunca são re-tentados.
+ *
  * settlements/{gameId}: tem `settledAt` quando o jogo já foi liquidado.
  */
 import { Firestore, Timestamp, DocumentData } from "firebase-admin/firestore";
@@ -73,6 +77,9 @@ function mapGame(data: DocumentData, now: Date): GameState | null {
   const explicit = typeof data.status === "string" ? STATUS_MAP[data.status.trim().toUpperCase()] : undefined;
   if (explicit) {
     status = explicit;
+    if ((status === "FT" || status === "AET" || status === "PEN") && finishedAt === null) {
+      finishedAt = toDate(data.endTime);
+    }
   } else if (data.isActive === true) {
     status = "LIVE";
   } else if (now.getTime() < kickoff.getTime()) {
@@ -133,18 +140,19 @@ export async function getPlayerLines(db: Firestore, gameId: string): Promise<Pla
 /**
  * Jogos FT/AET/PEN terminados há pelo menos MVP_SETTLE_AFTER_MS e ainda sem `settledAt`.
  * Firestore não filtra por estado derivado: consulta uma janela por kickoff (últimos 7 dias até now-2h)
- * e filtra em memória. O `timestamp` pode ser Timestamp ou número (s/ms), por isso há uma consulta por tipo.
+ * e filtra em memória. Em produção `timestamp` é sempre Timestamp (a conversão defensiva de números fica só em toDate).
  */
 export async function listFinishedUnsettled(db: Firestore, now: Date): Promise<GameState[]> {
   const to = now.getTime() - MVP_SETTLE_AFTER_MS;
   const from = now.getTime() - SETTLE_LOOKBACK_MS;
   const games = db.collection("games");
 
-  const snaps = await Promise.all([
-    games.where("timestamp", ">=", Timestamp.fromMillis(from)).where("timestamp", "<=", Timestamp.fromMillis(to)).get(),
-    games.where("timestamp", ">=", Math.floor(from / 1000)).where("timestamp", "<=", Math.floor(to / 1000)).get(),
-    games.where("timestamp", ">=", from).where("timestamp", "<=", to).get(),
-  ]);
+  const snaps = [
+    await games
+      .where("timestamp", ">=", Timestamp.fromMillis(from))
+      .where("timestamp", "<=", Timestamp.fromMillis(to))
+      .get(),
+  ];
 
   const byId = new Map<string, GameState>();
   for (const s of snaps) {

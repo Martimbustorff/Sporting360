@@ -4,7 +4,7 @@ export function publicName(
   uid: string,
 ): string {
   const display = (user.displayName ?? "").trim();
-  if (display) return display;
+  if (display && !display.includes("@")) return display;
 
   const name = (user.name ?? "").trim();
   if (name && !name.includes("@")) return titleCasePt(name);
