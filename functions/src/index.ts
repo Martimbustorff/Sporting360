@@ -1,14 +1,17 @@
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
+import { RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
+import { syncNews } from "./news/newsSync";
+import { syncTweets } from "./social/tweetsSync";
 import { settleDue } from "./scheduled/settle";
 import { apiFootball } from "./sources/apiFootball";
+import { twitter } from "./sources/twitter";
 import { vsports } from "./sources/vsports";
 import { runJob } from "./store/health";
 import { syncVideos } from "./videos/videosSync";
@@ -119,5 +122,21 @@ export const videosSync = onSchedule(
         seasonId: Number.isFinite(override) ? override : undefined,
       }),
     );
+  },
+);
+
+// Notícias RSS (sem segredo): cada fonte regista a sua saúde em `ingestHealth/news_{nome}`.
+export const newsSync = onSchedule(
+  { schedule: "every 15 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120 },
+  async () => {
+    await runJob(getFirestore(), "news", () => syncNews({ db: getFirestore(), fetch, now: () => new Date() }));
+  },
+);
+
+// Tweets das contas do Sporting, de 10 em 10 horas (quota da API do Twitter).
+export const tweetsSync = onSchedule(
+  { schedule: "0 */10 * * *", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [TWITTER_BEARER_TOKEN] },
+  async () => {
+    await runJob(getFirestore(), "tweets", () => syncTweets({ db: getFirestore(), tw: twitter({ token: TWITTER_BEARER_TOKEN.value() }) }));
   },
 );
