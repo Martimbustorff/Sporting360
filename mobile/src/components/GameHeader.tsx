@@ -13,7 +13,12 @@ export const SPORTING_API_ID = 228;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SPORTING_CREST = require('../../assets/images/sporting-cp-2026.png') as number;
 
-export type TeamVM = { name: string; crestUrl: string | null; id?: number | null };
+export type TeamVM = {
+  name: string;
+  crestUrl: string | null;
+  /** API team id. Pass 228 for Sporting so the local 2026 crest is used instead of crestUrl. */
+  id?: number | null;
+};
 export type GameHeaderVM = {
   competitionName: string;
   round: string;
@@ -80,8 +85,8 @@ export function GameHeader({ game, tabs, now }: { game: GameHeaderVM; tabs?: Rea
       style={{ gap: spacing.md, alignItems: 'stretch' }}
     >
       <View
+        accessible
         accessibilityRole="header"
-        accessibilityLabel={`${game.competitionName}, ${stripText(game)}`}
         style={{
           backgroundColor: colors.surface20,
           paddingHorizontal: spacing.sm,
@@ -102,6 +107,15 @@ export function GameHeader({ game, tabs, now }: { game: GameHeaderVM; tabs?: Rea
       >
         <Team team={game.home} side="home" />
         <View style={{ alignItems: 'center', gap: spacing.sm }}>
+          {/* SEM FIGMA: nome da competição não existe no cabeçalho do Figma; requisito do Martim (visível). Tipografia strip a muted. */}
+          <Body
+            variant="strip"
+            testID="competition-name"
+            numberOfLines={1}
+            style={{ opacity: layout.mutedOpacity, textAlign: 'center', maxWidth: layout.teamColumnWidth + layout.headerColumnsGap }}
+          >
+            {game.competitionName}
+          </Body>
           <CompetitionBadge label={game.round} size="lg" />
           <View style={{ alignItems: 'center', gap: layout.headerDateGap }}>
             <Body variant="body" style={{ opacity: layout.mutedOpacity }}>{date}</Body>

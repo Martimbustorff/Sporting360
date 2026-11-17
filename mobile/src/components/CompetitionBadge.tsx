@@ -20,9 +20,10 @@ export function CompetitionBadge({ label, size }: { label: string; size: 'lg' | 
         alignItems: 'center',
         justifyContent: 'center',
         alignSelf: 'center',
+        flexShrink: 1,
       }}
     >
-      <Body variant={lg ? 'badge' : 'badgeSmall'}>{text}</Body>
+      <Body variant={lg ? 'badge' : 'badgeSmall'} numberOfLines={1}>{text}</Body>
     </View>
   );
 }

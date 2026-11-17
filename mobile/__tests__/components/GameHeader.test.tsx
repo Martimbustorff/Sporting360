@@ -31,6 +31,12 @@ describe('GameHeader', () => {
     expect(screen.queryByTestId('score-home')).toBeNull();
   });
 
+  it('shows the competition name and an accessible strip', async () => {
+    await render(<GameHeader game={base} now={NOW} />);
+    expect(screen.getByText('Liga Portugal')).toBeTruthy();
+    expect(screen.getByRole('header').props.accessible).toBe(true);
+  });
+
   it('live: minute strip and score boxes', async () => {
     await render(
       <GameHeader game={{ ...base, state: 'live', minute: 23, score: { home: 3, away: 0 } }} now={NOW} />,
