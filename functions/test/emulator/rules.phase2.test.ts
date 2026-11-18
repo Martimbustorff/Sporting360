@@ -1,3 +1,5 @@
+// Regras da FASE 2 (firestore.rules): a V2 da loja continua a funcionar e a app nova também.
+// As regras finais (firestore.final.rules) têm os seus testes em rules.final.test.ts.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -7,8 +9,10 @@ import {
   RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import {
-  doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction, increment, deleteField,
+  collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, runTransaction, increment, deleteField,
+  where,
 } from "firebase/firestore";
+import { NEW_APP_OPS, V2_OPS } from "../helpers/rulesOps";
 
 let env: RulesTestEnvironment;
 
@@ -56,7 +60,7 @@ describe("public-read data collections", () => {
 });
 
 describe("backend-owned collections", () => {
-  it.each(["pointEvents/x", "leaderboards/a", "leaderboards/a/entries/b", "settlements/x", "mvpVotes/x", "matchPredictions/x"])(
+  it.each(["leaderboards/a", "leaderboards/a/entries/b", "settlements/x"])(
     "anonymous can read %s",
     async (p) => {
       await assertSucceeds(getDoc(doc(anon(), p)));
@@ -72,6 +76,48 @@ describe("backend-owned collections", () => {
     await seed("leaderboards/a/entries/b", { a: 1 });
     await assertFails(updateDoc(doc(as("alice"), "leaderboards/a/entries/b"), { a: 2 }));
     await assertFails(deleteDoc(doc(as("alice"), "leaderboards/a/entries/b")));
+  });
+});
+
+// Fase 2: só o dono lê. A V2 não lê estas coleções; a app nova só lê os do próprio.
+// `byIdWhenMissing`: a app lê o próprio doc por id ({gameId}_{uid}) antes de ele existir (jogo sem palpite ou voto).
+describe.each([
+  ["matchPredictions", "userId", true],
+  ["mvpVotes", "userId", true],
+  ["pointEvents", "uid", false],
+] as const)("%s: owner-only read", (col, field, byIdWhenMissing) => {
+  const own = `${col}/m1_alice`;
+  const data = { [field]: "alice", gameId: "m1" };
+  it("owner reads their own doc", async () => {
+    await seed(own, data);
+    await assertSucceeds(getDoc(doc(as("alice"), own)));
+  });
+  it("bob and anonymous cannot read alice's doc", async () => {
+    await seed(own, data);
+    await assertFails(getDoc(doc(as("bob"), own)));
+    await assertFails(getDoc(doc(anon(), own)));
+  });
+  it(`query where('${field}','==','alice') as alice passes; as bob or anonymous it fails`, async () => {
+    await seed(own, data);
+    await assertSucceeds(getDocs(query(collection(as("alice"), col), where(field, "==", "alice"))));
+    await assertFails(getDocs(query(collection(as("bob"), col), where(field, "==", "alice"))));
+    await assertFails(getDocs(query(collection(anon(), col), where(field, "==", "alice"))));
+  });
+  it("query without the owner filter fails", async () => {
+    await seed(own, data);
+    await assertFails(getDocs(collection(as("alice"), col)));
+  });
+  it("a missing doc: owner gets it as missing (only by {gameId}_{uid}), bob cannot probe it", async () => {
+    if (byIdWhenMissing) await assertSucceeds(getDoc(doc(as("alice"), `${col}/m9_alice`)));
+    else await assertFails(getDoc(doc(as("alice"), `${col}/m9_alice`)));
+    await assertFails(getDoc(doc(as("bob"), `${col}/m9_alice`)));
+    await assertFails(getDoc(doc(anon(), `${col}/m9_alice`)));
+  });
+  it("nobody can write, not even the owner", async () => {
+    await assertFails(setDoc(doc(as("alice"), own), data));
+    await seed(own, data);
+    await assertFails(updateDoc(doc(as("alice"), own), { x: 1 }));
+    await assertFails(deleteDoc(doc(as("alice"), own)));
   });
 });
 
@@ -135,7 +181,7 @@ describe("users displayName is server-only", () => {
 });
 
 describe("users", () => {
-  it("anonymous can read users/alice (phase 1, closes in Plan 5)", async () => {
+  it("anonymous can read users/alice (phase 2, V2 PIN login; closes at launch)", async () => {
     await assertSucceeds(getDoc(doc(anon(), "users/alice")));
   });
   it("owner can create users/alice; others and anonymous cannot", async () => {
@@ -325,4 +371,16 @@ describe("new data model (Plan 2)", () => {
       await assertFails(setDoc(doc(as("alice"), p), { a: 1 }));
     },
   );
+});
+
+// Operações reais das duas apps (functions/test/helpers/rulesOps.ts): têm de passar todas na fase 2.
+describe.each(V2_OPS)("V2: $name", (op) => {
+  it("allowed", async () => {
+    await assertSucceeds(op.run(env));
+  });
+});
+describe.each(NEW_APP_OPS)("app nova: $name", (op) => {
+  it("allowed", async () => {
+    await assertSucceeds(op.run(env));
+  });
 });

@@ -1,0 +1,110 @@
+// Regras do Firestore do S360, ESTADO FINAL (lançamento da app 7.0.0).
+// Data: 18/11/2026 (Plano 5, Task 7).
+//
+// PUBLICAR SÓ NO PASSO L5 DA TASK 12 DO PLANO 5: no dia do lançamento, sexta 20/11/2026, logo que as duas
+// lojas (App Store e Google Play) mostrem a 7.0.0. Publica-se copiando este ficheiro por cima de
+// firestore.rules (o deploy só lê firestore.rules). Se uma loja atrasar, ficam as regras da fase 2.
+//
+// ATENÇÃO: a partir desse momento a V2 (6.1.2) perde o login por PIN, a lista de GameBox quando não tem
+// sessão Firebase e os palpites, votos MVP e ranking antigos (predictions, manofmatch, rankings). A V2 não
+// tem ecrã de atualização: não há forma de avisar quem ainda não atualizou.
+//
+// Face à fase 2: `users` e `gamebox` só o dono lê; `predictions`, `manofmatch` e `rankings` ficam como
+// arquivo, sem acesso da app (deixa de haver o risco do +1 sem limite em `rankings`). Os dados antigos
+// (games, news, ...) mantêm a leitura pública. Nenhuma regra deixa ler o email de outro utilizador.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid).
+    function idEndsWithUid(id) {
+      return id.size() > request.auth.uid.size()
+          && id[id.size() - request.auth.uid.size() - 1:] == '_' + request.auth.uid;
+    }
+    // Leitura só do dono, para documentos com id {gameId}_{uid} e campo `userId`. Um documento que ainda não
+    // existe (jogo sem palpite ou voto) lê-se como inexistente só pelo dono do id; outro utilizador não
+    // consegue saber se existe. As queries têm de filtrar por userId == uid.
+    function ownerByUserId(id) {
+      return signedIn()
+          && ((resource == null && idEndsWithUid(id))
+              || (resource != null && resource.data.userId == request.auth.uid));
+    }
+
+    // Dados públicos antigos, escritos só pelo servidor.
+    match /{col}/{id} {
+      allow read: if col in ['games', 'news', 'players', 'standings', 'videos', 'lineups',
+                             'summaries', 'stastistics', 'tweets'];
+    }
+
+    // Resultados do servidor, só de leitura para a app.
+    match /settlements/{id} { allow read: if true; }
+    // Só o documento pai (escrito pelo agregador); os shards (mvpTallies/{id}/shards) ficam fechados por omissão.
+    match /mvpTallies/{id} { allow read: if true; }
+    // Nomes públicos e pontos (nunca email).
+    match /leaderboards/{id} { allow read: if true; }
+    match /leaderboards/{id}/entries/{entry} { allow read: if true; }
+
+    // Palpites, votos MVP e pontos: só o dono lê, escrita só do servidor (callables e liquidação).
+    match /matchPredictions/{id} {
+      allow get: if ownerByUserId(id);
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+    match /mvpVotes/{id} {
+      allow get: if ownerByUserId(id);
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+    // Id {uid}_{gameId}_{tipo}: a app só faz queries por uid, nunca lê por id.
+    match /pointEvents/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Modelo novo (Plano 2): leitura pública, escrita só pelo Admin SDK (que ignora as regras).
+    // `ingestHealth`, `ingestState` e as coleções `_shadow_*` (ensaio em sombra) ficam fechadas
+    // pelo "negado por omissão" no fim do ficheiro.
+    match /matches/{id} { allow read: if true; }
+    match /matches/{id}/{sub=**} { allow read: if true; }
+    match /competitions/{id} { allow read: if true; }
+    match /competitions/{id}/{sub=**} { allow read: if true; }
+    match /teams/{id} { allow read: if true; }
+    match /teams/{id}/{sub=**} { allow read: if true; }
+    match /venues/{id} { allow read: if true; }
+    // config/app é lido SEM sessão (portão de atualização obrigatória antes do login).
+    // ATENÇÃO: todos os documentos em config/ são públicos (leitura sem sessão). Configuração privada
+    // (chaves, listas internas, flags de operação) tem de viver noutra coleção, nunca aqui.
+    match /config/{id} { allow read: if true; }
+
+    // Perfil público (nome e avatar, nunca email), escrito pela callable updateProfile.
+    match /publicProfiles/{uid} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // users: perfil privado (inclui email), só o dono lê e escreve. `displayName` e `nameChangedAt` são só do
+    // servidor (a callable updateProfile valida-os). A regra usa o uid do caminho, por isso o dono também lê o
+    // seu documento antes de ele existir (login social).
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+                    && !('displayName' in request.resource.data)
+                    && !('nameChangedAt' in request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'nameChangedAt']);
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // gamebox: campo `userid` (minúsculas, formato da V2). Só o dono; as queries têm de filtrar por userid == uid.
+    match /gamebox/{id} {
+      allow read: if signedIn() && resource.data.userid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userid == request.auth.uid;
+      allow update: if signedIn()
+                    && resource.data.userid == request.auth.uid
+                    && request.resource.data.userid == resource.data.userid;
+      allow delete: if signedIn() && resource.data.userid == request.auth.uid;
+    }
+
+    // predictions, manofmatch e rankings (V2): arquivo, sem leitura nem escrita da app (negado por omissão).
+
+    // Tudo o resto: negado por omissão.
+  }
+}

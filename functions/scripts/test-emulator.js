@@ -1,5 +1,5 @@
 // Runs the emulator test suite against a demo project. Extra args are passed to jest
-// (e.g. `npm run test:emulator -- rules.phase1`).
+// (e.g. `npm run test:emulator -- rules.phase2`).
 const { spawnSync } = require("node:child_process");
 const extra = process.argv.slice(2).map((a) => JSON.stringify(a)).join(" ");
 const jest = `jest -c jest.emulator.config.js --runInBand ${extra}`.trim();

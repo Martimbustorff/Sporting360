@@ -1,48 +1,75 @@
-// S360 Firestore rules, PHASE 1 (transition).
+// Regras do Firestore do S360, FASE 2 (transição: a V2 6.1.2 da loja e a app nova 7.0.0 em simultâneo).
+// Data: 18/11/2026 (Plano 5, Task 7).
 //
-// Goal: close everything that can be closed without breaking the deployed V2 app.
-// Known phase-1 concessions (all to be closed at cutover, Plan 5):
-//   - `users` is publicly readable: the V2 PIN login reads it without a session.
-//   - `gamebox` is publicly readable: V2 queries where('userid','==',uid), possibly without a session.
+// Publicar no passo P12 da Task 12 do Plano 5, depois do corte dos writers antigos (P10): os agendadores
+// legados escreviam games, news, ... pelo SDK web sem sessão e estas regras partiam-nos.
+// Estas regras ficam em produção até ao lançamento. No passo L5 da Task 12 (sexta 20/11/2026, logo que as
+// duas lojas mostrem 7.0.0) são substituídas por firestore.final.rules. Publicar o ficheiro final só no
+// passo L5 da Task 12 do Plano 5.
 //
-// Publicar so depois de apagar as functions antigas (Plano 2, Task 21): os agendadores legados
-// escrevem games, players, news, standings, summary, videos, lineups, statistics e tweets pelo SDK
-// web NAO autenticado, e estas regras partiam-nos. Ate la a producao mantem as regras atuais.
+// O que muda face à fase 1: `matchPredictions`, `mvpVotes` e `pointEvents` passam a ser lidos só pelo dono.
+// A V2 não lê estas coleções e a app nova só lê os do próprio.
 //
-// Accepted phase-1 risk: `rankings` allows unlimited +1 increments by the owner. V2 increments
-// points client-side (one +1 per prediction transaction), so this cannot be tightened without
-// breaking V2. Closed at cutover (Plan 5), when points move server-side. (+1 inflation risk
-// stays documented and accepted for phase 1.)
+// Concessões da fase 2 (mantidas para a V2 funcionar, todas fechadas em firestore.final.rules):
+//   - `users` tem leitura pública: o login por PIN da V2 lê users/{id} sem sessão Firebase
+//     (PasscodeLoginScreen.tsx:56). Isto expõe nome, email e GameBox cifrada de qualquer utilizador a quem
+//     souber o uid. Risco aceite até ao lançamento.
+//   - `gamebox` tem leitura pública: a V2 faz where('userid','==',uid) com a sessão que houver (home.tsx:174).
+//   - `predictions`, `manofmatch` e `rankings` têm leitura pública e escrita da V2 (palpites, votos e +1).
+//
+// Risco aceite (desde a fase 1, até ao lançamento): `rankings` deixa ao dono somar +1 sem limite. A V2 soma
+// os pontos no cliente (um +1 por transação de palpite ou voto), por isso não se pode apertar sem partir a V2.
+// A app nova não usa `rankings` (os pontos novos são do servidor, em leaderboards). Fecha no passo L5.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    // Doc id ends with '_' + uid (literal compare, no regex on the uid).
+    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid).
     function idEndsWithUid(id) {
       return id.size() > request.auth.uid.size()
           && id[id.size() - request.auth.uid.size() - 1:] == '_' + request.auth.uid;
     }
+    // Leitura só do dono, para documentos com id {gameId}_{uid} e campo `userId`. Um documento que ainda não
+    // existe (jogo sem palpite ou voto) lê-se como inexistente só pelo dono do id; outro utilizador não
+    // consegue saber se existe. As queries têm de filtrar por userId == uid.
+    function ownerByUserId(id) {
+      return signedIn()
+          && ((resource == null && idEndsWithUid(id))
+              || (resource != null && resource.data.userId == request.auth.uid));
+    }
 
-    // Public-read data, backend-written only.
+    // Dados públicos antigos, escritos só pelo servidor.
     match /{col}/{id} {
       allow read: if col in ['games', 'news', 'players', 'standings', 'videos', 'lineups',
                              'summaries', 'stastistics', 'tweets'];
     }
 
-    // Backend-owned results (public names only), read-only for clients.
-    match /pointEvents/{id} { allow read: if true; }
+    // Resultados do servidor, só de leitura para a app.
     match /settlements/{id} { allow read: if true; }
-    match /mvpVotes/{id} { allow read: if true; }
     // Só o documento pai (escrito pelo agregador); os shards (mvpTallies/{id}/shards) ficam fechados por omissão.
     match /mvpTallies/{id} { allow read: if true; }
-    match /matchPredictions/{id} { allow read: if true; }
+    // Nomes públicos e pontos (nunca email).
     match /leaderboards/{id} { allow read: if true; }
     match /leaderboards/{id}/entries/{entry} { allow read: if true; }
 
-    // Modelo novo (Plano 2): leitura publica, escrita so pelo Admin SDK (que ignora as regras).
+    // Palpites, votos MVP e pontos: só o dono lê, escrita só do servidor (callables e liquidação).
+    match /matchPredictions/{id} {
+      allow get: if ownerByUserId(id);
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+    match /mvpVotes/{id} {
+      allow get: if ownerByUserId(id);
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+    // Id {uid}_{gameId}_{tipo}: a app só faz queries por uid, nunca lê por id.
+    match /pointEvents/{id} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Modelo novo (Plano 2): leitura pública, escrita só pelo Admin SDK (que ignora as regras).
     // `ingestHealth`, `ingestState` e as coleções `_shadow_*` (ensaio em sombra) ficam fechadas
-    // pelo "negado por omissao" no fim do ficheiro.
+    // pelo "negado por omissão" no fim do ficheiro.
     match /matches/{id} { allow read: if true; }
     match /matches/{id}/{sub=**} { allow read: if true; }
     match /competitions/{id} { allow read: if true; }
@@ -50,19 +77,19 @@ service cloud.firestore {
     match /teams/{id} { allow read: if true; }
     match /teams/{id}/{sub=**} { allow read: if true; }
     match /venues/{id} { allow read: if true; }
-    // config/app e lido SEM sessao (portao de atualizacao obrigatoria antes do login).
-    // ATENCAO: todos os documentos em config/ sao publicos (leitura sem sessao). Configuracao privada
-    // (chaves, listas internas, flags de operacao) tem de viver noutra colecao, nunca aqui.
+    // config/app é lido SEM sessão (portão de atualização obrigatória antes do login).
+    // ATENÇÃO: todos os documentos em config/ são públicos (leitura sem sessão). Configuração privada
+    // (chaves, listas internas, flags de operação) tem de viver noutra coleção, nunca aqui.
     match /config/{id} { allow read: if true; }
 
-    // Public profile (name + avatar only, never email), written by the updateProfile callable.
+    // Perfil público (nome e avatar, nunca email), escrito pela callable updateProfile.
     match /publicProfiles/{uid} {
       allow read: if true;
       allow write: if false;
     }
 
-    // users: public read (phase 1), owner-only writes. `displayName` and `nameChangedAt` are server-only (updateProfile
-    // callable validates it); the V2 app never writes it, so it keeps working.
+    // users: leitura pública (fase 2, login por PIN da V2), escrita só do dono. `displayName` e `nameChangedAt`
+    // são só do servidor (a callable updateProfile valida-os); a V2 nunca os escreve, por isso continua a funcionar.
     match /users/{uid} {
       allow read: if true;
       allow create: if signedIn() && request.auth.uid == uid
@@ -73,7 +100,7 @@ service cloud.firestore {
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 
-    // gamebox: field `userid` (lowercase).
+    // gamebox: campo `userid` (minúsculas, formato da V2). Leitura pública na fase 2.
     match /gamebox/{id} {
       allow read: if true;
       allow create: if signedIn() && request.resource.data.userid == request.auth.uid;
@@ -83,8 +110,8 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userid == request.auth.uid;
     }
 
-    // predictions and manofmatch: id is {gameId}_{uid}, create-only. `source` is reserved for
-    // server-written (v2027 callable) docs; clients cannot set it.
+    // predictions e manofmatch (V2): id {gameId}_{uid}, só criar. `source` está reservado aos documentos
+    // escritos pelo servidor (callables v2027); o cliente não o pode pôr.
     match /predictions/{id} {
       allow read: if true;
       allow create: if signedIn()
@@ -100,9 +127,9 @@ service cloud.firestore {
                     && idEndsWithUid(id);
     }
 
-    // rankings: id is exactly {uid}_{season} (V2 rankingDocId); V2 increments points by 1
-    // (merge-set in a transaction). Id and `season` field are tied together so a user cannot
-    // create extra rows; exact-id compare avoids '_' ambiguity in uids.
+    // rankings (V2): id exatamente {uid}_{season} (rankingDocId da V2); a V2 soma +1 aos pontos (set em merge
+    // numa transação). O id e o campo `season` ficam ligados para o utilizador não criar linhas extra; a
+    // comparação exata do id evita a ambiguidade do '_' nos uids.
     match /rankings/{id} {
       allow read: if true;
       allow create: if signedIn()
@@ -119,6 +146,6 @@ service cloud.firestore {
                     && request.resource.data.points == resource.data.points + 1;
     }
 
-    // Everything else: denied by default.
+    // Tudo o resto: negado por omissão.
   }
 }
