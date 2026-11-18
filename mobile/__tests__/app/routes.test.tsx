@@ -41,6 +41,8 @@ jest.mock('@/data/user', () => ({
   useMyPredictions: () => ({ status: 'loading' }),
   useMyPointEvents: () => ({ status: 'loading' }),
   useSettlements: () => ({ status: 'loading' }),
+  // Task 23: a Gestão de Gamebox e o formulário leem a lista (aqui fica a carregar).
+  useMyGameboxes: () => ({ status: 'loading' }),
 }));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));

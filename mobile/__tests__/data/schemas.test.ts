@@ -88,6 +88,14 @@ describe('UserDocSchema', () => {
     expect((parsed as Record<string, unknown>).somethingElse).toBe(true);
   });
 
+  it('reads the V2 profile GameBox seat fields (Task 23 "Principal")', () => {
+    const parsed = UserDocSchema.parse({ gameboxName: 'Casa', gameboxPort: 5, gameboxSector: 'A27', gameboxLine: { x: 1 } });
+    expect(parsed.gameboxName).toBe('Casa');
+    expect(parsed.gameboxPort).toBe(5);
+    expect(parsed.gameboxSector).toBe('A27');
+    expect(parsed.gameboxLine).toBeUndefined();
+  });
+
   it('does not fail the whole document on one malformed optional field', () => {
     const parsed = UserDocSchema.parse({ name: 'Ana', partnerNumber: { weird: 1 } });
     expect(parsed.name).toBe('Ana');

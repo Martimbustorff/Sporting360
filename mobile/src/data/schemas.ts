@@ -86,7 +86,13 @@ export const UserDocSchema = z.looseObject({
   favoriteSport: lenient(SportSchema),
   favoritePlayer: lenient(z.object({ id: z.string(), name: z.string() })),
   notificationPrefs: lenient(NotificationPrefsSchema),
+  /** V2: GameBox antiga só no perfil (cifrada ou em claro), lida como "Principal" (lib/gamebox). Só leitura. */
   gameboxNumber: lenient(stringOrNumber),
+  gameboxName: lenient(stringOrNumber),
+  gameboxPort: lenient(stringOrNumber),
+  gameboxSector: lenient(stringOrNumber),
+  gameboxLine: lenient(stringOrNumber),
+  gameboxSeat: lenient(stringOrNumber),
 });
 export type UserDoc = z.infer<typeof UserDocSchema>;
 

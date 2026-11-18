@@ -292,6 +292,19 @@ export const layout = {
   shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
   shareQr: 72,
   shareQrQuietZone: 4,
+  // GameBox (Figma 323:12992 lista, 327:15134 / 450:5633 / 450:5683 formulário)
+  gameboxFab: 60, // botão "+" redondo branco (327:14894)
+  gameboxFabRight: 32, // borda direita a 32 px (centro em 313 de 375)
+  gameboxFabBottom: 31, // 64.97 px do fundo do frame, menos os 34 do indicador
+  gameboxListGap: 24, // entre linhas da lista (323:12996)
+  gameboxFieldsGap: 16, // entre campos (327:15141 / 327:15159)
+  gameboxBlockGap: 24, // campos de cima ao cartão Estádio/Pavilhão (327:15140)
+  gameboxCardBorder: 2, // cartão Estádio/Pavilhão (327:15153): contorno branco 2 px, raio 16
+  gameboxCardRadius: 16,
+  gameboxCardPadX: 24,
+  gameboxCardPadTop: 16,
+  gameboxCardPadBottom: 24,
+  gameboxDeleteTop: 32, // SEM FIGMA exato: cartão ao "Apagar Gamebox" (450:5636, ~32 px abaixo do cartão)
   termsTop: 16, // header bottom to text (564:7169)
   termsSectionGap: 12,
 } as const;

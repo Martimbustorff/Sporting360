@@ -1,6 +1,6 @@
 // Figma: nós 564:6907 (vazio: etiqueta display 18 como placeholder, linha 1px branca a 30%) e 564:6938 (preenchido: etiqueta display 14 a 50%, valor corpo 16, linha 2px primary).
 // Olho: o ativo ic_eye (564:6910) está vazio no Figma (sem vetores); usa-se Ionicons eye-outline / eye-off-outline tingido com token.
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Body } from '@/theme/typography';
@@ -17,6 +17,7 @@ export function TextField({
   textContentType,
   autoCapitalize = 'none',
   autoCorrect = false,
+  accessory,
 }: {
   label: string;
   value: string;
@@ -28,6 +29,8 @@ export function TextField({
   textContentType?: TextInputProps['textContentType'];
   autoCapitalize?: TextInputProps['autoCapitalize'];
   autoCorrect?: boolean;
+  /** Ação à direita do valor (ex.: leitor da GameBox, Figma 327:15144). */
+  accessory?: ReactNode;
 }) {
   const [hidden, setHidden] = useState(true);
   const filled = value.length > 0;
@@ -69,6 +72,7 @@ export function TextField({
             <Ionicons name={hidden ? 'eye-outline' : 'eye-off-outline'} size={layout.headerIcon} color={colors.textMuted} />
           </Pressable>
         ) : null}
+        {accessory}
       </View>
       <View
         testID="field-line"
