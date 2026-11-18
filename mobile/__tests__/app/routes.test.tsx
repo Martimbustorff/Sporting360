@@ -31,6 +31,12 @@ jest.mock('@/data/sports', () => ({
   useTeamStats: () => ({ status: 'loading' }),
   useSeasonFootballCompetitions: () => ({ status: 'loading' }),
 }));
+// Task 19: o Ranking lê o top 100 e a entrada do próprio (aqui ficam a carregar).
+jest.mock('@/data/user', () => ({
+  useLeaderboard: () => ({ status: 'loading' }),
+  useMyLeaderboardEntry: () => ({ status: 'loading' }),
+  fetchMyPosition: jest.fn(),
+}));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/services/biometrics', () => ({ setBiometricEnabled: jest.fn() }));
