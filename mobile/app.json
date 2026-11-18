@@ -3,7 +3,7 @@
     "name": "S360",
     "slug": "s3602027",
     "scheme": "s360",
-    "version": "2.0.0",
+    "version": "7.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",

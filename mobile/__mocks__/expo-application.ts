@@ -1,2 +1,2 @@
 // Versão nativa fixa nos testes; cada teste pode alterá-la.
-export const nativeApplicationVersion: string | null = '2.0.0';
+export const nativeApplicationVersion: string | null = '7.0.0';
