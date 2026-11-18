@@ -1,6 +1,7 @@
-import type { EventItem, Match } from '@/data/schemas';
+import type { Competition, EventItem, FixtureItem, Match } from '@/data/schemas';
 import {
   competitionText,
+  fixtureToMatch,
   groupEvents,
   isShownEvent,
   minuteText,
@@ -335,5 +336,65 @@ describe('groupEvents', () => {
       { label: '1ª Parte', score: '0-0' },
       { label: '2ª Parte', score: '0-0' },
     ]);
+  });
+});
+
+describe('fixtureToMatch (preflight F9)', () => {
+  const cup: Competition & { key: string; season: string } = {
+    sport: 'football',
+    leagueId: '96',
+    name: 'Taça de Portugal',
+    type: 'cup',
+    logo: null,
+    key: 'football_96_2026',
+    season: '2026',
+  };
+  const item = (over: Partial<FixtureItem> = {}): FixtureItem => ({
+    id: '3001',
+    kickoff: KICKOFF,
+    round: 'Round of 32',
+    roundLabel: null,
+    home: { id: '762', name: 'Gil Vicente', logo: null },
+    away: { id: '228', name: 'Sporting CP', logo: null },
+    status: 'PEN',
+    score: { home: 1, away: 1, extraHome: 0, extraAway: 0, penaltyHome: 3, penaltyAway: 4 },
+    ...over,
+  });
+
+  it('mapeia o FixtureItem para um Match (competição, resultado, penáltis, prolongamento)', () => {
+    const m = fixtureToMatch(item(), cup);
+    expect(m).toMatchObject({
+      id: '3001',
+      sport: 'football',
+      competition: { key: 'football_96_2026', id: '96', name: 'Taça de Portugal', type: 'cup', season: '2026', round: 'Round of 32', roundLabel: null },
+      sportingSide: 'away',
+      status: 'PEN',
+      elapsed: null,
+      elapsedExtra: null,
+      finishedAt: null,
+      venue: null,
+      referee: null,
+      source: { provider: 'api-football', id: '3001', attribution: null },
+    });
+    expect(m.score).toEqual({ home: 1, away: 1, halftime: null, extratime: { home: 0, away: 0 }, penalty: { home: 3, away: 4 } });
+    expect(scoreText(m)).toBe('1-1 (3-4 g.p.)');
+    expect(competitionText(m.competition).round).toBe('16 avos de final');
+  });
+
+  it('sem penáltis nem prolongamento ficam a null; jogo sem o Sporting fica "home" por omissão', () => {
+    const m = fixtureToMatch(
+      item({
+        home: { id: '212', name: 'FC Porto', logo: null },
+        away: { id: '211', name: 'SL Benfica', logo: null },
+        status: 'NS',
+        score: { home: null, away: null, extraHome: null, extraAway: null, penaltyHome: null, penaltyAway: null },
+      }),
+      cup,
+    );
+    expect(m.sportingSide).toBe('home');
+    expect(m.score.penalty).toBeNull();
+    expect(m.score.extratime).toBeNull();
+    // O adversário usa o seu id (o lado "home" não é o Sporting só por omissão: o id não é 228).
+    expect(toGameHeaderVM(m).home.id).not.toBe(228);
   });
 });

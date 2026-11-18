@@ -2,7 +2,7 @@
 // e lances. Sem React nem Firestore; só recebem `Match`/`EventItem` já validados (data/schemas.ts).
 import type { GameHeaderVM } from '@/components/GameHeader';
 import type { EventVM } from '@/components/EventRow';
-import type { EventItem, GameStatus, Match } from '@/data/schemas';
+import type { Competition, EventItem, FixtureItem, GameStatus, Match } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
 import { SPORTING_API_ID } from '@/lib/teams';
 
@@ -75,11 +75,56 @@ export function scoreText(m: Match): string | null {
   return pen && pen.home != null && pen.away != null ? `${base} (${penaltiesText(pen.home, pen.away)})` : base;
 }
 
+const pairOrNull = (home: number | null, away: number | null): { home: number; away: number } | null =>
+  home == null || away == null ? null : { home, away };
+
+/**
+ * Jogo de `competitions/{key}/data/fixtures` como `Match`, para reutilizar a `MatchRow` nas jornadas
+ * (preflight F9). O `FixtureItem` não traz intervalo, minuto, local, árbitro nem fonte: ficam a null,
+ * e a fonte é a API-Football com o id do jogo. `sportingSide` sai do id 228; num jogo sem o Sporting
+ * fica 'home' e não quer dizer nada (só os jogos do Sporting têm `matches/{id}` e abrem o detalhe).
+ */
+export function fixtureToMatch(item: FixtureItem, c: Competition & { key: string; season: string }): Match {
+  const sporting = String(SPORTING_API_ID);
+  return {
+    id: item.id,
+    sport: c.sport,
+    competition: {
+      key: c.key,
+      id: c.leagueId,
+      name: c.name,
+      type: c.type,
+      season: c.season,
+      round: item.round,
+      roundLabel: item.roundLabel,
+    },
+    home: item.home,
+    away: item.away,
+    sportingSide: item.away.id === sporting ? 'away' : 'home',
+    kickoff: item.kickoff,
+    status: item.status,
+    elapsed: null,
+    elapsedExtra: null,
+    score: {
+      home: item.score.home,
+      away: item.score.away,
+      halftime: null,
+      extratime: pairOrNull(item.score.extraHome, item.score.extraAway),
+      penalty: pairOrNull(item.score.penaltyHome, item.score.penaltyAway),
+    },
+    finishedAt: null,
+    venue: null,
+    referee: null,
+    source: { provider: 'api-football', id: item.id, attribution: null },
+  };
+}
+
 export function toGameHeaderVM(m: Match): GameHeaderVM {
-  // Id do emblema: o lado do Sporting é sempre 228 (emblema local 2026, em qualquer modalidade). O adversário
-  // só guarda o id no futebol: as outras modalidades usam ids api-sports, que podem colidir com 228.
+  // Id do emblema. Futebol: o id API-Football da equipa (o Sporting é 228, emblema local 2026); não se usa
+  // `sportingSide`, que nos jogos de competição sem o Sporting (`fixtureToMatch`) não quer dizer nada. Outras
+  // modalidades: o lado do Sporting leva 228 e o adversário nenhum (ids api-sports podem colidir com 228).
   const team = (t: Match['home'], side: 'home' | 'away') => ({
-    id: side === m.sportingSide ? SPORTING_API_ID : m.sport === 'football' ? Number(t.id) : null,
+    id: m.sport === 'football' ? Number(t.id) : side === m.sportingSide ? SPORTING_API_ID : null,
     name: t.name,
     crestUrl: t.logo,
   });

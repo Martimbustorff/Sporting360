@@ -34,7 +34,8 @@ function Separator() {
   return <View style={{ height: layout.separator, backgroundColor: colors.surface20 }} />;
 }
 
-function Position({ rank }: { rank: number }) {
+/** Círculo da posição (500:29423): 1.º a 3.º com fundo de pódio, os outros só o número a branco. Também nos tops. */
+export function PositionCircle({ rank }: { rank: number }) {
   const bg = PODIUM[rank];
   return (
     <View
@@ -71,7 +72,7 @@ function Row({ row, highlight }: { row: StandingRow; highlight: boolean }) {
         backgroundColor: highlight ? colors.surface10 : undefined,
       }}
     >
-      <Position rank={row.rank} />
+      <PositionCircle rank={row.rank} />
       <TeamCrest
         team={{ id: Number(row.teamId) || null, name: row.name, crestUrl: row.logo }}
         size="sm"
