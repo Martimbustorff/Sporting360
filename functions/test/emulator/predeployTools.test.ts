@@ -1,7 +1,8 @@
 import { deleteApp, getApps } from "firebase-admin/app";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
-import { checkFirestore, checkShadowIsolation, firestoreFailures, shadowFailures } from "../../scripts/check-predeploy";
+import { ENGINE_COLLECTIONS, checkFirestore, checkShadowIsolation, firestoreFailures, shadowFailures } from "../../scripts/check-predeploy";
 import { compareAll, hasProblems } from "../../scripts/compare-legacy";
+import { parseArgs as resetParse, resetEngine, runReset } from "../../scripts/reset-engine";
 import { parseArgs, stripNewsContent } from "../../scripts/strip-news-content";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 
@@ -165,5 +166,128 @@ describe("strip-news-content (argumentos da linha de comandos)", () => {
     const r = spawnSync("npx", ["tsx", "scripts/strip-news-content.ts"], { cwd: __dirname + "/../..", encoding: "utf8" });
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/--project/);
+  });
+});
+
+describe("reset-engine (só no emulador)", () => {
+  const NOW = new Date("2026-11-20T10:00:00Z");
+  const hours = (h: number) => Timestamp.fromDate(new Date(NOW.getTime() + h * 3_600_000));
+  const match = (id: string, over: Record<string, unknown> = {}) =>
+    db.doc(`matches/${id}`).set({ id, sport: "football", sportingSide: "home", status: "NS", kickoff: hours(48), ...over });
+  const ENGINE = ["matchPredictions/a", "mvpVotes/a", "pointEvents/a", "leaderboards/season", "settlements/a", "mvpTallies/g1"];
+  const OTHERS = ["users/a", "publicProfiles/a", "predictions/x", "manofmatch/x", "rankings/x_2026-2027", "gamebox/x", "config/app", "news/n1", "matches/m1"];
+
+  const seed = async () => {
+    for (const p of ENGINE) await db.doc(p).set({ v: 1 });
+    await db.doc("leaderboards/season/entries/u1").set({ points: 3 });
+    await db.doc("mvpTallies/g1/shards/0").set({ counts: { p1: 2 } });
+    for (const p of OTHERS) await db.doc(p).set({ v: 1 });
+  };
+  const exists = async (p: string) => (await db.doc(p).get()).exists;
+
+  it("dryRun devolve as contagens (com subcoleções) e não apaga nada", async () => {
+    await seed();
+    const r = await resetEngine(db, { dryRun: true, now: NOW });
+    expect(r.deleted).toBe(false);
+    expect(r.counts).toEqual({
+      matchPredictions: 1, mvpVotes: 1, pointEvents: 1, leaderboards: 1, settlements: 1, mvpTallies: 1,
+      "leaderboards/entries": 1, "mvpTallies/shards": 1,
+    });
+    for (const p of [...ENGINE, ...OTHERS, "leaderboards/season/entries/u1", "mvpTallies/g1/shards/0"]) expect(await exists(p)).toBe(true);
+  });
+
+  it("sem dryRun apaga as 6 coleções, incluindo entries e shards, e deixa as outras intactas", async () => {
+    await seed();
+    const r = await resetEngine(db, { dryRun: false, now: NOW });
+    expect(r.deleted).toBe(true);
+    for (const c of ENGINE_COLLECTIONS) expect((await db.collection(c).listDocuments()).length).toBe(0);
+    expect(await exists("leaderboards/season/entries/u1")).toBe(false);
+    expect(await exists("mvpTallies/g1/shards/0")).toBe(false);
+    for (const p of OTHERS) expect(await exists(p)).toBe(true);
+  });
+
+  it("conta e apaga documentos pai que só existem por terem subcoleções", async () => {
+    await db.doc("leaderboards/ghost/entries/u1").set({ points: 1 });
+    expect((await resetEngine(db, { dryRun: true, now: NOW })).counts).toMatchObject({ leaderboards: 1, "leaderboards/entries": 1 });
+    await resetEngine(db, { dryRun: false, now: NOW });
+    expect(await exists("leaderboards/ghost/entries/u1")).toBe(false);
+  });
+
+  it.each(["LIVE", "HT"])("jogo do Sporting %s recusa e não apaga nada", async (status) => {
+    await seed();
+    await match("live", { status, kickoff: hours(-1) });
+    await expect(resetEngine(db, { dryRun: false, now: NOW })).rejects.toThrow("RESET_BLOCKED_LIVE_GAME");
+    await expect(resetEngine(db, { dryRun: true, now: NOW })).rejects.toThrow("RESET_BLOCKED_LIVE_GAME");
+    for (const p of ENGINE) expect(await exists(p)).toBe(true);
+  });
+
+  it("janela de kickoff: dentro de ±6 h recusa, fora de 6 h não", async () => {
+    await seed();
+    for (const h of [-5.9, 0, 5.9, -6, 6]) {
+      await clearMatches();
+      await match("m", { kickoff: hours(h) });
+      await expect(resetEngine(db, { dryRun: true, now: NOW })).rejects.toThrow("RESET_BLOCKED_LIVE_GAME");
+    }
+    for (const h of [-6.1, 6.1]) {
+      await clearMatches();
+      await match("m", { kickoff: hours(h), status: h < 0 ? "FT" : "NS" });
+      await expect(resetEngine(db, { dryRun: true, now: NOW })).resolves.toMatchObject({ deleted: false });
+    }
+  });
+
+  it("jogos de outros desportos (LIVE ou próximos) não bloqueiam", async () => {
+    await seed();
+    await match("futsal", { sport: "futsal", status: "LIVE", kickoff: hours(0) });
+    await expect(resetEngine(db, { dryRun: false, now: NOW })).resolves.toMatchObject({ deleted: true });
+  });
+
+  async function clearMatches() {
+    await Promise.all((await db.collection("matches").listDocuments()).map((r) => r.delete()));
+  }
+});
+
+describe("reset-engine (linha de comandos)", () => {
+  it("parseArgs: --project obrigatório, --apply opcional, --dry-run rejeitado", () => {
+    expect(resetParse(["--project", "scp360-37a74"])).toEqual({ ok: true, project: "scp360-37a74", apply: false });
+    expect(resetParse(["--project", "scp360-37a74", "--apply"])).toEqual({ ok: true, project: "scp360-37a74", apply: true });
+    expect(resetParse([])).toMatchObject({ ok: false });
+    expect(resetParse(["--apply"])).toMatchObject({ ok: false });
+    expect(resetParse(["--project", "--apply"])).toMatchObject({ ok: false });
+    const dry = resetParse(["--project", "x", "--dry-run"]);
+    expect(dry).toMatchObject({ ok: false });
+    expect(dry.ok === false && dry.message).toContain("--dry-run");
+  });
+
+  const NOW = new Date("2026-11-20T10:00:00Z");
+  const run = (apply: boolean, typed: string) => {
+    const logs: string[] = [];
+    const prompt = jest.fn(async () => typed);
+    return { logs, prompt, p: runReset({ project: "scp360-37a74", apply }, { db, now: NOW, prompt, log: (l) => logs.push(l) }) };
+  };
+
+  it("sem --apply é ensaio: não pergunta nem apaga", async () => {
+    await db.doc("pointEvents/a").set({ v: 1 });
+    const { prompt, logs, p } = run(false, "");
+    expect(await p).toEqual({ deleted: false });
+    expect(prompt).not.toHaveBeenCalled();
+    expect(logs.join("\n")).toContain("scp360-37a74");
+    expect((await db.doc("pointEvents/a").get()).exists).toBe(true);
+  });
+
+  it("--apply com id diferente aborta e não apaga", async () => {
+    await db.doc("pointEvents/a").set({ v: 1 });
+    const { prompt, logs, p } = run(true, "outro-projeto");
+    expect(await p).toEqual({ deleted: false });
+    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(logs.join("\n")).toContain("abortado");
+    expect((await db.doc("pointEvents/a").get()).exists).toBe(true);
+  });
+
+  it("--apply com o id certo apaga", async () => {
+    await db.doc("pointEvents/a").set({ v: 1 });
+    await db.doc("users/a").set({ v: 1 });
+    expect(await run(true, " scp360-37a74 ").p).toEqual({ deleted: true });
+    expect((await db.doc("pointEvents/a").get()).exists).toBe(false);
+    expect((await db.doc("users/a").get()).exists).toBe(true);
   });
 });

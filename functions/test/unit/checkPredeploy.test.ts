@@ -1,4 +1,4 @@
-import { checkFunctions, checkRankings, checkNoSource, emailUserNames, parseFunctionsList, shadowFailures } from "../../scripts/check-predeploy";
+import { ENGINE_COLLECTIONS, checkFunctions, checkRankings, checkNoSource, emailUserNames, parseFunctionsList, shadowFailures } from "../../scripts/check-predeploy";
 
 describe("checkRankings", () => {
   it("aceita season aaaa-aaaa e id userId_season", () => {
@@ -61,5 +61,11 @@ describe("shadowFailures", () => {
   });
   it("sombra vazia ou documentos reais com _ingest v2027: falha", () => {
     expect(shadowFailures({ shadowGames: 0, leaked: { games: 3, standings: 0 } })).toHaveLength(2);
+  });
+});
+
+describe("ENGINE_COLLECTIONS", () => {
+  it("inclui mvpTallies (o reset de lançamento apaga-o com os shards)", () => {
+    expect(ENGINE_COLLECTIONS).toContain("mvpTallies");
   });
 });

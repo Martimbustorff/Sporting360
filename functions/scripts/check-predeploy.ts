@@ -11,7 +11,7 @@
 // (c) as functions publicadas (`firebase functions:list --json`) são só as 13 antigas em us-central1
 //     e as v2027 em europe-west1; qualquer outra (ex. um `cleanup` antigo) falha;
 // (d) informativo: documentos já existentes nas coleções do motor novo (o corte do Plano 5 apaga-os).
-// (e) informativo: rankings com `userName` que parece um email (a V2 escreve o email; limpeza no Plano 5).
+// (e) informativo: rankings com `userName` que parece um email (a V2 escreve o email; `rankings` fica ilegível no passo L5 e como arquivo até à eliminação da conta).
 // Imprime as contagens e sai com código 1 se (a), (b) ou (c) falharem.
 //
 // `--phase shadow` (depois do primeiro footballFixturesSync em sombra) só faz o teste de isolamento, com
@@ -76,7 +76,7 @@ async function scan(db: Firestore, col: string, fields: string[]): Promise<Doc[]
 }
 
 /** Coleções do motor v2027 (Plano 1); devem estar vazias ou só com dados de teste antes da publicação. */
-export const ENGINE_COLLECTIONS = ["matchPredictions", "mvpVotes", "pointEvents", "leaderboards", "settlements"] as const;
+export const ENGINE_COLLECTIONS = ["matchPredictions", "mvpVotes", "pointEvents", "leaderboards", "settlements", "mvpTallies"] as const;
 
 export type FirestoreReport = {
   rankings: number;
@@ -165,7 +165,7 @@ async function main(): Promise<void> {
 
   console.log(`rankings: ${fs.rankings} documentos, ${fs.badRankings.length} fora do formato`);
   for (const b of fs.badRankings.slice(0, 50)) console.log(`  ${b.id}: ${b.reason}`);
-  console.log(`rankings com email em userName (informativo, limpeza no Plano 5): ${fs.emailNames}`);
+  console.log(`rankings com email em userName (informativo: rankings fica ilegível no passo L5 (regras finais) e como arquivo até à eliminação da conta; não existe tarefa de limpeza): ${fs.emailNames}`);
   console.log(`predictions: ${fs.predictions} documentos, ${fs.withSource.predictions.length} com source ${fs.withSource.predictions.slice(0, 20).join(" ")}`);
   console.log(`manofmatch: ${fs.manofmatch} documentos, ${fs.withSource.manofmatch.length} com source ${fs.withSource.manofmatch.slice(0, 20).join(" ")}`);
   console.log(`motor v2027 (informativo): ${Object.entries(fs.engine).map(([k, v]) => `${k} ${v}`).join(", ")}`);
