@@ -89,8 +89,9 @@ function GameboxFormView({
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
-  // Nova que ficou pendente sem rede: repetir grava no mesmo documento.
-  const target = useRef(existing);
+  // Nova cuja escrita ficou pendente (tempo limite sem rede): repetir substitui-a no mesmo documento (setDoc).
+  // Outro erro larga o id e a tentativa seguinte começa do zero.
+  const reserved = useRef<string | undefined>(undefined);
   const back = () => (router.canGoBack() ? router.back() : router.replace('/gamebox'));
 
   const numberError = gameboxNumberError(form.number);
@@ -109,7 +110,7 @@ function GameboxFormView({
       await action();
       router.replace('/gamebox');
     } catch (e) {
-      if (e instanceof GameboxSaveError && e.id && !target.current) target.current = { id: e.id, order: newOrder };
+      if (!existing) reserved.current = e instanceof GameboxSaveError ? e.id : undefined;
       setMessage(FORM_TEXT[codeOfError(e)]);
     } finally {
       busyRef.current = false;
@@ -126,8 +127,8 @@ function GameboxFormView({
       pavilion: isEmptySeat(form.pavilion) ? null : form.pavilion,
     };
     void run(async () => {
-      if (target.current) await saveGamebox(uid, input, target.current);
-      else await saveGamebox(uid, input, undefined, newOrder);
+      if (existing) await saveGamebox(uid, input, existing);
+      else await saveGamebox(uid, input, undefined, newOrder, reserved.current);
     });
   };
 

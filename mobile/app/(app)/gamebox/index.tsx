@@ -44,7 +44,8 @@ function LegacyPrincipal({ uid, legacy }: { uid: string; legacy: GameboxInput })
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const busy = useRef(false);
-  // Repetir depois de "sem rede" grava no mesmo documento já reservado (não duplica).
+  // Repetir depois do tempo limite sem rede substitui a escrita pendente no mesmo documento (setDoc, não duplica);
+  // outro erro larga o id.
   const pending = useRef<string | undefined>(undefined);
   const copy = async () => {
     if (busy.current) return;
@@ -52,11 +53,11 @@ function LegacyPrincipal({ uid, legacy }: { uid: string; legacy: GameboxInput })
     setLoading(true);
     setMessage(null);
     try {
-      await saveGamebox(uid, legacy, pending.current ? { id: pending.current, order: 1 } : undefined, 1);
+      await saveGamebox(uid, legacy, undefined, 1, pending.current);
       // A lista passa a ter o documento e este bloco desaparece sozinho.
     } catch (e) {
       const err = e instanceof GameboxSaveError ? e : null;
-      if (err?.id) pending.current = err.id;
+      pending.current = err?.id;
       setMessage(GAMEBOX_TEXT[err?.saveCode as keyof typeof GAMEBOX_TEXT] ?? GAMEBOX_TEXT.UNKNOWN);
     } finally {
       busy.current = false;

@@ -52,12 +52,44 @@ describe('saveGamebox', () => {
     expect(setDoc).not.toHaveBeenCalled();
   });
 
-  it('unavailable é OFFLINE (com o id, para repetir sem duplicar) e não vai ao Crashlytics', async () => {
+  it('unavailable é OFFLINE sem id (a escrita não ficou na fila) e não vai ao Crashlytics', async () => {
     (setDoc as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'firestore/unavailable' }));
     const e = await saveGamebox('u1', INPUT).catch((x: unknown) => x);
     expect(e).toMatchObject({ saveCode: 'OFFLINE' });
-    expect((e as { id: string }).id).toMatch(/^auto/);
+    expect((e as { id?: string }).id).toBeUndefined();
     expect(recordError).not.toHaveBeenCalled();
+  });
+
+  it('tempo limite: OFFLINE com o id reservado; repetir faz setDoc completo no mesmo id, nunca updateDoc', async () => {
+    jest.useFakeTimers();
+    (setDoc as jest.Mock).mockReturnValueOnce(new Promise(() => {}));
+    const p = saveGamebox('u1', INPUT, undefined, 2).catch((x: unknown) => x);
+    jest.advanceTimersByTime(GAMEBOX_SAVE_TIMEOUT_MS);
+    const e = (await p) as { saveCode: string; id?: string };
+    jest.useRealTimers();
+    expect(e.saveCode).toBe('OFFLINE');
+    const firstRef = (setDoc as jest.Mock).mock.calls[0][0];
+    expect(e.id).toBe(firstRef.id);
+
+    const id = await saveGamebox('u1', INPUT, undefined, 2, e.id);
+    expect(id).toBe(e.id);
+    const [ref, data] = (setDoc as jest.Mock).mock.calls[1];
+    expect(ref.path).toBe(`gamebox/${e.id}`);
+    expect(Object.keys(data).sort()).toEqual(Object.keys((setDoc as jest.Mock).mock.calls[0][1]).sort());
+    expect(data).toMatchObject({ userid: 'u1', order: 2, gameboxName: 'João' });
+    expect(decryptGameboxNumber(data.gameboxNumber, 'u1')).toBe('266571276572');
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it.each(['firestore/permission-denied', 'internal'])('%s numa nova não devolve id para reutilizar', async (code) => {
+    (setDoc as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code }));
+    const e = (await saveGamebox('u1', INPUT).catch((x: unknown) => x)) as { saveCode: string; id?: string };
+    expect(['DENIED', 'UNKNOWN']).toContain(e.saveCode);
+    expect(e.id).toBeUndefined();
+    // A tentativa seguinte começa do zero: id novo, setDoc, sem updateDoc.
+    const id = await saveGamebox('u1', INPUT, undefined, 1, e.id);
+    expect(id).not.toBe((setDoc as jest.Mock).mock.calls[0][0].id);
+    expect(updateDoc).not.toHaveBeenCalled();
   });
 
   it('escrita pendente passa a OFFLINE após o tempo limite', async () => {

@@ -114,6 +114,7 @@ describe('Gestão de Gamebox', () => {
         { number: '266571276572', name: 'Principal', stadium: { port: '', sector: '', line: '', seat: '' }, pavilion: null },
         undefined,
         1,
+        undefined,
       );
     });
 
@@ -139,9 +140,22 @@ describe('Gestão de Gamebox', () => {
       await fireEvent.press(screen.getByRole('button', { name: 'Guardar na minha GameBox' }));
       expect(screen.getByText(/Sem ligação/)).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Guardar na minha GameBox' }).props.accessibilityState.disabled).toBe(false);
-      // Repetir usa o mesmo documento (não duplica).
+      // Repetir depois do tempo limite usa o mesmo documento (setDoc no serviço, não duplica).
       await fireEvent.press(screen.getByRole('button', { name: 'Guardar na minha GameBox' }));
-      expect((saveGamebox as jest.Mock).mock.calls[1][2]).toEqual({ id: 'auto9', order: 1 });
+      expect((saveGamebox as jest.Mock).mock.calls[1].slice(2)).toEqual([undefined, 1, 'auto9']);
+    });
+
+    it('depois de DENIED a tentativa seguinte não reutiliza id', async () => {
+      mockUser.current = ready({ gameboxNumber: V2_VECTOR });
+      (saveGamebox as jest.Mock)
+        .mockRejectedValueOnce(new GameboxSaveError('OFFLINE', 'auto9'))
+        .mockRejectedValueOnce(new GameboxSaveError('DENIED'));
+      await render(wrap(<GameboxList />));
+      const btn = () => screen.getByRole('button', { name: 'Guardar na minha GameBox' });
+      await fireEvent.press(btn());
+      await fireEvent.press(btn());
+      await fireEvent.press(btn());
+      expect((saveGamebox as jest.Mock).mock.calls[2].slice(2)).toEqual([undefined, 1, undefined]);
     });
   });
 });
@@ -176,6 +190,7 @@ describe('Formulário da Gamebox', () => {
       { number: '266571276572', name: 'João', stadium: { port: '5', sector: '', line: '', seat: '' }, pavilion: null },
       undefined,
       2,
+      undefined,
     );
     expect(mockRouter.replace).toHaveBeenCalledWith('/gamebox');
   });
@@ -257,14 +272,18 @@ describe('Formulário da Gamebox', () => {
     expect(save().props.accessibilityState.disabled).toBe(false);
   });
 
-  it('nova sem rede: repetir grava no mesmo documento (não duplica)', async () => {
-    (saveGamebox as jest.Mock).mockRejectedValueOnce(new GameboxSaveError('OFFLINE', 'auto7'));
+  it('nova sem rede (tempo limite): repetir grava no mesmo documento; depois de UNKNOWN começa do zero', async () => {
+    (saveGamebox as jest.Mock)
+      .mockRejectedValueOnce(new GameboxSaveError('OFFLINE', 'auto7'))
+      .mockRejectedValueOnce(new GameboxSaveError('UNKNOWN'));
     mockParams.current = { id: 'nova' };
     await render(wrap(<GameboxForm />));
     await fireEvent.changeText(screen.getByLabelText('Número da GameBox'), '266571276572');
     await fireEvent.press(save());
     await fireEvent.press(save());
-    expect((saveGamebox as jest.Mock).mock.calls[1][2]).toEqual({ id: 'auto7', order: 1 });
+    expect((saveGamebox as jest.Mock).mock.calls[1].slice(2)).toEqual([undefined, 1, 'auto7']);
+    await fireEvent.press(save());
+    expect((saveGamebox as jest.Mock).mock.calls[2].slice(2)).toEqual([undefined, 1, undefined]);
   });
 
   it('sem rede ao apagar: mensagem clara e fica no formulário', async () => {
