@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { SessionProvider, useSession } from '@/providers/SessionProvider';
@@ -26,6 +27,8 @@ try {
   }
 }
 legacyCleanup();
+// app.json deixa a rotação livre (o player de vídeo roda); o resto da app fica sempre em vertical.
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
 
 // Guardas de rota: (auth)/_layout e (app)/_layout redirecionam conforme a sessão.
 // Enquanto a sessão está em `loading` não se mostra nada: o splash nativo continua (V2 entra já com sessão).

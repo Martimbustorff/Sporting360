@@ -9,3 +9,11 @@ export const onSnapshot = jest.fn(
 export const setDoc = jest.fn(() => Promise.resolve());
 export const serverTimestamp = jest.fn(() => ({ __kind: 'serverTimestamp' }));
 export const getDoc = jest.fn(() => Promise.resolve({ exists: () => false, data: () => undefined }));
+export const query = jest.fn((ref: unknown, ...constraints: unknown[]) => ({ __kind: 'query', ref, constraints }));
+export const where = jest.fn((field: string, op: string, value: unknown) => ({ __kind: 'where', field, op, value }));
+export const orderBy = jest.fn((field: string, dir?: string) => ({ __kind: 'orderBy', field, dir }));
+export const limit = jest.fn((n: number) => ({ __kind: 'limit', n }));
+export const documentId = jest.fn(() => ({ __kind: 'documentId' }));
+export const getCountFromServer = jest.fn(() =>
+  Promise.resolve({ data: () => ({ count: 0 }) }),
+);

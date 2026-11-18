@@ -4,7 +4,7 @@
     "slug": "s3602027",
     "scheme": "s360",
     "version": "7.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -70,7 +70,16 @@
         {
           "faceIDPermission": "Permite à S360 usar o Face ID para desbloquear a app."
         }
-      ]
+      ],
+      "expo-screen-orientation",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "A S360 usa a câmara para ler o código da tua GameBox.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
