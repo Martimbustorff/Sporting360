@@ -81,10 +81,14 @@ describe('Comunidade Leonina (escondida)', () => {
     expect(screen.queryByText('X')).toBeNull();
   });
 
-  it('config com erro também redireciona; a carregar não mostra nada nem redireciona', async () => {
+  it('config com erro também redireciona; a carregar mostra o Header com voltar e o estado a carregar, sem redirecionar', async () => {
     mockConfig.current = { status: 'loading' };
     const a = await render(wrap(<Comunidade />));
     expect(screen.queryByTestId('redirect')).toBeNull();
+    expect(screen.getByText('Comunidade Leonina')).toBeTruthy();
+    expect(screen.getByLabelText('Voltar')).toBeTruthy();
+    expect(screen.getByTestId('comunidade-loading')).toBeTruthy();
+    expect(screen.queryByText('Aqui podes encontrar onde na web se fala sobre o Sporting')).toBeNull();
     await a.unmount();
     mockConfig.current = { status: 'error', error: new Error('x') };
     await render(wrap(<Comunidade />));

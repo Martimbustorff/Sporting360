@@ -36,6 +36,13 @@ describe('AnalyticsConsentSheet no layout', () => {
     expect(screen.getByRole('button', { name: 'Agora não' })).toBeTruthy();
   });
 
+  it('o título não é um botão (a folha não se fecha sem escolha) e é anunciado como cabeçalho', async () => {
+    await render(wrap(<AppLayout />));
+    await screen.findByText(CONSENT_TITLE);
+    expect(screen.queryByRole('button', { name: CONSENT_TITLE })).toBeNull();
+    expect(screen.getByRole('header', { name: CONSENT_TITLE })).toBeTruthy();
+  });
+
   it('Aceitar grava granted, ativa a recolha e fecha a folha', async () => {
     await render(wrap(<AppLayout />));
     await screen.findByText(CONSENT_TITLE);

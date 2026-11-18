@@ -7,10 +7,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
-import { isHttps, STADIUM_LINKS, type StadiumLink } from '@/content/clubLinks';
+import { STADIUM_LINKS, type StadiumLink } from '@/content/clubLinks';
+import { openLink } from '@/lib/openLink';
 import { layout, type } from '@/theme/tokens';
 import { Display } from '@/theme/typography';
 
@@ -40,9 +40,6 @@ export default function Estadio() {
     }).start();
   }, [zoomed, scale]);
 
-  const open = (url: string | null) => {
-    if (isHttps(url)) WebBrowser.openBrowserAsync(url).catch(() => undefined);
-  };
   const label = zoomed ? 'Reduzir mapa' : 'Ampliar mapa';
 
   return (
@@ -77,7 +74,7 @@ export default function Estadio() {
             key={l.id}
             accessibilityRole="link"
             accessibilityLabel={l.label}
-            onPress={() => open(l.url)}
+            onPress={() => void openLink(l.url)}
             hitSlop={8}
             style={({ pressed }) => ({
               flexDirection: 'row',

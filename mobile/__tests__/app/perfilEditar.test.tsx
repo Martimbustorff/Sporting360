@@ -1,5 +1,5 @@
 // Task 22: Editar perfil e Notificações. Hooks e serviço mockados; expo-router global (jest.setup).
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockUser: { current: unknown } = { current: { status: 'loading' } };
@@ -91,6 +91,7 @@ describe('Editar perfil', () => {
     await fireEvent.changeText(screen.getByLabelText('Lugar anual'), 'B2');
     await fireEvent.press(save());
     expect(screen.getByText(/Sem ligação/)).toBeTruthy();
+    expect(screen.getByText(/As alterações vão ser enviadas quando houver ligação\./)).toBeTruthy();
     expect(screen.getByLabelText('Lugar anual').props.value).toBe('B2');
     expect(save().props.accessibilityState.disabled).toBe(false);
   });
@@ -161,6 +162,41 @@ describe('Notificações', () => {
     await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
     expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
     expect(screen.getByText(/Sem ligação/)).toBeTruthy();
+    expect(screen.getByText(/As alterações vão ser enviadas quando houver ligação\./)).toBeTruthy();
+  });
+
+  it('snapshot da 1.ª escrita com a 2.ª ainda pendente não perde a 2.ª escolha', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    let finishSecond!: () => void;
+    (updateMyProfileFields as jest.Mock)
+      .mockImplementationOnce(() => Promise.resolve())
+      .mockImplementationOnce(() => new Promise<void>((r) => (finishSecond = r)));
+    const view = await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
+    // Chega o documento só com a 1.ª escrita (goals false); a 2.ª (news false) ainda não foi confirmada.
+    mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: true } } };
+    await view.rerender(wrap(<Notificacoes />));
+    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(screen.getByRole('switch', { name: 'Início dos jogos' }));
+    expect((updateMyProfileFields as jest.Mock).mock.calls[2][1]).toEqual({
+      notificationPrefs: { matchStart: false, goals: false, predictionReminder: true, mvpOpen: true, news: false },
+    });
+    await act(async () => finishSecond());
+  });
+
+  it('erro na 1.ª escrita depois de uma 2.ª: desfaz só a 1.ª escolha', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    let failFirst!: (e: unknown) => void;
+    (updateMyProfileFields as jest.Mock)
+      .mockImplementationOnce(() => new Promise<void>((_r, j) => (failFirst = j)))
+      .mockImplementationOnce(() => Promise.resolve());
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
+    await act(async () => failFirst(new ProfileSaveError('UNKNOWN')));
+    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(true);
+    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
   });
 
   it('chaves em falta nas preferências guardadas contam como desligadas', async () => {

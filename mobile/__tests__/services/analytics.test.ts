@@ -178,6 +178,47 @@ describe('setAnalyticsUserId (F14)', () => {
   });
 });
 
+describe('mudanças rápidas no interruptor (Task 26, minors da Task 6)', () => {
+  it('leitura antiga não sobrepõe um "denied" escolhido durante a leitura: o uid não segue', async () => {
+    const { a, fb, store } = load();
+    await store.setItemAsync(KEY, 'granted');
+    let release!: (v: string | null) => void;
+    (store.getItemAsync as jest.Mock).mockImplementationOnce(() => new Promise((r) => (release = r)));
+    const signIn = a.setAnalyticsUserId('u1');
+    await a.setAnalyticsConsent('denied');
+    (fb.setUserId as jest.Mock).mockClear();
+    release('granted');
+    await signIn;
+    expect(fb.setUserId).not.toHaveBeenCalledWith(expect.anything(), 'u1');
+  });
+
+  it('aceitar e recusar logo a seguir: aplicados por ordem, fica recolha desligada e uid limpo no fim', async () => {
+    const { a, fb } = load();
+    await a.setAnalyticsUserId('u1');
+    const calls: string[] = [];
+    (fb.setAnalyticsCollectionEnabled as jest.Mock).mockImplementation(async (_x: unknown, on: boolean) => {
+      calls.push(`collection:${on}`);
+    });
+    (fb.setUserId as jest.Mock).mockImplementation(async (_x: unknown, id: string | null) => {
+      calls.push(`uid:${id}`);
+    });
+    await Promise.all([a.setAnalyticsConsent('granted'), a.setAnalyticsConsent('denied')]);
+    expect(calls).toEqual(['collection:true', 'uid:u1', 'collection:false', 'uid:null']);
+    a.track('x');
+    expect(fb.logEvent).not.toHaveBeenCalled();
+  });
+
+  it('recusar com setAnalyticsCollectionEnabled a falhar ainda limpa o uid', async () => {
+    const { a, fb } = load();
+    await a.setAnalyticsConsent('granted');
+    await a.setAnalyticsUserId('u1');
+    (fb.setUserId as jest.Mock).mockClear();
+    (fb.setAnalyticsCollectionEnabled as jest.Mock).mockRejectedValueOnce(new Error('nativo'));
+    await expect(a.setAnalyticsConsent('denied')).rejects.toThrow('nativo');
+    expect(fb.setUserId).toHaveBeenCalledWith(expect.anything(), null);
+  });
+});
+
 afterEach(() => {
   (SecureStore as unknown as Store).__reset();
   jest.clearAllMocks();

@@ -5,12 +5,12 @@
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
 import { Screen } from '@/components/Screen';
-import { CLUB_SITES, isHttps, type ClubSite } from '@/content/clubLinks';
+import { CLUB_SITES, type ClubSite } from '@/content/clubLinks';
+import { openLink } from '@/lib/openLink';
 import { Body } from '@/theme/typography';
 import { layout, spacing, type } from '@/theme/tokens';
 
@@ -29,9 +29,6 @@ const iconStyle = { width: layout.menuRowIcon, height: layout.menuRowIcon };
 export default function Sites() {
   const router = useRouter();
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
-  const open = (url: string) => {
-    if (isHttps(url)) WebBrowser.openBrowserAsync(url).catch(() => undefined);
-  };
   return (
     <Screen padded="none">
       <LionBackdrop blurred />
@@ -45,7 +42,7 @@ export default function Sites() {
               external
               label={s.label}
               icon={<Image source={ICONS[s.id]} style={iconStyle} accessible={false} />}
-              onPress={() => open(s.url)}
+              onPress={() => void openLink(s.url)}
             />
           ))}
         </View>

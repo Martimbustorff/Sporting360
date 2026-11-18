@@ -16,6 +16,14 @@ let currentUid: string | null = null;
 let settled = false;
 const MAX_PENDING = 20;
 let pending: { name: string; params?: Record<string, string | number> }[] = [];
+// Task 26: o interruptor das Definições pode mudar depressa. As escolhas aplicam-se uma de cada vez, pela ordem.
+let queue: Promise<void> = Promise.resolve();
+
+function serial(fn: () => Promise<void>): Promise<void> {
+  const run = queue.then(fn, fn);
+  queue = run.catch(() => {});
+  return run;
+}
 
 function isConsent(v: string | null): v is Consent {
   return v === 'granted' || v === 'denied';
@@ -34,7 +42,7 @@ export async function getAnalyticsConsent(): Promise<Consent | null> {
 async function applyCollection(next: Consent | null): Promise<void> {
   consent = next;
   await setAnalyticsCollectionEnabled(getAnalytics(), next === 'granted');
-  if (next === 'granted' && currentUid) await setUserId(getAnalytics(), currentUid);
+  if (consent === 'granted' && currentUid) await setUserId(getAnalytics(), currentUid);
   settled = true;
   const queued = pending;
   pending = [];
@@ -49,19 +57,31 @@ function send(name: string, params?: Record<string, string | number>): void {
   }
 }
 
-export async function setAnalyticsConsent(c: Consent): Promise<void> {
-  try {
-    await SecureStore.setItemAsync(KEY, c);
-  } catch {
-    // a escolha vale nesta sessão mesmo que não fique guardada
-  }
-  await applyCollection(c);
-  if (c === 'denied') await setUserId(getAnalytics(), null);
+export function setAnalyticsConsent(c: Consent): Promise<void> {
+  // Já em memória: um início de sessão a meio desta escolha nunca envia o uid depois de um "denied".
+  consent = c;
+  return serial(async () => {
+    try {
+      await SecureStore.setItemAsync(KEY, c);
+    } catch {
+      // a escolha vale nesta sessão mesmo que não fique guardada
+    }
+    if (c === 'granted') {
+      await applyCollection(c);
+      return;
+    }
+    // Recusar limpa sempre o uid, mesmo que desligar a recolha falhe.
+    try {
+      await applyCollection(c);
+    } finally {
+      await setUserId(getAnalytics(), null);
+    }
+  });
 }
 
 /** Arranque: aplica a escolha guardada. Sem escolha, a recolha fica desligada. */
-export async function applyStoredConsent(): Promise<void> {
-  await applyCollection(await getAnalyticsConsent());
+export function applyStoredConsent(): Promise<void> {
+  return serial(async () => applyCollection(await getAnalyticsConsent()));
 }
 
 /**
@@ -74,7 +94,11 @@ export async function setAnalyticsUserId(uid: string | null): Promise<void> {
     await setUserId(getAnalytics(), null);
     return;
   }
-  if (consent === null) consent = await getAnalyticsConsent();
+  if (consent === null) {
+    const stored = await getAnalyticsConsent();
+    // Uma escolha feita durante a leitura vale mais do que o valor lido (que pode já estar desatualizado).
+    if (consent === null) consent = stored;
+  }
   if (consent === 'granted' && currentUid === uid) await setUserId(getAnalytics(), uid);
 }
 

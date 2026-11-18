@@ -1,17 +1,18 @@
 // Figma: nó 406:13212 (Comunidade Leonina: texto 406:13220, por entrada uma linha, o nome em DIN 24 maiúsculas e uma linha
 // por ligação com ícone 24 + gap 16 + corpo leve 14 + seta diagonal); ícones sociais 406:11998 (Twitter, Patreon, Youtube).
 // ESCONDIDA: só abre com config/app features.comunidadeLeonina === true (a mesma flag da entrada do menu da Home); com a
-// flag a false, em erro de leitura ou sem ela, vai para a Home. Enquanto a config carrega não mostra nada. Não apagar.
+// flag a false, em erro de leitura ou sem ela, vai para a Home. Enquanto a config carrega: Header com voltar e o estado a
+// carregar (SEM FIGMA), sem redirecionar. Não apagar.
 // Uma ligação ausente ou que não seja https não gera linha. `description` e `image` da entrada não existem no frame.
-import { ScrollView, Text, View, Pressable } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View, Pressable } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
 import { isHttps } from '@/content/clubLinks';
+import { openLink } from '@/lib/openLink';
 import { useAppConfig } from '@/data/hooks';
 import type { CommunityEntry } from '@/data/schemas';
 import { colors, layout, spacing, type } from '@/theme/tokens';
@@ -25,10 +26,6 @@ const CHANNELS = [
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 export const COMUNIDADE_INTRO = 'Aqui podes encontrar onde na web se fala sobre o Sporting';
-
-function open(url: string) {
-  if (isHttps(url)) WebBrowser.openBrowserAsync(url).catch(() => undefined);
-}
 
 function Entry({ entry }: { entry: CommunityEntry }) {
   const links = CHANNELS.flatMap((c) => {
@@ -44,7 +41,7 @@ function Entry({ entry }: { entry: CommunityEntry }) {
           key={l.key}
           accessibilityRole="link"
           accessibilityLabel={l.label}
-          onPress={() => open(l.url)}
+          onPress={() => void openLink(l.url)}
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',
@@ -68,7 +65,22 @@ export default function Comunidade() {
   const config = useAppConfig();
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  if (config.status === 'loading') return <Screen padded="none"><LionBackdrop blurred /></Screen>;
+  if (config.status === 'loading') {
+    return (
+      <Screen padded="none">
+        <LionBackdrop blurred />
+        <Header title="Comunidade Leonina" onBack={back} />
+        <View
+          testID="comunidade-loading"
+          accessible
+          accessibilityLabel="A carregar"
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <ActivityIndicator color={colors.white} />
+        </View>
+      </Screen>
+    );
+  }
   if (config.status !== 'ready' || config.data.features.comunidadeLeonina !== true) return <Redirect href="/" />;
 
   const entries = config.data.comunidadeLeonina;

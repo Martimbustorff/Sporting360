@@ -21,7 +21,7 @@ import { colors, layout, spacing } from '@/theme/tokens';
 export const NOTIFICACOES_TEXT = {
   loadError: 'Não foi possível carregar as tuas preferências.',
   notice: 'As notificações chegam numa próxima versão. As tuas escolhas ficam guardadas.',
-  OFFLINE: 'Sem ligação. A escolha fica neste telemóvel e é enviada quando houver rede.',
+  OFFLINE: 'Sem ligação. A escolha fica neste telemóvel. As alterações vão ser enviadas quando houver ligação.',
   DENIED: 'Não tens permissão para guardar esta escolha.',
   UNKNOWN: 'Não foi possível guardar a escolha. Tenta outra vez.',
 } as const;
@@ -46,7 +46,10 @@ export default function Notificacoes() {
   const [local, setLocal] = useState<NotificationPrefs | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const latest = useRef<NotificationPrefs>(fromDoc);
+  // Escritas por confirmar: enquanto houver alguma, um documento novo não apaga as escolhas ainda pendentes.
+  const inFlight = useRef(0);
   useEffect(() => {
+    if (inFlight.current > 0) return;
     setLocal(null);
     latest.current = fromDoc;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,21 +58,25 @@ export default function Notificacoes() {
 
   const toggle = async (key: keyof NotificationPrefs, value: boolean) => {
     if (!uid) return;
-    const before = latest.current;
-    const next: NotificationPrefs = { ...before, [key]: value };
+    const previous = latest.current[key];
+    const next: NotificationPrefs = { ...latest.current, [key]: value };
     latest.current = next;
     setLocal(next);
     setMessage(null);
+    inFlight.current += 1;
     try {
       await updateMyProfileFields(uid, { notificationPrefs: next });
     } catch (e) {
       const code = e instanceof ProfileSaveError ? e.saveCode : 'UNKNOWN';
-      // Sem rede a escrita fica na fila local e segue com a ligação: o interruptor mantém-se. Outros erros desfazem.
-      if (code !== 'OFFLINE') {
-        latest.current = before;
-        setLocal(before);
+      // Sem rede a escrita fica na fila local e segue com a ligação: o interruptor mantém-se. Outros erros desfazem
+      // só esta escolha (e só se não foi mudada depois), para não apagar toques mais recentes.
+      if (code !== 'OFFLINE' && latest.current[key] === value) {
+        latest.current = { ...latest.current, [key]: previous };
+        setLocal(latest.current);
       }
       setMessage(NOTIFICACOES_TEXT[code]);
+    } finally {
+      inFlight.current -= 1;
     }
   };
 

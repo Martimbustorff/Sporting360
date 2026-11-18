@@ -24,7 +24,7 @@ export function AnalyticsConsentSheet({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <Sheet title={CONSENT_TITLE} collapsedHeight={height} expandedHeight={height} open onOpenChange={() => {}}>
+    <Sheet title={CONSENT_TITLE} collapsedHeight={height} expandedHeight={height} open toggleable={false} onOpenChange={() => {}}>
       <View style={{ flex: 1, gap: layout.consentGap, paddingTop: layout.consentGap }}>
         <Text style={[type.authIntro, { color: colors.black }]}>{CONSENT_TEXT}</Text>
         <Pressable

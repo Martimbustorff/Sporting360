@@ -30,7 +30,7 @@ export const EDITAR_TEXT = {
   squadError: 'Não foi possível carregar o plantel.',
   noSquad: 'O plantel ainda não está disponível.',
   saved: 'Perfil guardado.',
-  OFFLINE: 'Sem ligação. As alterações não foram confirmadas; mantemos o que escreveste. Tenta outra vez quando houver rede.',
+  OFFLINE: 'Sem ligação. Ainda não foi confirmado; mantemos o que escreveste. As alterações vão ser enviadas quando houver ligação.',
   DENIED: 'Não tens permissão para guardar estas alterações.',
   UNKNOWN: 'Não foi possível guardar. Tenta outra vez.',
 } as const;

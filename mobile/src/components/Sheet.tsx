@@ -18,16 +18,20 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { resolveSheetEnd } from '@/lib/sheetEnd';
 import { colors, layout, radius, type } from '@/theme/tokens';
 
+const titleRow = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: layout.minTouch } as const;
+
 export type SheetProps = {
   title: string;
   collapsedHeight: number;
   expandedHeight: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** `false`: folha fixa (consentimento): o título é só cabeçalho, sem toque nem seta, e o gesto não muda nada. */
+  toggleable?: boolean;
   children?: ReactNode;
 };
 
-export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChange, children }: SheetProps) {
+export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChange, toggleable = true, children }: SheetProps) {
   const reduced = useReducedMotion();
   const range = Math.max(0, expandedHeight - collapsedHeight);
   // 0 = aberta, range = fechada
@@ -40,6 +44,7 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
   }, [open, range, reduced, y]);
 
   const pan = Gesture.Pan()
+    .enabled(toggleable)
     .onStart(() => {
       'worklet';
       start.set(y.get());
@@ -103,16 +108,22 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
             ...pad,
           }}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={title}
-            accessibilityState={{ expanded: open }}
-            onPress={() => onOpenChange(!open)}
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: layout.minTouch }}
-          >
-            <Text style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
-            <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.black} />
-          </Pressable>
+          {toggleable ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={title}
+              accessibilityState={{ expanded: open }}
+              onPress={() => onOpenChange(!open)}
+              style={titleRow}
+            >
+              <Text style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
+              <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.black} />
+            </Pressable>
+          ) : (
+            <View style={titleRow}>
+              <Text accessibilityRole="header" style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
+            </View>
+          )}
           <View
             testID="sheet-content"
             accessibilityElementsHidden={!open}
