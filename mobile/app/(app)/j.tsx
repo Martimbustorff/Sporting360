@@ -1,5 +1,5 @@
 // SEM FIGMA: entrada do link partilhado (Task 17), sem interface: com a app instalada, o link do cartão
-// "S360 MATCHDAY" (https://scp360-37a74.web.app/j?src=share&game=...) abre aqui pelos universal links / app links
+// "S360 MATCHDAY" (https://<host de share.config.json>/j?src=share&game=...) abre aqui pelos universal links / app links
 // (app.json). Com `game` válido mede `share_open` e abre o jogo na tab Prognóstico; sem `game` vai para a Home.
 // Sem sessão, o guarda de (app)/_layout manda para /welcome e o jogo perde-se (preflight F29: aceite na Entrega 1).
 import { Redirect, useLocalSearchParams } from 'expo-router';

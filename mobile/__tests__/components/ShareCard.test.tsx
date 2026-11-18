@@ -51,8 +51,8 @@ describe('ShareCard', () => {
 
   it('QR com o link do jogo e o link curto em texto', async () => {
     await render(<ShareCard match={MATCH} home={1} away={2} />);
-    expect(screen.getByTestId('qrcode').props.value).toBe('https://scp360-37a74.web.app/j?src=share&game=1001');
-    expect(screen.getByText('scp360-37a74.web.app/j')).toBeTruthy();
+    expect(screen.getByTestId('qrcode').props.value).toBe('https://s360-prognostico-download.web.app/j?src=share&game=1001');
+    expect(screen.getByText('s360-prognostico-download.web.app/j')).toBeTruthy();
   });
 
   it('o Sporting usa o emblema local 2026, não o logo da API', async () => {

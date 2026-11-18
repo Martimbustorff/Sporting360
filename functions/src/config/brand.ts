@@ -6,7 +6,7 @@ export const SPORTING_TEAM_ID = 228;
  * ingestão escreve. O ficheiro vive no repositório em brand/sporting-cp-2026.png; as Tasks 20/21
  * têm de o publicar neste URL (Hosting).
  */
-export const SPORTING_CREST_URL = "https://scp360-37a74.web.app/brand/sporting-cp-2026.png";
+export const SPORTING_CREST_URL = "https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png";
 
 /**
  * Logótipo a gravar nas outras modalidades (API-Sports): o emblema novo para o Sporting da modalidade

@@ -336,7 +336,7 @@ describe('Partilhar prognóstico', () => {
     expect(Share.open).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'file:///tmp/card.png',
-        message: expect.stringContaining('https://scp360-37a74.web.app/j?src=share&game=1001'),
+        message: expect.stringContaining('https://s360-prognostico-download.web.app/j?src=share&game=1001'),
       }),
     );
     expect(track).toHaveBeenCalledWith('share_prediction', { game: '1001' });

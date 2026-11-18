@@ -88,12 +88,23 @@ describe('emblema do Sporting no Hosting', () => {
 
   it('o caminho é o do SPORTING_CREST_URL das functions', () => {
     const brand = fs.readFileSync(path.join(repo, 'functions/src/config/brand.ts'), 'utf8');
-    expect(brand).toContain('"https://scp360-37a74.web.app/brand/sporting-cp-2026.png"');
+    expect(brand).toContain('"https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png"');
+  });
+
+  it('o emblema é servido no mesmo host do link de partilha', () => {
+    const brand = fs.readFileSync(path.join(repo, 'functions/src/config/brand.ts'), 'utf8');
+    const crest = /"(https:\/\/[^"]+\/brand\/sporting-cp-2026\.png)"/.exec(brand)?.[1];
+    const share = JSON.parse(fs.readFileSync(path.join(repo, 'mobile/share.config.json'), 'utf8')) as { host: string };
+    expect(new URL(crest as string).host).toBe(share.host);
   });
 });
 
 describe('firebase.json hosting', () => {
   const fb = JSON.parse(fs.readFileSync(path.join(repo, 'firebase.json'), 'utf8'));
+
+  it('publica no site s360-prognostico-download', () => {
+    expect(fb.hosting.site).toBe('s360-prognostico-download');
+  });
 
   it('serve hosting/public com URLs limpos e sem esconder o .well-known', () => {
     expect(fb.hosting.public).toBe('hosting/public');

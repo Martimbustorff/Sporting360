@@ -93,7 +93,7 @@ describe("classifyDiff (diferenças esperadas)", () => {
   });
 
   it("games: o logótipo do Sporting passa a ser o emblema de 2026", () => {
-    expect(classifyDiff("games", { id: "g", field: "teamhome.logo", a: "https://media.api-sports.io/football/teams/228.png", b: "https://scp360-37a74.web.app/brand/sporting-cp-2026.png" })).toBe("expected");
+    expect(classifyDiff("games", { id: "g", field: "teamhome.logo", a: "https://media.api-sports.io/football/teams/228.png", b: "https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png" })).toBe("expected");
     expect(classifyDiff("games", { id: "g", field: "teamhome.logo", a: "https://media.api-sports.io/football/teams/211.png", b: "https://other/211.png" })).toBe("unexpected");
   });
 });

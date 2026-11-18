@@ -45,7 +45,7 @@ export interface MatchSource {
 
 /** Cabeçalhos dos pedidos às fontes gratuitas: identificam a app e o propósito. */
 export const FREE_HEADERS: Record<string, string> = {
-  "User-Agent": "SCP360/2027 (calendario de adeptos do Sporting CP; scp360-37a74.web.app)",
+  "User-Agent": "SCP360/2027 (calendario de adeptos do Sporting CP; s360-prognostico-download.web.app)",
   Accept: "text/html,application/json;q=0.9",
 };
 export const FREE_TIMEOUT_MS = 15_000;

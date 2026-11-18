@@ -18,6 +18,7 @@
     "ui": { "enabled": false }
   },
   "hosting": {
+    "site": "s360-prognostico-download",
     "public": "hosting/public",
     "ignore": ["**/node_modules/**"],
     "cleanUrls": true,

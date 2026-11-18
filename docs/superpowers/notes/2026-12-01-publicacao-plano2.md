@@ -172,11 +172,11 @@ Diferenças a explicar caso a caso (não são erro por si): jogo a decorrer no m
 
 ## 7. Emblema de 2026 no Hosting (PARAGEM (Martim))
 
-URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web.app/brand/sporting-cp-2026.png`. O ficheiro está no repositório em `brand/sporting-cp-2026.png`. **Fazer antes do corte (secção 9).**
+URL fixo no código (`functions/src/config/brand.ts`): `https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png`. O ficheiro está no repositório em `brand/sporting-cp-2026.png`. **Fazer antes do corte (secção 9).**
 
 1. Ver se o site já tem conteúdo (um deploy de Hosting substitui o site inteiro):
    ```bash
-   curl -sI https://scp360-37a74.web.app/ | head -1
+   curl -sI https://s360-prognostico-download.web.app/ | head -1
    firebase hosting:sites:list --project scp360-37a74
    ```
    Consola Firebase, Hosting: histórico de versões. Se houver uma versão publicada com conteúdo (não a página "Site Not Found"), **parar**: juntar esses ficheiros à pasta abaixo antes de publicar, ou decidir com o Martim outra solução.
@@ -186,10 +186,10 @@ URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web
    mkdir -p /tmp/s360-hosting/public/brand && cd /tmp/s360-hosting
    cp "$REPO/brand/sporting-cp-2026.png" public/brand/
    cat > firebase.json <<'EOF'
-   { "hosting": { "public": "public", "headers": [ { "source": "/brand/**", "headers": [ { "key": "Cache-Control", "value": "public, max-age=86400" }, { "key": "Access-Control-Allow-Origin", "value": "*" } ] } ] } }
+   { "hosting": { "site": "s360-prognostico-download", "public": "public", "headers": [ { "source": "/brand/**", "headers": [ { "key": "Cache-Control", "value": "public, max-age=86400" }, { "key": "Access-Control-Allow-Origin", "value": "*" } ] } ] } }
    EOF
    "$REPO/functions/node_modules/.bin/firebase" deploy --only hosting --project scp360-37a74
-   curl -sI https://scp360-37a74.web.app/brand/sporting-cp-2026.png
+   curl -sI https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png
    ```
    Esperado: `HTTP/2 200` e `content-type: image/png`.
 
@@ -248,7 +248,7 @@ Testar o filtro (só leitura): `gcloud logging read 'jsonPayload.message="INGEST
 Pré-requisitos:
 - comparação da secção 6 limpa;
 - nenhum jogo de futebol do Sporting nas 6 h antes nem nas 6 h depois;
-- emblema publicado: `curl -sI https://scp360-37a74.web.app/brand/sporting-cp-2026.png` devolve `200` e `image/png` (senão fazer primeiro a secção 7: a partir do corte os `games` reais passam a apontar para este URL);
+- emblema publicado: `curl -sI https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png` devolve `200` e `image/png` (senão fazer primeiro a secção 7: a partir do corte os `games` reais passam a apontar para este URL);
 - alerta de email criado (secção 8), para o corte já ficar vigiado.
 
 Cópia de segurança das coleções que o corte passa a escrever. O balde tem de estar numa localização compatível com a base de dados; ver primeiro onde ela está:

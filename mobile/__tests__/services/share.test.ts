@@ -24,7 +24,7 @@ describe('shareMatchday', () => {
       url: 'file:///tmp/card.png',
       type: 'image/png',
       message:
-        'O meu prognóstico para Sporting CP x SC Braga: 2-1. Faz o teu na S360: https://scp360-37a74.web.app/j?src=share&game=1001',
+        'O meu prognóstico para Sporting CP x SC Braga: 2-1. Faz o teu na S360: https://s360-prognostico-download.web.app/j?src=share&game=1001',
       failOnCancel: false,
     });
     expect(track).toHaveBeenCalledWith('share_prediction', { game: '1001' });
