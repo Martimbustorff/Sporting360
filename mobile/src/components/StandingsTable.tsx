@@ -1,7 +1,7 @@
 // Figma: nós 500:29367 (jogo futuro) e 489:7432 (ao vivo): cabeçalho "# EQUIPA J V E D G P" (500:29409, DIN 18 a
 // 60 %), divisória de 1 px a 20 % (500:29415), linha de 34 px (500:29416) com o círculo da posição de 26 px
 // (1.º 500:29423 amarelo, 2.º 500:29433 prata, 3.º 500:29443 bronze, restantes sem fundo e número a branco),
-// nome em SemiBold 12 (500:29419, `tableTeam`) e valores DIN 20 (500:29420); golos "8:4" (500:29421).
+// nome em SemiBold 10 (pedido do Martim, 18/11; Figma 500:29419 tem 12; `standingsTeam`) e valores DIN 20 (500:29420); golos "8:4" (500:29421).
 // Variante 500:30076: emblema de cada equipa à esquerda do nome (29x34 no Figma, `TeamCrest` sm de 30x35, 8 px
 // de intervalo, 500:30126/500:30127); no futebol o Sporting usa sempre o emblema local 2026 (id 228); nas outras
 // modalidades os ids são da api-sports e o emblema é sempre o `logo` da linha.
@@ -81,7 +81,7 @@ function Row({ row, highlight, sport }: { row: StandingRow; highlight: boolean; 
         size="sm"
         testID={`standings-crest-${row.teamId}`}
       />
-      <Body variant="tableTeam" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>
+      <Body variant="standingsTeam" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>
         {row.name}
       </Body>
       <View style={{ flexDirection: 'row', flexShrink: 0 }}>

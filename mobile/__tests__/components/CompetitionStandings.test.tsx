@@ -339,3 +339,21 @@ describe('BracketView', () => {
     expect(screen.getByTestId('tie-team-q1-228').props.accessibilityState).toEqual({ selected: false });
   });
 });
+
+describe('StandingsTable: nome do clube mais pequeno (Plan 5 Task 2)', () => {
+  it('nome longo: uma linha, reticências, tamanho 10; emblema e pontos visíveis em cada linha', async () => {
+    const long: StandingsDoc['groups'] = [
+      { name: 'Liga', rows: [row(1, '228', 'Sporting Clube de Portugal B', 13), row(2, '541', 'Real Madrid', 10)] },
+    ];
+    await render(<StandingsTable groups={long} highlightTeamId="228" sport="football" />);
+    const name = screen.getByText('Sporting Clube de Portugal B');
+    expect(name.props.numberOfLines).toBe(1);
+    expect(name.props.ellipsizeMode).toBe('tail');
+    expect(StyleSheet.flatten(name.props.style).fontSize).toBe(10);
+    for (const id of ['228', '541']) {
+      expect(screen.getByTestId(`standings-crest-${id}`, { includeHiddenElements: true })).toBeTruthy();
+      expect(screen.getByTestId(`standings-points-${id}`)).toBeTruthy();
+    }
+    expect(screen.getByTestId('standings-points-228').props.children).toBe(13);
+  });
+});

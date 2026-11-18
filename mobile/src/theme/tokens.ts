@@ -99,6 +99,8 @@ export const type = {
   // Classificação (Figma 500:29367): cabeçalho 500:29409 (DIN 18 a 60 %), equipa 500:29419, valores 500:29420, posição 500:29424
   tableHead: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
   tableTeam: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white },
+  // SEM FIGMA: nome na tabela da classificação, mais pequeno que `tableTeam` (pedido do Martim, 18/11)
+  standingsTeam: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.white },
   tableValue: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase', textAlign: 'center' },
   tablePosition: { fontFamily: fonts.display, fontSize: 20, color: colors.black, textTransform: 'uppercase' },
   // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427): "S360" display com o S a primary,

@@ -112,3 +112,11 @@ describe('component tokens from Figma 564:6907 / 564:6938 / 500:28814 / 500:2897
     expect(radius.hairline).toBe(1);
   });
 });
+
+describe('standings team name (Plan 5 Task 2)', () => {
+  it('standingsTeam is 10 and tableTeam stays 12 for TeamRows', () => {
+    expect(type.standingsTeam.fontSize).toBe(10);
+    expect(type.standingsTeam.fontFamily).toBe(fonts.bodySemiBold);
+    expect(type.tableTeam.fontSize).toBe(12);
+  });
+});
