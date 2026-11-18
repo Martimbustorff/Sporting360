@@ -5,6 +5,8 @@ import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch, seedPlayers as seedPlayerLines } from "../helpers/seedMatch";
 import { handleSubmitPrediction } from "../../src/callables/submitPrediction";
 import { handleVoteMvp } from "../../src/callables/voteMvp";
+import { aggregateMvpTallies } from "../../src/scheduled/mvpTallyAggregator";
+import { sumShards } from "../../src/game/mvpTally";
 
 let db: Firestore;
 const KICKOFF = new Date("2026-11-17T20:00:00Z");
@@ -194,7 +196,13 @@ describe("handleVoteMvp", () => {
   });
 
   describe("mvpTallies", () => {
-    const tally = async () => (await db.doc("mvpTallies/m1").get()).data();
+    // Soma dos shards escritos pelo voto (o pai só é escrito pelo agregador).
+    const shardDocs = async () => (await db.collection("mvpTallies/m1/shards").get()).docs;
+    const tally = async () => {
+      const docs = await shardDocs();
+      return docs.length === 0 ? undefined : { gameId: docs[0].get("gameId"), ...sumShards(docs.map((d) => d.data())) };
+    };
+    const parent = async () => (await db.doc("mvpTallies/m1").get()).data();
     async function seedTwoCandidates() {
       await seedPlayerLines(db, "m1", [
         {
@@ -211,11 +219,16 @@ describe("handleVoteMvp", () => {
       await live(85);
       await seedTwoCandidates();
       await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      const docs = await shardDocs();
+      expect(docs).toHaveLength(1);
+      expect(Number(docs[0].id)).toBeGreaterThanOrEqual(0);
+      expect(Number(docs[0].id)).toBeLessThan(20);
+      expect(docs[0].get("updatedAt")).toBeInstanceOf(Timestamp);
       const t = (await tally())!;
       expect(t.gameId).toBe("m1");
       expect(t.counts).toEqual({ p10: 1 });
       expect(t.total).toBe(1);
-      expect(t.updatedAt).toBeInstanceOf(Timestamp);
+      expect(await parent()).toBeUndefined();
     });
 
     it("second voter adds to the same tally", async () => {
@@ -256,20 +269,49 @@ describe("handleVoteMvp", () => {
       expect(await tally()).toBeUndefined();
     });
 
-    it("50 parallel votes give total 50", async () => {
+    // Emulador: prova que os incrementos são exatos com concorrência, não a capacidade de produção.
+    it("50 parallel votes then the aggregator give total 50 with exact counts", async () => {
       await live(85);
       await seedTwoCandidates();
       const uids = Array.from({ length: 50 }, (_, i) => `u${i}`);
       const results = await Promise.all(
-        uids.map((uid, i) => handleVoteMvp(db, { uid }, { gameId: "m1", playerId: i % 2 === 0 ? "p10" : "p7" }, now)),
+        uids.map((uid, i) => handleVoteMvp(db, { uid }, { gameId: "m1", playerId: i % 5 === 0 ? "p7" : "p10" }, now)),
       );
       expect(results.every((r) => r.ok)).toBe(true);
-      const t = (await tally())!;
-      expect(t.total).toBe(50);
-      const counts = t.counts as Record<string, number>;
-      expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(50);
-      expect(counts).toEqual({ p10: 25, p7: 25 });
+      expect(await tally()).toMatchObject({ counts: { p10: 40, p7: 10 }, total: 50 });
+
+      expect(await aggregateMvpTallies(db, now)).toEqual({ count: 1 });
+      const p = (await parent())!;
+      expect(Object.keys(p).sort()).toEqual(["counts", "gameId", "total", "updatedAt"]);
+      expect(p).toMatchObject({ gameId: "m1", counts: { p10: 40, p7: 10 }, total: 50 });
     }, 60_000);
+
+    it("aggregator only rewrites the parent when the sum changes", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      expect(await aggregateMvpTallies(db, now)).toEqual({ count: 1 });
+      expect(await aggregateMvpTallies(db, now)).toEqual({ count: 0 });
+      await handleVoteMvp(db, { uid: "bob" }, { gameId: "m1", playerId: "p7" }, now);
+      expect(await aggregateMvpTallies(db, now)).toEqual({ count: 1 });
+      expect(await parent()).toMatchObject({ counts: { p10: 1, p7: 1 }, total: 2 });
+    });
+
+    it("aggregator skips games with no shards and games outside the window", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      expect(await aggregateMvpTallies(db, now)).toEqual({ count: 0 });
+      expect(await parent()).toBeUndefined();
+
+      await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      const fin = new Date(KICKOFF.getTime() + 110 * MIN);
+      await seedGame({ status: "FT", statusRaw: "FT", finishedAt: fin, elapsed: 90 });
+      // Fechou em fin+20; até fin+30 ainda agrega, depois não.
+      expect(await aggregateMvpTallies(db, new Date(fin.getTime() + 31 * MIN))).toEqual({ count: 0 });
+      expect(await parent()).toBeUndefined();
+      expect(await aggregateMvpTallies(db, new Date(fin.getTime() + 29 * MIN))).toEqual({ count: 1 });
+      expect(await parent()).toMatchObject({ counts: { p10: 1 }, total: 1 });
+    });
   });
 
   it("jogo inexistente -> not-found; dados inválidos -> invalid-argument", async () => {

@@ -24,6 +24,7 @@ export const DEPLOY_CUTOVER_FUNCTIONS = ["legacyPredictionSettlement"] as const;
 export const DEPLOY_ENGINE_FUNCTIONS = [
   "submitPrediction",
   "voteMvp",
+  "mvpTallyAggregator",
   "settleScheduler",
   "updateProfile",
   "deleteAccount",

@@ -17,7 +17,7 @@ import { GameState } from "../game/types";
 import { PlayerLine } from "../game/mvp";
 import { MVP_SETTLE_AFTER_MS } from "../game/windows";
 import type { MatchDoc } from "../model/types";
-import { getMatch } from "../store/writer";
+import { fromFirestore, getMatch } from "../store/writer";
 
 const SPORTING_TEAM_ID = "228";
 const DAY_MS = 24 * 60 * 60_000;
@@ -104,4 +104,15 @@ export async function listFinishedUnsettled(db: Firestore, now: Date): Promise<G
     }),
   );
   return candidates.filter((_, i) => !settled[i]);
+}
+
+/** Jogos de futebol com kickoff em [from, to], como GameState. Usa o índice (sport, kickoff). */
+export async function listFootballStates(db: Firestore, from: Date, to: Date): Promise<GameState[]> {
+  const snap = await db
+    .collection("matches")
+    .where("sport", "==", "football")
+    .where("kickoff", ">=", Timestamp.fromDate(from))
+    .where("kickoff", "<=", Timestamp.fromDate(to))
+    .get();
+  return snap.docs.map((d) => toState({ ...fromFirestore(d.data() as MatchDoc), id: d.id }));
 }

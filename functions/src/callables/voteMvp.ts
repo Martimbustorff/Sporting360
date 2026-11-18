@@ -6,6 +6,7 @@ import { mvpCandidates } from "../game/mvp";
 import { awardPoints } from "../points/ledger";
 import { POINTS } from "../game/scoring";
 import { validGameId } from "./validation";
+import { contentionToUnavailable, randomShard } from "../game/mvpTally";
 
 export async function handleVoteMvp(
   db: Firestore,
@@ -32,34 +33,39 @@ export async function handleVoteMvp(
   }
 
   const ref = db.doc(`mvpVotes/${gameId}_${auth.uid}`);
-  const tallyRef = db.doc(`mvpTallies/${gameId}`);
+  // Shard aleatório: a rajada do minuto 80 espalha-se por NUM_SHARDS documentos. O documento
+  // `mvpTallies/{gameId}` só é escrito pelo agregador (mvpTallyAggregator).
+  const shardRef = db.doc(`mvpTallies/${gameId}/shards/${randomShard()}`);
   const found: { data: Record<string, unknown> | null } = { data: null };
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (snap.exists) {
-      found.data = snap.data() ?? {};
-      return;
-    }
-    tx.create(ref, {
-      gameId,
-      userId: auth.uid,
-      playerId,
-      createdAt: FieldValue.serverTimestamp(),
-      source: "v2027",
-    });
-    // Contagem anónima, escrita só aqui e na mesma transação do voto. Não é lida
-    // (incrementos cegos), por isso não há contenção de leitura na rajada do minuto 80.
-    tx.set(
-      tallyRef,
-      {
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists) {
+        found.data = snap.data() ?? {};
+        return;
+      }
+      tx.create(ref, {
         gameId,
-        counts: { [playerId]: FieldValue.increment(1) },
-        total: FieldValue.increment(1),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-  });
+        userId: auth.uid,
+        playerId,
+        createdAt: FieldValue.serverTimestamp(),
+        source: "v2027",
+      });
+      // Contagem anónima no shard, na mesma transação do voto (incremento cego, o shard não é lido).
+      tx.set(
+        shardRef,
+        {
+          gameId,
+          counts: { [playerId]: FieldValue.increment(1) },
+          total: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    });
+  } catch (e) {
+    throw contentionToUnavailable(e);
+  }
 
   const existing = found.data;
   if (existing) {

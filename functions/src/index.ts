@@ -13,6 +13,7 @@ import { syncNews } from "./news/newsSync";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleRun } from "./scheduled/settle";
+import { aggregateMvpTallies } from "./scheduled/mvpTallyAggregator";
 import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
 import { twitter } from "./sources/twitter";
@@ -33,6 +34,23 @@ export const settleScheduler = onSchedule(
   { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 540, memory: "512MiB" },
   async () => {
     await runJob(getFirestore(), "settle", () => settleRun(getFirestore(), new Date()));
+  },
+);
+
+// Contagem do MVP: soma os shards de `mvpTallies/{gameId}/shards` no documento pai que a app lê.
+// Único escritor do pai; maxInstances 1 + concurrency 1 para duas execuções nunca se sobreporem.
+export const mvpTallyAggregator = onSchedule(
+  {
+    schedule: "every 1 minutes",
+    region: "europe-west1",
+    timeZone: "Europe/Lisbon",
+    timeoutSeconds: 60,
+    maxInstances: 1,
+    concurrency: 1,
+    retryCount: 0,
+  },
+  async () => {
+    await runJob(getFirestore(), "mvp_tally", () => aggregateMvpTallies(getFirestore(), new Date()));
   },
 );
 

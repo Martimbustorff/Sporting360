@@ -85,6 +85,16 @@ describe("mvpTallies", () => {
     await seed("mvpTallies/g1", { gameId: "g1", counts: { p10: 1 }, total: 1 });
     await assertFails(updateDoc(doc(as("alice"), "mvpTallies/g1"), { total: increment(1) }));
     await assertFails(deleteDoc(doc(as("alice"), "mvpTallies/g1")));
+    await assertFails(setDoc(doc(anon(), "mvpTallies/g3"), { total: 1 }));
+  });
+  it("shards: no client read or write (anonymous or authenticated)", async () => {
+    await seed("mvpTallies/g1/shards/3", { gameId: "g1", counts: { p10: 1 }, total: 1 });
+    await assertFails(getDoc(doc(anon(), "mvpTallies/g1/shards/3")));
+    await assertFails(getDoc(doc(as("alice"), "mvpTallies/g1/shards/3")));
+    await assertFails(setDoc(doc(as("alice"), "mvpTallies/g1/shards/4"), { total: 1 }));
+    await assertFails(updateDoc(doc(as("alice"), "mvpTallies/g1/shards/3"), { total: increment(1) }));
+    await assertFails(deleteDoc(doc(as("alice"), "mvpTallies/g1/shards/3")));
+    await assertFails(setDoc(doc(anon(), "mvpTallies/g1/shards/5"), { total: 1 }));
   });
 });
 

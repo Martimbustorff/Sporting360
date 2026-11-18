@@ -47,7 +47,7 @@ describe("listas de publicação", () => {
   it("tamanhos e nomes sem repetições", () => {
     expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
-    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail"]);
+    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail"]);
     expect(LEGACY_FUNCTIONS).toHaveLength(13);
     expect(new Set(DEPLOYED).size).toBe(DEPLOYED.length);
     expect([...V2027_FUNCTIONS].sort()).toEqual([...DEPLOYED].sort());
@@ -98,6 +98,7 @@ describe("configuração de cada function exportada", () => {
     freeSourcesSync: [],
     legacyPredictionSettlement: [],
     settleScheduler: [],
+    mvpTallyAggregator: [],
     submitPrediction: [],
     voteMvp: [],
     updateProfile: [],

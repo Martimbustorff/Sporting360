@@ -34,6 +34,7 @@ service cloud.firestore {
     match /pointEvents/{id} { allow read: if true; }
     match /settlements/{id} { allow read: if true; }
     match /mvpVotes/{id} { allow read: if true; }
+    // Só o documento pai (escrito pelo agregador); os shards (mvpTallies/{id}/shards) ficam fechados por omissão.
     match /mvpTallies/{id} { allow read: if true; }
     match /matchPredictions/{id} { allow read: if true; }
     match /leaderboards/{id} { allow read: if true; }
