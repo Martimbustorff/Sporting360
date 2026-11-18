@@ -57,25 +57,40 @@ function send(name: string, params?: Record<string, string | number>): void {
   }
 }
 
+export const CONSENT_SAVE_FAILED = 'CONSENT_SAVE_FAILED';
+
+/**
+ * Guarda e aplica a escolha. Nunca falha em silêncio: rejeita se não ficar guardada (ou se a recolha não mudar).
+ * - `granted`: só se aplica depois de guardada; sem gravação, nada liga e a folha volta a perguntar.
+ * - `denied`: vale já em memória; grava "denied" antes de tudo; se a gravação falhar, apaga o "granted" antigo (um
+ *   arranque seguinte sem escolha volta a perguntar, nunca reaplica "granted"); desliga a recolha e limpa o uid sempre.
+ */
 export function setAnalyticsConsent(c: Consent): Promise<void> {
-  // Já em memória: um início de sessão a meio desta escolha nunca envia o uid depois de um "denied".
-  consent = c;
+  if (c === 'denied') consent = c; // um início de sessão a meio nunca envia o uid depois de um "denied"
   return serial(async () => {
-    try {
-      await SecureStore.setItemAsync(KEY, c);
-    } catch {
-      // a escolha vale nesta sessão mesmo que não fique guardada
-    }
     if (c === 'granted') {
+      try {
+        await SecureStore.setItemAsync(KEY, c);
+      } catch {
+        throw new Error(CONSENT_SAVE_FAILED);
+      }
       await applyCollection(c);
       return;
     }
-    // Recusar limpa sempre o uid, mesmo que desligar a recolha falhe.
+    let saved = true;
+    try {
+      await SecureStore.setItemAsync(KEY, c);
+    } catch {
+      saved = false;
+      await SecureStore.deleteItemAsync(KEY).catch(() => {});
+    }
     try {
       await applyCollection(c);
     } finally {
+      consent = 'denied';
       await setUserId(getAnalytics(), null);
     }
+    if (!saved) throw new Error(CONSENT_SAVE_FAILED);
   });
 }
 

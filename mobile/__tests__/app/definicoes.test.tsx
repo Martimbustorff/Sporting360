@@ -31,7 +31,6 @@ jest.mock('@/services/analytics', () => ({
   setAnalyticsConsent: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('@/services/social', () => ({
-  APPLE_IN_USE_MESSAGE: 'Esta conta Apple já está ligada a outra conta S360.',
   linkAppleToCurrentUser: jest.fn(),
 }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn(() => Promise.resolve()) }));
@@ -104,6 +103,29 @@ describe('Definições', () => {
     expect(sw('Análise de utilização').props.accessibilityState.checked).toBe(false);
   });
 
+  it('aceitar falha a guardar: mostra o erro e volta ao valor guardado', async () => {
+    (setAnalyticsConsent as jest.Mock).mockRejectedValueOnce(new Error('CONSENT_SAVE_FAILED'));
+    await render(wrap(<Definicoes />));
+    await flush();
+    await fireEvent.press(sw('Análise de utilização'));
+    await flush();
+    expect(screen.getByText(DEFINICOES_TEXT.saveError)).toBeTruthy();
+    expect(sw('Análise de utilização').props.accessibilityState.checked).toBe(false);
+  });
+
+  it('recusar falha a guardar: mostra o erro e o interruptor fica desligado', async () => {
+    (getAnalyticsConsent as jest.Mock).mockResolvedValue('granted');
+    (setAnalyticsConsent as jest.Mock).mockRejectedValueOnce(new Error('CONSENT_SAVE_FAILED'));
+    await render(wrap(<Definicoes />));
+    await flush();
+    await fireEvent.press(sw('Análise de utilização'));
+    await flush();
+    expect(setAnalyticsConsent).toHaveBeenLastCalledWith('denied');
+    expect(screen.getByText(DEFINICOES_TEXT.saveError)).toBeTruthy();
+    expect(sw('Análise de utilização').props.accessibilityState.checked).toBe(false);
+    (getAnalyticsConsent as jest.Mock).mockImplementation(() => Promise.resolve(null));
+  });
+
   it('consentimento guardado granted: o interruptor começa ligado', async () => {
     (getAnalyticsConsent as jest.Mock).mockResolvedValueOnce('granted');
     await render(wrap(<Definicoes />));
@@ -165,30 +187,12 @@ describe('Definições', () => {
     expect(screen.queryByRole('button', { name: 'Ligar conta Apple' })).toBeNull();
   });
 
-  it('ligar a Apple com sucesso: "Conta Apple ligada." e a entrada desaparece', async () => {
-    (linkAppleToCurrentUser as jest.Mock).mockResolvedValueOnce('linked');
+  it('"Ligar conta Apple" (iOS, sem apple.com) só abre /ligar-apple, sem ligar aqui', async () => {
     await render(wrap(<Definicoes />));
     await flush();
     await fireEvent.press(screen.getByRole('button', { name: 'Ligar conta Apple' }));
-    expect(screen.getByText('Conta Apple ligada.')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Ligar conta Apple' })).toBeNull();
-  });
-
-  it('Apple já usada noutra conta: mostra APPLE_IN_USE_MESSAGE e a entrada fica', async () => {
-    (linkAppleToCurrentUser as jest.Mock).mockResolvedValueOnce('inUse');
-    await render(wrap(<Definicoes />));
-    await flush();
-    await fireEvent.press(screen.getByRole('button', { name: 'Ligar conta Apple' }));
-    expect(screen.getByText('Esta conta Apple já está ligada a outra conta S360.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Ligar conta Apple' })).toBeTruthy();
-  });
-
-  it('erro ao ligar a Apple mostra a mensagem do serviço', async () => {
-    (linkAppleToCurrentUser as jest.Mock).mockRejectedValueOnce(new Error('Sem ligação à internet.'));
-    await render(wrap(<Definicoes />));
-    await flush();
-    await fireEvent.press(screen.getByRole('button', { name: 'Ligar conta Apple' }));
-    expect(screen.getByText('Sem ligação à internet.')).toBeTruthy();
+    expect(mockPush).toHaveBeenLastCalledWith('/ligar-apple');
+    expect(linkAppleToCurrentUser).not.toHaveBeenCalled();
   });
 
   it('"Terminar sessão" só sai depois de confirmar', async () => {

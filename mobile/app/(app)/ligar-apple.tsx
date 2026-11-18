@@ -1,4 +1,5 @@
-// Task 14: ecrã mínimo para ligar a Apple à conta com sessão aberta (as Definições do Plano 4 trazem cá o utilizador).
+// Task 14: ecrã mínimo para ligar a Apple à conta com sessão aberta. As Definições (Plano 4, Task 26) trazem cá o
+// utilizador: a ligação faz-se só aqui, com o botão oficial da Apple (HIG). Depois de ligada, o botão desaparece.
 // SEM FIGMA: não desenhado; compõe Header, botão oficial da Apple e FormMessage.
 import { useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -14,11 +15,14 @@ import { Screen } from '@/components/Screen';
 import { APPLE_IN_USE_MESSAGE, linkAppleToCurrentUser } from '@/services/social';
 import { layout, radius, spacing } from '@/theme/tokens';
 
+export const LIGAR_APPLE_TEXT = { linked: 'Conta Apple ligada.' } as const;
+
 type Message = { text: string; tone: 'error' | 'info' };
 
 export default function LigarApple() {
   const router = useRouter();
   const [message, setMessage] = useState<Message | null>(null);
+  const [linked, setLinked] = useState(false);
   const busy = useRef(false);
 
   const link = async () => {
@@ -27,7 +31,10 @@ export default function LigarApple() {
     setMessage(null);
     try {
       const r = await linkAppleToCurrentUser();
-      if (r === 'linked') setMessage({ text: 'Apple ligada.', tone: 'info' });
+      if (r === 'linked') {
+        setLinked(true);
+        setMessage({ text: LIGAR_APPLE_TEXT.linked, tone: 'info' });
+      }
       else if (r === 'inUse') setMessage({ text: APPLE_IN_USE_MESSAGE, tone: 'error' });
     } catch (e) {
       setMessage({ text: e instanceof Error ? e.message : String(e), tone: 'error' });
@@ -41,7 +48,7 @@ export default function LigarApple() {
       <Header title="Ligar Apple" onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       <View style={{ paddingHorizontal: spacing.authX, paddingTop: layout.authContentTop, gap: layout.authButtonGap }}>
         {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
-        {Platform.OS === 'ios' ? (
+        {linked ? null : Platform.OS === 'ios' ? (
           <AppleAuthenticationButton
             testID="apple-link"
             buttonType={AppleAuthenticationButtonType.CONTINUE}

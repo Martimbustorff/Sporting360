@@ -83,12 +83,77 @@ describe('analytics consent', () => {
     expect(await a.getAnalyticsConsent()).toBeNull();
   });
 
-  it('setAnalyticsConsent não lança se a gravação falhar e vale na sessão', async () => {
+  it('aceitar com a gravação a falhar rejeita e não liga nada (o consentimento não fica dado)', async () => {
     const { a, fb, store } = load();
     (store.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain'));
-    await expect(a.setAnalyticsConsent('granted')).resolves.toBeUndefined();
+    await a.setAnalyticsUserId('u1');
+    await expect(a.setAnalyticsConsent('granted')).rejects.toThrow('CONSENT_SAVE_FAILED');
+    expect(fb.setAnalyticsCollectionEnabled).not.toHaveBeenCalledWith(expect.anything(), true);
+    expect(fb.setUserId).not.toHaveBeenCalledWith(expect.anything(), 'u1');
     a.track('x');
-    expect(fb.logEvent).toHaveBeenCalled();
+    expect(fb.logEvent).not.toHaveBeenCalled();
+    expect(await a.getAnalyticsConsent()).toBeNull();
+  });
+});
+
+describe('recusar nunca falha em silêncio (fix round 1)', () => {
+  it('grava "denied" antes de desligar a recolha', async () => {
+    const { a, fb, store } = load();
+    const order: string[] = [];
+    (store.setItemAsync as jest.Mock).mockImplementationOnce(async () => {
+      order.push('store');
+    });
+    (fb.setAnalyticsCollectionEnabled as jest.Mock).mockImplementation(async () => {
+      order.push('collection');
+    });
+    await a.setAnalyticsConsent('denied');
+    expect(order).toEqual(['store', 'collection']);
+  });
+
+  it('gravação falhada: apaga o "granted" guardado, desliga a recolha, limpa o uid e rejeita', async () => {
+    const { a, fb, store } = load();
+    await a.setAnalyticsConsent('granted');
+    await a.setAnalyticsUserId('u1');
+    (fb.setUserId as jest.Mock).mockClear();
+    (store.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain'));
+    await expect(a.setAnalyticsConsent('denied')).rejects.toThrow('CONSENT_SAVE_FAILED');
+    expect(store.deleteItemAsync).toHaveBeenCalledWith(KEY);
+    expect(fb.setAnalyticsCollectionEnabled).toHaveBeenLastCalledWith(expect.anything(), false);
+    expect(fb.setUserId).toHaveBeenCalledWith(expect.anything(), null);
+    a.track('x');
+    expect(fb.logEvent).not.toHaveBeenCalled();
+    // Próximo arranque: sem escolha guardada (nunca o "granted" antigo), a folha volta a perguntar.
+    expect(await a.getAnalyticsConsent()).toBeNull();
+    await a.applyStoredConsent();
+    expect(fb.setAnalyticsCollectionEnabled).toHaveBeenLastCalledWith(expect.anything(), false);
+  });
+
+  it('gravação e limpeza falhadas: mesmo assim desliga a recolha nesta sessão, limpa o uid e rejeita', async () => {
+    const { a, fb, store } = load();
+    await a.setAnalyticsConsent('granted');
+    await a.setAnalyticsUserId('u1');
+    (fb.setUserId as jest.Mock).mockClear();
+    (store.setItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain'));
+    (store.deleteItemAsync as jest.Mock).mockRejectedValueOnce(new Error('keychain'));
+    await expect(a.setAnalyticsConsent('denied')).rejects.toThrow('CONSENT_SAVE_FAILED');
+    expect(fb.setAnalyticsCollectionEnabled).toHaveBeenLastCalledWith(expect.anything(), false);
+    expect(fb.setUserId).toHaveBeenCalledWith(expect.anything(), null);
+    a.track('x');
+    expect(fb.logEvent).not.toHaveBeenCalled();
+    await a.setAnalyticsUserId('u1');
+    expect(fb.setUserId).not.toHaveBeenCalledWith(expect.anything(), 'u1');
+  });
+
+  it('desligar a recolha a falhar: "denied" fica guardado, uid limpo, eventos parados, rejeita', async () => {
+    const { a, fb, store } = load();
+    await a.setAnalyticsConsent('granted');
+    (fb.setAnalyticsCollectionEnabled as jest.Mock).mockRejectedValueOnce(new Error('nativo'));
+    await expect(a.setAnalyticsConsent('denied')).rejects.toThrow();
+    expect(await store.getItemAsync(KEY)).toBe('denied');
+    expect(fb.setUserId).toHaveBeenLastCalledWith(expect.anything(), null);
+    (fb.logEvent as jest.Mock).mockClear();
+    a.track('x');
+    expect(fb.logEvent).not.toHaveBeenCalled();
   });
 });
 

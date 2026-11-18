@@ -5,6 +5,8 @@
 // Diferenças ao frame (Plano 4, Task 26): "Definir Passcode" passa a "Desbloquear com {label}" (interruptor, com o ícone
 // do cadeado); "Notificações" abre as preferências (/perfil/notificacoes) em vez de um interruptor só.
 // SEM FIGMA: "Análise de utilização", "Ligar conta Apple", "Termos e privacidade" (mesmas linhas, ícones Feather/Ionicons),
+// "Ligar conta Apple" é só a sugestão nas definições (HIG): abre /ligar-apple, onde está o botão oficial da Apple. Sem
+// logótipo da Apple na linha (ícone de ligação do sistema).
 // "Apagar conta" e a versão (mesmo estilo do "Log Out"), a explicação sem biometria e as mensagens.
 // O email nunca aparece aqui (só em Conta).
 import Feather from '@expo/vector-icons/Feather';
@@ -24,7 +26,6 @@ import { useBiometricControl } from '@/providers/BiometricGate';
 import { useSession } from '@/providers/SessionProvider';
 import { getAnalyticsConsent, setAnalyticsConsent } from '@/services/analytics';
 import { signOut } from '@/services/auth';
-import { APPLE_IN_USE_MESSAGE, linkAppleToCurrentUser } from '@/services/social';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
 
@@ -39,7 +40,6 @@ const ICONS = {
 
 export const DEFINICOES_TEXT = {
   noBiometric: (label: string) => `Sem ${label} configurado neste telemóvel.`,
-  appleLinked: 'Conta Apple ligada.',
   saveError: 'Não foi possível guardar a escolha. Tenta outra vez.',
   signOutTitle: 'Terminar sessão?',
   signOutBody: 'Para voltar a usar a S360 tens de entrar outra vez.',
@@ -74,9 +74,7 @@ export default function Definicoes() {
   const [analytics, setAnalytics] = useState<boolean | null>(null);
   const [bioMessage, setBioMessage] = useState<string | null>(null);
   const [message, setMessage] = useState<Message | null>(null);
-  const [appleLinked, setAppleLinked] = useState(false);
   const bioBusy = useRef(false);
-  const appleBusy = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -87,7 +85,7 @@ export default function Definicoes() {
   }, []);
 
   const bioUnavailable = bio.status === 'notEnrolled' || bio.status === 'noHardware';
-  const showApple = Platform.OS === 'ios' && !providers.includes('apple.com') && !appleLinked;
+  const showApple = Platform.OS === 'ios' && !providers.includes('apple.com');
   const version = Application.nativeApplicationVersion;
 
   const toggleBiometric = async (on: boolean) => {
@@ -104,28 +102,17 @@ export default function Definicoes() {
     }
   };
 
-  // A escolha vale logo em memória (o serviço aplica-as pela ordem). Falha nativa: a escolha mantém-se nesta sessão.
-  const toggleAnalytics = (on: boolean) => {
+  // A escolha mostra-se já; se não ficar guardada, avisa e volta ao valor guardado. Recusar fica sempre desligado
+  // (o serviço mantém a recolha desligada nesta sessão e limpa o uid mesmo quando falha a guardar).
+  const toggleAnalytics = async (on: boolean) => {
     setAnalytics(on);
-    setAnalyticsConsent(on ? 'granted' : 'denied').catch(() => {});
-  };
-
-  const linkApple = async () => {
-    if (appleBusy.current) return;
-    appleBusy.current = true;
     setMessage(null);
     try {
-      const r = await linkAppleToCurrentUser();
-      if (r === 'linked') {
-        setAppleLinked(true);
-        setMessage({ text: DEFINICOES_TEXT.appleLinked, tone: 'info' });
-      } else if (r === 'inUse') {
-        setMessage({ text: APPLE_IN_USE_MESSAGE, tone: 'error' });
-      }
-    } catch (e) {
-      setMessage({ text: e instanceof Error ? e.message : DEFINICOES_TEXT.saveError, tone: 'error' });
-    } finally {
-      appleBusy.current = false;
+      await setAnalyticsConsent(on ? 'granted' : 'denied');
+    } catch {
+      const stored = on ? await getAnalyticsConsent().catch(() => null) : null;
+      setAnalytics(stored === 'granted');
+      setMessage({ text: DEFINICOES_TEXT.saveError, tone: 'error' });
     }
   };
 
@@ -181,13 +168,13 @@ export default function Definicoes() {
             label="Análise de utilização"
             value={analytics === true}
             disabled={analytics === null}
-            onChange={toggleAnalytics}
+            onChange={(v) => void toggleAnalytics(v)}
           />
           {showApple ? (
             <MenuRow
               label="Ligar conta Apple"
-              icon={<Ionicons name="logo-apple" size={layout.menuRowIcon} color={colors.white} />}
-              onPress={() => void linkApple()}
+              icon={<Ionicons name="link" size={layout.menuRowIcon} color={colors.white} />}
+              onPress={() => router.push('/ligar-apple')}
             />
           ) : null}
           <MenuRow
