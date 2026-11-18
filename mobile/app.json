@@ -15,7 +15,9 @@
       "infoPlist": {
         "CFBundleDevelopmentRegion": "pt-PT",
         "CFBundleAllowMixedLocalizations": true,
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "A S360 só usa as tuas fotografias para guardar o cartão do teu prognóstico quando o partilhas.",
+        "NSPhotoLibraryAddUsageDescription": "A S360 guarda nas tuas fotografias o cartão do teu prognóstico quando escolhes guardá-lo."
       }
     },
     "android": {

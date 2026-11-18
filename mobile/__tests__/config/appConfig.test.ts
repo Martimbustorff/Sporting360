@@ -131,3 +131,15 @@ describe('app.config.ts production gate (Plano 5, Task 8)', () => {
     expect(build('preview', ['x']).name).toBe(appJson.expo.name);
   });
 });
+
+// Apple ITMS-90683: o react-native-share referencia a biblioteca de fotografias; sem estas chaves o upload falha.
+describe('iOS purpose strings', () => {
+  it('declares the photo library purpose strings in pt-PT', () => {
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '../../app.json'), 'utf8'));
+    const ip = raw.expo.ios.infoPlist as Record<string, unknown>;
+    expect(typeof ip.NSPhotoLibraryUsageDescription).toBe('string');
+    expect(typeof ip.NSPhotoLibraryAddUsageDescription).toBe('string');
+    expect(String(ip.NSPhotoLibraryUsageDescription)).toMatch(/S360/);
+    expect(String(ip.NSPhotoLibraryAddUsageDescription)).toMatch(/S360/);
+  });
+});
