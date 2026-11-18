@@ -84,6 +84,31 @@ describe('myGameStats', () => {
     expect(history[19]?.gameId).toBe('p5');
   });
 
+  it('com liquidação mas sem participação nos eventos lidos não conta como liquidado nem como falhanço', () => {
+    const s = myGameStats({
+      predictions: [pred('gx', 0, 0, day(20)), ...predictions],
+      settlements: { ...settlements, gx: settle(3, 3) },
+      events,
+    });
+    expect(s).toMatchObject({ settled: 4, accuracyPct: 75, exact: 2, outcome: 1, streak: 2 });
+    // Continua no histórico, com o resultado final.
+    expect(s.history[0]).toMatchObject({ gameId: 'gx', final: '3-3', points: 0 });
+  });
+
+  it('utilizador com mais prognósticos do que a janela de eventos: acerto só sobre os jogos com eventos', () => {
+    // 30 jogos liquidados; só os 10 mais recentes têm eventos lidos (8 exatos, 2 falhados).
+    const many = Array.from({ length: 30 }, (_, i) => pred(`h${i}`, 1, 0, day(1)));
+    const allSettled = Object.fromEntries(many.map((p) => [p.gameId, settle(1, 0)]));
+    const recent: PointEvent[] = [];
+    for (let i = 20; i < 30; i++) {
+      const date = new Date(Date.UTC(2026, 10, 1, i));
+      recent.push(ev(`h${i}`, 'prediction_participation', 1, date));
+      if (i >= 22) recent.push(ev(`h${i}`, 'prediction_exact', 5, date));
+    }
+    const s = myGameStats({ predictions: many, settlements: allSettled, events: recent });
+    expect(s).toMatchObject({ settled: 10, accuracyPct: 80, exact: 8, outcome: 0, streak: 8 });
+  });
+
   it('arredonda a percentagem (2 em 3 = 67)', () => {
     const s = myGameStats({
       predictions: predictions.slice(1, 4),

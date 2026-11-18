@@ -119,6 +119,27 @@ describe('Perfil: identidade', () => {
     expect(JSON.stringify(screen.toJSON())).not.toMatch(/exemplo\.pt/);
   });
 
+  it('users a carregar: secção Sócio em carregamento, sem "Não indicado"', async () => {
+    mockUser.current = { status: 'loading' };
+    await renderScreen();
+    expect(screen.getByTestId('socio-loading')).toBeTruthy();
+    expect(screen.queryByText('Não indicado')).toBeNull();
+    expect(screen.queryByText('Número de sócio')).toBeNull();
+  });
+
+  it('users com leitura falhada: erro da secção, nunca "Não indicado"', async () => {
+    mockUser.current = { status: 'error', error: new Error('permission-denied') };
+    await renderScreen();
+    expect(screen.getByText('Não foi possível carregar esta secção.')).toBeTruthy();
+    expect(screen.queryByText('Não indicado')).toBeNull();
+  });
+
+  it('sem documento users: os campos dizem "Não indicado"', async () => {
+    mockUser.current = { status: 'missing' };
+    await renderScreen();
+    expect(screen.getAllByText('Não indicado')).toHaveLength(5);
+  });
+
   it('campos por preencher dizem "Não indicado"', async () => {
     mockUser.current = ready({ name: 'Maria Costa' });
     await renderScreen();

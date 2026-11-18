@@ -4,7 +4,8 @@
 // - Cabeçalho público: avatar com a inicial do nome público (decisão da Entrega 1, preflight F22; `avatarId` continua
 //   a ser lido para as imagens entrarem depois), nome público ("Maria C.") e "Editar" → /perfil/nome.
 // - O email nunca aparece aqui (só em Definições, Conta). O nome completo do `users` também não.
-// - "Sócio desde" vem de `users.partnerNumber` (MM/AAAA); o número de sócio é `memberNumber`.
+// - "Sócio desde" vem de `users.partnerNumber` (MM/AAAA); o número de sócio é `memberNumber`. A carregar: esqueleto;
+//   leitura falhada: erro da secção; "Não indicado" só com o documento lido e o campo vazio.
 // - "Meu jogo": pontos e posição do período; acerto, exatos, MVPs certos, série e histórico (lib/myGame).
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
 import Feather from '@expo/vector-icons/Feather';
@@ -48,6 +49,7 @@ const NOT_SET = 'Não indicado';
 
 export const PERFIL_TEXT = {
   gameError: 'Não foi possível carregar o teu jogo.',
+  sectionError: 'Não foi possível carregar esta secção.',
   noSettled: 'Ainda sem jogos liquidados.',
   positionError: 'Não foi possível carregar a tua posição.',
   noPoints: (kind: PeriodKind) => `Ainda não pontuaste ${PERIOD_TEXT[kind]}.`,
@@ -162,6 +164,22 @@ function HistoryRow({ item }: { item: MyGameHistoryItem }) {
   );
 }
 
+/** Linhas da secção Sócio. "Não indicado" só com o documento lido (ou inexistente) e o campo vazio. */
+function MemberRows({ user }: { user: Loadable<UserDoc> }) {
+  if (user.status === 'loading') return <View testID="socio-loading" style={{ minHeight: layout.skeletonRowHeight }} />;
+  if (user.status === 'error') return <Note text={PERFIL_TEXT.sectionError} />;
+  const u: UserDoc = user.status === 'ready' ? user.data : {};
+  return (
+    <>
+      <InfoRow label="Número de sócio" value={text(u.memberNumber)} />
+      <InfoRow label="Sócio desde" value={text(u.partnerNumber)} />
+      <InfoRow label="Lugar anual" value={text(u.seasonSeat)} />
+      <InfoRow label="Modalidade favorita" value={u.favoriteSport ? sportLabel(u.favoriteSport) : NOT_SET} />
+      <InfoRow label="Jogador favorito" value={text(u.favoritePlayer?.name)} />
+    </>
+  );
+}
+
 function PeriodBlock({ kind, uid }: { kind: PeriodKind; uid: string | null }) {
   const now = useNow();
   const key = periodKeys(now)[kind];
@@ -243,7 +261,6 @@ export default function Perfil() {
 
   const name = shownName(uid, profile, user);
   const avatarId = profile.status === 'ready' ? profile.data.avatarId : null;
-  const u: UserDoc = user.status === 'ready' ? user.data : {};
 
   return (
     <Screen padded="none">
@@ -266,11 +283,7 @@ export default function Perfil() {
 
         <View style={{ gap: spacing.xs }}>
           <SectionBar label="Sócio" />
-          <InfoRow label="Número de sócio" value={text(u.memberNumber)} />
-          <InfoRow label="Sócio desde" value={text(u.partnerNumber)} />
-          <InfoRow label="Lugar anual" value={text(u.seasonSeat)} />
-          <InfoRow label="Modalidade favorita" value={u.favoriteSport ? sportLabel(u.favoriteSport) : NOT_SET} />
-          <InfoRow label="Jogador favorito" value={text(u.favoritePlayer?.name)} />
+          <MemberRows user={user} />
           <LinkText label="Editar perfil" a11y="Editar perfil" onPress={() => router.push('/perfil/editar')} />
         </View>
 
