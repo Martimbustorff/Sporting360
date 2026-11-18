@@ -182,6 +182,7 @@ export const layout = {
   positionCircle: 26, // Figma 500:29423
   rankingRowMinHeight: 44,
   avatarSize: 32,
+  playerPhoto: 96, // SEM FIGMA: foto redonda no topo do detalhe do jogador (Task 14)
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
   // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens
   formChip: 24, // V / E / D square in the "Forma" row

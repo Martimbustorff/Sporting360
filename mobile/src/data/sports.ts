@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { z } from 'zod';
 import { collection, limit, orderBy, query, where, type Query } from '@react-native-firebase/firestore';
 import { db } from '@/services/firebase';
+import { orderCompetitions } from '@/lib/team';
 import { BLOCK_MS } from './clock';
 import { useCollection, useDocument, type Loadable } from './hooks';
 import {
@@ -33,6 +34,7 @@ import {
   type Bracket,
   type CoachDoc,
   type Competition,
+  type CompetitionType,
   type DetailDocs,
   type FixturesDoc,
   type GameStatus,
@@ -185,19 +187,23 @@ export function useCompetitionData<K extends CompetitionDataKind>(
   return useDocument(key ? `competitions/${key}/data/${kind}` : null, COMPETITION_SCHEMAS[kind]);
 }
 
-type SeasonCompetition = { key: string; leagueId: string; name: string };
+export type SeasonCompetition = { key: string; leagueId: string; name: string; type: CompetitionType };
 
 const distinctCompetitions = (ms: Match[]): SeasonCompetition[] => {
   const seen = new Map<string, SeasonCompetition>();
   for (const m of ms) {
     const c = m.competition;
     if (c.type === 'friendly' || seen.has(c.key)) continue;
-    seen.set(c.key, { key: c.key, leagueId: c.id, name: c.name });
+    seen.set(c.key, { key: c.key, leagueId: c.id, name: c.name, type: c.type });
   }
-  return [...seen.values()];
+  // The query has no orderBy (document id order): sort so the list is stable.
+  return orderCompetitions([...seen.values()]);
 };
 
-/** Competitions of the football `season` (start year), from its games, without friendlies. */
+/**
+ * Competitions of the football `season` (start year), from its games, without friendlies.
+ * Order: league, then cups (supercup included), then europe, by name within each type.
+ */
 export function useSeasonFootballCompetitions(season: string): Loadable<SeasonCompetition[]> {
   const q = useMemo(
     () =>

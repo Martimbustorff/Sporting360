@@ -166,7 +166,7 @@ describe('match lists', () => {
 });
 
 describe('competitions and team', () => {
-  it('useSeasonFootballCompetitions: distinct, no friendlies', async () => {
+  it('useSeasonFootballCompetitions: distinct, no friendlies, league then cups then europe', async () => {
     function P() {
       return <Out v={useSeasonFootballCompetitions('2026')} />;
     }
@@ -175,6 +175,7 @@ describe('competitions and team', () => {
     const comp = (key: string, id: string, name: string, type: string) => ({ key, id, name, type, season: '2026', round: null, roundLabel: null });
     await act(async () =>
       lastNext()(qSnap([
+        { id: '0', data: matchData('0', '2026-10-01T20:00:00Z', 'FT', { competition: comp('football_96_2026', '96', 'Taça de Portugal', 'cup') }) },
         { id: '1', data: matchData('1', '2026-09-01T20:00:00Z', 'FT', { competition: comp('football_94_2026', '94', 'Liga Portugal', 'league') }) },
         { id: '2', data: matchData('2', '2026-09-08T20:00:00Z', 'FT', { competition: comp('football_94_2026', '94', 'Liga Portugal', 'league') }) },
         { id: '3', data: matchData('3', '2026-09-15T20:00:00Z', 'FT', { competition: comp('football_2_2026', '2', 'Liga dos Campeões', 'europe') }) },
@@ -182,8 +183,9 @@ describe('competitions and team', () => {
       ])),
     );
     expect(out()).toEqual([
-      { key: 'football_94_2026', leagueId: '94', name: 'Liga Portugal' },
-      { key: 'football_2_2026', leagueId: '2', name: 'Liga dos Campeões' },
+      { key: 'football_94_2026', leagueId: '94', name: 'Liga Portugal', type: 'league' },
+      { key: 'football_96_2026', leagueId: '96', name: 'Taça de Portugal', type: 'cup' },
+      { key: 'football_2_2026', leagueId: '2', name: 'Liga dos Campeões', type: 'europe' },
     ]);
   });
 
