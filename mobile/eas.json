@@ -7,7 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "22.13.0",
+      "node": "22.18.0",
       "env": {
         "EXPO_PUBLIC_USE_EMULATOR": "0"
       }
@@ -15,18 +15,18 @@
     "development-emulator": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "22.13.0",
+      "node": "22.18.0",
       "env": {
         "EXPO_PUBLIC_USE_EMULATOR": "1"
       }
     },
     "preview": {
       "distribution": "internal",
-      "node": "22.13.0"
+      "node": "22.18.0"
     },
     "production": {
       "autoIncrement": true,
-      "node": "22.13.0"
+      "node": "22.18.0"
     }
   },
   "submit": {
@@ -36,6 +36,10 @@
         "bundleIdentifier": "com.scp360",
         "language": "pt-PT",
         "ascAppId": "6450608023"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
       }
     }
   }

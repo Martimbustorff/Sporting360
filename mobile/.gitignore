@@ -4,3 +4,5 @@ ios/
 android/
 *.log
 .env*
+google-play-service-account.json
+*.p8

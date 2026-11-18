@@ -96,3 +96,38 @@ describe('mobile/firebase.json', () => {
     expect(fb['react-native'].google_analytics_adid_collection_enabled).toBe(false);
   });
 });
+
+describe('app.config.ts production gate (Plano 5, Task 8)', () => {
+  const appJson = read('app.json');
+  const OLD = process.env.EAS_BUILD_PROFILE;
+
+  function build(profile: string, problems: string[]) {
+    jest.resetModules();
+    process.env.EAS_BUILD_PROFILE = profile;
+    jest.doMock('../../scripts/launchGate', () => ({ launchGateProblems: () => problems }));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('../../app.config').default({ config: appJson.expo });
+  }
+
+  afterEach(() => {
+    if (OLD === undefined) delete process.env.EAS_BUILD_PROFILE;
+    else process.env.EAS_BUILD_PROFILE = OLD;
+    jest.dontMock('../../scripts/launchGate');
+    jest.resetModules();
+  });
+
+  it('blocks a production build while there are launch todos', () => {
+    expect(() => build('production', ['src/content/a.ts:1 [A DEFINIR PELO MARTIM: x]'])).toThrow(
+      /Build de produção bloqueado: src\/content\/a\.ts:1/,
+    );
+  });
+
+  it('lets a production build through when nothing is pending', () => {
+    expect(build('production', []).name).toBe(appJson.expo.name);
+  });
+
+  it('does not block other profiles', () => {
+    expect(build('development', ['x']).name).toBe(appJson.expo.name);
+    expect(build('preview', ['x']).name).toBe(appJson.expo.name);
+  });
+});

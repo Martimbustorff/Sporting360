@@ -8,7 +8,8 @@
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "check:tokens": "node scripts/check-tokens.mjs",
-    "seed:emulator": "node scripts/seed-emulator.mjs"
+    "seed:emulator": "node scripts/seed-emulator.mjs",
+    "eas-build-pre-install": "node scripts/launchGate.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
