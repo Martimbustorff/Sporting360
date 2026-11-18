@@ -23,7 +23,7 @@ Os argumentos `--only functions:v2027:...` abaixo foram gerados por `deployArg` 
 |---|---|
 | `DEPLOY_DATA_FUNCTIONS` (12) | footballFixturesSync, footballPostMatchSync, footballLiveTicker, footballStandingsSync, footballSeasonSync, footballWeeklySync, footballPrematchSync, videosSync, newsSync, tweetsSync, apiSportsSync, freeSourcesSync |
 | `DEPLOY_CUTOVER_FUNCTIONS` (1) | legacyPredictionSettlement |
-| `DEPLOY_ENGINE_FUNCTIONS` (6) | submitPrediction, voteMvp, settleScheduler, updateProfile, deleteAccount, linkProviderByEmail (as três últimas vêm do Plano 3, branch `v2027-app`) |
+| `DEPLOY_ENGINE_FUNCTIONS` (7) | submitPrediction, voteMvp, mvpTallyAggregator, settleScheduler, updateProfile, deleteAccount, linkProviderByEmail (as três últimas vêm do Plano 3, branch `v2027-app`) |
 | `LEGACY_FUNCTIONS` (13, `us-central1`) | gamesSheduler, liveMatchUpdater, summarySheduler, statisticsSheduler, newsSheduler, twitterScheduler, videosSheduler, PlayersSheduler, lineupsheduler, standingsSheduler, predictionsSettlementScheduler, games, backfill |
 
 ## 1. Verificações iniciais (PARAGEM (Martim): credenciais do Martim, só leitura)
@@ -45,7 +45,7 @@ No painel da RapidAPI: confirmar API-Football **Pro** (7.500/dia) e as subscriç
 
 ## 2. Segredos (PARAGEM (Martim): valores escritos pelo Martim no terminal dele)
 
-Valores atuais, sem rotação. O CLI pede o valor sem o mostrar.
+Valores atuais, sem rotação (decisão do Martim, 18/11: as chaves antigas não são rodadas; monitorizar o consumo da RapidAPI). O CLI pede o valor sem o mostrar.
 
 ```bash
 firebase functions:secrets:set RAPIDAPI_KEY --project scp360-37a74
@@ -55,8 +55,6 @@ firebase functions:secrets:get RAPIDAPI_KEY --project scp360-37a74   # mostra as
 ```
 
 O deploy dá acesso aos segredos à conta de serviço das functions. Nada vai para o repositório. Se um segredo já estiver em uso, o `secrets:set` oferece republicar as functions que o usam: responder **não** e republicar por nome, no passo certo deste guia.
-
-**Pergunta para o Martim:** rodar no corte as chaves que estavam escritas no código antigo (chave RapidAPI, chave VSports por omissão, bearer token do X)? Da última vez a resposta foi não (repositório privado, chaves só no Secret Manager no código novo, monitorizar o consumo da RapidAPI). Se a resposta mudar: gerar as novas no painel de cada serviço, repetir os três `secrets:set` acima com os valores novos e voltar a publicar as functions que os usam (um segredo novo só é lido num deploy novo); as antigas deixam de funcionar no momento da rotação, por isso só depois do corte (secção 9).
 
 ## 3. Gravar fixtures reais (PARAGEM (Martim): chave no ambiente do Martim)
 
@@ -265,6 +263,11 @@ gcloud firestore databases describe --database="(default)" --format="value(locat
 
 ```bash
 gcloud storage buckets create gs://scp360-37a74-backups --location=<da tabela> --project scp360-37a74   # uma vez; pode já existir
+cat > /tmp/backups-lifecycle.json <<'EOF'
+{ "rule": [ { "action": { "type": "Delete" }, "condition": { "age": 30 } } ] }
+EOF
+gcloud storage buckets update gs://scp360-37a74-backups --lifecycle-file=/tmp/backups-lifecycle.json --project scp360-37a74   # apaga tudo com mais de 30 dias (prazo dos Termos)
+gcloud storage buckets describe gs://scp360-37a74-backups --format='default(lifecycle_config)' --project scp360-37a74   # confirma a regra de 30 dias
 gcloud firestore export gs://scp360-37a74-backups/pre-corte-$(date -u +%Y%m%dT%H%MZ) --collection-ids=games,summaries,stastistics,lineups,players,standings,videos,news,tweets,predictions,manofmatch,rankings,point_events --project scp360-37a74
 ```
 
@@ -352,10 +355,10 @@ Nos logs: nenhum `PERMISSION_DENIED` nas escritas da V2 e nenhuma das functions 
 A partir da árvore integrada (as três callables do Plano 3 só existem lá):
 
 ```bash
-firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail --project scp360-37a74
+firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:mvpTallyAggregator,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail --project scp360-37a74
 ```
 
-Verificar: `settleScheduler` corre de 10 em 10 minutos e devolve 0 sem jogos por liquidar; as callables aparecem em `europe-west1`. A V2 não as usa; a app nova (Planos 4 e 5) sim.
+Verificar: `settleScheduler` corre de 10 em 10 minutos e devolve 0 sem jogos por liquidar; `mvpTallyAggregator` corre de minuto a minuto (`ingestHealth/mvp_tally` aparece depois da primeira execução com um jogo ativo); as callables aparecem em `europe-west1`. Sem o `mvpTallyAggregator` o `voteMvp` grava os votos mas nunca escreve `mvpTallies/{gameId}`, e a app nova mostra a votação sem percentagens. A V2 não as usa; a app nova (Planos 4 e 5) sim.
 
 ## 14. config/app (PARAGEM (Martim))
 
@@ -454,5 +457,5 @@ O modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `in
    ```
    O import substitui os documentos com o mesmo id e não apaga os novos.
 4. Pontos da V2: só se a `legacyPredictionSettlement` tiver dado pontos errados. Ver os `point_events` `exact_score_*` criados depois do corte. Repor `predictions`, `rankings`, `point_events` (e `games`) da cópia desfaz também os +1 legítimos feitos desde o corte; preferir corrigir à mão os documentos afetados.
-5. Regras: consola Firebase, Firestore, Regras, versão anterior. Motor e callables (secção 13): `firebase functions:delete submitPrediction voteMvp settleScheduler updateProfile deleteAccount linkProviderByEmail --region europe-west1 --project scp360-37a74` (a V2 não os usa).
+5. Regras: consola Firebase, Firestore, Regras, versão anterior. Motor e callables (secção 13): `firebase functions:delete submitPrediction voteMvp mvpTallyAggregator settleScheduler updateProfile deleteAccount linkProviderByEmail --region europe-west1 --project scp360-37a74` (a V2 não os usa).
 6. Segredos e índices não precisam de reversão.

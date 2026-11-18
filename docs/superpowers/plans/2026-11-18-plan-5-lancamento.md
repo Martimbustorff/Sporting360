@@ -19,7 +19,7 @@
 - Nunca `firebase deploy` sem `--only`; functions sempre por nome qualificado (`functions:v2027:<nome>`); `firebase functions:delete` só com nomes de functions, nunca com um codebase; nunca `--force`.
 - A V2 da loja (6.1.2) continua a funcionar até ao passo L5 (regras finais) da Task 12. A V2 não lê `config/app` nem tem ecrã de atualização: a versão mínima não a bloqueia.
 - Segredos, chaves, `.p8`, JSON de contas de serviço e passwords de teste nunca entram no repositório, no plano, em logs nem na conversa; quem os escreve é o Martim, no terminal ou na consola dele.
-- Passos **PARAGEM** só correm com o OK explícito do Martim na conversa. Builds EAS só com OK explícito; o mínimo é 2 builds de produção (iOS e Android) e, só se não houver já um dev client com a configuração nativa final, 2 de desenvolvimento.
+- Passos **PARAGEM** só correm com o OK explícito do Martim na conversa. Builds EAS só com OK explícito; são exatamente 2 builds de produção (iOS e Android, versão 7.0.0) e nenhum de desenvolvimento.
 - Identidade: bundle e package `com.scp360`, equipa Apple `5U6HWPNTZ3`, `ascAppId` `6450608023`, versão `7.0.0`, Play target API 36 ou superior.
 - Os pontos só são escritos pelo servidor; o email nunca aparece fora da conta do próprio. O ranking arranca vazio no lançamento (spec, secção 8.4).
 - Submissão às lojas até 12/12/2026, lançamento antes do Natal.
@@ -188,7 +188,7 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
   - `shareLink.ts`: `SHARE_HOST = 'https://' + share.host`; `SHARE_SHORT_TEXT = share.host + '/j'`; `shareLink` igual.
   - Mudar de domínio = editar `share.config.json` (e, se o domínio antigo já foi partilhado, pô-lo em `extraHosts`) e fazer um build nativo novo. O Hosting não muda: AASA e `assetlinks.json` não dependem do domínio, e um domínio próprio ligado ao mesmo site serve os mesmos ficheiros.
 
-- [ ] **Step 1: Escrever os testes.** Os casos atuais de `appJson.test.ts` passam a correr sobre o resultado de `app.config.ts` (com `config` = `app.json`.expo); com `{ host: 'scp360-37a74.web.app', extraHosts: [] }` → `associatedDomains` `['applinks:scp360-37a74.web.app']` e o `intentFilter` atual; com `jest.doMock` de `share.config.json` para `{ host: 's360-download.app', extraHosts: ['scp360-37a74.web.app'] }` → dois `applinks:` e dois `data`, e `shareLink('1001')` `https://s360-download.app/j?src=share&game=1001`; `app.json` já não contém `web.app` (leitura do ficheiro).
+- [ ] **Step 1: Escrever os testes.** Os casos atuais de `appJson.test.ts` passam a correr sobre o resultado de `app.config.ts` (com `config` = `app.json`.expo); com o `share.config.json` real (`{ host: 's360-prognostico-download.web.app', extraHosts: [] }`) → `associatedDomains` `['applinks:s360-prognostico-download.web.app']` e o `intentFilter` atual; com `jest.doMock` de `share.config.json` para `{ host: 's360-download.app', extraHosts: ['s360-prognostico-download.web.app'] }` → dois `applinks:` e dois `data`, e `shareLink('1001')` `https://s360-download.app/j?src=share&game=1001` (host de teste, nunca em produção); `app.json` já não contém `web.app` (leitura do ficheiro).
 - [ ] **Step 2:** `npm test -- appConfig shareLink`. Esperado: FAIL.
 - [ ] **Step 3:** Implementar. Confirmar `npx expo config --type public | grep -A3 associatedDomains`.
 - [ ] **Step 4:** `npm test && npm run typecheck && npm run check:tokens && npx expo-doctor`. Esperado: PASS.
@@ -302,30 +302,26 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
 
 ### Task 12: Lançamento (paragens com o Martim)
 
-Ordem obrigatória. Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N" é a secção N de `docs/superpowers/notes/2026-12-01-publicacao-plano2.md`, que tem os comandos completos e a reversão (§17). Antes de cada paragem que mexe em produção: verificação completa das duas pastas verde. A §4 (integrar `v2027-app`) já está feita: o `v2027` contém o Plano 3 e o Plano 4.
+Ordem obrigatória. Calendário: P1 a P19 na quinta 19/11 e na sexta 20/11; L1 a L6 na sexta 20/11 (L7 começa nesse dia e fecha em D+7, 27/11). Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N" é a secção N de `docs/superpowers/notes/2026-12-01-publicacao-plano2.md`, que tem os comandos completos e a reversão (§17). Antes de cada paragem que mexe em produção: verificação completa das duas pastas verde. A §4 (integrar `v2027-app`) já está feita: o `v2027` contém o Plano 3 e o Plano 4.
 
-**Preparação (começar já, em paralelo com as Tasks 1 a 11)**
+**Preparação (a Play demora dias a aprovar a chave: P1 arranca já, em paralelo com as Tasks 1 a 11)**
 
 - [ ] **P1 (PARAGEM): chave de upload da Play.** Se o Martim tiver a keystore de upload da V2 (conta EAS do programador antigo), importá-la com `cd mobile && eas credentials -p android`. Senão: `eas credentials -p android` → exportar o certificado de upload (`.pem`) da keystore da EAS; Play Console → Testar e lançar → Integridade da app → Assinatura da app → "Pedir reposição da chave de upload", anexar o `.pem`. A Google demora uns dias a aprovar: o build Android de produção só sobe depois. Verificar: email de aprovação e a data a partir da qual a chave nova vale.
-- [ ] **P2 (PARAGEM): domínio.** Decidir (Pergunta 1) antes de qualquer build:
-  - **Domínio próprio** (ex.: `s360-download.app`): comprar num registador; Firebase consola → Hosting → Adicionar domínio personalizado → `s360-download.app`; pôr no DNS os registos TXT e A que a consola mostrar; esperar "Ligado" e o certificado SSL (até 24 h). Verificar: `curl -sI https://s360-download.app/.well-known/apple-app-site-association` dá `200` e `application/json` (depois de P8).
-  - **Grátis, segundo site:** `firebase hosting:sites:create s360-download --project scp360-37a74` (só se o nome estiver livre); no `firebase.json`, `hosting` passa a lista com dois objetos iguais ao atual, um com `"site": "scp360-37a74"` e outro com `"site": "s360-download"`; commit. Verificar o mesmo `curl` em `https://s360-download.web.app`.
-  - Em ambos: `mobile/share.config.json` → `{ "host": "<novo>", "extraHosts": ["scp360-37a74.web.app"] }`, `npm test`, commit. Fica o `web.app` em `extraHosts` (o emblema e testes já o usam).
-  - **Manter** `scp360-37a74.web.app`: nada a fazer. Mudar mais tarde obriga a um build nativo novo.
-- [ ] **P3 (PARAGEM): conta de serviço da Play para o `eas submit`.** Google Cloud do projeto da Play → conta de serviço com chave JSON; Play Console → Utilizadores e autorizações → convidar o email da conta de serviço com permissão de lançamentos. Guardar como `mobile/google-play-service-account.json` (ignorado pelo git). Verificar: `git status` não o mostra.
+- [ ] **P2 (PARAGEM): domínio.** Decidido: site `s360-prognostico-download`, host `s360-prognostico-download.web.app`. Verificar que `firebase hosting:sites:list --project scp360-37a74` mostra `s360-prognostico-download`. Sem alteração ao repositório (`mobile/share.config.json` e o `site` do `firebase.json` já estão certos, Task 6).
+- [ ] **P3 (PARAGEM): conta de serviço da Play para o `eas submit`.** Google Cloud do projeto da Play → conta de serviço com chave JSON; Play Console → Utilizadores e autorizações → convidar o email da conta de serviço com permissão de lançamentos. O Martim coloca o ficheiro em `mobile/google-play-service-account.json` (ignorado pelo git; nunca é commitado nem lido em conversa). Verificar: `git status` não o mostra. **Pré-requisitos da submissão Android (P17):** este ficheiro no sítio e a reposição da chave de upload (P1) aprovada pela Google.
 - [ ] **P4 (PARAGEM): decisões pendentes do Plano 3** (`mobile/README.md`): Poppins Light, texto do Google `needsExistingLogin`, nomes longos. Fechadas antes do build de produção.
 
-**Backend em produção (Task 21 do Plano 2, com as Tasks 3, 5, 7 e 9 já integradas)**
+**Backend em produção (Task 21 do Plano 2). Só começa com as Tasks 1 a 11 integradas no `v2027` e as duas verificações completas verdes (`mobile` e `functions`).**
 
 - [ ] **P5 (PARAGEM):** Guia §1 (verificações iniciais), §2 (segredos, valores escritos pelo Martim), §3 (fixtures reais e ids da API-Sports). Verificar como no guia.
 - [ ] **P6 (PARAGEM):** Guia §5 (índices; responder **não** a apagar).
 - [ ] **P7 (PARAGEM):** Guia §8 (alerta por email).
-- [ ] **P8 (PARAGEM): Hosting a partir do repositório.** O `firebase.json` já tem `hosting` com `hosting/public` (emblema `/brand`, `.well-known`, `/j`, `/privacidade`, `/apagar-conta`), por isso a pasta temporária do guia §7 deixa de ser precisa. Antes: confirmar que um dos SHA-256 de `hosting/public/.well-known/assetlinks.json` é o "Certificado da chave de assinatura da app" da Play Console (Integridade da app); senão acrescentá-lo e fazer commit. Depois o passo 1 do guia §7 (o site não pode ter conteúdo que não seja nosso) e `firebase deploy --only hosting --project scp360-37a74`. Verificar: `curl -sI https://scp360-37a74.web.app/brand/sporting-cp-2026.png` (`200`, `image/png`), `/.well-known/apple-app-site-association` (`application/json`), `/privacidade` e `/apagar-conta` (`200`).
+- [ ] **P8 (PARAGEM): Hosting a partir do repositório.** O `firebase.json` já tem `hosting` com `hosting/public` (emblema `/brand`, `.well-known`, `/j`, `/privacidade`, `/apagar-conta`), por isso a pasta temporária do guia §7 deixa de ser precisa. Antes: confirmar que um dos SHA-256 de `hosting/public/.well-known/assetlinks.json` é o "Certificado da chave de assinatura da app" da Play Console (Integridade da app); senão acrescentá-lo e fazer commit. Depois o passo 1 do guia §7 (o site não pode ter conteúdo que não seja nosso) e `firebase deploy --only hosting --project scp360-37a74`. Verificar, com `curl -sI`, em `https://s360-prognostico-download.web.app`: `/brand/sporting-cp-2026.png` (`200`, `image/png`), `/j` (`200`), `/.well-known/apple-app-site-association` (`200`, `application/json`), `/.well-known/assetlinks.json` (`200`, `application/json`), `/privacidade` e `/apagar-conta` (`200`).
 - [ ] **P9 (PARAGEM): modo sombra.** Guia §6, com o `.env` de 3 linhas (`LEGACY_COLLECTION_PREFIX=_shadow_`, `VSPORTS_SEASON_ID=`, `NEWS_LEGACY_CONTENT=true`). Este deploy já leva o `homeId` dos jogos do quadro (`bracket.ts`), pendente do Plano 4. Verificar: o teste de isolamento do guia e, depois do primeiro `footballStandingsSync`, `legs[].homeId` num `competitions/*/data/bracket`. Comparação do guia §6 depois de N horas.
-- [ ] **P10 (PARAGEM): corte dos writers.** Guia §9 completo, com o `.env` `LEGACY_COLLECTION_PREFIX=` e `NEWS_LEGACY_CONTENT=true` (a V2 ainda mostra o `content`). Inclui apagar as 13 antigas, entre elas as HTTP `games` e `backfill` (decisão do Plano 2). Verificar como no guia, incluindo o teste rápido na V2.
+- [ ] **P10 (PARAGEM): corte dos writers.** Guia §9 completo, com o `.env` `LEGACY_COLLECTION_PREFIX=` e `NEWS_LEGACY_CONTENT=true` (a V2 ainda mostra o `content`). Inclui apagar as 13 antigas, entre elas as HTTP `games` e `backfill` (decisão do Plano 2). Antes do `gcloud firestore export` do guia, definir no balde `gs://scp360-37a74-backups` a regra de ciclo de vida que apaga objetos com mais de 30 dias (comandos no guia §9): a cópia `pre-corte-*` tem dados pessoais (emails nos `rankings`, prognósticos) e o prazo dos Termos é 30 dias. Verificar como no guia, incluindo o teste rápido na V2 e o `describe` do balde com a regra de 30 dias.
 - [ ] **P11 (PARAGEM):** Guia §10 (preencher o modelo novo).
 - [ ] **P12 (PARAGEM): regras fase 2.** Guia §11 com o `firestore.rules` da Task 7 e §12 (teste da V2 em produção). Verificar também na consola, Regras, que `firestore.final.rules` **não** foi publicado (o deploy só lê `firestore.rules`).
-- [ ] **P13 (PARAGEM):** Guia §13 (motor e callables, o `voteMvp` já escreve `mvpTallies`), §14 (`config/app`) e §15 (Apple, fluxo com código OAuth).
+- [ ] **P13 (PARAGEM):** Guia §13 (motor e callables: o comando inclui o `mvpTallyAggregator`, gerado de `deployLists.ts`; sem ele o `voteMvp` grava votos mas não há percentagens), §14 (`config/app`) e §15 (Apple, fluxo com código OAuth).
 
 **Builds e lojas**
 
@@ -333,24 +329,30 @@ Ordem obrigatória. Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N
   - Apple Developer → Identifiers → `com.scp360`: capacidades "Sign In with Apple" e "Associated Domains" ligadas.
   - Firebase consola → Definições → app Android `com.scp360`: SHA-1 e SHA-256 da chave de assinatura da Play e da chave de upload da EAS presentes (login Google nos builds da Play).
   - Versão Android: Play Console → Pacote de apps → último `versionCode` da V2 (V2 local tem `17001`, mas vale o da Play). `cd mobile && eas build:version:get -p android`; se for menor ou igual, `eas build:version:set -p android` com o valor da Play mais 1. iOS: a versão `7.0.0` é maior do que `6.1.2`, o número de build da EAS serve.
+  - Firebase/Google Analytics (GA4) → Administração → Recolha e modificação de dados → Retenção de dados: **2 meses** para dados de eventos (prazo dos Termos). Corrigir se estiver noutro valor.
   - `EAS_BUILD_PROFILE=production npx expo config --type public` passa (Task 8, passo 6, feito).
-- [ ] **P15 (PARAGEM, build): dev client para o smoke, só se for preciso.** Se o Martim já tiver um dev client do Plano 4 com a configuração nativa atual (domínio de P2 incluído), não há build: o JS novo carrega pelo Metro. Senão: `cd mobile && eas build --profile development --platform all` (2 builds).
-- [ ] **P16 (PARAGEM): smoke em dispositivo, iOS e Android.** As listas "Paragens do Martim" do `mobile/README.md` (parte do dispositivo) e "Smoke em dispositivo (Martim)" do Plano 4, mais: estádio sem o Museu; classificação da Liga com nomes compridos numa linha, com emblemas; MVP mostra percentagens depois de votar e não antes; notícia abre a página original; cartão de partilha com o domínio de P2 e o link abre a app. Anotar o resultado no fim deste plano. Corrigir antes de P17.
-- [ ] **P17 (PARAGEM, build): produção.** `cd mobile && eas build --profile production --platform all --auto-submit` (2 builds: iOS vai para o TestFlight, Android para o teste interno da Play). Na primeira submissão iOS a EAS pede a sessão Apple para criar a chave da API do App Store Connect. Verificar: os dois builds aparecem no TestFlight e no teste interno. Sem EAS Update, cada correção a partir daqui é um build novo de produção: só com erro que impeça a submissão.
-- [ ] **P18 (PARAGEM): verificação no TestFlight e no teste interno** (backend de produção): entrar com a conta real e com Apple; agenda e detalhe com dados reais; um prognóstico e um voto num jogo real (estes dados apagam-se no L2); partilha; apagar uma conta de teste.
-- [ ] **P19 (PARAGEM): submissão até 12/12.**
-  - App Store Connect: versão 7.0.0; textos de `store/listing.pt-PT.json`; capturas de `store/capturas.md`; App Privacy de `store/privacidade-lojas.md`; URL de privacidade; questionário de idade; informação para a revisão com uma conta de teste (email e password escritos pelo Martim no App Store Connect, nunca no repositório) e a nota "App de adeptos não oficial; prognóstico até ao apito inicial; MVP do minuto 80 até 20 minutos depois do fim"; escolher o build; **"Lançar manualmente esta versão"**; enviar para revisão.
-  - Play Console: ficha principal, Segurança dos dados, URL de privacidade, URL de apagar conta, público-alvo e classificação de conteúdo; **Publicação gerida ligada**; Produção → criar versão a partir do build do teste interno → enviar para revisão.
+- [ ] **P15: sem builds de desenvolvimento.** Decidido: não há dev client novo. Os links universais e de aplicação, o domínio e a configuração nativa verificam-se nos builds de produção em P18. Se o Martim já tiver um dev client do Plano 4, pode fazer o smoke de JS em P16 por Metro; a associação do domínio não se testa nele (tem a configuração nativa antiga).
+- [ ] **P16 (PARAGEM): smoke em dispositivo, iOS e Android.** As listas "Paragens do Martim" do `mobile/README.md` (parte do dispositivo) e "Smoke em dispositivo (Martim)" do Plano 4, mais: estádio sem o Museu; classificação da Liga com nomes compridos numa linha, com emblemas; MVP mostra percentagens depois de votar e não antes; notícia abre a página original. O cartão de partilha e o link que abre a app testam-se em P18, nos builds de produção. Anotar o resultado no fim deste plano. Corrigir antes de P17.
+- [ ] **P17 (PARAGEM, build): produção, exatamente 2 builds (iOS e Android, versão 7.0.0).** `cd mobile && eas build --profile production --platform all`. Na primeira submissão iOS a EAS pede a sessão Apple para criar a chave da API do App Store Connect: `eas submit --profile production -p ios --latest` (TestFlight). **Android, pré-requisitos:** `mobile/google-play-service-account.json` colocado pelo Martim (P3) e a reposição da chave de upload aprovada pela Google (P1). Depois `eas submit --profile production -p android --latest` (faixa `internal`); o Martim promove depois do teste interno para produção na Play Console (P19). Se a aprovação da chave chegar depois do build, o submit Android corre-se mais tarde com `eas submit`, sem novo build. Verificar: os dois builds aparecem no TestFlight e no teste interno. Sem EAS Update, cada correção a partir daqui é um build novo de produção: só com erro que impeça a submissão.
+- [ ] **P18 (PARAGEM): verificação no TestFlight e no teste interno** (backend de produção): entrar com a conta real e com Apple; agenda e detalhe com dados reais; um prognóstico e um voto num jogo real (estes dados apagam-se no L2); partilha; apagar uma conta de teste. **Links** (só possível nos builds de produção): o link de partilha abre a app instalada (iOS por link universal, Android por link de aplicação para `/j`) e, sem a app, abre a página do site; o cartão de partilha mostra o domínio `s360-prognostico-download.web.app`. **MVP:** depois do voto de teste, esperar cerca de um minuto e confirmar que as percentagens aparecem e que `ingestHealth/mvp_tally` mostra uma contagem diferente de zero (verifica o `mvpTallyAggregator` de ponta a ponta).
+- [ ] **P19 (PARAGEM): submissão às lojas (até 12/12 no limite; prevista para 19-20/11).**
+  - App Store Connect: versão 7.0.0; textos de `store/listing.pt-PT.json`; capturas de `store/capturas.md`; App Privacy e questionário de idade de `store/privacidade-lojas.md`; URL de privacidade; informação para a revisão de `store/notas-revisao.md` (nota "App de adeptos não oficial; prognóstico até ao apito inicial; MVP do minuto 80 até 20 minutos depois do fim"); a conta de teste da Apple (email e password) é escrita pelo Martim no App Store Connect, nunca em ficheiros do repositório; escolher o build; **lançamento da versão em manual** ("Lançar manualmente esta versão"), para o Martim carregar em "Lançar" na sexta-feira (L3); enviar para revisão.
+  - Play Console: ficha principal de `store/listing.pt-PT.json`, Segurança dos dados de `store/privacidade-lojas.md`, URL de privacidade, URL de apagar conta, público-alvo e classificação de conteúdo, notas de `store/notas-revisao.md`; **Publicação gerida ligada**; o build está na faixa interna: o Martim promove-o para Produção (criar versão a partir do build do teste interno) e envia para revisão.
 
-**Lançamento (depois das duas aprovações)**
+**Lançamento (sexta 20/11, depois das duas aprovações; L1 a L5 na mesma sessão)**
 
 - [ ] **L1 (PARAGEM): janela.** Nenhum jogo de futebol do Sporting nas 6 h antes nem depois. `cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74` sem falhas.
-- [ ] **L2 (PARAGEM): ranking a zero.** `npx tsx scripts/reset-engine.ts --project scp360-37a74 --dry-run` (ver as contagens dos testes do P18), depois sem `--dry-run` e confirmar o id. Verificar: `check-predeploy` mostra o motor `v2027` com 0 em todas as coleções.
-- [ ] **L3 (PARAGEM): publicar.** App Store Connect → "Lançar esta versão"; Play Console → Publicação gerida → "Publicar alterações". Verificar: a ficha pública mostra a 7.0.0 nas duas lojas (pode levar horas).
+- [ ] **L2 (PARAGEM): ranking a zero.** Em duas execuções, dentro de `functions/`:
+  1. Antes, confirmar que o guarda do jogo ao vivo corre sobre uma coleção `matches` povoada: consola Firestore → `matches` tem os jogos de futebol do Sporting (documentos com `sport = football` e `sportingSide` preenchido, incluindo o próximo jogo). Com `matches` vazia o guarda passaria em vazio.
+  2. Ensaio, **sem flag**: `npx tsx scripts/reset-engine.ts --project scp360-37a74` (não existe `--dry-run`; só mostra as contagens, ver as dos testes do P18, e não apaga nada).
+  3. Real: `npx tsx scripts/reset-engine.ts --project scp360-37a74 --apply`; pede para escrever o id do projeto (`scp360-37a74`).
+  Verificar: `check-predeploy` mostra o motor `v2027` com 0 em todas as coleções.
+- [ ] **L3 (PARAGEM): publicar.** App Store Connect → "Lançar esta versão"; Play Console → Publicação gerida → "Publicar alterações". Verificar: a ficha pública mostra a 7.0.0 nas duas lojas (pode levar horas); L4 e L5 só se seguem quando a 7.0.0 está visível nas DUAS.
 - [ ] **L4 (PARAGEM): versão mínima.** Consola Firestore → `config/app` → `minVersion.ios` e `minVersion.android` = `"7.0.0"`. Só afeta a app nova (a V2 não lê este documento); serve de base para as versões seguintes. Verificar: a app da loja abre sem o ecrã de atualização.
-- [ ] **L5 (PARAGEM): regras finais.** No momento decidido na Pergunta 6:
+- [ ] **L5 (PARAGEM): regras finais, no dia do lançamento (sexta 20/11), na mesma sessão que L3 e L4, logo que a 7.0.0 esteja visível nas DUAS lojas.** Se uma loja se atrasar, lançar na outra e manter as regras da fase 2 até ambas estarem no ar. Sem avisos pré-publicados na V2 (a V2 perde o login por PIN, a GameBox e os palpites até atualizar: desvio registado).
   ```bash
   cp firestore.final.rules firestore.rules
+  cmp firestore.rules firestore.final.rules   # sem saída = ficheiros idênticos; qualquer saída: parar
   git rm functions/test/emulator/rules.phase2.test.ts   # a fase 2 acabou; o rules.final continua a correr
   cd functions && npm run test:emulator -- rules && cd ..
   git add firestore.rules && git commit -m "chore: final firestore rules at launch"
@@ -358,7 +360,10 @@ Ordem obrigatória. Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N
   ```
   Verificar com a app da loja: entrar, GameBox, prognóstico, voto, ranking, perfil, Definições, Conta; nos logs nenhum `PERMISSION_DENIED` da app nova. Voltar atrás: consola, Regras, versão anterior.
 - [ ] **L6 (PARAGEM): notícias sem `content`.** `.env.scp360-37a74` com `NEWS_LEGACY_CONTENT=false`, commit, `firebase deploy --only functions:v2027:newsSync --project scp360-37a74`; depois `npx tsx scripts/strip-news-content.ts --project scp360-37a74` (ensaio) e depois com `--apply`. Verificar: uma notícia nova e uma antiga sem `content`.
-- [ ] **L7 (PARAGEM, D+7, opcional):** App Check: consola → App Check → métricas do Firestore; se os pedidos verificados da app nova estiverem perto de 100%, "Aplicar". Apagar a `legacyPredictionSettlement` quando já não houver palpites da V2 por liquidar: `firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74`. Apagar a cópia `pre-corte-*` do balde no prazo dos Termos.
+- [ ] **L7 (PARAGEM, verificações de 20/11 e D+7 = 27/11, obrigatório):**
+  - Cópia de segurança (verificação): a regra de 30 dias do balde `gs://scp360-37a74-backups` (P10) continua ativa (`gcloud storage buckets describe gs://scp360-37a74-backups --format='default(lifecycle_config)'`) e a cópia `pre-corte-*` desaparece sozinha ao fim de 30 dias; confirmar também depois dos 30 dias que já não existe.
+  - App Check (D+7, obrigatório): consola → App Check → métricas do Firestore; quando os pedidos verificados da app nova estiverem perto de 100%, "Aplicar" (impor). Não se impõe no dia do lançamento porque cortaria os jogos e as notícias da V2.
+  - Apagar a `legacyPredictionSettlement` quando já não houver palpites da V2 por liquidar: `firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74`.
 
 ---
 
@@ -366,22 +371,20 @@ Ordem obrigatória. Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N
 
 | Build | Quando | Quantos |
 |---|---|---|
-| Desenvolvimento (`development`, `all`) | P15, só sem dev client com a configuração nativa final | 0 ou 2 |
-| Produção (`production`, `all`, `--auto-submit`) | P17 | 2 |
+| Desenvolvimento | nenhum (decidido) | 0 |
+| Produção (`production`, `all`) | P17 | 2 (iOS e Android, 7.0.0) |
 
-Uma mudança de domínio depois de P15 ou P17 obriga a repetir esse build: decidir P2 primeiro.
+O domínio está fixado em `s360-prognostico-download.web.app`: mudá-lo depois de P17 obriga a repetir os builds.
 
 ## Perguntas para o Martim
 
-1. **Domínio do link:** comprar `s360-download.app` (ou outro), usar o grátis `s360-download.web.app` (segundo site, se o nome estiver livre) ou manter `scp360-37a74.web.app`? Tem de ficar decidido antes do primeiro build.
 2. **Prazos de conservação** (Termos, bloqueia o build). Proposta: conta e perfil enquanto a conta existir e apagados com "Apagar conta"; prognósticos, votos e pontos idem; relatórios de falhas 90 dias (Crashlytics); dados de análise 2 meses (Google Analytics, por omissão); cópias de segurança 30 dias. Aprovar ou corrigir.
 3. **Relatórios de falhas:** confirmar "interesse legítimo" como base legal.
 4. **Chave de upload da Play:** tens a keystore de upload da V2, ou pedimos a reposição (P1)?
 5. **Último `versionCode` da V2** na Play Console.
-6. **Regras finais:** no dia do lançamento (cumpre a política de privacidade desde o primeiro dia; quem ainda tem a V2 perde o login por PIN, a GameBox e os palpites até atualizar, sem aviso) ou uns dias depois? Opcional: publicar na V2 uma "notícia" fixa "Atualiza a S360 na loja".
+6. **Regras finais:** fechada. Publicam-se no dia do lançamento (L5), logo que a 7.0.0 esteja visível nas duas lojas; sem notícia fixa na V2.
 7. **Conta de teste para a revisão da Apple:** criar uma conta de email e password só para isso (o Martim escreve-a no App Store Connect).
 8. **Percentagens do MVP:** só depois de votar ou quando a votação fecha (proposta) está bem?
 9. **Fichas das lojas:** aprovar nome, subtítulo e textos de `store/`; quem faz as capturas (no telemóvel do Martim ou em simulador)?
-10. **Dev client:** já tens um dev client do Plano 4 instalado com a configuração nativa atual (poupa 2 builds)?
-11. **Chaves antigas:** rodar no corte as chaves que estavam no código antigo (pergunta do guia §2)?
+10. **Dev client:** já tens um dev client do Plano 4 instalado, para o smoke de JS por Metro em P16 (não há builds de desenvolvimento, e o dev client antigo não testa links)?
 12. **App Store:** token de fornecedor (parâmetro `pt`) para medir instalações vindas da partilha (opcional).
