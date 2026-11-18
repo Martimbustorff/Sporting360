@@ -1,16 +1,16 @@
-// SEM FIGMA: esqueleto de rota (Task 5), substituído na Task 27. Compõe Screen, Header e EmptyState.
+// Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:7164 (Terms). Aberto das Definições ("Termos e privacidade").
 import { useRouter } from 'expo-router';
-import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
+import { TermsView } from '@/components/TermsView';
 
 export default function Termos() {
   const router = useRouter();
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  const back = () => (router.canGoBack() ? router.back() : router.replace('/definicoes'));
   return (
     <Screen padded="none">
-      <Header title="Termos" onBack={back} />
-      <EmptyState icon="info" text="Em breve." />
+      <Header title="Termos e condições" onBack={back} />
+      <TermsView />
     </Screen>
   );
 }
