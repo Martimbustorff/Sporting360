@@ -1,0 +1,179 @@
+// Task 22: Editar perfil e Notificações. Hooks e serviço mockados; expo-router global (jest.setup).
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+const mockUser: { current: unknown } = { current: { status: 'loading' } };
+const mockSquad: { current: unknown } = { current: { status: 'loading' } };
+jest.mock('@/providers/SessionProvider', () => ({
+  useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: 'a@b.pt', providers: ['password'] } }),
+}));
+jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
+jest.mock('@/data/sports', () => ({ useTeamData: jest.fn(() => mockSquad.current) }));
+jest.mock('@/services/userProfile', () => {
+  class ProfileSaveError extends Error {
+    saveCode: string;
+    constructor(code: string) {
+      super(code);
+      this.saveCode = code;
+    }
+  }
+  return { ProfileSaveError, updateMyProfileFields: jest.fn(() => Promise.resolve()) };
+});
+
+import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
+import EditarPerfil from '../../app/(app)/perfil/editar';
+import Notificacoes from '../../app/(app)/perfil/notificacoes';
+
+const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
+const wrap = (el: React.ReactElement) => <SafeAreaProvider initialMetrics={METRICS}>{el}</SafeAreaProvider>;
+const save = () => screen.getByRole('button', { name: 'Guardar' });
+const SQUAD = {
+  status: 'ready',
+  data: { players: [{ id: '1', name: 'Rui Silva', age: 30, number: 1, position: 'G', photo: null }, { id: '2', name: 'Morita', age: 29, number: 5, position: 'M', photo: null }] },
+};
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockUser.current = {
+    status: 'ready',
+    data: { name: 'Maria Costa', email: 'a@b.pt', memberNumber: '123', partnerNumber: '03/2008', seasonSeat: 'A1', favoriteSport: 'futsal' },
+  };
+  mockSquad.current = SQUAD;
+});
+
+describe('Editar perfil', () => {
+  it('mostra os valores atuais, sem email nem nome completo, e Guardar desativado', async () => {
+    await render(wrap(<EditarPerfil />));
+    expect(screen.getByLabelText('Número de sócio').props.value).toBe('123');
+    expect(screen.getByLabelText('Sócio desde (MM/AAAA)').props.value).toBe('03/2008');
+    expect(screen.getByLabelText('Lugar anual').props.value).toBe('A1');
+    expect(screen.getByRole('tab', { name: /Futsal/ }).props.accessibilityState.selected).toBe(true);
+    expect(screen.queryByText('a@b.pt')).toBeNull();
+    expect(save().props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('o payload é só o que mudou e só chaves da lista', async () => {
+    await render(wrap(<EditarPerfil />));
+    await fireEvent.changeText(screen.getByLabelText('Lugar anual'), 'B2');
+    await fireEvent.press(screen.getByRole('tab', { name: /Futebol/ }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Morita' }));
+    await fireEvent.press(save());
+    expect(updateMyProfileFields).toHaveBeenCalledWith('u1', {
+      seasonSeat: 'B2',
+      favoriteSport: 'football',
+      favoritePlayer: { id: '2', name: 'Morita' },
+    });
+    expect(screen.getByText('Perfil guardado.')).toBeTruthy();
+    expect(save().props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('"Sócio desde" inválido (mês 13 ou futuro) mostra o erro e bloqueia Guardar', async () => {
+    await render(wrap(<EditarPerfil />));
+    await fireEvent.changeText(screen.getByLabelText('Sócio desde (MM/AAAA)'), '13/2020');
+    expect(screen.getByText('Indica o mês e o ano no formato MM/AAAA, sem datas futuras.')).toBeTruthy();
+    expect(save().props.accessibilityState.disabled).toBe(true);
+    await fireEvent.changeText(screen.getByLabelText('Sócio desde (MM/AAAA)'), '01/2999');
+    expect(save().props.accessibilityState.disabled).toBe(true);
+    await fireEvent.changeText(screen.getByLabelText('Sócio desde (MM/AAAA)'), '05/2008');
+    expect(save().props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('número de sócio com letras bloqueia Guardar', async () => {
+    await render(wrap(<EditarPerfil />));
+    await fireEvent.changeText(screen.getByLabelText('Número de sócio'), '12ab');
+    expect(screen.getByText('O número de sócio tem de ter entre 1 e 10 algarismos.')).toBeTruthy();
+    expect(save().props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('sem rede: mensagem clara e o formulário fica como estava', async () => {
+    (updateMyProfileFields as jest.Mock).mockRejectedValueOnce(new ProfileSaveError('OFFLINE'));
+    await render(wrap(<EditarPerfil />));
+    await fireEvent.changeText(screen.getByLabelText('Lugar anual'), 'B2');
+    await fireEvent.press(save());
+    expect(screen.getByText(/Sem ligação/)).toBeTruthy();
+    expect(screen.getByLabelText('Lugar anual').props.value).toBe('B2');
+    expect(save().props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('leitura falhada mostra erro, nunca o formulário', async () => {
+    mockUser.current = { status: 'error', error: new Error('x') };
+    await render(wrap(<EditarPerfil />));
+    expect(screen.getByText('Não foi possível carregar o teu perfil.')).toBeTruthy();
+    expect(screen.queryByLabelText('Número de sócio')).toBeNull();
+  });
+
+  it('plantel com erro mostra o erro do plantel', async () => {
+    mockSquad.current = { status: 'error', error: new Error('x') };
+    await render(wrap(<EditarPerfil />));
+    expect(screen.getByText('Não foi possível carregar o plantel.')).toBeTruthy();
+  });
+
+  it('documento inexistente abre o formulário vazio', async () => {
+    mockUser.current = { status: 'missing' };
+    await render(wrap(<EditarPerfil />));
+    expect(screen.getByLabelText('Número de sócio').props.value).toBe('');
+  });
+});
+
+describe('Notificações', () => {
+  it('sem preferências guardadas mostra os cinco interruptores ligados e o aviso', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    await render(wrap(<Notificacoes />));
+    for (const l of ['Início dos jogos', 'Golos', 'Lembrete de prognóstico', 'Abertura do MVP', 'Notícias']) {
+      expect(screen.getByRole('switch', { name: l }).props.accessibilityState.checked).toBe(true);
+    }
+    expect(screen.getByText('As notificações chegam numa próxima versão. As tuas escolhas ficam guardadas.')).toBeTruthy();
+  });
+
+  it('mudar "Golos" grava o objeto completo com goals false', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    expect(updateMyProfileFields).toHaveBeenCalledWith('u1', {
+      notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: true },
+    });
+    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
+  });
+
+  it('dois toques seguidos acumulam as duas escolhas', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
+    expect((updateMyProfileFields as jest.Mock).mock.calls[1][1]).toEqual({
+      notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: false },
+    });
+  });
+
+  it('erro ao guardar desfaz o interruptor e avisa', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    (updateMyProfileFields as jest.Mock).mockRejectedValueOnce(new ProfileSaveError('UNKNOWN'));
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(true);
+    expect(screen.getByText('Não foi possível guardar a escolha. Tenta outra vez.')).toBeTruthy();
+  });
+
+  it('sem rede mantém o interruptor e avisa', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    (updateMyProfileFields as jest.Mock).mockRejectedValueOnce(new ProfileSaveError('OFFLINE'));
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByText(/Sem ligação/)).toBeTruthy();
+  });
+
+  it('chaves em falta nas preferências guardadas contam como desligadas', async () => {
+    mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: true, goals: false, predictionReminder: false, mvpOpen: false, news: false } } };
+    await render(wrap(<Notificacoes />));
+    expect(screen.getByRole('switch', { name: 'Início dos jogos' }).props.accessibilityState.checked).toBe(true);
+    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
+  });
+
+  it('leitura falhada mostra erro, não valores por omissão', async () => {
+    mockUser.current = { status: 'error', error: new Error('x') };
+    await render(wrap(<Notificacoes />));
+    expect(screen.getByText('Não foi possível carregar as tuas preferências.')).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'Golos' })).toBeNull();
+  });
+});

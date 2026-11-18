@@ -24,6 +24,7 @@ module.exports = {
           yellowAlt: '#FFB648',
           yellowStat: '#FFC700',
           red: '#F74C66',
+          toggleOn: '#34C759',
         },
       },
       fontFamily: {

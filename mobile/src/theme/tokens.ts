@@ -31,6 +31,9 @@ export const colors = {
   cardYellowAlt: '#FFB648',
   cardYellowStat: '#FFC700', // Figma 498:28525 (cartão amarelo nas Estatísticas)
   cardRed: '#F74C66',
+
+  // Interruptor ligado (Figma 306:6426, verde iOS)
+  toggleOn: '#34C759',
 } as const;
 
 export const fonts = {
@@ -141,6 +144,11 @@ export const layout = {
   fieldGapEmpty: 13, // gap between placeholder row and underline
   fieldGapFilled: 12, // gap between label/value block and underline
   disabledOpacity: 0.5,
+  // Interruptor (Figma 306:6426)
+  toggleWidth: 51,
+  toggleHeight: 31,
+  toggleKnob: 27,
+  toggleInset: 2,
   pressedOpacity: 0.8,
   // Game header (Figma 500:28956 / 655:31868)
   teamColumnWidth: 100,

@@ -23,6 +23,7 @@ const MAP: Record<string, string> = {
   cardYellowAlt: 'yellowAlt',
   cardYellowStat: 'yellowStat',
   cardRed: 'red',
+  toggleOn: 'toggleOn',
 };
 
 describe('tokens <-> tailwind', () => {
