@@ -56,6 +56,7 @@ O gráfico de destaque (1024x500) é só da Play e já está feito.
 ## Regras
 
 - Sem emblema nem logótipo do Sporting no gráfico de destaque: a app é não oficial. O gráfico usa só o nome S360 e as cores do tema.
+- Home: o dev client mostra por baixo do menu a ligação `__DEV__` "Galeria" e o botão do menu de programador. Capturar num build de produção ou TestFlight, ou cortar a ligação e o botão da captura 1 (e confirmar o mesmo nas outras).
 - Só aparece o que está ligado no lançamento. O que está escondido (flags de `config/app.features` a `false`) não aparece em nenhuma captura nem em nenhum texto das lojas, e o seed já tem essas flags desligadas, por isso o menu da Home só tem Notícias, Agenda, Ranking, Mapa do estádio e Sites do clube.
 - Sem notificações push nas capturas e sem o ecrã de preferências de notificação.
 - Só nomes fictícios no ranking e no perfil. Verificar cada captura antes de a carregar: nenhum email, nenhum nome real.

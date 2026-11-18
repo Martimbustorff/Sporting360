@@ -29,7 +29,7 @@ const share = JSON.parse(fs.readFileSync(path.join(repo, 'mobile/share.config.js
 const { appStore: apple, googlePlay: play } = listing;
 
 const storeTexts = (): { file: string; text: string }[] => {
-  const files = ['listing.pt-PT.json', 'privacidade-lojas.md', 'capturas.md'];
+  const files = ['listing.pt-PT.json', 'privacidade-lojas.md', 'capturas.md', 'notas-revisao.md'];
   return files.map((file) => ({ file, text: read(file) }));
 };
 
@@ -97,6 +97,16 @@ describe('conteúdo', () => {
     expect(apple.supportUrl.startsWith(`${base}/`)).toBe(true);
   });
 
+  it('o texto da Play não menciona a Apple (o botão só existe no iOS)', () => {
+    expect(play.fullDescription).not.toMatch(/Apple|Face ID/);
+  });
+
+  it('as notas de revisão não têm credenciais', () => {
+    const notes = read('notas-revisao.md');
+    expect(notes).toContain('unofficial');
+    expect(notes).not.toMatch(/password\s*[:=]|teste1234|teste@/i);
+  });
+
   it('whatsNew e releaseNotes descrevem a 7.0.0 como app nova', () => {
     for (const t of [apple.whatsNew, play.releaseNotes]) {
       expect(t).toContain('7.0.0');
@@ -113,6 +123,15 @@ describe('privacidade-lojas.md', () => {
     expect(md).toMatch(/Diagnóstico[\s\S]*não ligad/);
     expect(md).toMatch(/só com consentimento/);
     expect(md).toContain('interesse legítimo');
+  });
+
+  it('declara os identificadores do dispositivo e a finalidade Análise do ID do utilizador', () => {
+    expect(md).toMatch(/ID do utilizador \| Sim \| Funcionalidade da app e Análise/);
+    expect(md).toContain('identificador da instalação do Crashlytics');
+    expect(md).toContain('identificador da instância da app do Firebase Analytics');
+    const body = TERMS.map((t) => t.body).join(' ');
+    expect(body).toContain('identificador da instalação da App');
+    expect(body).toContain('identificador da instância da App');
   });
 
   it('declara sem rastreio, sem publicidade e sem venda de dados', () => {

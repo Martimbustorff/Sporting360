@@ -67,7 +67,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '2. DADOS QUE RECOLHEMOS',
-    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado de forma ofuscada, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o modelo do telemóvel, a versão do sistema e a versão da App, sem identificador da conta. Utilização da App (Firebase Analytics): só com consentimento.',
+    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado de forma ofuscada, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o modelo do telemóvel, a versão do sistema e a versão da App, sem identificador da conta; cada relatório usa apenas um identificador da instalação da App, que não está ligado à conta. Utilização da App (Firebase Analytics): só com consentimento, com um identificador da instância da App que, com consentimento, fica associado ao identificador interno da conta.',
   },
   {
     title: '3. FINALIDADES E FUNDAMENTOS',
@@ -79,7 +79,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '5. ANÁLISE DE UTILIZAÇÃO',
-    body: 'O Firebase Analytics fica desligado até o utilizador aceitar. Com consentimento, o único identificador enviado é o identificador interno da conta, nunca o email nem o nome. O consentimento pode ser retirado a qualquer momento nas Definições, em "Análise de utilização".',
+    body: 'O Firebase Analytics fica desligado até o utilizador aceitar. Com consentimento, a conta é identificada apenas pelo identificador interno, nunca pelo email nem pelo nome, e o Analytics usa ainda o identificador da instância da App. O consentimento pode ser retirado a qualquer momento nas Definições, em "Análise de utilização".',
   },
   {
     title: '6. SUBCONTRATANTES E PARTILHA',
