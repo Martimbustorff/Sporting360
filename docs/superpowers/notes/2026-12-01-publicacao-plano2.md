@@ -9,6 +9,8 @@ Os argumentos `--only functions:v2027:...` abaixo foram gerados por `deployArg` 
 - Comandos `firebase ...`: na raiz do repositório (onde está o `firebase.json`), com o CLI global ou `npx --prefix functions firebase ...`. Sessão iniciada com `firebase login` na conta dona do projeto.
 - Comandos `npx tsx scripts/...`: dentro de `functions/`. Os scripts usam as credenciais ADC: `gcloud auth application-default login` uma vez.
 - Nunca `firebase deploy` sem `--only`, nunca `--only functions` sem nomes, nunca `--force`.
+- `firebase functions:delete` só com nomes de functions, **nunca** com um nome de codebase (`v2027`, `default`): apagaria o codebase inteiro.
+- Se durante um deploy aparecer `Enter a string value for ...` (parâmetro em falta no `functions/.env.scp360-37a74`): **Ctrl-C e parar**. O CLI gravaria a resposta no ficheiro, e um `LEGACY_COLLECTION_PREFIX` em falta vale `""`, ou seja, escrever nas coleções reais. O ficheiro tem de ter `LEGACY_COLLECTION_PREFIX` e `VSPORTS_SEASON_ID` (vazio = calculado), os dois `defineString` de `src/config/secrets.ts`.
 - Functions antigas: codebase por omissão, região `us-central1` (o `index.ts` antigo não define região nem `setGlobalOptions`, e o código está no bucket `gcf-v2-sources-394641993263-us-central1`). Functions novas: codebase `v2027`, região `europe-west1`. Um deploy do codebase `v2027` nunca mexe nas antigas.
 - Chaves só no terminal do Martim, nunca no repositório, em ficheiros, em logs ou na conversa. Para pôr uma chave no ambiente sem ficar no histórico:
   - bash: `read -rs RAPIDAPI_KEY && export RAPIDAPI_KEY` (o mesmo para `VSPORTS_KEY`)
@@ -51,9 +53,9 @@ firebase functions:secrets:set TWITTER_BEARER_TOKEN --project scp360-37a74
 firebase functions:secrets:get RAPIDAPI_KEY --project scp360-37a74   # mostra as versões, nunca o valor
 ```
 
-O deploy dá acesso aos segredos à conta de serviço das functions. Nada vai para o repositório.
+O deploy dá acesso aos segredos à conta de serviço das functions. Nada vai para o repositório. Se um segredo já estiver em uso, o `secrets:set` oferece republicar as functions que o usam: responder **não** e republicar por nome, no passo certo deste guia.
 
-**Pergunta para o Martim:** rodar no corte as chaves que estavam escritas no código antigo (chave RapidAPI, chave VSports por omissão, bearer token do X)? Da última vez a resposta foi não (repositório privado, chaves só no Secret Manager no código novo, monitorizar o consumo da RapidAPI). Se a resposta mudar: gerar as novas no painel de cada serviço, repetir os três `secrets:set` acima com os valores novos e voltar a publicar as functions que os usam (um segredo novo só é lido num deploy novo); as antigas deixam de funcionar no momento da rotação, por isso só depois do corte (secção 7).
+**Pergunta para o Martim:** rodar no corte as chaves que estavam escritas no código antigo (chave RapidAPI, chave VSports por omissão, bearer token do X)? Da última vez a resposta foi não (repositório privado, chaves só no Secret Manager no código novo, monitorizar o consumo da RapidAPI). Se a resposta mudar: gerar as novas no painel de cada serviço, repetir os três `secrets:set` acima com os valores novos e voltar a publicar as functions que os usam (um segredo novo só é lido num deploy novo); as antigas deixam de funcionar no momento da rotação, por isso só depois do corte (secção 9).
 
 ## 3. Gravar fixtures reais (PARAGEM (Martim): chave no ambiente do Martim)
 
@@ -65,18 +67,19 @@ npx tsx scripts/record-fixtures.ts --help
 npx tsx scripts/record-fixtures.ts --fixture <id de um jogo recente terminado> --player <id> --coach <id>
 ```
 
-Cada pedido gasta 1 chamada da quota. Copiar as respostas reais para `test/fixtures/**`, correr `npm test && npm run test:emulator`, corrigir os mapeamentos onde a forma real diferir e fazer commit `test: real recorded api fixtures` (o controlador revê antes de seguir).
+Cada pedido gasta 1 chamada da quota. O script grava diretamente em `test/fixtures/api-football/real/` (e `vsports/real/`); ajustar os testes para usar essas respostas onde a forma real difere das sintéticas, correr `npm test && npm run test:emulator`, corrigir os mapeamentos onde a forma real diferir e fazer commit `test: real recorded api fixtures` (o controlador revê antes de seguir).
 
 IDs das API-Sports (para preencher `src/modalities/sourcesConfig.ts`, que hoje tem tudo `enabled: false`):
 
 ```bash
 for h in api-handball api-volleyball api-basketball; do
-  curl -s -H "x-rapidapi-key: $RAPIDAPI_KEY" -H "x-rapidapi-host: $h.p.rapidapi.com" "https://$h.p.rapidapi.com/teams?search=Sporting" > /tmp/$h-teams.json
-  curl -s -H "x-rapidapi-key: $RAPIDAPI_KEY" -H "x-rapidapi-host: $h.p.rapidapi.com" "https://$h.p.rapidapi.com/leagues?country=Portugal" > /tmp/$h-leagues.json
+  printf 'x-rapidapi-key: %s\n' "$RAPIDAPI_KEY" | curl -s -H @- -H "x-rapidapi-host: $h.p.rapidapi.com" "https://$h.p.rapidapi.com/teams?search=Sporting" > /tmp/$h-teams.json
+  printf 'x-rapidapi-key: %s\n' "$RAPIDAPI_KEY" | curl -s -H @- -H "x-rapidapi-host: $h.p.rapidapi.com" "https://$h.p.rapidapi.com/leagues?country=Portugal" > /tmp/$h-leagues.json
 done
+unset RAPIDAPI_KEY VSPORTS_KEY
 ```
 
-(6 pedidos, 2 por modalidade.) Depois: `teamId`, ids e `covered` das ligas, `enabled: true`, testes, commit.
+(6 pedidos, 2 por modalidade.) O cabeçalho com a chave entra pelo stdin (`-H @-`, `printf` é interno da shell), para a chave não aparecer na lista de processos; nunca a escrever na própria linha do `curl`. No fim, `unset` tira as chaves do ambiente. Depois: `teamId`, ids e `covered` das ligas, `enabled: true`, testes, commit.
 
 ### Lista de confirmação na gravação (itens "ver na Task 21" do ledger)
 
@@ -121,20 +124,34 @@ Juntar ao `firestore.indexes.json` todos os índices e `fieldOverrides` de produ
 firebase deploy --only firestore:indexes --project scp360-37a74
 ```
 
-Se o CLI perguntar se apaga índices: responder **não**. Esperar que os índices de `matches` (`sport`+`kickoff`, `sport`+`finishedAt`) fiquem "Ativado" na consola antes da secção 6.
+O CLI pode perguntar duas vezes (primeiro pelos índices, depois pelos field overrides que estão em produção e não no ficheiro): responder **não** às duas. Esperar que os índices de `matches` (`sport`+`kickoff`, `sport`+`finishedAt`) fiquem "Ativado" na consola antes da secção 6.
 
 ## 6. Modo sombra (PARAGEM (Martim))
 
-Pré-requisitos: secções 2 a 5 feitas; `functions/.env.scp360-37a74` com exatamente `LEGACY_COLLECTION_PREFIX=_shadow_` (só isto, sem segredos).
+Pré-requisitos: secções 2 a 5 feitas, e a 7 e a 8 (emblema e alerta) de preferência também. O `functions/.env.scp360-37a74` tem exatamente estas duas linhas, sem segredos:
+
+```
+LEGACY_COLLECTION_PREFIX=_shadow_
+VSPORTS_SEASON_ID=
+```
 
 ```bash
+cat functions/.env.scp360-37a74   # confirmar LEGACY_COLLECTION_PREFIX=_shadow_ antes de publicar
 date -u +%Y-%m-%dT%H:%M:%SZ   # guardar: é o --since da comparação
 firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
 ```
 
 Com o prefixo `_shadow_`, as coleções antigas são escritas em `_shadow_games`, `_shadow_summaries`, etc.; o modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `ingestState`) é escrito nas coleções reais, que a V2 não lê. A `legacyPredictionSettlement` **não** é publicada aqui.
 
-Verificar: na consola as 13 antigas continuam ativas; as 12 novas correm sem erros; `ingestHealth/*` com `lastOkAt` recente. Durante a sombra o ticker novo e o `liveMatchUpdater` antigo pedem os dois à API-Football num dia de jogo (consumo a dobrar durante alguns dias, dentro da quota Pro).
+**Teste de isolamento, logo depois da primeira execução do `footballFixturesSync`** (até 3 h; pode correr-se à mão na consola do Cloud Scheduler, "Forçar execução"):
+
+```bash
+cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74 --phase shadow
+```
+
+Esperado: `OK: sombra isolada.` (`_shadow_games` com documentos e nenhum `games`/`standings` real com `_ingest == "v2027"`; só count(), barato). **Se falhar: correr de imediato o "Antes do corte" da secção 17** (apagar as 12 novas) e avisar; as antigas reescrevem as coleções reais nas execuções seguintes.
+
+Verificar também: na consola as 13 antigas continuam ativas; as 12 novas correm sem erros; `ingestHealth/*` com `lastOkAt` recente. Durante a sombra o ticker novo e o `liveMatchUpdater` antigo pedem os dois à API-Football num dia de jogo (consumo a dobrar durante alguns dias, dentro da quota Pro).
 
 ### Comparação depois de N horas (verificação, só leitura)
 
@@ -145,112 +162,15 @@ cd functions
 npx tsx scripts/compare-legacy.ts --project scp360-37a74 --since <hora guardada acima>
 ```
 
-O script conta primeiro os documentos (1 leitura por documento de cada coleção real e sombra, mais 2 por documento comparado) e pára acima de `--max-reads` (150.000); `--collections games,standings` limita. Esperado: `RESULTADO: zero diferenças fora das esperadas` e saída 0.
+O script conta primeiro os documentos (1 leitura por documento de cada coleção real e sombra, mais 2 por documento comparado) e pára acima de `--max-reads` (150.000); `--collections games,standings` limita. Esperado: `RESULTADO: zero diferenças fora das esperadas` e saída 0. `news.summary` conta como esperado quando é o resumo (`summarize`, 400 caracteres) do `content`.
 
-Diferenças já classificadas como esperadas (não contam): `_ingest`; em `games`, `isActive`, `endTime` (estado real em vez da janela de 150 min), `channel` (manual, não existe em sombra) e `predictionsSettled`; qualquer `*.logo` que passa a ser o emblema de 2026; `summaries.playerSub` vazio como `""` ou `"null"`; contadores de `players` `0`/`""`/`null`; `news.sport` e `news.publishedAt` (campos novos); `tweets.metrics.*`; jogos só em sombra de competições que a função antiga não pedia (e os seus `summaries`, `lineups`, etc.).
+Diferenças já classificadas como esperadas (não contam): `_ingest`; em `games`, `isActive`, `endTime` (estado real em vez da janela de 150 min), `channel` (manual, não existe em sombra) e `predictionsSettled`; qualquer `*.logo` que passa a ser o emblema de 2026; `summaries.playerSub` vazio como `""` ou `"null"`; contadores de `players` `0`/`""`/`null`; `news.sport` e `news.publishedAt` (campos novos); `news.summary` resumido do `content`; `tweets.metrics.*`; jogos só em sombra de competições que a função antiga não pedia (e os seus `summaries`, `lineups`, etc.).
 
-Diferenças a explicar caso a caso (não são erro por si): jogo a decorrer no momento da leitura (`elapsedTime`, resultado), notícias ou tweets que uma das functions já apanhou e a outra ainda não, `news.summary` resumido a 400 caracteres em textos longos (decisão da Task 14). Conferir também no painel da RapidAPI o consumo real do dia face à secção 16.
+Diferenças a explicar caso a caso (não são erro por si): jogo a decorrer no momento da leitura (`elapsedTime`, resultado), notícias ou tweets que uma das functions já apanhou e a outra ainda não. Conferir também no painel da RapidAPI o consumo real do dia face à secção 16.
 
-## 7. Corte dos writers (PARAGEM (Martim))
+## 7. Emblema de 2026 no Hosting (PARAGEM (Martim))
 
-Pré-requisitos:
-- comparação da secção 6 limpa;
-- nenhum jogo de futebol do Sporting nas 6 h antes nem nas 6 h depois;
-- emblema publicado: `curl -sI https://scp360-37a74.web.app/brand/sporting-cp-2026.png` devolve `200` e `image/png` (senão fazer primeiro a secção 13: a partir do corte os `games` reais passam a apontar para este URL);
-- alerta de email criado (secção 15), para o corte já ficar vigiado.
-
-Cópia de segurança das coleções que o corte passa a escrever (uma vez; o balde pode já existir):
-
-```bash
-gcloud storage buckets create gs://scp360-37a74-backups --location=EU --project scp360-37a74
-gcloud firestore export gs://scp360-37a74-backups/pre-corte-$(date -u +%Y%m%dT%H%MZ) --collection-ids=games,summaries,stastistics,lineups,players,standings,videos,news,tweets,predictions,manofmatch,rankings,point_events --project scp360-37a74
-```
-
-Corte, por esta ordem:
-
-1. Apagar **primeiro** a liquidação antiga (a antiga e a nova ao mesmo tempo dariam o +3 duas vezes, e a antiga liquida jogos `PST` como 0-0):
-   ```bash
-   firebase functions:delete predictionsSettlementScheduler --region us-central1 --project scp360-37a74
-   ```
-2. Mudar `functions/.env.scp360-37a74` para `LEGACY_COLLECTION_PREFIX=` (vazio) e publicar as de dados com a liquidação nova:
-   ```bash
-   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync,functions:v2027:legacyPredictionSettlement --project scp360-37a74
-   ```
-3. Logo a seguir, apagar as outras 12 antigas por nome (confirmar a lista no prompt; sem `--force`):
-   ```bash
-   firebase functions:delete gamesSheduler liveMatchUpdater summarySheduler statisticsSheduler newsSheduler twitterScheduler videosSheduler PlayersSheduler lineupsheduler standingsSheduler games backfill --region us-central1 --project scp360-37a74
-   ```
-
-Verificar:
-- `npx tsx scripts/check-predeploy.ts --project scp360-37a74` mostra `functions antigas (us-central1): 0/13` e nenhuma desconhecida (`firebase functions:list --project scp360-37a74` só mostra `europe-west1`);
-- nos logs das antigas não há invocações depois da hora do corte;
-- `games/{próximo jogo}._ingest === "v2027"`; `ingestHealth/legacy_prediction_settlement` com `lastOkAt` recente.
-
-Apagar as coleções sombra 48 h depois do corte (cada comando pede confirmação):
-
-```bash
-for c in games summaries stastistics lineups players standings videos news tweets; do
-  firebase firestore:delete _shadow_$c --recursive --project scp360-37a74
-done
-```
-
-## 8. Preencher o modelo novo (PARAGEM (Martim): chave no ambiente)
-
-```bash
-cd functions
-read -rs RAPIDAPI_KEY && export RAPIDAPI_KEY
-GOOGLE_CLOUD_PROJECT=scp360-37a74 npx tsx scripts/backfill-season.ts --season 2026 --new-model-only
-```
-
-Escreve só `matches` e `details` dos jogos terminados da época 2026/2027 (1 pedido pela época mais 1 por cada 20 jogos). O script não aceita `--project`: o projeto vem de `GOOGLE_CLOUD_PROJECT` (PowerShell: `$env:GOOGLE_CLOUD_PROJECT = "scp360-37a74"`).
-
-## 9. Regras (PARAGEM (Martim))
-
-Só a partir da árvore com o `v2027-app` integrado (secção 4): o `firestore.rules` tem de ter o bloco da Task 18 e o `publicProfiles`/`users` do Plano 3, e a regra `config/{id}` com leitura anónima de `config/app` (o UpdateGate da app nova abre sem ela).
-
-```bash
-cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74 && cd ..
-firebase deploy --only firestore:rules --project scp360-37a74
-```
-
-Se os índices mudaram com a integração (o `fieldOverrides` `entries.uid`), publicar também `firebase deploy --only firestore:indexes --project scp360-37a74` (responder **não** a apagar).
-
-Para voltar atrás nas regras: consola Firebase, Firestore, Regras, versão anterior, Publicar.
-
-## 10. Teste da V2 em produção (PARAGEM (Martim): telemóvel com a V2 da loja)
-
-Logo a seguir às regras:
-- [ ] entrar com email; sair e entrar por **PIN**;
-- [ ] **multi-conta**: trocar de conta e voltar;
-- [ ] **GameBox**: criar, **editar** e apagar;
-- [ ] fazer um prognóstico e votar no MVP num jogo; ver o ranking (os +1 entram);
-- [ ] notícias e tweets abrem;
-- [ ] detalhe de um jogo recente: sumário, estatísticas, formações, jogadores, vídeos; classificação; emblema novo do Sporting visível.
-
-Nos logs: nenhum `PERMISSION_DENIED` nas escritas da V2 e nenhuma das functions antigas voltou a correr. Se algo falhar: regras anteriores (secção 9) e avisar.
-
-## 11. Motor do Plano 1 e callables do Plano 3 (PARAGEM (Martim))
-
-A partir da árvore integrada (as três callables do Plano 3 só existem lá):
-
-```bash
-firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail --project scp360-37a74
-```
-
-Verificar: `settleScheduler` corre de 10 em 10 minutos e devolve 0 sem jogos por liquidar; as callables aparecem em `europe-west1`. A V2 não as usa; a app nova (Planos 4 e 5) sim.
-
-## 12. config/app (PARAGEM (Martim))
-
-```bash
-cd functions
-npx tsx scripts/seed-config.ts --project scp360-37a74
-```
-
-Esperado `scp360-37a74: config/app created` (ou `exists`, e nesse caso não se mexe; `--force` só com o OK do Martim, porque substitui a versão mínima). O seed tem `features.comunidadeLeonina: false` e os textos do UpdateGate do Plano 3.
-
-## 13. Emblema de 2026 no Hosting (PARAGEM (Martim))
-
-URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web.app/brand/sporting-cp-2026.png`. O ficheiro está no repositório em `brand/sporting-cp-2026.png`. **Fazer antes do corte (secção 7).**
+URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web.app/brand/sporting-cp-2026.png`. O ficheiro está no repositório em `brand/sporting-cp-2026.png`. **Fazer antes do corte (secção 9).**
 
 1. Ver se o site já tem conteúdo (um deploy de Hosting substitui o site inteiro):
    ```bash
@@ -260,7 +180,7 @@ URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web
    Consola Firebase, Hosting: histórico de versões. Se houver uma versão publicada com conteúdo (não a página "Site Not Found"), **parar**: juntar esses ficheiros à pasta abaixo antes de publicar, ou decidir com o Martim outra solução.
 2. Publicar a partir de uma pasta temporária fora do repositório (o `firebase.json` do repositório não tem Hosting):
    ```bash
-   REPO=$(pwd)
+   REPO=$(git rev-parse --show-toplevel)
    mkdir -p /tmp/s360-hosting/public/brand && cd /tmp/s360-hosting
    cp "$REPO/brand/sporting-cp-2026.png" public/brand/
    cat > firebase.json <<'EOF'
@@ -271,16 +191,7 @@ URL fixo no código (`functions/src/config/brand.ts`): `https://scp360-37a74.web
    ```
    Esperado: `HTTP/2 200` e `content-type: image/png`.
 
-## 14. Apple: fluxo com código OAuth (PARAGEM (Martim): Apple Developer e consola Firebase)
-
-Necessário para apagar conta com Apple (a app nova chama `revokeToken(authorizationCode)` antes de `deleteAccount`, regra da Apple para revogar o acesso).
-
-1. Apple Developer, Certificates, IDs & Profiles, Keys: criar uma chave com "Sign in with Apple" ativado, ligada ao App ID `com.scp360`. Guardar o **Key ID** e descarregar o `.p8` (só se descarrega uma vez; guardar fora do repositório).
-2. Apple Developer: anotar o **Team ID** e o **Services ID** (criar um Services ID com Sign in with Apple se ainda não existir; o return URL é o que a consola Firebase mostra no passo 3).
-3. Consola Firebase, Authentication, Sign-in method, Apple: na secção "Configuração do fluxo de código OAuth" preencher Services ID, Apple Team ID, Key ID e o conteúdo da chave privada `.p8`. Guardar.
-4. Testar quando a app nova tiver o ecrã de apagar conta (Plano 4/5): conta Apple de teste apagada desaparece em appleid.apple.com, "Iniciar sessão com a Apple".
-
-## 15. Alerta por email (PARAGEM (Martim))
+## 8. Alerta por email (PARAGEM (Martim))
 
 Destino: martimbustorff@gmail.com. As functions escrevem `logger.error("INGEST_ALERT", { source, reason })` (JSON, `jsonPayload.message = "INGEST_ALERT"`). Pode fazer-se a qualquer momento depois da secção 2; recomendado antes da secção 6.
 
@@ -326,7 +237,133 @@ Política de alerta baseada em logs, com no máximo 1 email por hora (desduplica
 gcloud monitoring policies create --policy-from-file=/tmp/ingest-alert-policy.json --project scp360-37a74
 ```
 
+O Cloud Monitoring pode abrir um incidente (e um email) por cada combinação de etiquetas (`source`, `reason`), o que fura o limite de 1 por hora quando várias fontes falham ao mesmo tempo: confirmar no primeiro alerta real e, se vierem demasiados, tirar `reason` dos `labelExtractors`. Se o `gcloud` disser que `beta` não está instalado: `gcloud components install beta` (ou `alpha`, se a política for recusada pelo comando GA).
+
 Testar o filtro (só leitura): `gcloud logging read 'jsonPayload.message="INGEST_ALERT"' --limit 5 --freshness 7d --project scp360-37a74` mostra as entradas que disparam o alerta. O primeiro alerta real confirma o email; os seguintes da mesma política chegam no máximo um por hora.
+
+## 9. Corte dos writers (PARAGEM (Martim))
+
+Pré-requisitos:
+- comparação da secção 6 limpa;
+- nenhum jogo de futebol do Sporting nas 6 h antes nem nas 6 h depois;
+- emblema publicado: `curl -sI https://scp360-37a74.web.app/brand/sporting-cp-2026.png` devolve `200` e `image/png` (senão fazer primeiro a secção 7: a partir do corte os `games` reais passam a apontar para este URL);
+- alerta de email criado (secção 8), para o corte já ficar vigiado.
+
+Cópia de segurança das coleções que o corte passa a escrever. O balde tem de estar numa localização compatível com a base de dados; ver primeiro onde ela está:
+
+```bash
+gcloud firestore databases describe --database="(default)" --format="value(locationId)" --project scp360-37a74
+```
+
+| `locationId` | `--location` do balde |
+|---|---|
+| `eur3` (multirregião Europa; a do projeto, segundo o plano) | `EU` (ou uma região europeia, ex. `europe-west1`) |
+| `nam5` (multirregião EUA) | `US` (ou uma região dos EUA, ex. `us-central1`) |
+| região única (ex. `europe-west1`) | a mesma região |
+
+```bash
+gcloud storage buckets create gs://scp360-37a74-backups --location=<da tabela> --project scp360-37a74   # uma vez; pode já existir
+gcloud firestore export gs://scp360-37a74-backups/pre-corte-$(date -u +%Y%m%dT%H%MZ) --collection-ids=games,summaries,stastistics,lineups,players,standings,videos,news,tweets,predictions,manofmatch,rankings,point_events --project scp360-37a74
+```
+
+Corte, por esta ordem:
+
+1. Apagar **primeiro** a liquidação antiga (a antiga e a nova ao mesmo tempo dariam o +3 duas vezes, e a antiga liquida jogos `PST` como 0-0):
+   ```bash
+   firebase functions:delete predictionsSettlementScheduler --region us-central1 --project scp360-37a74
+   ```
+2. Mudar `functions/.env.scp360-37a74` para `LEGACY_COLLECTION_PREFIX=` (vazio; `VSPORTS_SEASON_ID=` fica), **fazer commit** (senão um deploy futuro a partir de outra cópia do repositório volta a pôr os writers em `_shadow_`, congela os dados da V2 e pára a `legacyPredictionSettlement`) e publicar as de dados com a liquidação nova:
+   ```bash
+   printf 'LEGACY_COLLECTION_PREFIX=\nVSPORTS_SEASON_ID=\n' > functions/.env.scp360-37a74
+   cat functions/.env.scp360-37a74
+   git add functions/.env.scp360-37a74
+   git commit -m "chore: cutover, legacy collections written by v2027"
+   ```
+   ```bash
+   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync,functions:v2027:legacyPredictionSettlement --project scp360-37a74
+   ```
+   Se o deploy falhar a meio (algumas functions publicadas, outras não): repetir **o mesmo comando**. Não avançar para o passo 3 antes de `cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74` mostrar as 13 functions de dados e corte em `europe-west1` (linha `functions v2027`) e nenhuma desconhecida.
+3. Logo a seguir, apagar as outras 12 antigas por nome (confirmar a lista no prompt; sem `--force`):
+   ```bash
+   firebase functions:delete gamesSheduler liveMatchUpdater summarySheduler statisticsSheduler newsSheduler twitterScheduler videosSheduler PlayersSheduler lineupsheduler standingsSheduler games backfill --region us-central1 --project scp360-37a74
+   ```
+
+Verificar:
+- `npx tsx scripts/check-predeploy.ts --project scp360-37a74` mostra `functions antigas (us-central1): 0/13` e nenhuma desconhecida (`firebase functions:list --project scp360-37a74` só mostra `europe-west1`);
+- nos logs das antigas não há invocações depois da hora do corte;
+- `games/{próximo jogo}._ingest === "v2027"`; `ingestHealth/legacy_prediction_settlement` com `lastOkAt` recente;
+- **PARAGEM (Martim): teste rápido na V2 de produção**, antes das regras: a lista de jogos e a agenda abrem, o detalhe de um jogo recente abre (sumário, estatísticas, formações), e o emblema novo do Sporting aparece. Se algo falhar: secção 17.
+
+Apagar as coleções sombra 48 h depois do corte (cada comando pede confirmação):
+
+```bash
+for c in games summaries stastistics lineups players standings videos news tweets; do
+  firebase firestore:delete _shadow_$c --recursive --project scp360-37a74
+done
+```
+
+## 10. Preencher o modelo novo (PARAGEM (Martim): chave no ambiente)
+
+```bash
+cd functions
+read -rs RAPIDAPI_KEY && export RAPIDAPI_KEY
+GOOGLE_CLOUD_PROJECT=scp360-37a74 npx tsx scripts/backfill-season.ts --season 2026 --new-model-only
+```
+
+Escreve só `matches` e `details` dos jogos terminados da época 2026/2027 (1 pedido pela época mais 1 por cada 20 jogos). O script não aceita `--project`: o projeto vem de `GOOGLE_CLOUD_PROJECT` (PowerShell: `$env:GOOGLE_CLOUD_PROJECT = "scp360-37a74"`).
+
+## 11. Regras (PARAGEM (Martim))
+
+Só a partir da árvore com o `v2027-app` integrado (secção 4): o `firestore.rules` tem de ter o bloco da Task 18 e o `publicProfiles`/`users` do Plano 3, e a regra `config/{id}` com leitura anónima de `config/app` (o UpdateGate da app nova abre sem ela).
+
+```bash
+cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74 && cd ..
+firebase deploy --only firestore:rules --project scp360-37a74
+```
+
+Se os índices mudaram com a integração (o `fieldOverrides` `entries.uid`), publicar também `firebase deploy --only firestore:indexes --project scp360-37a74` (responder **não** a apagar).
+
+Para voltar atrás nas regras: consola Firebase, Firestore, Regras, versão anterior, Publicar.
+
+## 12. Teste da V2 em produção (PARAGEM (Martim): telemóvel com a V2 da loja)
+
+Logo a seguir às regras:
+- [ ] entrar com email; sair e entrar por **PIN**;
+- [ ] **multi-conta**: trocar de conta e voltar;
+- [ ] **GameBox**: criar, **editar** e apagar;
+- [ ] fazer um prognóstico e votar no MVP num jogo; ver o ranking (os +1 entram);
+- [ ] notícias e tweets abrem;
+- [ ] detalhe de um jogo recente: sumário, estatísticas, formações, jogadores, vídeos; classificação; emblema novo do Sporting visível.
+
+Nos logs: nenhum `PERMISSION_DENIED` nas escritas da V2 e nenhuma das functions antigas voltou a correr. Se algo falhar: regras anteriores (secção 11) e avisar.
+
+## 13. Motor do Plano 1 e callables do Plano 3 (PARAGEM (Martim))
+
+A partir da árvore integrada (as três callables do Plano 3 só existem lá):
+
+```bash
+firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail --project scp360-37a74
+```
+
+Verificar: `settleScheduler` corre de 10 em 10 minutos e devolve 0 sem jogos por liquidar; as callables aparecem em `europe-west1`. A V2 não as usa; a app nova (Planos 4 e 5) sim.
+
+## 14. config/app (PARAGEM (Martim))
+
+```bash
+cd functions
+npx tsx scripts/seed-config.ts --project scp360-37a74
+```
+
+Esperado `scp360-37a74: config/app created` (ou `exists`, e nesse caso não se mexe; `--force` só com o OK do Martim, porque substitui a versão mínima). O seed tem `features.comunidadeLeonina: false` e os textos do UpdateGate do Plano 3.
+
+## 15. Apple: fluxo com código OAuth (PARAGEM (Martim): Apple Developer e consola Firebase)
+
+Necessário para apagar conta com Apple (a app nova chama `revokeToken(authorizationCode)` antes de `deleteAccount`, regra da Apple para revogar o acesso).
+
+1. Apple Developer, Certificates, IDs & Profiles, Keys: criar uma chave com "Sign in with Apple" ativado, ligada ao App ID `com.scp360`. Guardar o **Key ID** e descarregar o `.p8` (só se descarrega uma vez; guardar fora do repositório).
+2. Apple Developer: anotar o **Team ID** e o **Services ID** (criar um Services ID com Sign in with Apple se ainda não existir; o return URL é o que a consola Firebase mostra no passo 3).
+3. Consola Firebase, Authentication, Sign-in method, Apple: na secção "Configuração do fluxo de código OAuth" preencher Services ID, Apple Team ID, Key ID e o conteúdo da chave privada `.p8`. Guardar.
+4. Testar quando a app nova tiver o ecrã de apagar conta (Plano 4/5): conta Apple de teste apagada desaparece em appleid.apple.com, "Iniciar sessão com a Apple".
 
 ## 16. Orçamento diário de pedidos
 
@@ -366,7 +403,7 @@ Calendário de 3 em 3 h (8/dia), 1 por cada tick de 10 min na janela do jogo (�
 | RSS de notícias (3 fontes, de 15 em 15 min) | ≈288 | ≈288 |
 | X (2 contas, `0 */10 * * *`) | ≈5 pedidos, ≈50 tweets | igual |
 
-## 17. Reverter
+## 17. Reverter (PARAGEM (Martim))
 
 ### Antes do corte (só sombra)
 
@@ -380,27 +417,32 @@ O modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `in
 
 ### Depois do corte
 
-1. Parar as novas nas coleções antigas: `functions/.env.scp360-37a74` de volta a `LEGACY_COLLECTION_PREFIX=_shadow_`, apagar a liquidação nova **antes** de repor a antiga, e republicar as de dados (passam a escrever em sombra):
+1. Parar as novas nas coleções antigas: `functions/.env.scp360-37a74` de volta a `_shadow_` **com commit**, apagar a liquidação nova **antes** de repor a antiga, e republicar as de dados (passam a escrever em sombra):
    ```bash
+   printf 'LEGACY_COLLECTION_PREFIX=_shadow_\nVSPORTS_SEASON_ID=\n' > functions/.env.scp360-37a74
+   git add functions/.env.scp360-37a74
+   git commit -m "chore: revert cutover, v2027 back to shadow collections"
    firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74
    firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
    ```
    (Ou apagá-las com o comando da secção anterior.)
 2. Republicar as 13 antigas a partir do código completo. A cópia `legacy/v2-functions` do repositório **não compila** (os ficheiros com chaves foram omitidos); usar o zip original `predictionsSettlementScheduler_function-source.zip` (PC do Martim, `Desktop\Personal\S360`), numa pasta temporária fora do repositório:
    ```bash
-   mkdir /tmp/s360-legacy && cd /tmp/s360-legacy && unzip <caminho>/predictionsSettlementScheduler_function-source.zip
+   mkdir -p /tmp/s360-legacy/functions && cd /tmp/s360-legacy
+   unzip <caminho>/predictionsSettlementScheduler_function-source.zip -d functions
    cat > firebase.json <<'EOF'
-   { "functions": [ { "source": ".", "codebase": "default" } ] }
+   { "functions": [ { "source": "functions", "codebase": "default" } ] }
    EOF
-   npm ci && npm run build
+   echo '{"projects":{"default":"scp360-37a74"}}' > .firebaserc
+   (cd functions && npm ci && npm run build)
    firebase deploy --only functions:default:gamesSheduler,functions:default:liveMatchUpdater,functions:default:summarySheduler,functions:default:statisticsSheduler,functions:default:newsSheduler,functions:default:twitterScheduler,functions:default:videosSheduler,functions:default:PlayersSheduler,functions:default:lineupsheduler,functions:default:standingsSheduler,functions:default:predictionsSettlementScheduler,functions:default:games,functions:default:backfill --project scp360-37a74
    ```
    Ficam em `us-central1` como antes (o código não define região). Confirmar no prompt que nenhuma `v2027` é apagada (com `--only` por nome não é).
-3. Coleções: `games`, `summaries`, `stastistics`, `lineups`, `players`, `standings`, `videos`, `news`, `tweets` são reescritas pelas antigas nas execuções seguintes (notícias em 15 min, jogos e classificações em 2 h, resumos, jogadores e formações às 09:00 UTC). Documentos que só a v2027 escrevia (jogos de competições que a antiga não pedia) ficam com `_ingest: "v2027"`; apagá-los se aparecerem a mais na V2. Se houver dados estragados, repor a cópia da secção 7:
+3. Coleções: `games`, `summaries`, `stastistics`, `lineups`, `players`, `standings`, `videos`, `news`, `tweets` são reescritas pelas antigas nas execuções seguintes (notícias em 15 min, jogos e classificações em 2 h, resumos, jogadores e formações às 09:00 UTC). Documentos que só a v2027 escrevia (jogos de competições que a antiga não pedia) ficam com `_ingest: "v2027"`; apagá-los se aparecerem a mais na V2. Se houver dados estragados, repor a cópia da secção 9:
    ```bash
    gcloud firestore import gs://scp360-37a74-backups/pre-corte-<data> --collection-ids=games,summaries,stastistics,lineups,players,standings,videos,news,tweets --project scp360-37a74
    ```
    O import substitui os documentos com o mesmo id e não apaga os novos.
 4. Pontos da V2: só se a `legacyPredictionSettlement` tiver dado pontos errados. Ver os `point_events` `exact_score_*` criados depois do corte. Repor `predictions`, `rankings`, `point_events` (e `games`) da cópia desfaz também os +1 legítimos feitos desde o corte; preferir corrigir à mão os documentos afetados.
-5. Regras: consola Firebase, Firestore, Regras, versão anterior. Motor e callables (secção 11): `firebase functions:delete submitPrediction voteMvp settleScheduler updateProfile deleteAccount linkProviderByEmail --region europe-west1 --project scp360-37a74` (a V2 não os usa).
+5. Regras: consola Firebase, Firestore, Regras, versão anterior. Motor e callables (secção 13): `firebase functions:delete submitPrediction voteMvp settleScheduler updateProfile deleteAccount linkProviderByEmail --region europe-west1 --project scp360-37a74` (a V2 não os usa).
 6. Segredos e índices não precisam de reversão.

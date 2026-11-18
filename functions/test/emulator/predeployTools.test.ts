@@ -1,6 +1,6 @@
 import { deleteApp, getApps } from "firebase-admin/app";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
-import { checkFirestore, firestoreFailures } from "../../scripts/check-predeploy";
+import { checkFirestore, checkShadowIsolation, firestoreFailures, shadowFailures } from "../../scripts/check-predeploy";
 import { compareAll, hasProblems } from "../../scripts/compare-legacy";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 
@@ -24,6 +24,7 @@ describe("check-predeploy (Firestore, só leitura)", () => {
     const r = await checkFirestore(db);
     expect(r).toMatchObject({ rankings: 1, predictions: 1, manofmatch: 1, badRankings: [], withSource: { predictions: [], manofmatch: [] } });
     expect(r.engine.matchPredictions).toBe(1);
+    expect(r.emailNames).toBe(0);
     expect(firestoreFailures(r)).toEqual([]);
   });
 
@@ -33,6 +34,24 @@ describe("check-predeploy (Firestore, só leitura)", () => {
     await db.doc("manofmatch/1001_u2").set({ userId: "u2", source: null });
     const r = await checkFirestore(db);
     expect(firestoreFailures(r)).toEqual(["1 rankings fora do formato", "1 predictions com source", "1 manofmatch com source"]);
+  });
+});
+
+describe("check-predeploy --phase shadow (count, só leitura)", () => {
+  it("sombra isolada: _shadow_games com documentos e reais sem _ingest", async () => {
+    await db.doc("_shadow_games/1001").set({ api: "1001", _ingest: "v2027" });
+    await db.doc("games/1001").set({ api: "1001" });
+    const r = await checkShadowIsolation(db);
+    expect(r).toEqual({ shadowGames: 1, leaked: { games: 0, standings: 0 } });
+    expect(shadowFailures(r)).toEqual([]);
+  });
+
+  it("escrita nas coleções reais é detetada", async () => {
+    await db.doc("games/1001").set({ api: "1001", _ingest: "v2027" });
+    await db.doc("standings/228_94_2026").set({ api: "228", _ingest: "v2027", userName: "x" });
+    const r = await checkShadowIsolation(db);
+    expect(r).toEqual({ shadowGames: 0, leaked: { games: 1, standings: 1 } });
+    expect(shadowFailures(r)).toHaveLength(3);
   });
 });
 

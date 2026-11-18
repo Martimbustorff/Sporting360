@@ -2,6 +2,7 @@
 // Verificações antes de publicar o Plano 2 (e de novo antes das regras). SÓ LEITURA.
 //
 //   npx tsx scripts/check-predeploy.ts --project scp360-37a74 [--skip-functions]
+//   npx tsx scripts/check-predeploy.ts --project scp360-37a74 --phase shadow
 //
 // (a) `rankings`: `season` string aaaa-aaaa e id == `${userId}_${season}` (senão as regras novas negam
 //     as atualizações da V2 nesses documentos; passagem do Plano 1, Task 3);
@@ -10,7 +11,11 @@
 // (c) as functions publicadas (`firebase functions:list --json`) são só as 13 antigas em us-central1
 //     e as v2027 em europe-west1; qualquer outra (ex. um `cleanup` antigo) falha;
 // (d) informativo: documentos já existentes nas coleções do motor novo (o corte do Plano 5 apaga-os).
+// (e) informativo: rankings com `userName` que parece um email (a V2 escreve o email; limpeza no Plano 5).
 // Imprime as contagens e sai com código 1 se (a), (b) ou (c) falharem.
+//
+// `--phase shadow` (depois do primeiro footballFixturesSync em sombra) só faz o teste de isolamento, com
+// count(): `_shadow_games` tem documentos e nenhum `games`/`standings` real tem `_ingest == "v2027"`.
 import { execFileSync } from "node:child_process";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore, type DocumentData, type Firestore } from "firebase-admin/firestore";
@@ -34,6 +39,11 @@ export function checkRankings(docs: Doc[]): { id: string; reason: string }[] {
 /** Ids dos documentos que têm o campo `source` (mesmo a null). */
 export function checkNoSource(docs: Doc[]): string[] {
   return docs.filter((d) => "source" in d.data).map((d) => d.id);
+}
+
+/** Ids dos rankings cujo `userName` contém "@" (emails escritos pela V2). Só informativo. */
+export function emailUserNames(docs: Doc[]): string[] {
+  return docs.filter((d) => typeof d.data.userName === "string" && d.data.userName.includes("@")).map((d) => d.id);
 }
 
 export type DeployedFunction = { id: string; region: string; codebase?: string };
@@ -71,6 +81,7 @@ export const ENGINE_COLLECTIONS = ["matchPredictions", "mvpVotes", "pointEvents"
 export type FirestoreReport = {
   rankings: number;
   badRankings: { id: string; reason: string }[];
+  emailNames: number;
   predictions: number;
   manofmatch: number;
   withSource: { predictions: string[]; manofmatch: string[] };
@@ -78,7 +89,7 @@ export type FirestoreReport = {
 };
 
 export async function checkFirestore(db: Firestore): Promise<FirestoreReport> {
-  const rankings = await scan(db, "rankings", ["season", "userId"]);
+  const rankings = await scan(db, "rankings", ["season", "userId", "userName"]);
   const predictions = await scan(db, "predictions", ["source"]);
   const manofmatch = await scan(db, "manofmatch", ["source"]);
   const engine: Record<string, number> = {};
@@ -86,6 +97,7 @@ export async function checkFirestore(db: Firestore): Promise<FirestoreReport> {
   return {
     rankings: rankings.length,
     badRankings: checkRankings(rankings),
+    emailNames: emailUserNames(rankings).length,
     predictions: predictions.length,
     manofmatch: manofmatch.length,
     withSource: { predictions: checkNoSource(predictions), manofmatch: checkNoSource(manofmatch) },
@@ -101,6 +113,26 @@ export function firestoreFailures(r: FirestoreReport): string[] {
   return out;
 }
 
+/** Coleções reais que as functions v2027 marcam com `_ingest: "v2027"` (games e standings). */
+export const INGEST_MARKED = ["games", "standings"] as const;
+
+export type ShadowReport = { shadowGames: number; leaked: Record<string, number> };
+
+/** Teste de isolamento do modo sombra: só count(), barato. */
+export async function checkShadowIsolation(db: Firestore, prefix = "_shadow_"): Promise<ShadowReport> {
+  const shadowGames = (await db.collection(`${prefix}games`).count().get()).data().count;
+  const leaked: Record<string, number> = {};
+  for (const c of INGEST_MARKED) leaked[c] = (await db.collection(c).where("_ingest", "==", "v2027").count().get()).data().count;
+  return { shadowGames, leaked };
+}
+
+export function shadowFailures(r: ShadowReport): string[] {
+  const out: string[] = [];
+  if (r.shadowGames === 0) out.push("_shadow_games vazio (a sombra ainda não escreveu ou escreve noutro sítio)");
+  for (const [c, n] of Object.entries(r.leaked)) if (n > 0) out.push(`${n} documentos reais de ${c} com _ingest v2027 (a sombra escreve nas coleções reais)`);
+  return out;
+}
+
 function listFunctions(project: string): DeployedFunction[] {
   const stdout = execFileSync("npx", ["firebase", "functions:list", "--json", "--project", project], { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] });
   return parseFunctionsList(stdout);
@@ -110,16 +142,30 @@ async function main(): Promise<void> {
   const i = process.argv.indexOf("--project");
   const project = i >= 0 ? process.argv[i + 1] : undefined;
   if (process.argv.includes("--help") || !project) {
-    console.log("Uso: npx tsx scripts/check-predeploy.ts --project <id> [--skip-functions]\nSó leitura. Sai com código 1 se alguma verificação falhar.");
+    console.log("Uso: npx tsx scripts/check-predeploy.ts --project <id> [--skip-functions | --phase shadow]\nSó leitura. Sai com código 1 se alguma verificação falhar.");
     if (!project) process.exitCode = 1;
     return;
   }
   const app = getApps()[0] ?? initializeApp({ projectId: project });
+  const pi = process.argv.indexOf("--phase");
+  const phase = pi >= 0 ? process.argv[pi + 1] : undefined;
+  if (phase !== undefined && phase !== "shadow") throw new Error(`--phase desconhecida: ${phase}`);
+  if (phase === "shadow") {
+    const r = await checkShadowIsolation(getFirestore(app));
+    console.log(`_shadow_games: ${r.shadowGames}; reais com _ingest v2027: ${Object.entries(r.leaked).map(([k, v]) => `${k} ${v}`).join(", ")}`);
+    const f = shadowFailures(r);
+    if (f.length) {
+      console.log(`FALHOU: ${f.join("; ")}`);
+      process.exitCode = 1;
+    } else console.log("OK: sombra isolada.");
+    return;
+  }
   const fs = await checkFirestore(getFirestore(app));
   const failures = firestoreFailures(fs);
 
   console.log(`rankings: ${fs.rankings} documentos, ${fs.badRankings.length} fora do formato`);
   for (const b of fs.badRankings.slice(0, 50)) console.log(`  ${b.id}: ${b.reason}`);
+  console.log(`rankings com email em userName (informativo, limpeza no Plano 5): ${fs.emailNames}`);
   console.log(`predictions: ${fs.predictions} documentos, ${fs.withSource.predictions.length} com source ${fs.withSource.predictions.slice(0, 20).join(" ")}`);
   console.log(`manofmatch: ${fs.manofmatch} documentos, ${fs.withSource.manofmatch.length} com source ${fs.withSource.manofmatch.slice(0, 20).join(" ")}`);
   console.log(`motor v2027 (informativo): ${Object.entries(fs.engine).map(([k, v]) => `${k} ${v}`).join(", ")}`);

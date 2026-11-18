@@ -1,4 +1,4 @@
-import { checkFunctions, checkRankings, checkNoSource, parseFunctionsList } from "../../scripts/check-predeploy";
+import { checkFunctions, checkRankings, checkNoSource, emailUserNames, parseFunctionsList, shadowFailures } from "../../scripts/check-predeploy";
 
 describe("checkRankings", () => {
   it("aceita season aaaa-aaaa e id userId_season", () => {
@@ -46,5 +46,20 @@ describe("checkFunctions", () => {
     const out = JSON.stringify({ status: "success", result: [{ id: "games", region: "us-central1", platform: "gcfv2" }] });
     expect(parseFunctionsList(out)).toEqual([{ id: "games", region: "us-central1", codebase: undefined }]);
     expect(() => parseFunctionsList(JSON.stringify({ status: "error", error: "sem permissão" }))).toThrow(/sem permissão/);
+  });
+});
+
+describe("emailUserNames (informativo)", () => {
+  it("conta os userName com @", () => {
+    expect(emailUserNames([{ id: "a", data: { userName: "x@y.pt" } }, { id: "b", data: { userName: "Ana S." } }, { id: "c", data: {} }])).toEqual(["a"]);
+  });
+});
+
+describe("shadowFailures", () => {
+  it("sombra com jogos e nada marcado nas reais: passa", () => {
+    expect(shadowFailures({ shadowGames: 40, leaked: { games: 0, standings: 0 } })).toEqual([]);
+  });
+  it("sombra vazia ou documentos reais com _ingest v2027: falha", () => {
+    expect(shadowFailures({ shadowGames: 0, leaked: { games: 3, standings: 0 } })).toHaveLength(2);
   });
 });

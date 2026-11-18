@@ -10,6 +10,7 @@
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore, Timestamp, type DocumentData, type Firestore } from "firebase-admin/firestore";
 import { SPORTING_CREST_URL } from "../src/config/brand";
+import { summarize } from "../src/news/newsSync";
 
 export const SHADOW_PREFIX = "_shadow_";
 
@@ -92,16 +93,17 @@ const ZEROISH = new Set<unknown>([0, "", null, undefined]);
  * - qualquer `*.logo` que passa a ser o emblema de 2026 (regra do emblema, equipa 228);
  * - summaries: `playerSub` vazio como `""` ou `"null"`;
  * - players: contadores `0`, `""` e `null`/ausente são equivalentes;
- * - news: `sport` e `publishedAt` são campos novos;
+ * - news: `sport` e `publishedAt` são campos novos; `summary` resumido (= summarize(content), Task 14);
  * - tweets: `metrics.*` mudam entre leituras.
  */
-export function classifyDiff(col: string, c: Change): "expected" | "unexpected" {
+export function classifyDiff(col: string, c: Change, shadowDoc?: DocumentData): "expected" | "unexpected" {
   const parts = c.field.split(".");
   const last = parts[parts.length - 1];
   if (last === "logo" && c.b === SPORTING_CREST_URL) return "expected";
   if (col === "summaries" && parts[0] === "playerSub" && EMPTYISH.has(c.a) && EMPTYISH.has(c.b)) return "expected";
   if (col === "players" && parts[0] === "Players" && COUNTERS.has(last) && ZEROISH.has(c.a) && ZEROISH.has(c.b)) return "expected";
   if (col === "news" && (c.field === "sport" || c.field === "publishedAt") && c.a === undefined) return "expected";
+  if (col === "news" && c.field === "summary" && typeof shadowDoc?.content === "string" && c.b === summarize(shadowDoc.content)) return "expected";
   if (col === "tweets" && parts[0] === "metrics") return "expected";
   return "unexpected";
 }
@@ -194,8 +196,8 @@ export async function compareCollection(
     missing: d.missing,
     extra: d.extra.filter((id) => !exp.has(id)),
     expectedExtra,
-    expected: d.changed.filter((c) => classifyDiff(col, c) === "expected"),
-    unexpected: d.changed.filter((c) => classifyDiff(col, c) === "unexpected"),
+    expected: d.changed.filter((c) => classifyDiff(col, c, b[c.id]) === "expected"),
+    unexpected: d.changed.filter((c) => classifyDiff(col, c, b[c.id]) === "unexpected"),
   };
 }
 

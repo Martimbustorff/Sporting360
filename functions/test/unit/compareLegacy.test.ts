@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { classifyDiff, diffLegacy, parseArgs } from "../../scripts/compare-legacy";
+import { summarize } from "../../src/news/newsSync";
 
 const game = (over: Record<string, unknown> = {}) => ({
   api: "1001",
@@ -85,6 +86,9 @@ describe("classifyDiff (diferenças esperadas)", () => {
     expect(classifyDiff("news", { id: "n", field: "publishedAt", a: undefined, b: "2026-12-01" })).toBe("expected");
     expect(classifyDiff("news", { id: "n", field: "sport", a: undefined, b: "football" })).toBe("expected");
     expect(classifyDiff("news", { id: "n", field: "title", a: "a", b: "b" })).toBe("unexpected");
+    const content = "palavra ".repeat(80).trim();
+    expect(classifyDiff("news", { id: "n", field: "summary", a: content, b: summarize(content) }, { content })).toBe("expected");
+    expect(classifyDiff("news", { id: "n", field: "summary", a: content, b: "outro" }, { content })).toBe("unexpected");
     expect(classifyDiff("tweets", { id: "t", field: "metrics.like_count", a: 1, b: 9 })).toBe("expected");
   });
 
