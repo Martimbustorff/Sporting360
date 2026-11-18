@@ -6,13 +6,11 @@
 
 export type TermsSection = { title: string; body: string };
 
-/** Marca do único ponto por decidir. Aparece no texto e em TERMS_TODOS. */
-const RETENTION_TODO = '[A DEFINIR PELO MARTIM: prazos de conservação]';
-
 /**
- * Pendentes para o Martim. O Plano 5 bloqueia o build de produção enquanto isto não estiver vazio.
+ * Pendentes para o Martim. Vazio: os prazos de conservação estão decididos. O Plano 5 bloqueia o build de produção
+ * enquanto houver marcas por resolver em src/content (scripts/launchGate.js).
  */
-export const TERMS_TODOS: readonly string[] = [RETENTION_TODO];
+export const TERMS_TODOS: readonly string[] = [];
 
 export const TERMS: TermsSection[] = [
   {
@@ -69,11 +67,11 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '2. DADOS QUE RECOLHEMOS',
-    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado de forma ofuscada, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o identificador da conta, o modelo do telemóvel e a versão da App. Utilização da App (Firebase Analytics): só com consentimento.',
+    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado de forma ofuscada, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o modelo do telemóvel, a versão do sistema e a versão da App, sem identificador da conta. Utilização da App (Firebase Analytics): só com consentimento.',
   },
   {
     title: '3. FINALIDADES E FUNDAMENTOS',
-    body: 'Os dados da conta, do perfil, da GameBox e do jogo são tratados para prestar o serviço pedido pelo utilizador (execução do contrato, artigo 6.º, n.º 1, alínea b) do RGPD). Os relatórios de erros servem para manter a App segura e a funcionar (interesse legítimo). A análise de utilização serve para perceber como a App é usada e melhorá-la, e só acontece com o consentimento do utilizador.',
+    body: 'Os dados da conta, do perfil, da GameBox e do jogo são tratados para prestar o serviço pedido pelo utilizador (execução do contrato, artigo 6.º, n.º 1, alínea b) do RGPD). Os relatórios de erros servem para manter a App segura e a funcionar (interesse legítimo, artigo 6.º, n.º 1, alínea f) do RGPD). A análise de utilização serve para perceber como a App é usada e melhorá-la, e só acontece com o consentimento do utilizador.',
   },
   {
     title: '4. O QUE É PÚBLICO',
@@ -93,7 +91,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '8. CONSERVAÇÃO',
-    body: `Os dados são conservados enquanto a conta existir. Prazos: ${RETENTION_TODO}. Quando a conta é apagada, a conta e os dados pessoais associados são apagados.`,
+    body: 'Conta, perfil, GameBox e dados do jogo (prognósticos, votos e pontos): enquanto a conta existir; são apagados com "Apagar conta". Relatórios de erros (Crashlytics): 90 dias. Estatísticas de utilização (Firebase Analytics, só com consentimento): 2 meses. Cópias de segurança: 30 dias.',
   },
   {
     title: '9. APAGAR CONTA',

@@ -86,11 +86,34 @@ describe('TERMS', () => {
 });
 
 describe('pendentes para o Plano 5', () => {
-  it('TERMS_TODOS tem só os prazos de conservação (F15) e a marca aparece no texto', () => {
-    expect(TERMS_TODOS).toHaveLength(1);
-    expect(TERMS_TODOS[0]!.startsWith('[A DEFINIR PELO MARTIM')).toBe(true);
-    expect(TERMS_TODOS[0]).toMatch(/conservação/);
-    for (const t of TERMS_TODOS) expect(all).toContain(t);
+  it('sem pendentes: TERMS_TODOS vazio e nenhuma marca [A DEFINIR PELO MARTIM no texto', () => {
+    expect(TERMS_TODOS).toEqual([]);
+    expect(all).not.toContain('[A DEFINIR PELO MARTIM');
+  });
+
+  it('§8 CONSERVAÇÃO traz os quatro prazos decididos', () => {
+    const s8 = TERMS.find((x) => x.title === '8. CONSERVAÇÃO')!.body;
+    expect(s8).toContain('enquanto a conta existir');
+    expect(s8).toContain('"Apagar conta"');
+    expect(s8).toContain('Relatórios de erros (Crashlytics): 90 dias');
+    expect(s8).toContain('Estatísticas de utilização (Firebase Analytics, só com consentimento): 2 meses');
+    expect(s8).toContain('Cópias de segurança: 30 dias');
+  });
+});
+
+describe('relatórios de erros (Crashlytics)', () => {
+  const policy = TERMS.slice(TERMS.findIndex((x) => x.title === 'POLÍTICA DE PRIVACIDADE'));
+  const s2 = policy.find((x) => x.title === '2. DADOS QUE RECOLHEMOS')!.body;
+  const s3 = policy.find((x) => x.title === '3. FINALIDADES E FUNDAMENTOS')!.body;
+
+  it('§2: levam modelo do telemóvel, versão do sistema e da App, sem identificador da conta', () => {
+    expect(s2).toContain('relatórios de erros (Crashlytics), com o modelo do telemóvel, a versão do sistema e a versão da App');
+    expect(s2).toContain('sem identificador da conta');
+    expect(s2).not.toContain('com o identificador da conta');
+  });
+
+  it('§3: fundamento é o interesse legítimo', () => {
+    expect(s3).toMatch(/relatórios de erros[^.]*\(interesse legítimo/);
   });
 });
 
