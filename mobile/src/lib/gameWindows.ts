@@ -1,12 +1,52 @@
-// Server source: functions/src/game/windows.ts (predictionOpen). Parity is checked with the server's own test
-// vectors (functions/test/unit/windows.test.ts, describe "predictionOpen") in __tests__/lib/gameWindows.test.ts.
-// The app check only drives the UI; the callable (functions/src/callables/submitPrediction.ts) decides.
-// Task 18 extends this file (MVP window).
-import type { Match } from '@/data/schemas';
+// Server source: functions/src/game/windows.ts (predictionOpen, mvpWindow, MVP_CLOSE_AFTER_MS, MVP_OPEN_ELAPSED) and
+// functions/src/game/mvp.ts (mvpCandidates). Parity is checked with the server's own test vectors
+// (functions/test/unit/windows.test.ts, describes "predictionOpen" and "mvpWindow"; functions/test/unit/mvp.test.ts,
+// describe "mvpCandidates") in __tests__/lib/gameWindows.test.ts.
+// The app check only drives the UI; the callables (functions/src/callables/submitPrediction.ts, voteMvp.ts) decide.
+import type { Match, PlayersDoc } from '@/data/schemas';
 
 /** Open while the match has not started (`NS`) and before the official kickoff. */
 export function predictionOpen(m: Pick<Match, 'status' | 'kickoff'>, now: Date): boolean {
   return m.status === 'NS' && now.getTime() < m.kickoff.getTime();
+}
+
+/** The MVP vote closes 20 minutes after the final whistle (`finishedAt`). */
+export const MVP_CLOSE_AFTER_MS = 20 * 60_000;
+/** The MVP vote opens at minute 80 of the live clock. */
+export const MVP_OPEN_ELAPSED = 80;
+const FINISHED: ReadonlyArray<Match['status']> = ['FT', 'AET', 'PEN'];
+
+export type MvpWindow = { state: 'before' | 'open' | 'closed'; closesAt: Date | null };
+
+/**
+ * LIVE from minute 80: open with no close time yet. FT/AET/PEN: open until `finishedAt` + 20 min, then closed;
+ * before `finishedAt` is known it counts as `before`. Everything else (NS, HT, PST, CANC) is `before`.
+ */
+export function mvpWindow(m: Pick<Match, 'status' | 'elapsed' | 'finishedAt'>, now: Date): MvpWindow {
+  if (m.status === 'LIVE') {
+    return m.elapsed !== null && m.elapsed >= MVP_OPEN_ELAPSED
+      ? { state: 'open', closesAt: null }
+      : { state: 'before', closesAt: null };
+  }
+  if (FINISHED.includes(m.status)) {
+    if (m.finishedAt === null) return { state: 'before', closesAt: null };
+    const closesAt = new Date(m.finishedAt.getTime() + MVP_CLOSE_AFTER_MS);
+    return now.getTime() < closesAt.getTime() ? { state: 'open', closesAt } : { state: 'closed', closesAt };
+  }
+  return { state: 'before', closesAt: null };
+}
+
+export type MvpCandidate = { playerId: string; name: string; number: number | null };
+
+/** Sporting players who played (minutes > 0), sorted by name (`localeCompare(…, 'pt')`), as the server does. */
+export function mvpCandidates(doc: PlayersDoc | null, sportingTeamId = '228'): MvpCandidate[] {
+  if (!doc) return [];
+  return doc.teams
+    .filter((t) => String(t.teamId) === sportingTeamId)
+    .flatMap((t) => t.players)
+    .filter((p) => p.minutes !== null && p.minutes > 0)
+    .map((p) => ({ playerId: String(p.playerId), name: p.name, number: p.number }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt'));
 }
 
 export type Stage = 'table' | 'knockout';
