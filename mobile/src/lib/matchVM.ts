@@ -1,9 +1,10 @@
 // View-models puros dos jogos (Agenda, detalhe do jogo, Home): estado, minuto, resultado, competição
 // e lances. Sem React nem Firestore; só recebem `Match`/`EventItem` já validados (data/schemas.ts).
-import { SPORTING_API_ID, type GameHeaderVM } from '@/components/GameHeader';
+import type { GameHeaderVM } from '@/components/GameHeader';
 import type { EventVM } from '@/components/EventRow';
 import type { EventItem, GameStatus, Match } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
+import { SPORTING_API_ID } from '@/lib/teams';
 
 export type UiState = 'scheduled' | 'live' | 'halftime' | 'finished' | 'postponed' | 'cancelled';
 
@@ -109,8 +110,9 @@ export function isShownEvent(e: EventItem): e is ShownEvent {
 const GOAL_DETAIL: Record<string, string> = {
   'own goal': 'Autogolo',
   penalty: 'Penálti',
-  'missed penalty': 'Penálti falhado',
 };
+
+const MISSED_PENALTY = 'missed penalty';
 
 function isRedCard(detail: string): boolean {
   const d = detail.toLowerCase();
@@ -121,6 +123,10 @@ export function toEventVM(e: ShownEvent, homeTeamId: string): EventVM {
   const base = { minute: minuteText(e.minute, e.extra), side: e.teamId === homeTeamId ? 'home' : 'away' } as const;
   switch (e.type) {
     case 'goal': {
+      // Penálti falhado: o tipo da API é `goal`, mas não é golo (ícone próprio e não conta no resultado).
+      if (e.detail.toLowerCase() === MISSED_PENALTY) {
+        return { ...base, kind: 'missedPenalty', primary: e.playerName ?? '', secondary: 'Penálti falhado' };
+      }
       const secondary = GOAL_DETAIL[e.detail.toLowerCase()];
       return { ...base, kind: 'goal', primary: e.playerName ?? '', ...(secondary ? { secondary } : {}) };
     }
@@ -150,7 +156,7 @@ function partOf(e: EventItem): Part {
 }
 
 function isScoredGoal(e: EventItem): boolean {
-  return e.type === 'goal' && e.detail.toLowerCase() !== 'missed penalty';
+  return e.type === 'goal' && e.detail.toLowerCase() !== MISSED_PENALTY;
 }
 
 /** Lado que marcou. API-Football: no "Own Goal" a equipa do lance é a do jogador, ou seja, a que sofreu. */

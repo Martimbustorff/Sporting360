@@ -10,10 +10,10 @@ import { View } from 'react-native';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
 import { stateLabel, type UiState } from '@/lib/matchVM';
 import { formatKickoffDate, formatTime } from '@/lib/ptDate';
+import { SPORTING_API_ID } from '@/lib/teams';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
 
-export const SPORTING_API_ID = 228;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SPORTING_CREST = require('../../assets/images/sporting-cp-2026.png') as number;
 
@@ -81,8 +81,7 @@ function ScoreBox({ value, testID }: { value: number; testID: string }) {
   );
 }
 
-// `stateLabel` vive em lib/matchVM (partilhado com a linha da Agenda). É lido dentro da função,
-// e não num `const` de módulo, porque matchVM também importa deste ficheiro.
+// `stateLabel` vive em lib/matchVM (partilhado com a linha da Agenda).
 function stripText(game: GameHeaderVM): string {
   if (game.state !== 'live') return stateLabel(game.state);
   if (game.minuteText) return `${stateLabel('live')} - ${game.minuteText}`;

@@ -243,6 +243,13 @@ describe('toEventVM', () => {
     expect(toEventVM(shown({ detail: 'Missed Penalty', playerName: 'W' }), '228').secondary).toBe('Penálti falhado');
   });
 
+  it('missed penalty is its own kind, not a goal', () => {
+    expect(toEventVM(shown({ detail: 'Missed Penalty', playerName: 'W' }), '228')).toMatchObject({
+      kind: 'missedPenalty',
+      primary: 'W',
+    });
+  });
+
   it('var and stoppage minute', () => {
     expect(toEventVM(shown({ type: 'var', minute: 90, extra: 3 }), '228')).toMatchObject({ kind: 'var', minute: '90+3’' });
   });
@@ -316,5 +323,17 @@ describe('groupEvents', () => {
     ]);
     expect(groups[2]?.events).toHaveLength(1);
     expect(groups[3]?.events).toHaveLength(4);
+    expect(groups[2]?.events[0]?.kind).toBe('missedPenalty');
+  });
+
+  it('a missed penalty in regulation time does not change the part score', () => {
+    const groups = groupEvents(
+      [ev({ minute: 30, teamId: '228', detail: 'Missed Penalty' }), ev({ minute: 60, teamId: '217', detail: 'Missed Penalty' })],
+      '228',
+    );
+    expect(groups.map(({ label, score }) => ({ label, score }))).toEqual([
+      { label: '1ª Parte', score: '0-0' },
+      { label: '2ª Parte', score: '0-0' },
+    ]);
   });
 });

@@ -46,4 +46,15 @@ describe('EventRow', () => {
     await render(<EventRow event={ev({ kind: 'var' })} />);
     expect(screen.getByLabelText('VAR')).toBeTruthy();
   });
+
+  it('missed penalty: own label and a red outline ball, not the goal glyph', async () => {
+    await render(<EventRow event={ev({ kind: 'goal', primary: 'Gyökeres' })} />);
+    const goalGlyph = screen.getByTestId('event-glyph').props.children;
+    await render(<EventRow event={ev({ kind: 'missedPenalty', primary: 'Gyökeres', secondary: 'Penálti falhado' })} />);
+    expect(screen.getByLabelText('Penálti falhado')).toBeTruthy();
+    expect(screen.queryByLabelText('Golo')).toBeNull();
+    const glyph = screen.getByTestId('event-glyph');
+    expect(StyleSheet.flatten(glyph.props.style).color).toBe(colors.cardRed);
+    expect(glyph.props.children).not.toEqual(goalGlyph);
+  });
 });

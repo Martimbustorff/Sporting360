@@ -26,31 +26,12 @@ import { VideosTab } from '@/components/match/VideosTab';
 import { useNow } from '@/data/clock';
 import type { Match } from '@/data/schemas';
 import { useMatch } from '@/data/sports';
+import { FOOTBALL_TABS, type MatchTabKey } from '@/lib/matchTabs';
 import { competitionText, toGameHeaderVM } from '@/lib/matchVM';
 import { MONTHS_SHORT, formatTime, lisbonParts } from '@/lib/ptDate';
 import { sportLabel } from '@/lib/sports';
 import { Body } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
-
-export type MatchTabKey =
-  | 'sumario'
-  | 'videos'
-  | 'estatisticas'
-  | 'formacoes'
-  | 'classificacao'
-  | 'prognostico'
-  | 'mvp';
-
-/** Tabs do detalhe de um jogo de futebol, por esta ordem. As outras modalidades não têm tabs. */
-export const FOOTBALL_TABS: { key: MatchTabKey; label: string }[] = [
-  { key: 'sumario', label: 'Sumário' },
-  { key: 'videos', label: 'Vídeos' },
-  { key: 'estatisticas', label: 'Estatísticas' },
-  { key: 'formacoes', label: 'Formações' },
-  { key: 'classificacao', label: 'Classificação' },
-  { key: 'prognostico', label: 'Prognóstico' },
-  { key: 'mvp', label: 'MVP' },
-];
 
 const TAB_VIEWS: Record<MatchTabKey, (props: { match: Match }) => React.JSX.Element> = {
   sumario: SummaryTab,

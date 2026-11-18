@@ -1,7 +1,8 @@
 // Figma: nós 655:31908 (cartão, lado direito: nome, ícone, minuto; alinhado à direita) e 655:31916
 // (substituição, lado esquerdo: minuto, ícone, nome). Ícone: círculo branco 32 (raio 16). Cartão: retângulo
 // 13x19 raio 2 rodado 9.07º; substituição: setas (assets/icons/event-sub.png, exportado do Figma).
-// SEM FIGMA: ícones de golo e VAR (não existem nos nós fornecidos): Ionicons tingidos com tokens.
+// SEM FIGMA: ícones de golo, penálti falhado e VAR (não existem nos nós fornecidos): Ionicons tingidos com
+// tokens. O penálti falhado usa a bola em contorno a vermelho (cardRed), para não se confundir com um golo.
 import { Image } from 'expo-image';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View } from 'react-native';
@@ -11,13 +12,14 @@ import { colors, layout, radius, spacing } from '@/theme/tokens';
 export type EventVM = {
   minute: string;
   side: 'home' | 'away';
-  kind: 'goal' | 'yellow' | 'red' | 'sub' | 'var';
+  kind: 'goal' | 'missedPenalty' | 'yellow' | 'red' | 'sub' | 'var';
   primary: string;
   secondary?: string;
 };
 
 const LABEL: Record<EventVM['kind'], string> = {
   goal: 'Golo',
+  missedPenalty: 'Penálti falhado',
   yellow: 'Cartão amarelo',
   red: 'Cartão vermelho',
   sub: 'Substituição',
@@ -44,6 +46,9 @@ function Glyph({ kind }: { kind: EventVM['kind'] }) {
   }
   if (kind === 'sub') {
     return <Image testID="event-glyph" source={SUB_ICON} contentFit="contain" style={layout.subIcon} />;
+  }
+  if (kind === 'missedPenalty') {
+    return <Ionicons testID="event-glyph" name="football-outline" size={layout.eventGlyph} color={colors.cardRed} />;
   }
   return (
     <Ionicons
