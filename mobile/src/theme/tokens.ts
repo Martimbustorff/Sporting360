@@ -35,6 +35,7 @@ export const fonts = {
   display: 'DinCondensedBold',
   // Body text
   body: 'Poppins',
+  bodyLight: 'PoppinsLight',
   bodyMedium: 'PoppinsMedium',
   bodySemiBold: 'PoppinsSemiBold',
 } as const;
@@ -69,9 +70,8 @@ export const type = {
   authLink: { fontFamily: fonts.body, fontSize: 12, color: colors.white }, // 564:6901 (white at 50%)
   authLinkAction: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primary }, // 564:6902
   authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
-  // Figma uses Poppins Light (not bundled): Regular stands in.
-  authIntro: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
-  termsBody: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
+  authIntro: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
+  termsBody: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 

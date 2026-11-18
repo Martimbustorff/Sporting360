@@ -26,6 +26,7 @@ module.exports = {
       fontFamily: {
         display: ['DinCondensedBold'],
         body: ['Poppins'],
+        bodyLight: ['PoppinsLight'],
         bodyMedium: ['PoppinsMedium'],
         bodySemiBold: ['PoppinsSemiBold'],
       },

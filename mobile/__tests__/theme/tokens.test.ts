@@ -41,6 +41,7 @@ describe('tokens <-> tailwind', () => {
     const ff = tw.theme.extend.fontFamily;
     expect(ff.display).toEqual([fonts.display]);
     expect(ff.body).toEqual([fonts.body]);
+    expect(ff.bodyLight).toEqual([fonts.bodyLight]);
     expect(ff.bodyMedium).toEqual([fonts.bodyMedium]);
     expect(ff.bodySemiBold).toEqual([fonts.bodySemiBold]);
   });
@@ -49,6 +50,7 @@ describe('tokens <-> tailwind', () => {
     expect(Object.keys(FONT_ASSETS)).toEqual([
       'DinCondensedBold',
       'Poppins',
+      'PoppinsLight',
       'PoppinsMedium',
       'PoppinsSemiBold',
     ]);
@@ -56,6 +58,13 @@ describe('tokens <-> tailwind', () => {
   });
 });
 
+
+describe('Poppins Light usage (Figma 564:6971 / 564:7169)', () => {
+  it('authIntro and termsBody use Poppins Light', () => {
+    expect(type.authIntro.fontFamily).toBe('PoppinsLight');
+    expect(type.termsBody.fontFamily).toBe('PoppinsLight');
+  });
+});
 
 describe('component tokens from Figma 564:6950 / 564:7259', () => {
   it('button radius is fully round at button height', () => {
