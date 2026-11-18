@@ -30,6 +30,12 @@ const BOARD_ENTRIES = [
   { uid: 'seed-user-3', displayName: 'Rui Costa', points: 15 },
   { uid: 'seed-user-4', displayName: `Sportinguista #${'seed-user-4'.slice(-4)}`, points: 9 },
   { uid: 'seed-user-5', displayName: 'Inês Pereira', points: 3 },
+  // Fictional names only (store screenshots): same "Nome I." shape as the server rule, never a real user or email.
+  { uid: 'seed-user-6', displayName: 'Marta F.', points: 21 },
+  { uid: 'seed-user-7', displayName: 'Diogo L.', points: 17 },
+  { uid: 'seed-user-8', displayName: 'Sofia R.', points: 14 },
+  { uid: 'seed-user-9', displayName: 'Tomás B.', points: 11 },
+  { uid: 'seed-user-10', displayName: 'Carolina M.', points: 8 },
 ] as const;
 
 const NO_PAIR = { home: null, away: null, halftime: null, extratime: null, penalty: null };
@@ -469,6 +475,26 @@ export function buildFixtures(now: Date = new Date()): SeedDoc[] {
   docs.push({
     path: 'settlements/9000',
     data: { settledAt: now, finalHome: 1, finalAway: 2, officialMvp: ['1002'] },
+  });
+
+  // Points the server wrote when it settled 9000: exact result and the right MVP (Perfil "Meu jogo" and its history).
+  const gameDate = finishedKickoff;
+  for (const [type, points] of [
+    ['prediction_participation', 1],
+    ['prediction_exact', 5],
+    ['mvp_participation', 1],
+    ['mvp_correct', 3],
+  ] as const) {
+    docs.push({
+      path: `pointEvents/${TEST_USER.uid}_9000_${type}`,
+      data: { uid: TEST_USER.uid, gameId: '9000', type, points, gameDate },
+    });
+  }
+
+  // MVP tally of the finished game: closed, voted by the test user, settled (official MVP 1002). Percentages need it.
+  docs.push({
+    path: 'mvpTallies/9000',
+    data: { gameId: '9000', counts: { '1001': 14, '1002': 22, '1003': 3, '1004': 1 }, total: 40, updatedAt: now },
   });
 
   // Leaderboards: only the entries exist, the parent docs `leaderboards/{kind}_{key}` do not.

@@ -10,6 +10,8 @@ import {
   InjuriesDocSchema,
   LineupsDocSchema,
   MatchSchema,
+  MvpTallySchema,
+  PointEventSchema,
   NewsSchema,
   PlayersDocSchema,
   PlayerStatsDocSchema,
@@ -204,5 +206,47 @@ describe('fixtures of the plan 4 screen states', () => {
       { cwd: path.join(__dirname, '..', '..'), encoding: 'utf8' },
     );
     expect(res.stdout).toMatch(/N=\d+/);
+  });
+});
+
+// Task 11 (Plano 5): dados para as capturas das lojas (store/capturas.md).
+describe('buildFixtures: dados das capturas das lojas', () => {
+  const docs = buildFixtures(new Date('2026-11-17T12:00:00Z'));
+  const byPath = new Map(docs.map((d) => [d.path, d.data]));
+
+  it('o jogo 9000 (fechado, votado, liquidado) tem votação com contagens coerentes', () => {
+    const tally = MvpTallySchema.parse(byPath.get('mvpTallies/9000'));
+    expect(tally.gameId).toBe('9000');
+    expect(Object.values(tally.counts).reduce((a, b) => a + b, 0)).toBe(tally.total);
+    expect(byPath.has('mvpVotes/9000_seed-user-1')).toBe(true);
+    expect(byPath.has('settlements/9000')).toBe(true);
+    // O voto do utilizador de teste (1002) é o MVP oficial e o mais votado.
+    const top = Object.entries(tally.counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    expect(top).toBe('1002');
+  });
+
+  it('o jogo 9002 mantém a votação em aberto', () => {
+    expect(MvpTallySchema.safeParse(byPath.get('mvpTallies/9002')).success).toBe(true);
+  });
+
+  it('o utilizador de teste tem os eventos de pontos do jogo 9000 (Perfil, Meu jogo)', () => {
+    const events = docs.filter((d) => d.path.startsWith('pointEvents/seed-user-1_9000_'));
+    expect(events.map((d) => PointEventSchema.parse(d.data).type).sort()).toEqual([
+      'mvp_correct',
+      'mvp_participation',
+      'prediction_exact',
+      'prediction_participation',
+    ]);
+  });
+
+  it('o ranking tem pelo menos 10 entradas e só nomes fictícios, sem emails', () => {
+    const entries = docs.filter((d) => d.path.startsWith('leaderboards/week_') && d.path.includes('/entries/'));
+    expect(entries.length).toBeGreaterThanOrEqual(10);
+    for (const e of entries) {
+      const name = (e.data as { displayName: string }).displayName;
+      expect(name).not.toMatch(/@/);
+      expect(PublicProfileSchema.safeParse(byPath.get(`publicProfiles/${(e.data as { uid: string }).uid}`)).success).toBe(true);
+    }
+    expect(JSON.stringify(docs.filter((d) => d.path.startsWith('publicProfiles/') || d.path.includes('/entries/')))).not.toMatch(/@/);
   });
 });
