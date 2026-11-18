@@ -217,6 +217,73 @@ describe('Votação aberta', () => {
   });
 });
 
+describe('Relógio de 1 segundo (carry da Task 18)', () => {
+  const ended = (msAgo: number) => match({ status: 'FT', elapsed: 90, finishedAt: new Date(NOW.getTime() - msAgo) });
+  // Intervalos de 1 s ainda ativos (criados e não limpos); os outros temporizadores do RN ficam de fora.
+  const live = new Set<unknown>();
+  let setSpy: jest.SpyInstance;
+  let clearSpy: jest.SpyInstance;
+  beforeEach(() => {
+    live.clear();
+    const realSet = global.setInterval;
+    const realClear = global.clearInterval;
+    setSpy = jest.spyOn(global, 'setInterval').mockImplementation(((fn: () => void, ms?: number) => {
+      const id = realSet(fn, ms);
+      if (ms === 1_000) live.add(id);
+      return id;
+    }) as typeof setInterval);
+    clearSpy = jest.spyOn(global, 'clearInterval').mockImplementation(((id: never) => {
+      live.delete(id);
+      realClear(id);
+    }) as typeof clearInterval);
+  });
+  afterEach(() => {
+    setSpy.mockRestore();
+    clearSpy.mockRestore();
+  });
+  const running = () => live.size;
+
+  it('corre só até ao fecho e depois não fica nenhum intervalo', async () => {
+    await render(<MvpTab match={ended(20 * 60_000 - 3_000)} />, { wrapper });
+    expect(running()).toBe(1);
+    await tick(2_000);
+    expect(running()).toBe(1);
+    await tick(1_000);
+    expect(screen.getByText('A votação já fechou.')).toBeTruthy();
+    expect(running()).toBe(0);
+  });
+
+  it('já fechado ao abrir o ecrã: não arranca intervalo', async () => {
+    await render(<MvpTab match={ended(25 * 60_000)} />, { wrapper });
+    expect(screen.getByText('A votação já fechou.')).toBeTruthy();
+    expect(running()).toBe(0);
+  });
+
+  it('resultado apurado pára o intervalo, mesmo com a janela aberta', async () => {
+    const { rerender } = await render(<MvpTab match={ended(10 * 60_000)} />, { wrapper });
+    expect(running()).toBe(1);
+    mockData.settlement = { status: 'ready', data: { finalHome: 1, finalAway: 0, officialMvp: ['10'] } };
+    await rerender(<MvpTab match={ended(10 * 60_000)} />);
+    expect(running()).toBe(0);
+  });
+
+  it('o servidor diz que fechou (relógio adiantado): pára o intervalo', async () => {
+    mockCall.mockRejectedValueOnce(Object.assign(new Error('MVP_CLOSED'), { code: 'failed-precondition' }));
+    await render(<MvpTab match={ended(10 * 60_000)} />, { wrapper });
+    expect(running()).toBe(1);
+    await press('Votar em Trincão');
+    await press('Confirmar');
+    await flush();
+    expect(screen.getByText('A votação já fechou.')).toBeTruthy();
+    expect(running()).toBe(0);
+  });
+
+  it('jogo ao vivo não tem intervalo', async () => {
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(running()).toBe(0);
+  });
+});
+
 describe('Erros da callable', () => {
   async function voteTrincao(m = match()) {
     await render(<MvpTab match={m} />, { wrapper });

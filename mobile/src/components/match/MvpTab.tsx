@@ -20,6 +20,7 @@ import { useMyGamePoints, useMyMvpVote, useSettlement } from '@/data/user';
 import {
   clockText,
   GameActionError,
+  MVP_CLOSE_AFTER_MS,
   MVP_OPEN_ELAPSED,
   mvpCandidates,
   mvpWindow,
@@ -82,15 +83,23 @@ function mvpCorrectPoints(events: PointEvent[]): number {
   return events.filter((e) => e.type === 'mvp_correct').reduce((sum, e) => sum + e.points, 0);
 }
 
-/** Relógio a cada segundo só depois do apito final (contagem "Fecha em mm:ss" e fecho sozinho). */
-function useMvpClock(active: boolean): Date {
+/**
+ * Relógio a cada segundo enquanto a janela do voto está aberta depois do apito final (contagem "Fecha em mm:ss" e fecho
+ * sozinho). `untilMs` é o fecho; o intervalo pára nesse instante, e não arranca se `stop` (resultado apurado ou
+ * servidor já disse que fechou) ou se o fecho já passou: nunca fica um intervalo a correr sem efeito.
+ */
+function useMvpClock(untilMs: number | null, stop: boolean): Date {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     setNow(new Date());
-    if (!active) return undefined;
-    const interval = setInterval(() => setNow(new Date()), TICK_MS);
+    if (untilMs === null || stop || Date.now() >= untilMs) return undefined;
+    const interval = setInterval(() => {
+      const next = new Date();
+      setNow(next);
+      if (next.getTime() >= untilMs) clearInterval(interval);
+    }, TICK_MS);
     return () => clearInterval(interval);
-  }, [active]);
+  }, [untilMs, stop]);
   return now;
 }
 
@@ -255,10 +264,11 @@ export function MvpTab({ match }: { match: Match }) {
   const points = useMyGamePoints(match.id, uid);
 
   const finishedAtMs = match.finishedAt?.getTime() ?? null;
-  const now = useMvpClock(FINISHED.includes(match.status) && finishedAtMs !== null);
 
   // O servidor disse que fechou (relógio do telemóvel adiantado). Esquece-se quando o jogo muda de estado.
   const [serverClosed, setServerClosed] = useState(false);
+  const closesAtMs = FINISHED.includes(match.status) && finishedAtMs !== null ? finishedAtMs + MVP_CLOSE_AFTER_MS : null;
+  const now = useMvpClock(closesAtMs, serverClosed || settlement.status === 'ready');
   const [sent, setSent] = useState<string | null>(null);
   useEffect(() => {
     setServerClosed(false);
