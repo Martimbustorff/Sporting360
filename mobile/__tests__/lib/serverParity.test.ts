@@ -49,3 +49,16 @@ describe('mobile/server parity (publicName, titleCasePt, derivedName, validateDi
     expect(a).toBe(b);
   });
 });
+
+// Task 17 (carry da revisão da Task 16): a nota do prolongamento usa a mesma classificação de rondas que o quadro
+// das eliminatórias no servidor (functions/src/football/bracket.ts, `stageOf`). Aspas normalizadas (o servidor usa ").
+describe('mobile/server parity (stageOf)', () => {
+  it('stageOf is identical on both sides', () => {
+    const app = readFileSync(join(__dirname, '..', '..', 'src', 'lib', 'gameWindows.ts'), 'utf8');
+    const server = read('functions/src/football/bracket.ts');
+    const a = body(app, 'stageOf').replace(/"/g, "'");
+    const b = body(server, 'stageOf').replace(/"/g, "'");
+    expect(a.length).toBeGreaterThan(40);
+    expect(a).toBe(b);
+  });
+});

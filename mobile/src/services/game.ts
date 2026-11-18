@@ -2,7 +2,9 @@
 // Códigos lidos de functions/src/callables/submitPrediction.ts e voteMvp.ts:
 //   unauthenticated → UNAUTHENTICATED; invalid-argument → INVALID; already-exists → ALREADY;
 //   failed-precondition PREDICTION_CLOSED / MVP_CLOSED → CLOSED, MVP_NOT_OPEN → NOT_OPEN;
-//   unavailable / deadline-exceeded (sem rede) → OFFLINE; not-found e o resto → UNKNOWN (vai ao Crashlytics).
+//   unavailable / deadline-exceeded (sem rede) → OFFLINE; internal com mensagem de rede → OFFLINE (Task 17: no
+//   telemóvel, sem rede o SDK costuma dar `internal`; ver revisão da Task 16); not-found e o resto → UNKNOWN
+//   (vai ao Crashlytics). OFFLINE nunca vai ao Crashlytics.
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GameActionError, type GameActionCode } from '@/lib/gameWindows';
 import { codeOf, reportCode } from '@/lib/report';
@@ -10,6 +12,10 @@ import { fns } from '@/services/firebase';
 
 const messageOf = (e: unknown): unknown =>
   typeof e === 'object' && e !== null ? (e as { message?: unknown }).message : undefined;
+
+/** Mensagens de falha de rede dos SDKs (Android: IOException / UnknownHost; iOS: NSURLError). */
+const NETWORK_MESSAGE =
+  /network|internet|offline|connection|unreachable|timed? ?out|resolve host|UnknownHost|ECONN|socket/i;
 
 function toCode(e: unknown): GameActionCode {
   const code = (codeOf(e) ?? '').replace(/^functions\//, '');
@@ -23,6 +29,10 @@ function toCode(e: unknown): GameActionCode {
     case 'unavailable':
     case 'deadline-exceeded':
       return 'OFFLINE';
+    case 'internal': {
+      const msg = messageOf(e);
+      return typeof msg === 'string' && NETWORK_MESSAGE.test(msg) ? 'OFFLINE' : 'UNKNOWN';
+    }
     case 'failed-precondition':
       return messageOf(e) === 'MVP_NOT_OPEN' ? 'NOT_OPEN' : 'CLOSED';
     default:

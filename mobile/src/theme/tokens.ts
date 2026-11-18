@@ -91,6 +91,11 @@ export const type = {
   tableTeam: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white },
   tableValue: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase', textAlign: 'center' },
   tablePosition: { fontFamily: fonts.display, fontSize: 20, color: colors.black, textTransform: 'uppercase' },
+  // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427): "S360" display com o S a primary,
+  // "MATCH" fino e "DAY" carregado
+  shareLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
+  shareMatch: { fontFamily: fonts.bodyLight, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
+  shareDay: { fontFamily: fonts.bodySemiBold, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
@@ -268,6 +273,10 @@ export const layout = {
   authRecoverBottom: 30, // "Enviar" to keyboard / bottom
   authMutedOpacity: 0.5,
   authNoteWidth: 267, // terms note under "Criar conta"
+  // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
+  shareCardWidth: 347,
+  shareQr: 72,
+  shareQrQuietZone: 4,
   termsTop: 16, // header bottom to text (564:7169)
   termsSectionGap: 12,
 } as const;

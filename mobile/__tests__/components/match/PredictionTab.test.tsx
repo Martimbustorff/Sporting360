@@ -21,6 +21,8 @@ jest.mock('@/services/firebase', () => ({ fns: jest.fn(() => ({ __mock: 'functio
 jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: null, providers: [] } }),
 }));
+// Task 17: a partilha mede pelo track (mock) e usa os mocks de react-native-share / view-shot / qrcode (__mocks__).
+jest.mock('@/services/analytics', () => ({ track: jest.fn() }));
 jest.mock('@/data/user', () => ({
   useMyPrediction: jest.fn(() => mockData.prediction),
   useSettlement: jest.fn(() => mockData.settlement),
@@ -30,6 +32,10 @@ jest.mock('@/data/user', () => ({
 import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { httpsCallable } from '@react-native-firebase/functions';
+import { recordError } from '@react-native-firebase/crashlytics';
+import Share from 'react-native-share';
+import { captureRef } from 'react-native-view-shot';
+import { track } from '@/services/analytics';
 import { Stepper } from '@/components/Stepper';
 import { PredictionTab } from '@/components/match/PredictionTab';
 
@@ -41,11 +47,11 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 const NOW = new Date('2026-11-21T17:45:00Z');
 const KICKOFF = new Date('2026-11-21T20:00:00Z'); // 2 h 15 min depois de NOW
 
-function match(over: { status?: GameStatus; kickoff?: Date; type?: CompetitionType } = {}): Match {
+function match(over: { status?: GameStatus; kickoff?: Date; type?: CompetitionType; round?: string } = {}): Match {
   return {
     id: '1001',
     sport: 'football',
-    competition: { key: 'football_94_2026', id: '94', name: 'Liga Portugal', type: over.type ?? 'league', season: '2026', round: 'Regular Season - 12', roundLabel: null },
+    competition: { key: 'football_94_2026', id: '94', name: 'Liga Portugal', type: over.type ?? 'league', season: '2026', round: over.round ?? 'Regular Season - 12', roundLabel: null },
     home: { id: '228', name: 'Sporting CP', logo: null },
     away: { id: '217', name: 'SC Braga', logo: null },
     sportingSide: 'home',
@@ -124,6 +130,26 @@ describe('Prognóstico aberto', () => {
     expect(screen.getByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
+  // Task 17 (carry da revisão da Task 16): o servidor conta prolongamento e penáltis em todos os jogos a eliminar.
+  it.each([
+    ['supertaça', { type: 'supercup' as const, round: 'Final' }],
+    ['eliminatória europeia', { type: 'europe' as const, round: 'Round of 16' }],
+    ['play-off europeu', { type: 'europe' as const, round: 'Knockout Round Play-offs' }],
+  ])('%s mostra a regra do prolongamento e penáltis', async (_, over) => {
+    await render(<PredictionTab match={match(over)} />, { wrapper });
+    expect(screen.getByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
+  });
+
+  it('fase de liga europeia não mostra a regra do prolongamento', async () => {
+    await render(<PredictionTab match={match({ type: 'europe', round: 'League Stage - 3' })} />, { wrapper });
+    expect(screen.queryByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
+  });
+
+  it('sem prognóstico não há botão de partilha', async () => {
+    await render(<PredictionTab match={match()} />, { wrapper });
+    expect(screen.queryByLabelText('Partilhar prognóstico')).toBeNull();
+  });
+
   it('a contagem atualiza a cada 30 s', async () => {
     await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 2 * 60_000 + 10_000) })} />, { wrapper });
     expect(screen.getByText('Fecha em 2 min')).toBeTruthy();
@@ -189,6 +215,20 @@ describe('Erros da callable', () => {
     expect(value('Sporting CP')).toBe(2);
     expect(value('SC Braga')).toBe(1);
     expect(screen.getByLabelText('Submeter prognóstico')).toBeTruthy();
+  });
+
+  // Task 17 (carry da revisão da Task 16): no telemóvel, sem rede o SDK costuma dar `internal` com mensagem de rede.
+  it('sem rede (internal com mensagem de rede): mensagem de sem ligação, valores ficam e não vai ao Crashlytics', async () => {
+    mockCall.mockRejectedValueOnce(
+      Object.assign(new Error('A network error (such as timeout, interrupted connection or unreachable host) has occurred.'), {
+        code: 'internal',
+      }),
+    );
+    await submit21();
+    expect(screen.getByText('Sem ligação. O teu prognóstico não foi enviado; tenta outra vez.')).toBeTruthy();
+    expect(value('Sporting CP')).toBe(2);
+    expect(value('SC Braga')).toBe(1);
+    expect(recordError).not.toHaveBeenCalled();
   });
 
   it('janela fechada no servidor (failed-precondition): mensagem de fechado e sem botão', async () => {
@@ -277,5 +317,61 @@ describe('Adiado e cancelado (Review Focus 2)', () => {
     await render(<PredictionTab match={match({ status: 'CANC' })} />, { wrapper });
     expect(screen.getByText('Jogo cancelado. Sem pontos.')).toBeTruthy();
     expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+  });
+});
+
+// Task 17: botão "Partilhar prognóstico" quando há prognóstico; abre o cartão "S360 MATCHDAY" e partilha imagem + texto.
+describe('Partilhar prognóstico', () => {
+  it('prognóstico guardado: abre o cartão, partilha e fecha', async () => {
+    mockData.prediction = prediction(2, 1);
+    await render(<PredictionTab match={match()} />, { wrapper });
+    await press('Partilhar prognóstico');
+    expect(screen.getByText('#JogoAJogoLadoALado')).toBeTruthy();
+    expect(screen.getByTestId('share-score-home')).toHaveTextContent('2');
+    expect(screen.getByTestId('share-score-away')).toHaveTextContent('1');
+
+    await press('Partilhar');
+    await flush();
+    expect(captureRef).toHaveBeenCalledTimes(1);
+    expect(Share.open).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'file:///tmp/card.png',
+        message: expect.stringContaining('https://scp360-37a74.web.app/j?src=share&game=1001'),
+      }),
+    );
+    expect(track).toHaveBeenCalledWith('share_prediction', { game: '1001' });
+    expect(screen.queryByText('#JogoAJogoLadoALado')).toBeNull();
+  });
+
+  it('fechar o cartão sem partilhar', async () => {
+    mockData.prediction = prediction(2, 1);
+    await render(<PredictionTab match={match()} />, { wrapper });
+    await press('Partilhar prognóstico');
+    await press('Fechar');
+    expect(screen.queryByText('#JogoAJogoLadoALado')).toBeNull();
+    expect(Share.open).not.toHaveBeenCalled();
+  });
+
+  it('logo depois de submeter já se pode partilhar', async () => {
+    await render(<PredictionTab match={match()} />, { wrapper });
+    await press('Mais um golo para Sporting CP');
+    await press('Submeter prognóstico');
+    await press('Confirmar');
+    await flush();
+    await press('Partilhar prognóstico');
+    expect(screen.getByTestId('share-score-home')).toHaveTextContent('1');
+    expect(screen.getByTestId('share-score-away')).toHaveTextContent('0');
+  });
+
+  it('falha da captura: mensagem e o cartão fica aberto', async () => {
+    mockData.prediction = prediction(2, 1);
+    (captureRef as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'snap' }));
+    await render(<PredictionTab match={match()} />, { wrapper });
+    await press('Partilhar prognóstico');
+    await press('Partilhar');
+    await flush();
+    expect(screen.getByText('Não foi possível partilhar. Tenta outra vez.')).toBeTruthy();
+    expect(screen.getByText('#JogoAJogoLadoALado')).toBeTruthy();
+    expect(recordError).toHaveBeenCalledTimes(1);
   });
 });

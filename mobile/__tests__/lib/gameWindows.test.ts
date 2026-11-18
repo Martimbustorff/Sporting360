@@ -1,5 +1,5 @@
 // Task 16: janela do prognóstico. Vetores copiados de functions/test/unit/windows.test.ts (describe "predictionOpen").
-import { clockText, GameActionError, predictionOpen } from '@/lib/gameWindows';
+import { clockText, GameActionError, isKnockoutGame, predictionOpen } from '@/lib/gameWindows';
 import type { GameStatus } from '@/data/schemas';
 
 const game = (over: { kickoff?: Date; status?: GameStatus } = {}) => ({
@@ -59,5 +59,28 @@ describe('GameActionError', () => {
     expect(e).toBeInstanceOf(Error);
     expect(e.code).toBe('OFFLINE');
     expect(e.name).toBe('GameActionError');
+  });
+});
+
+// Task 17 (carry da revisão da Task 16): o servidor conta prolongamento e penáltis como empate em qualquer jogo
+// (functions/src/game/result.ts); a nota aparece em todos os jogos a eliminar: taças, supertaça e fases a eliminar europeias.
+describe('isKnockoutGame', () => {
+  const c = (type: 'league' | 'cup' | 'supercup' | 'europe' | 'friendly', round: string | null) => ({ type, round });
+  it.each([
+    [c('cup', '4th Round'), true],
+    [c('cup', 'Something new'), true],
+    [c('supercup', 'Final'), true],
+    [c('europe', 'Round of 16'), true],
+    [c('europe', 'Knockout Round Play-offs'), true],
+    [c('europe', 'Quarter-finals'), true],
+    [c('europe', '3rd Qualifying Round'), true],
+    [c('europe', 'Final'), true],
+    [c('europe', 'League Stage - 3'), false],
+    [c('europe', 'Group A - 2'), false],
+    [c('europe', null), false],
+    [c('league', 'Regular Season - 12'), false],
+    [c('friendly', 'Final'), false],
+  ])('%j → %s', (comp, expected) => {
+    expect(isKnockoutGame(comp)).toBe(expected);
   });
 });

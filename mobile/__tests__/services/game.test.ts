@@ -6,6 +6,7 @@ jest.mock('@react-native-firebase/functions');
 jest.mock('@react-native-firebase/crashlytics');
 jest.mock('@/services/firebase', () => ({ fns: jest.fn(() => ({ __mock: 'functions' })) }));
 
+import { recordError } from '@react-native-firebase/crashlytics';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GameActionError } from '@/lib/gameWindows';
 import { submitPrediction, voteMvp } from '@/services/game';
@@ -46,9 +47,25 @@ describe('submitPrediction', () => {
     ['unauthenticated', 'Sessão necessária.', 'UNAUTHENTICATED'],
     ['not-found', 'Jogo não encontrado.', 'UNKNOWN'],
     ['internal', 'x', 'UNKNOWN'],
+    ['internal', 'A network error (such as timeout, interrupted connection or unreachable host) has occurred.', 'OFFLINE'],
+    ['functions/internal', 'Unable to resolve host "europe-west1-scp360-37a74.cloudfunctions.net"', 'OFFLINE'],
+    ['internal', 'The Internet connection appears to be offline.', 'OFFLINE'],
   ])('%s (%s) → %s', async (code, message, expected) => {
     mockCall.mockRejectedValueOnce(err(code, message));
     expect(await codeOf(submitPrediction('1001', 2, 1))).toBe(expected);
+  });
+
+  it('sem rede não vai ao Crashlytics; um erro desconhecido vai', async () => {
+    mockCall.mockRejectedValueOnce(err('unavailable'));
+    await codeOf(submitPrediction('1001', 2, 1));
+    mockCall.mockRejectedValueOnce(err('deadline-exceeded'));
+    await codeOf(submitPrediction('1001', 2, 1));
+    mockCall.mockRejectedValueOnce(err('internal', 'java.net.UnknownHostException: no network'));
+    await codeOf(submitPrediction('1001', 2, 1));
+    expect(recordError).not.toHaveBeenCalled();
+    mockCall.mockRejectedValueOnce(err('internal', 'INTERNAL'));
+    await codeOf(submitPrediction('1001', 2, 1));
+    expect(recordError).toHaveBeenCalledTimes(1);
   });
 
   it('erro sem código → UNKNOWN', async () => {

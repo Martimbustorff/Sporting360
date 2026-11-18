@@ -114,7 +114,9 @@ const URLS: [string, string][] = [
   ['/comunidade', '/comunidade'],
   ['/apagar-conta', '/apagar-conta'],
   ['/ligar-apple', '/ligar-apple'],
-  ['/j', '/j'],
+  // Task 17: /j sem jogo vai para a Home; com jogo abre o detalhe na tab Prognóstico.
+  ['/j', '/'],
+  ['/j?src=share&game=1001', '/jogo/1001'],
 ];
 
 let errorSpy: jest.SpyInstance;

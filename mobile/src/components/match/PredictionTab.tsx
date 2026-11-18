@@ -5,21 +5,25 @@
 // Regras (spec §6): uma submissão definitiva, só pela callable submitPrediction (services/game.ts); fecha ao apito
 // inicial. A janela da app (lib/gameWindows.predictionOpen) só desenha a UI: o servidor decide e os seus códigos de
 // erro dão as mensagens. Adiado (PST) fecha com explicação e reabre sozinho quando o jogo volta a NS.
-// Task 17 acrescenta o botão de partilha no lugar marcado "Task 17" (P52).
-import { useEffect, useRef, useState } from 'react';
+// Task 17 (P52): com prognóstico (guardado ou acabado de enviar) há "Partilhar prognóstico", que abre o cartão
+// "S360 MATCHDAY" (ShareCard) numa folha com "Partilhar" e "Fechar", como na referência 818:20427.
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { ShareCard } from '@/components/ShareCard';
 import { Stepper } from '@/components/Stepper';
 import type { Match, PointEvent } from '@/data/schemas';
 import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
 import { countdownText } from '@/lib/countdown';
-import { GameActionError, predictionOpen, type GameActionCode } from '@/lib/gameWindows';
+import { GameActionError, isKnockoutGame, predictionOpen, type GameActionCode } from '@/lib/gameWindows';
 import { useSession } from '@/providers/SessionProvider';
+import { reportCode } from '@/lib/report';
 import { submitPrediction } from '@/services/game';
+import { shareMatchday } from '@/services/share';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
@@ -32,6 +36,10 @@ export const PREDICTION_TEXT = {
   cancelled: 'Jogo cancelado. Sem pontos.',
   error: 'Não foi possível carregar os dados.',
   signedOut: 'Entra na tua conta para fazeres o prognóstico.',
+  share: 'Partilhar prognóstico',
+  shareSend: 'Partilhar',
+  shareClose: 'Fechar',
+  shareError: 'Não foi possível partilhar. Tenta outra vez.',
 } as const;
 
 export const PREDICTION_ERRORS: Record<GameActionCode, string> = {
@@ -47,8 +55,6 @@ export const PREDICTION_ERRORS: Record<GameActionCode, string> = {
 /** A contagem atualiza a cada 30 s. */
 const TICK_MS = 30_000;
 const MAX_GOALS = 20;
-/** Taças (e supertaça): o resultado com prolongamento conta; penáltis contam como empate (functions/src/game/result.ts). */
-const CUP_TYPES: ReadonlyArray<Match['competition']['type']> = ['cup', 'supercup'];
 
 const pointsText = (n: number) => `+${n} ${n === 1 ? 'ponto' : 'pontos'}`;
 
@@ -120,6 +126,64 @@ function ConfirmSheet({
   );
 }
 
+/** Folha com o cartão "S360 MATCHDAY": captura e partilha (imagem + texto com link); fecha depois de partilhar. */
+function ShareSheet({ match, home, away, onClose }: { match: Match; home: number; away: number; onClose: () => void }) {
+  const { bottom } = useSafeAreaInsets();
+  const card = useRef<ComponentRef<typeof View>>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const share = async () => {
+    setSending(true);
+    setError(null);
+    try {
+      const result = await shareMatchday(card, match, home, away);
+      if (result === 'shared') onClose();
+    } catch (e) {
+      reportCode('SHARE_FAILED', e);
+      setError(PREDICTION_TEXT.shareError);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
+        <View
+          accessibilityViewIsModal
+          style={{
+            backgroundColor: colors.bg,
+            borderTopLeftRadius: radius.sheet,
+            borderTopRightRadius: radius.sheet,
+            padding: layout.lockModalPad,
+            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
+            gap: layout.lockModalGap,
+            alignItems: 'stretch',
+          }}
+        >
+          <View style={{ alignItems: 'center' }}>
+            <ShareCard ref={card} match={match} home={home} away={away} />
+          </View>
+          {error ? <FormMessage text={error} /> : null}
+          <PrimaryButton label={PREDICTION_TEXT.shareSend} onPress={() => void share()} loading={sending} />
+          <PrimaryButton label={PREDICTION_TEXT.shareClose} variant="secondary" onPress={onClose} />
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function SharePrediction({ match, home, away }: { match: Match; home: number; away: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ alignSelf: 'stretch' }}>
+      <PrimaryButton label={PREDICTION_TEXT.share} variant="secondary" onPress={() => setOpen(true)} />
+      {open ? <ShareSheet match={match} home={home} away={away} onClose={() => setOpen(false)} /> : null}
+    </View>
+  );
+}
+
 function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onClosed: () => void }) {
   // Os valores escolhidos ficam aqui enquanto o formulário existe: um erro (sem rede, etc.) não os apaga.
   const [home, setHome] = useState(0);
@@ -131,7 +195,14 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
   // Um toque duplo em "Confirmar" antes do novo render não chama a callable duas vezes.
   const busy = useRef(false);
 
-  if (sent) return <MyPrediction home={sent.home} away={sent.away} />;
+  if (sent) {
+    return (
+      <View style={{ gap: spacing.md, alignItems: 'center' }}>
+        <MyPrediction home={sent.home} away={sent.away} />
+        <SharePrediction match={match} home={sent.home} away={sent.away} />
+      </View>
+    );
+  }
 
   const send = async () => {
     if (busy.current) return;
@@ -159,7 +230,7 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
   return (
     <View style={{ gap: spacing.lg }}>
       <Info text={PREDICTION_TEXT.rules} />
-      {CUP_TYPES.includes(match.competition.type) ? <Info text={PREDICTION_TEXT.cupRule} /> : null}
+      {isKnockoutGame(match.competition) ? <Info text={PREDICTION_TEXT.cupRule} /> : null}
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
         <Stepper
           label={match.home.name}
@@ -240,7 +311,7 @@ export function PredictionTab({ match }: { match: Match }) {
             {pointsText(predictionPoints(points.data))}
           </Display>
         ) : null}
-        {/* Task 17: botão de partilha do cartão "S360 MATCHDAY" aqui. */}
+        <SharePrediction match={match} home={prediction.data.home} away={prediction.data.away} />
       </View>
     );
   } else if (match.status === 'PST') {

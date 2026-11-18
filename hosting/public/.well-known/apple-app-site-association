@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["5U6HWPNTZ3.com.scp360"],
+        "components": [{ "/": "/j*" }]
+      }
+    ]
+  }
+}

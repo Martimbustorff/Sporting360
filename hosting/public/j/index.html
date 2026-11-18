@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S360</title>
+  <meta name="description" content="Faz o teu prognóstico na S360.">
+  <meta name="apple-itunes-app" content="app-id=6450608023">
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: #001B13; color: #FFFFFF; font-family: -apple-system, system-ui, sans-serif;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+    }
+    main { padding: 32px; max-width: 360px; }
+    .logo { font-size: 56px; font-weight: 700; letter-spacing: 1px; margin: 0; }
+    .logo span { color: #00835B; }
+    p { opacity: 0.7; margin: 16px 0 24px; }
+    a.store {
+      display: block; margin: 12px 0; padding: 14px 16px; border-radius: 52px;
+      background: #FFFFFF; color: #00835B; font-weight: 700; text-decoration: none;
+    }
+    #desktop { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 class="logo"><span>S</span>360</h1>
+    <p>Faz o teu prognóstico na S360.</p>
+    <p id="desktop">Abre este link no telemóvel.</p>
+    <a class="store" id="ios" href="https://apps.apple.com/app/id6450608023?ct=share">App Store</a>
+    <a class="store" id="android" href="https://play.google.com/store/apps/details?id=com.scp360">Google Play</a>
+  </main>
+  <script src="/j/redirect.js"></script>
+  <script>
+    (function () {
+      var r = window.S360Redirect;
+      if (!r) return;
+      var game = r.gameFrom(window.location.search);
+      document.getElementById('android').href = r.storeUrlFor('Android', game);
+      var url = r.storeUrlFor(navigator.userAgent, game);
+      if (url) window.location.replace(url);
+      else document.getElementById('desktop').style.display = 'block';
+    })();
+  </script>
+</body>
+</html>

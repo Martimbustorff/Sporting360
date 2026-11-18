@@ -1,0 +1,14 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.scp360",
+      "sha256_cert_fingerprints": [
+        "40:01:41:D8:98:C9:D6:DE:26:89:35:CC:6A:28:AD:D4:57:F9:0E:AB:BB:43:AE:21:14:81:16:70:81:52:24:9F",
+        "6C:FF:45:8A:D3:95:19:FC:EB:36:39:98:C9:08:21:54:53:5E:54:62:69:78:E7:30:7E:84:DB:C6:AF:95:24:DF",
+        "C3:7B:10:D1:52:34:37:3C:0D:C0:04:3B:86:EB:56:65:D4:A1:4B:54:B0:60:68:5B:3C:1E:F0:7B:1E:14:C2:2B"
+      ]
+    }
+  }
+]

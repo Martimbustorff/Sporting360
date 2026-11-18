@@ -28,6 +28,25 @@ describe('app.json', () => {
   });
 });
 
+describe('app.json share link (Task 17)', () => {
+  const { expo } = read('app.json');
+
+  it('associates the Hosting domain for iOS universal links', () => {
+    expect(expo.ios.associatedDomains).toEqual(['applinks:scp360-37a74.web.app']);
+  });
+
+  it('verifies the Hosting domain for Android app links on /j', () => {
+    expect(expo.android.intentFilters).toEqual([
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: [{ scheme: 'https', host: 'scp360-37a74.web.app', pathPrefix: '/j' }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ]);
+  });
+});
+
 describe('mobile/firebase.json', () => {
   it('turns analytics collection off by default', () => {
     const fb = read('firebase.json');
