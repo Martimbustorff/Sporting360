@@ -16,3 +16,15 @@ describe("periodKeys", () => {
     expect(k.month).toBe("2027-01");
   });
 });
+
+describe("periodKeys deferred minors", () => {
+  it("ISO week boundaries in Lisbon", () => {
+    expect(periodKeys(new Date("2026-07-12T23:30:00Z")).week).toBe("2026-W29");
+    expect(periodKeys(new Date("2026-12-27T23:30:00Z")).week).toBe("2026-W52");
+    expect(periodKeys(new Date("2026-12-28T00:00:00Z")).week).toBe("2026-W53");
+  });
+  it("season spans the calendar year change", () => {
+    expect(periodKeys(new Date("2026-12-15T12:00:00Z")).season).toBe("2026-2027");
+    expect(periodKeys(new Date("2027-01-15T12:00:00Z")).season).toBe("2026-2027");
+  });
+});

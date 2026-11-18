@@ -26,6 +26,21 @@ const pts = async (board: string, uid: string): Promise<number | undefined> =>
   (await db.doc(`leaderboards/${board}/entries/${uid}`).get()).data()?.points;
 const base = { uid: "alice", gameId: "g1", type: "prediction_exact" as const, points: 3, gameDate: GAME_DATE };
 
+describe("awardPoints input validation", () => {
+  it.each([
+    ["uid vazio", { uid: "" }],
+    ["uid com /", { uid: "a/b" }],
+    ["gameId vazio", { gameId: "" }],
+    ["gameId com /", { gameId: "a/b" }],
+    ["periods vazio", { periods: [] }],
+    ["gameDate inválida", { gameDate: new Date("x") }],
+    ["type desconhecido", { type: "bogus" as never }],
+  ])("rejeita %s", async (_n, over) => {
+    await expect(awardPoints(db, { ...base, ...over })).rejects.toThrow();
+    expect((await db.collection("pointEvents").get()).size).toBe(0);
+  });
+});
+
 describe("awardPoints", () => {
   it("atribui pontos nos três períodos da data do jogo", async () => {
     await db.doc("users/alice").set({ displayName: "Alice" });

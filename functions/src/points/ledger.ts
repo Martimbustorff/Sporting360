@@ -2,6 +2,14 @@ import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore"
 import { periodKeys } from "../time/periods";
 import { publicName } from "../data/profiles";
 
+const POINT_TYPES = [
+  "prediction_participation",
+  "prediction_exact",
+  "prediction_outcome",
+  "mvp_participation",
+  "mvp_correct",
+] as const;
+
 export type PointType =
   | "prediction_participation"
   | "prediction_exact"
@@ -28,6 +36,14 @@ export interface AwardInput {
 export async function awardPoints(db: Firestore, e: AwardInput): Promise<boolean> {
   if (!Number.isInteger(e.points) || e.points <= 0) {
     throw new Error(`awardPoints: points tem de ser um inteiro > 0 (recebido ${e.points})`);
+  }
+  const badId = (v: unknown): boolean => typeof v !== "string" || v.length === 0 || v.includes("/");
+  if (badId(e.uid)) throw new Error(`awardPoints: uid inválido (${String(e.uid)})`);
+  if (e.gameId !== null && badId(e.gameId)) throw new Error(`awardPoints: gameId inválido (${String(e.gameId)})`);
+  if (!POINT_TYPES.includes(e.type)) throw new Error(`awardPoints: type desconhecido (${String(e.type)})`);
+  if (e.periods !== undefined && e.periods.length === 0) throw new Error("awardPoints: periods não pode ser vazio");
+  if (!(e.gameDate instanceof Date) || Number.isNaN(e.gameDate.getTime())) {
+    throw new Error("awardPoints: gameDate inválida");
   }
   const id = `${e.uid}_${e.gameId ?? "none"}_${e.type}`;
   const keys = periodKeys(e.gameDate);

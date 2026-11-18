@@ -189,6 +189,35 @@ describe("settleDue", () => {
     warn.mockRestore();
   });
 
+  it("settleGame duas vezes mantém o settledAt da primeira", async () => {
+    await seedGame();
+    await seedPlayers();
+    await seedPrediction("a", 2, 1);
+    const r1 = await settleGame(db, "m1", NOW);
+    expect(r1.settled).toBe(true);
+    const first = (await db.doc("settlements/m1").get()).data()!.settledAt;
+    await new Promise((r) => setTimeout(r, 50));
+    const r2 = await settleGame(db, "m1", NOW);
+    expect(r2.settled).toBe(true);
+    const second = (await db.doc("settlements/m1").get()).data()!.settledAt;
+    expect(second.isEqual(first)).toBe(true);
+  });
+
+  it("settleGame com PEN de golos desiguais conta empate", async () => {
+    await seedGame({ status: "PEN", statusRaw: "PEN", scorehome: 3, scoreaway: 2 });
+    await seedPlayers();
+    await settleGame(db, "m1", NOW);
+    const st = (await db.doc("settlements/m1").get()).data()!;
+    expect([st.finalHome, st.finalAway]).toEqual([2, 2]);
+  });
+
+  it("settleGame faz warn quando o jogo não é legível", async () => {
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    expect((await settleGame(db, "ghost", NOW)).settled).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it("250 prognósticos num jogo (lotes de getAll)", async () => {
     await seedGame();
     await seedPlayers();

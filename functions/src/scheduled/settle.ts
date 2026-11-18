@@ -73,7 +73,10 @@ export async function settleGame(
 ): Promise<SettleResult> {
   const skipped: SettleResult = { predictions: 0, votes: 0, officialMvp: [], settled: false };
   const game = await getGameState(db, gameId, now);
-  if (!game) return skipped;
+  if (!game) {
+    logger.warn(`settle: jogo ${gameId} não legível (getGameState devolveu null)`);
+    return skipped;
+  }
   const stale = game.finishedAt !== null && now.getTime() - game.finishedAt.getTime() > DAY_MS;
   const final = countedScore(game);
   if (!final) {
@@ -120,11 +123,17 @@ export async function settleGame(
   const votes = await awardCandidates(db, gameId, game.kickoff, voteCands);
 
   // Só depois de todas as atribuições: um crash a meio deixa o jogo por liquidar (os awards são idempotentes).
-  await db.doc(`settlements/${gameId}`).set({
-    settledAt: FieldValue.serverTimestamp(),
-    finalHome: final.home,
-    finalAway: final.away,
-    officialMvp: official,
+  // Idempotente: mantém o settledAt da primeira liquidação (lido na mesma transação).
+  const settleRef = db.doc(`settlements/${gameId}`);
+  await db.runTransaction(async (tx) => {
+    const prev = await tx.get(settleRef);
+    const prevAt = prev.exists ? prev.data()?.settledAt : undefined;
+    tx.set(settleRef, {
+      settledAt: prevAt ?? FieldValue.serverTimestamp(),
+      finalHome: final.home,
+      finalAway: final.away,
+      officialMvp: official,
+    });
   });
   return { predictions, votes, officialMvp: official, settled: true };
 }

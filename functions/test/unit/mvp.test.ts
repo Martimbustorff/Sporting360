@@ -58,6 +58,15 @@ describe("officialMvpIds", () => {
     expect(officialMvpIds(lines)).toEqual(["a", "c"]);
   });
 
+  it("ignora ratings NaN", () => {
+    const lines: PlayerLine[] = [
+      line("a", "Alpha", { rating: NaN }),
+      line("b", "Bravo", { rating: 6.4 }),
+    ];
+    expect(officialMvpIds(lines)).toEqual(["b"]);
+    expect(officialMvpIds([line("a", "Alpha", { rating: NaN })])).toEqual([]);
+  });
+
   it("ignora ratings null e considera só os restantes", () => {
     const lines: PlayerLine[] = [
       line("a", "Alpha", { rating: null }),

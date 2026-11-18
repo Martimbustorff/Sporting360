@@ -5,7 +5,7 @@ import { mvpWindow } from "../game/windows";
 import { mvpCandidates } from "../game/mvp";
 import { awardPoints } from "../points/ledger";
 import { POINTS } from "../game/scoring";
-import { validGameId } from "./submitPrediction";
+import { validGameId } from "./validation";
 
 export async function handleVoteMvp(
   db: Firestore,

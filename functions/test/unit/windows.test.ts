@@ -63,6 +63,11 @@ describe("predictionOpen", () => {
 });
 
 describe("mvpWindow", () => {
+  it.each([95, 105])("LIVE with elapsed %i is open", (elapsed) => {
+    const r = mvpWindow(game({ status: "LIVE", elapsed }), new Date("2026-11-21T21:50:00Z"));
+    expect(r).toEqual({ state: "open", closesAt: null });
+  });
+
   it("LIVE with elapsed 79 is before", () => {
     const r = mvpWindow(game({ status: "LIVE", elapsed: 79 }), new Date("2026-11-21T21:19:00Z"));
     expect(r).toEqual({ state: "before", closesAt: null });

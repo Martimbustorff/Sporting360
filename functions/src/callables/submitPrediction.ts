@@ -4,10 +4,7 @@ import { getGameState } from "../data/gamesRepo";
 import { predictionOpen } from "../game/windows";
 import { awardPoints } from "../points/ledger";
 import { POINTS } from "../game/scoring";
-
-export function validGameId(v: unknown): v is string {
-  return typeof v === "string" && v.length > 0 && !v.includes("/");
-}
+import { validGameId } from "./validation";
 
 function validGoals(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 20;

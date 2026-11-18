@@ -16,6 +16,20 @@ describe("countedScore", () => {
   it("null goals null", () => expect(countedScore(g("FT", null, null))).toBeNull());
 });
 
+describe("countedScore deferred minors", () => {
+  it.each(["FT", "AET", "PEN"] as const)("%s with null goals is null", (st) => {
+    expect(countedScore(g(st, null, null))).toBeNull();
+    expect(countedScore(g(st, 1, null))).toBeNull();
+    expect(countedScore(g(st, null, 1))).toBeNull();
+  });
+  it("PEN with unequal goals is forced to a draw (lower value)", () => {
+    expect(countedScore(g("PEN", 3, 2))).toEqual({ home: 2, away: 2 });
+    expect(countedScore(g("PEN", 0, 1))).toEqual({ home: 0, away: 0 });
+  });
+  it("PEN 2-2 stays 2-2", () => expect(countedScore(g("PEN", 2, 2))).toEqual({ home: 2, away: 2 }));
+  it("AET 3-2 stays 3-2", () => expect(countedScore(g("AET", 3, 2))).toEqual({ home: 3, away: 2 }));
+});
+
 describe("outcome", () => {
   it("H/D/A", () => {
     expect(outcome(2, 1)).toBe("H");
