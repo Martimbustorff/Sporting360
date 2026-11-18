@@ -213,9 +213,10 @@ describe("reset-engine (só no emulador)", () => {
     expect(await exists("leaderboards/ghost/entries/u1")).toBe(false);
   });
 
-  it.each(["LIVE", "HT"])("jogo do Sporting %s recusa e não apaga nada", async (status) => {
+  // Kickoffs fora de ±6 h (-8 h e +30 h): só a query de estado pode recusar.
+  it.each([["LIVE", -8], ["HT", -8], ["LIVE", 30], ["HT", 30]])("jogo do Sporting %s com kickoff a %i h recusa e não apaga nada", async (status, h) => {
     await seed();
-    await match("live", { status, kickoff: hours(-1) });
+    await match("live", { status, kickoff: hours(h as number) });
     await expect(resetEngine(db, { dryRun: false, now: NOW })).rejects.toThrow("RESET_BLOCKED_LIVE_GAME");
     await expect(resetEngine(db, { dryRun: true, now: NOW })).rejects.toThrow("RESET_BLOCKED_LIVE_GAME");
     for (const p of ENGINE) expect(await exists(p)).toBe(true);
