@@ -194,6 +194,8 @@ function PreMatch({ match }: { match: Match }) {
           <Form p={full} match={match} />
           <HeadToHead p={full} />
         </>
+      ) : prematch.status === 'error' ? (
+        <EmptyState icon="info" text={LOAD_ERROR} />
       ) : (
         <Body variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>{PREMATCH_PENDING}</Body>
       )}

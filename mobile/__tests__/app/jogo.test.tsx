@@ -103,7 +103,7 @@ describe('futebol', () => {
     expect(screen.getByRole('tab', { name: 'Sumário' }).props.accessibilityState.selected).toBe(true);
     expect(screen.getByText('Disponível no dia de jogo')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: 'Formações' }));
-    expect(screen.getByText('Formações em breve.')).toBeTruthy();
+    expect(screen.getByText('Os onzes são conhecidos cerca de uma hora antes do jogo.')).toBeTruthy();
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
   });
 

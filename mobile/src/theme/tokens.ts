@@ -80,6 +80,10 @@ export const type = {
   authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
   authIntro: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
   termsBody: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
+  // Formações (Figma 498:28140): número na camisola 498:28147 e apelido 498:28149
+  pitchNumber: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
+  pitchName: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.black, textAlign: 'center' },
+  pitchRating: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.white }, // SEM FIGMA: nota do jogador
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
@@ -182,6 +186,18 @@ export const layout = {
   statValueWidth: 64,
   statCardGap: 9,
   statMutedOpacity: 0.3,
+  // Formações (Figma 498:28129 campo 347x533.14; jogador 498:28140: camisola 30.028x28, número a 7 px do topo,
+  // caixa do apelido branca com padding 5/4 e raio 4). Guarda-redes da casa sobe 7 px sobre a linha de fundo (498:28345).
+  pitch: { width: 347, height: 533.14 },
+  shirt: { width: 30.028, height: 28 },
+  shirtNumberTop: 7,
+  pitchNamePadX: 5,
+  pitchNamePadY: 4,
+  pitchGkOverlap: 7,
+  pitchMidGap: 16, // SEM FIGMA: folga entre a última linha e o meio-campo (a maqueta tem 14 a 21 px)
+  pitchNameMaxWidth: 76, // SEM FIGMA: a 4 por linha cabem 4 caixas sem se tocarem; o resto leva reticências
+  pitchRatingPadX: 4, // SEM FIGMA: etiqueta da nota ao lado da camisola
+  subNumberWidth: 28, // SEM FIGMA: coluna do número na lista de suplentes
   // Welcome (Figma 564:7178)
   welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
