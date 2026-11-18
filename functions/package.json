@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "jest",
     "pretest:emulator": "npm run build",
     "test:emulator": "node scripts/test-emulator.js"
