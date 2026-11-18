@@ -53,10 +53,22 @@ service cloud.firestore {
     // (chaves, listas internas, flags de operacao) tem de viver noutra colecao, nunca aqui.
     match /config/{id} { allow read: if true; }
 
-    // users: public read (phase 1), owner-only writes.
+    // Public profile (name + avatar only, never email), written by the updateProfile callable.
+    match /publicProfiles/{uid} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // users: public read (phase 1), owner-only writes. `displayName` and `nameChangedAt` are server-only (updateProfile
+    // callable validates it); the V2 app never writes it, so it keeps working.
     match /users/{uid} {
       allow read: if true;
-      allow create, update, delete: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+                    && !('displayName' in request.resource.data)
+                    && !('nameChangedAt' in request.resource.data);
+      allow update: if signedIn() && request.auth.uid == uid
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['displayName', 'nameChangedAt']);
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     // gamebox: field `userid` (lowercase).

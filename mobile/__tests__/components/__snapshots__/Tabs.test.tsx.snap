@@ -1,0 +1,160 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Tabs snapshot (default) 1`] = `
+<View
+  accessibilityRole="tablist"
+  style={
+    [
+      {
+        "backgroundColor": "rgba(255, 255, 255, 0.2)",
+        "borderRadius": 8,
+        "overflow": "hidden",
+      },
+      {
+        "flexDirection": "row",
+      },
+    ]
+  }
+>
+  <View
+    accessibilityRole="tab"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": true,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    hitSlop={11}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flex": 1,
+        "justifyContent": "space-between",
+        "minHeight": 44,
+        "paddingTop": 8,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PoppinsMedium",
+            "fontSize": 14,
+          },
+          {
+            "color": "#FFFFFF",
+          },
+        ]
+      }
+    >
+      Resultados
+    </Text>
+    <View
+      style={
+        {
+          "alignSelf": "stretch",
+          "backgroundColor": "#FFFFFF",
+          "borderRadius": 1,
+          "height": 2,
+        }
+      }
+      testID="tab-underline"
+    />
+  </View>
+  <View
+    accessibilityRole="tab"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": undefined,
+        "selected": false,
+      }
+    }
+    accessibilityValue={
+      {
+        "max": undefined,
+        "min": undefined,
+        "now": undefined,
+        "text": undefined,
+      }
+    }
+    accessible={true}
+    collapsable={false}
+    focusable={true}
+    hitSlop={11}
+    onBlur={[Function]}
+    onClick={[Function]}
+    onFocus={[Function]}
+    onResponderGrant={[Function]}
+    onResponderMove={[Function]}
+    onResponderRelease={[Function]}
+    onResponderTerminate={[Function]}
+    onResponderTerminationRequest={[Function]}
+    onStartShouldSetResponder={[Function]}
+    style={
+      {
+        "alignItems": "center",
+        "flex": 1,
+        "justifyContent": "space-between",
+        "minHeight": 44,
+        "paddingTop": 8,
+      }
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "PoppinsMedium",
+            "fontSize": 14,
+          },
+          {
+            "color": "#FFFFFF",
+          },
+        ]
+      }
+    >
+      Classificação
+    </Text>
+    <View
+      style={
+        {
+          "alignSelf": "stretch",
+          "backgroundColor": "#334942",
+          "borderRadius": 1,
+          "height": 2,
+        }
+      }
+      testID="tab-underline"
+    />
+  </View>
+</View>
+`;

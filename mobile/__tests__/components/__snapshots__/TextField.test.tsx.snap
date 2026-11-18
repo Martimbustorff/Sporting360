@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`TextField snapshot (default) 1`] = `
+<View>
+  <View
+    className="flex-row items-center"
+    style={
+      {
+        "gap": 8,
+      }
+    }
+  >
+    <TextInput
+      accessibilityLabel="Email"
+      autoCapitalize="none"
+      autoCorrect={false}
+      className="flex-1"
+      onChangeText={[Function]}
+      placeholder="EMAIL"
+      placeholderTextColor="#FFFFFF"
+      secureTextEntry={false}
+      style={
+        [
+          {
+            "color": "#FFFFFF",
+            "fontFamily": "DinCondensedBold",
+            "fontSize": 18,
+            "textTransform": "uppercase",
+          },
+          {
+            "paddingVertical": 8,
+          },
+        ]
+      }
+      value=""
+    />
+  </View>
+  <View
+    style={
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 23,
+        "height": 1,
+        "marginTop": 13,
+        "opacity": 0.3,
+      }
+    }
+    testID="field-line"
+  />
+</View>
+`;

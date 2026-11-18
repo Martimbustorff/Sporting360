@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Screen snapshot (default) 1`] = `
+<RNCSafeAreaView
+  className="flex-1 bg-s360-bg"
+  edges={
+    {
+      "bottom": "additive",
+      "left": "additive",
+      "right": "additive",
+      "top": "off",
+    }
+  }
+>
+  <View
+    className="flex-1"
+    style={
+      {
+        "paddingHorizontal": 14,
+      }
+    }
+  >
+    <Text>
+      ola
+    </Text>
+  </View>
+</RNCSafeAreaView>
+`;
