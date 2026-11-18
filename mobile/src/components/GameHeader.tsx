@@ -65,7 +65,8 @@ function Team({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   );
 }
 
-function ScoreBox({ value, testID }: { value: number; testID: string }) {
+/** Caixa de resultado branca (Figma 655:31868); também usada pelo Stepper do Prognóstico. */
+export function ScoreBox({ value, testID }: { value: number; testID: string }) {
   return (
     <View
       style={{

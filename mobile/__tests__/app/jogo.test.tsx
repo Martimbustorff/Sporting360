@@ -111,7 +111,8 @@ describe('futebol', () => {
     mockParams.current = { id: '1001', tab: 'prognostico' };
     await render(ui());
     expect(screen.getByRole('tab', { name: 'Prognóstico' }).props.accessibilityState.selected).toBe(true);
-    expect(screen.getByText('Prognóstico em breve.')).toBeTruthy();
+    // Task 16: sem sessão (sem SessionProvider) o prognóstico fica a carregar.
+    expect(screen.getByTestId('prediction-loading')).toBeTruthy();
   });
 
   it('um `tab` desconhecido cai no Sumário', async () => {
