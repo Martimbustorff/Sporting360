@@ -56,12 +56,21 @@ export async function reauthenticateWithPassword(password: string): Promise<void
 
 /**
  * Reautenticação pelo provider da sessão: Google (silencioso, sem escrever nada) se ligado; senão password
- * (folha do ecrã, `askPassword`); senão Apple (iPhone).
+ * (folha do ecrã, `askPassword`); senão Apple (iPhone). Google com outra conta (auth/user-mismatch) e password
+ * ligada → folha da password.
  */
 export function providerReauth(askPassword: () => Promise<ReauthOutcome>): () => Promise<ReauthOutcome> {
   return async () => {
     const providers = providersOf(authInstance().currentUser);
-    if (providers.includes('google.com')) return (await reauthenticateWithGoogle()).status;
+    if (providers.includes('google.com')) {
+      try {
+        return (await reauthenticateWithGoogle()).status;
+      } catch (e) {
+        // Outra conta Google escolhida: com password ligada, pede a password em vez de falhar.
+        if (codeOf(e) === 'auth/user-mismatch' && providers.includes('password')) return askPassword();
+        throw e;
+      }
+    }
     if (providers.includes('password')) return askPassword();
     if (hasAppleFlow(providers)) return (await reauthenticateWithApple()).status;
     throw new Error(GENERIC);
@@ -70,7 +79,8 @@ export function providerReauth(askPassword: () => Promise<ReauthOutcome>): () =>
 
 /**
  * Apaga a conta. R9: utilizador Apple (iPhone) → reautentica com a Apple e revoga o token SEMPRE antes da primeira
- * chamada (com login recente o servidor não pediria reauth e a revogação ficava por fazer).
+ * chamada (com login recente o servidor não pediria reauth e a revogação ficava por fazer). Revogação falhada
+ * (duas tentativas) só vai ao Crashlytics: não impede apagar.
  * REAUTH_REQUIRED → `reauth` e uma só nova tentativa. Outros erros → mensagem genérica, sessão mantém-se.
  * No fim: biometria desligada para o uid (capturado antes), aviso "conta-apagada" e signOut.
  */
@@ -82,11 +92,15 @@ export async function deleteMyAccount(reauth: () => Promise<ReauthOutcome>): Pro
   if (hasAppleFlow(providersOf(user))) {
     const apple = await reauthenticateWithApple();
     if (apple.status === 'cancelled') return 'cancelled';
+    // Revogar com uma nova tentativa; se falhar, regista e apaga na mesma (a falha nunca impede apagar a conta).
     try {
       await revokeToken(authInstance(), apple.authorizationCode);
-    } catch (e) {
-      reportCode('APPLE_REVOKE_FAILED', e);
-      throw new Error(GENERIC);
+    } catch {
+      try {
+        await revokeToken(authInstance(), apple.authorizationCode);
+      } catch (e) {
+        reportCode('APPLE_REVOKE_FAILED', e);
+      }
     }
   }
 
@@ -111,13 +125,13 @@ export async function deleteMyAccount(reauth: () => Promise<ReauthOutcome>): Pro
     }
   }
 
-  // A conta já não existe: daqui para a frente nada falha para o utilizador.
+  // A conta já não existe: daqui para a frente nada falha para o utilizador. O aviso fica marcado já.
+  setSignOutNotice('conta-apagada');
   try {
     await setBiometricEnabled(uid, false);
   } catch {
     // a chave fica órfã no Keychain; inofensivo (uid apagado)
   }
-  setSignOutNotice('conta-apagada');
   try {
     await signOut();
   } catch (e) {

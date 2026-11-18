@@ -7,16 +7,20 @@
 import { useRef, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { TextField } from '@/components/TextField';
 import { deleteMyAccount, providerReauth, reauthenticateWithPassword, type ReauthOutcome } from '@/services/account';
+import { signOut } from '@/services/auth';
+import { authInstance } from '@/services/firebase';
 import { colors, layout, radius, type } from '@/theme/tokens';
 
 const CONFIRM_WORD = 'APAGAR';
 
 export default function ApagarConta() {
+  const router = useRouter();
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,8 +51,18 @@ export default function ApagarConta() {
     setLoading(true);
     try {
       const r = await deleteMyAccount(providerReauth(askPassword));
-      // 'deleted': a sessão terminou e a guarda de (app) já está a sair deste ecrã; não mexer no estado.
-      if (r === 'deleted') return;
+      // 'deleted' com a sessão terminada: a guarda de (app) já está a sair deste ecrã; não mexer no estado.
+      // currentUser é a fonte síncrona (o estado React da sessão só muda no próximo render).
+      if (r === 'deleted' && !authInstance().currentUser) return;
+      if (r === 'deleted') {
+        // O signOut dentro de deleteMyAccount falhou: mais uma tentativa e Welcome com o aviso na mesma.
+        try {
+          await signOut();
+        } catch {
+          // a conta já não existe; o próximo refresh do token termina a sessão
+        }
+        router.replace('/welcome?aviso=conta-apagada');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }

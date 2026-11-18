@@ -24,9 +24,10 @@ jest.mock('@/providers/SessionProvider', () => ({
     ),
 }));
 jest.mock('@/providers/BiometricGate', () => ({ BiometricGate: ({ children }: { children: unknown }) => children }));
-const mockUser = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'password' }] };
+const MOCK_USER = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'password' }] };
+const mockAuth: { currentUser: typeof MOCK_USER | null } = { currentUser: MOCK_USER };
 jest.mock('@/services/firebase', () => ({
-  authInstance: jest.fn(() => ({ __mock: 'auth', currentUser: mockUser })),
+  authInstance: jest.fn(() => ({ __mock: 'auth', currentUser: mockAuth.currentUser })),
   fns: jest.fn(() => ({ __mock: 'functions' })),
 }));
 jest.mock('@react-native-firebase/auth');
@@ -36,7 +37,9 @@ jest.mock('@/services/auth', () => ({
   signInEmail: jest.fn(),
   signUpEmail: jest.fn(),
   sendReset: jest.fn(),
+  // Como o Firebase: depois de um signOut bem-sucedido currentUser é null e a sessão passa a signedOut.
   signOut: jest.fn(async () => {
+    mockAuth.currentUser = null;
     mockStore.set({ status: 'signedOut', user: null });
   }),
 }));
@@ -91,6 +94,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   clearSignOutNotice();
   mockStore.value = SIGNED_IN;
+  mockAuth.currentUser = MOCK_USER;
   (httpsCallable as jest.Mock).mockImplementation(() => mockDelete);
   mockDelete.mockResolvedValue({ data: { ok: true, deleted: 2 } });
 });
@@ -187,4 +191,29 @@ it('outro erro da callable: mensagem genérica, sessão mantém-se', async () =>
   expect(screen.getByText('Algo correu mal. Tenta outra vez.')).toBeTruthy();
   expect(signOut).not.toHaveBeenCalled();
   expect(r.getPathname()).toBe('/apagar-conta');
+});
+
+describe('signOut falha depois de apagar (fix round 1)', () => {
+  it('tenta signOut outra vez e vai para o Welcome com o aviso; o botão deixa de carregar', async () => {
+    (signOut as jest.Mock).mockRejectedValueOnce(new Error('x')); // dentro de deleteMyAccount
+    const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    expect(signOut).toHaveBeenCalledTimes(2);
+    expect(r.getPathname()).toBe('/welcome');
+    expect(screen.getByText('Conta apagada.')).toBeTruthy();
+  });
+
+  it('se o segundo signOut também falhar, não fica a carregar para sempre', async () => {
+    (signOut as jest.Mock).mockRejectedValueOnce(new Error('x')).mockRejectedValueOnce(new Error('y'));
+    const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    expect(signOut).toHaveBeenCalledTimes(2);
+    // Sessão local ainda signedIn: a guarda de (auth) devolve a /. O importante: navegou e não ficou preso.
+    expect(r.getPathname()).not.toBe('/apagar-conta');
+    expect(screen.queryByTestId('button-loading')).toBeNull();
+  });
 });

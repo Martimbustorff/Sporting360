@@ -38,9 +38,15 @@ const user = (uid: string, providers: string[], email: string | null = 'ze@x.pt'
 });
 const originalOS = Platform.OS;
 
+const mockNoticeAtBiometric: { value: unknown } = { value: undefined };
+
 beforeEach(() => {
   jest.clearAllMocks();
   clearSignOutNotice();
+  mockNoticeAtBiometric.value = undefined;
+  (setBiometricEnabled as jest.Mock).mockImplementation(async () => {
+    mockNoticeAtBiometric.value = peekSignOutNotice();
+  });
   Platform.OS = 'ios';
   mockUser.current = user('u1', ['password']);
   (httpsCallable as jest.Mock).mockImplementation(() => mockDeleteCall);
@@ -60,6 +66,7 @@ describe('deleteMyAccount', () => {
     expect(setBiometricEnabled).toHaveBeenCalledWith('u1', false);
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(peekSignOutNotice()).toBe('conta-apagada');
+    expect(mockNoticeAtBiometric.value).toBe('conta-apagada');
     // biometria desligada antes de terminar a sessão (o uid foi capturado antes)
     expect((setBiometricEnabled as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
       (signOut as jest.Mock).mock.invocationCallOrder[0] ?? Infinity,
@@ -171,11 +178,29 @@ describe('deleteMyAccount', () => {
       expect(signOut).not.toHaveBeenCalled();
     });
 
-    it('revokeToken falha → não apaga (erro genérico)', async () => {
-      (revokeToken as jest.Mock).mockRejectedValueOnce({ code: 'auth/invalid-credential' });
-      await expect(deleteMyAccount(jest.fn())).rejects.toThrow('Algo correu mal. Tenta outra vez.');
-      expect(mockDeleteCall).not.toHaveBeenCalled();
-      expect(signOut).not.toHaveBeenCalled();
+    it('revokeToken falha duas vezes → regista o código e apaga na mesma', async () => {
+      (revokeToken as jest.Mock)
+        .mockRejectedValueOnce({ code: 'auth/invalid-credential' })
+        .mockRejectedValueOnce({ code: 'auth/invalid-credential' });
+      await expect(deleteMyAccount(jest.fn())).resolves.toBe('deleted');
+      expect(revokeToken).toHaveBeenCalledTimes(2);
+      expect(mockDeleteCall).toHaveBeenCalledTimes(1);
+      expect(signOut).toHaveBeenCalledTimes(1);
+      const logged = (recordError as jest.Mock).mock.calls.map((c) => String((c[1] as Error).message));
+      expect(logged).toContain('APPLE_REVOKE_FAILED auth/invalid-credential');
+      expect(logged.join(' ')).not.toContain('code-xyz');
+    });
+
+    it('revokeToken falha uma vez → repete, depois apaga', async () => {
+      (revokeToken as jest.Mock).mockRejectedValueOnce({ code: 'auth/network-request-failed' });
+      await expect(deleteMyAccount(jest.fn())).resolves.toBe('deleted');
+      expect(revokeToken).toHaveBeenCalledTimes(2);
+      expect((revokeToken as jest.Mock).mock.calls[1][1]).toBe('code-xyz');
+      expect((revokeToken as jest.Mock).mock.invocationCallOrder[1] ?? Infinity).toBeLessThan(
+        mockDeleteCall.mock.invocationCallOrder[0] ?? -Infinity,
+      );
+      expect(mockDeleteCall).toHaveBeenCalledTimes(1);
+      expect(recordError).not.toHaveBeenCalled();
     });
 
     it('Android: sem pedido Apple (não disponível); segue pelo caminho normal', async () => {
@@ -194,6 +219,36 @@ describe('providerReauth', () => {
     (reauthenticateWithGoogle as jest.Mock).mockResolvedValue({ status: 'ok' });
     const askPassword = jest.fn();
     await expect(providerReauth(askPassword)()).resolves.toBe('ok');
+    expect(askPassword).not.toHaveBeenCalled();
+  });
+
+  it('Google com outra conta (auth/user-mismatch) e password ligada → folha da password', async () => {
+    mockUser.current = user('u1', ['google.com', 'password']);
+    (reauthenticateWithGoogle as jest.Mock).mockRejectedValue(
+      Object.assign(new Error('Algo correu mal. Tenta outra vez.'), { code: 'auth/user-mismatch' }),
+    );
+    const askPassword = jest.fn(() => Promise.resolve('ok' as const));
+    await expect(providerReauth(askPassword)()).resolves.toBe('ok');
+    expect(askPassword).toHaveBeenCalledTimes(1);
+  });
+
+  it('Google user-mismatch sem password: o erro propaga', async () => {
+    mockUser.current = user('u1', ['google.com']);
+    (reauthenticateWithGoogle as jest.Mock).mockRejectedValue(
+      Object.assign(new Error('Algo correu mal. Tenta outra vez.'), { code: 'auth/user-mismatch' }),
+    );
+    const askPassword = jest.fn();
+    await expect(providerReauth(askPassword)()).rejects.toThrow('Algo correu mal. Tenta outra vez.');
+    expect(askPassword).not.toHaveBeenCalled();
+  });
+
+  it('outro erro do Google com password ligada não abre a folha', async () => {
+    mockUser.current = user('u1', ['google.com', 'password']);
+    (reauthenticateWithGoogle as jest.Mock).mockRejectedValue(
+      Object.assign(new Error('Sem ligação à internet.'), { code: 'auth/network-request-failed' }),
+    );
+    const askPassword = jest.fn();
+    await expect(providerReauth(askPassword)()).rejects.toThrow('Sem ligação à internet.');
     expect(askPassword).not.toHaveBeenCalled();
   });
 

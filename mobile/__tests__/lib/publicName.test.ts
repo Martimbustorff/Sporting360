@@ -93,8 +93,11 @@ describe("publicName", () => {
     expect(publicName({ name: "a".repeat(60) }, "abcd1234")).toBe("Sportinguista #1234");
     expect(publicName({ name: "Sportinguista Ana Maria Pinto Costa" }, "abcd1234")).toBe("Sportinguista #1234");
     expect(publicName({ name: "Bartolomeuzinhodasilva Antunesdeoliveira" }, "abcd1234")).toBe("Sportinguista #1234");
-    // Só para nomes longos: um emoji no meio continua a cair para o uid.
+    // O atalho só se aplica a TOO_LONG. Nome curto com emoji dá INVALID_CHARS e cai para o uid.
     expect(publicName({ name: "Ana 🦁 Pinto" }, "abcd1234")).toBe("Sportinguista #1234");
+    // Nome longo: o comprimento é verificado antes dos caracteres, por isso dá TOO_LONG e o emoji do meio
+    // desaparece no "<primeiro> <último>".
+    expect(publicName({ name: "Ana 🦁 Pinto Da Costa E Silva" }, "abcd1234")).toBe("Ana Silva");
   });
   it("displayName inválido também é ignorado", () => {
     expect(publicName({ displayName: "x".repeat(40), name: "ana pinto" }, "u1")).toBe("Ana Pinto");

@@ -262,6 +262,12 @@ export async function linkAppleToCurrentUser(): Promise<'linked' | 'cancelled' |
 
 export type ReauthResult = { status: 'ok' } | { status: 'cancelled' };
 
+/** Mensagem PT e o código original (account.ts usa auth/user-mismatch para cair na password). */
+function reauthError(e: unknown): Error & { code?: string } {
+  const code = codeOf(e);
+  return Object.assign(new Error(authErrorMessage(code)), code ? { code } : {});
+}
+
 /**
  * R9: novo pedido Apple + reauthenticateWithCredential. Devolve o authorizationCode (fresco, válido ~5 min) para
  * quem apaga a conta o revogar com revokeToken antes de chamar deleteAccount. Nunca registar o código.
@@ -277,7 +283,7 @@ export async function reauthenticateWithApple(): Promise<{ status: 'ok'; authori
   } catch (e) {
     if (e instanceof Cancelled) return { status: 'cancelled' };
     reportCode('REAUTH_FAILED apple', e);
-    throw new Error(authErrorMessage(codeOf(e)));
+    throw reauthError(e);
   }
 }
 
@@ -292,6 +298,6 @@ export async function reauthenticateWithGoogle(): Promise<ReauthResult> {
   } catch (e) {
     if (e instanceof Cancelled) return { status: 'cancelled' };
     reportCode('REAUTH_FAILED google', e);
-    throw new Error(authErrorMessage(codeOf(e)));
+    throw reauthError(e);
   }
 }

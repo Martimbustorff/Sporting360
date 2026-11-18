@@ -434,4 +434,10 @@ describe('reauthenticateWithGoogle', () => {
     (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/user-mismatch' });
     await expect(reauthenticateWithGoogle()).rejects.toThrow('Algo correu mal. Tenta outra vez.');
   });
+
+  it('o erro lançado guarda o código (para o fallback para password em account.ts)', async () => {
+    (GoogleSignin.signInSilently as jest.Mock).mockResolvedValue(googleSuccess());
+    (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/user-mismatch' });
+    await expect(reauthenticateWithGoogle()).rejects.toMatchObject({ code: 'auth/user-mismatch' });
+  });
 });
