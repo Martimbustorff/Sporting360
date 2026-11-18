@@ -5,6 +5,19 @@ const lenient = <T extends z.ZodType>(schema: T) => schema.optional().catch(unde
 
 const stringOrNumber = z.union([z.string(), z.number()]);
 
+const optUrl = z.string().optional().catch(undefined);
+/** config/app `comunidadeLeonina[]` (functions/src/config/appConfig.ts). */
+export const CommunityEntrySchema = z.object({
+  name: z.string(),
+  description: z.string().nullable().catch(null).default(null),
+  image: z.string().nullable().catch(null).default(null),
+  links: z
+    .object({ twitter: optUrl, patreon: optUrl, youtube: optUrl })
+    .catch({})
+    .default({}),
+});
+export type CommunityEntry = z.infer<typeof CommunityEntrySchema>;
+
 /**
  * config/app. Public read, written by the backend (Plan 2 seed).
  * Passthrough keeps `comunidadeLeonina`, `updatedAt` and whatever Plan 2 adds.
@@ -21,6 +34,21 @@ export const AppConfigSchema = z.looseObject({
     })
     .nullish()
     .catch(undefined),
+  // Comunidade Leonina (hidden by default). A malformed list becomes [] and a malformed entry is dropped.
+  comunidadeLeonina: z
+    .array(z.unknown())
+    .catch([])
+    .transform((items) =>
+      items.flatMap((i) => {
+        const r = CommunityEntrySchema.safeParse(i);
+        return r.success ? [r.data] : [];
+      }),
+    ),
+  // Anything other than `true` means off.
+  features: z
+    .looseObject({ comunidadeLeonina: z.unknown().transform((v) => v === true) })
+    .catch({ comunidadeLeonina: false })
+    .default({ comunidadeLeonina: false }),
 });
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
@@ -31,12 +59,33 @@ export const PublicProfileSchema = z.object({
 });
 export type PublicProfile = z.infer<typeof PublicProfileSchema>;
 
+export const SportSchema = z.enum(['football', 'futsal', 'handball', 'roller_hockey', 'volleyball', 'basketball']);
+export type Sport = z.infer<typeof SportSchema>;
+
+const boolOff = z.boolean().catch(false).default(false);
+/** Notification preferences, stored only (no push in this release). A missing key is off. */
+export const NotificationPrefsSchema = z.object({
+  matchStart: boolOff,
+  goals: boolOff,
+  predictionReminder: boolOff,
+  mvpOpen: boolOff,
+  news: boolOff,
+});
+export type NotificationPrefs = z.infer<typeof NotificationPrefsSchema>;
+
 /** users/{uid}: private V2 profile. Every field optional; V2 data is not uniform. */
 export const UserDocSchema = z.looseObject({
   name: lenient(z.string()),
   email: lenient(z.string()),
   displayName: lenient(z.string()),
+  /** Despite the name: "sócio desde" as `MM/AAAA` (V2). Read with String(v). */
   partnerNumber: lenient(stringOrNumber),
+  /** Member number (new field; `partnerNumber` is not it). */
+  memberNumber: lenient(z.string()),
+  seasonSeat: lenient(z.string()),
+  favoriteSport: lenient(SportSchema),
+  favoritePlayer: lenient(z.object({ id: z.string(), name: z.string() })),
+  notificationPrefs: lenient(NotificationPrefsSchema),
   gameboxNumber: lenient(stringOrNumber),
 });
 export type UserDoc = z.infer<typeof UserDocSchema>;
@@ -63,9 +112,6 @@ const str = z.string();
 const num = z.number();
 /** Id that the server may write as number or string; always read as string. */
 const idString = z.union([z.string(), z.number()]).transform(String);
-
-export const SportSchema = z.enum(['football', 'futsal', 'handball', 'roller_hockey', 'volleyball', 'basketball']);
-export type Sport = z.infer<typeof SportSchema>;
 
 export const GameStatusSchema = z.enum(['NS', 'LIVE', 'HT', 'FT', 'AET', 'PEN', 'PST', 'CANC']);
 export type GameStatus = z.infer<typeof GameStatusSchema>;
@@ -470,3 +516,91 @@ export const SidelinedDocSchema = z.looseObject({
   byPlayer: z.record(z.string(), z.array(z.looseObject({ type: str, start: str, end: nullable(str) }))),
 });
 export type SidelinedDoc = z.infer<typeof SidelinedDocSchema>;
+
+// ---------------------------------------------------------------------------
+// Points, predictions, news and GameBox (read contract, plan 4 "Contrato de leitura").
+// ---------------------------------------------------------------------------
+
+/** leaderboards/{kind}_{key}/entries/{uid} (functions/src/points/ledger.ts). */
+export const LeaderboardEntrySchema = z.looseObject({ uid: str, displayName: str.catch(''), points: num.catch(0) });
+export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
+
+export const PointTypeSchema = z.enum([
+  'prediction_participation',
+  'prediction_exact',
+  'prediction_outcome',
+  'mvp_participation',
+  'mvp_correct',
+]);
+export type PointType = z.infer<typeof PointTypeSchema>;
+
+/** pointEvents/{uid}_{gameId}_{type}. `gameId` is null for events without a game. */
+export const PointEventSchema = z.looseObject({
+  uid: str,
+  gameId: nullable(str),
+  type: str,
+  points: num,
+  gameDate: ts,
+});
+export type PointEvent = z.infer<typeof PointEventSchema>;
+
+/** matchPredictions/{gameId}_{uid}. V2 documents may lack `createdAt` and `source`. */
+export const MatchPredictionSchema = z.looseObject({
+  gameId: str,
+  userId: str,
+  home: num,
+  away: num,
+  createdAt: nullable(ts),
+  source: z.string().optional().catch(undefined),
+});
+export type MatchPrediction = z.infer<typeof MatchPredictionSchema>;
+
+/** mvpVotes/{gameId}_{uid}. */
+export const MvpVoteSchema = z.looseObject({
+  gameId: str,
+  userId: str,
+  playerId: idString,
+  createdAt: nullable(ts),
+  source: z.string().optional().catch(undefined),
+});
+export type MvpVote = z.infer<typeof MvpVoteSchema>;
+
+/** settlements/{gameId}, written once by the server. */
+export const SettlementSchema = z.looseObject({
+  finalHome: num,
+  finalAway: num,
+  officialMvp: z.array(idString).catch([]),
+});
+export type Settlement = z.infer<typeof SettlementSchema>;
+
+/** news/{id}. `content` exists on the document but is never read. */
+export const NewsSchema = z.looseObject({
+  id: str,
+  title: str,
+  image: nullable(str),
+  summary: str.catch(''),
+  source: str.catch(''),
+  url: str,
+  sport: SportSchema,
+  publishedAt: ts,
+});
+export type News = z.infer<typeof NewsSchema>;
+
+const gbText = z.string().optional().catch(undefined);
+/** gamebox/{auto} (V2). `gameboxNumber` is ciphered; the app never logs it. */
+export const GameboxDocSchema = z.looseObject({
+  userid: str,
+  gameboxNumber: str,
+  gameboxName: str.catch(''),
+  gameboxPort: gbText,
+  gameboxSector: gbText,
+  gameboxLine: gbText,
+  gameboxSeat: gbText,
+  pavilionPort: gbText,
+  pavilionSector: gbText,
+  pavilionLine: gbText,
+  pavilionSeat: gbText,
+  order: num.catch(0),
+  default: z.boolean().catch(false),
+});
+export type GameboxDoc = z.infer<typeof GameboxDocSchema>;
