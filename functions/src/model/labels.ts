@@ -28,13 +28,24 @@ const OTHER_BY_NAME: Record<string, Label> = {
   "supertaça": { name: "Supertaça", type: "supercup" },
   "elite cup": { name: "Elite Cup", type: "cup" },
   "wse champions league": { name: "Liga dos Campeões WSE", type: "europe" },
+  // Futsal (futsalportugal.com: lista e JSON-LD das fichas) e hóquei (hp.fpp.pt, hoqueipatins.pt), nomes reais de 2026-11-17.
+  "liga placard": { name: "Liga Placard", type: "league" },
+  "taça da liga": { name: "Taça da Liga", type: "cup" },
+  "uefa futsal champions league": { name: "Liga dos Campeões UEFA de Futsal", type: "europe" },
+  "liga dos campeões uefa de futsal": { name: "Liga dos Campeões UEFA de Futsal", type: "europe" },
+  "campeonato placard": { name: "Campeonato Placard", type: "league" },
+  "campeonato placard hp - fase regular": { name: "Campeonato Placard", type: "league" },
+  "supertaça antónio livramento placard": { name: "Supertaça", type: "supercup" },
+  "elite cup masculina": { name: "Elite Cup", type: "cup" },
+  "taça de portugal masculina": { name: "Taça de Portugal", type: "cup" },
+  "liga dos campeões wse": { name: "Liga dos Campeões WSE", type: "europe" },
 };
 
 export function competitionLabel(sport: Sport, leagueId: number | null, rawName: string): Label {
   if (sport === "football") {
     return (leagueId !== null && FOOTBALL_BY_ID[leagueId]) || { name: rawName, type: "league" };
   }
-  return OTHER_BY_NAME[rawName.trim().toLowerCase()] ?? { name: rawName, type: "league" };
+  return OTHER_BY_NAME[rawName.trim().replace(/\s+/g, " ").toLowerCase()] ?? { name: rawName, type: "league" };
 }
 
 export function competitionKey(sport: Sport, leagueId: number | null, season: string): string {
@@ -70,6 +81,12 @@ export function roundLabel(raw: string | null, type: CompetitionType): string | 
   t = t.replace(/^\d{3,}\s*-\s*/, "");
 
   let m: RegExpMatchArray | null;
+
+  // Série de play-off (hp.fpp.pt, hoqueipatins.pt): "1/2 Final - Jornada 2" → "Meias-finais, jogo 2".
+  if ((m = t.match(/^(.+?)\s+-\s+(?:(\d+)\s*[.ªa]?\s*jornada|jornada\s*(\d+))$/i))) {
+    const phase = roundLabel(m[1], type);
+    if (phase !== null && (phase !== m[1] || /^final$/i.test(m[1]))) return `${phase}, jogo ${m[2] ?? m[3]}`;
+  }
 
   if ((m = t.match(/^regular season\s*-\s*(\d+)$/i))) return `J${m[1]}`;
   if ((m = t.match(/^league stage\s*-\s*(\d+)$/i))) return `Fase de liga, J${m[1]}`;

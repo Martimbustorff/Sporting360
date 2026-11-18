@@ -74,6 +74,22 @@ describe("roundLabel", () => {
   });
 });
 
+describe("roundLabel (futsal e hóquei, Task 17)", () => {
+  it.each([
+    ["Jornada 11", "J11"],
+    ["1/8 Final", "Oitavos de final"],
+    ["1/4 Final", "Quartos de final"],
+    ["1/2 Final - Jornada 1", "Meias-finais, jogo 1"],
+    ["1/2 Final - Jornada 3", "Meias-finais, jogo 3"],
+    ["1/4 Final - 2ª Jornada", "Quartos de final, jogo 2"],
+    ["Final - 1ª Jornada", "Final, jogo 1"],
+    ["0601-Meias-Finais - Jornada 2", "Meias-finais, jogo 2"],
+    ["0300-Quartos de Final", "Quartos de final"],
+  ])("%s -> %s", (raw, expected) => {
+    expect(roundLabel(raw, "league")).toBe(expected);
+  });
+});
+
 describe("roundLabel (API-Sports, textos das fixtures)", () => {
   // Textos de ronda das fixtures sintéticas: SUBSTITUIR pelos reais recolhidos na gravação (Task 21).
   it("rondas das outras modalidades", () => {
@@ -116,6 +132,22 @@ describe("competitionLabel", () => {
       name: "Competição Nova",
       type: "league",
     });
+  });
+  it("nomes reais das fontes gratuitas (futsalportugal, hp.fpp.pt, hoqueipatins.pt) em pt-PT", () => {
+    const cases: Array<[Parameters<typeof competitionLabel>[0], string, { name: string; type: string }]> = [
+      ["futsal", "Liga Placard", { name: "Liga Placard", type: "league" }],
+      ["futsal", "LIGA PLACARD", { name: "Liga Placard", type: "league" }],
+      ["futsal", "Taça Da Liga", { name: "Taça da Liga", type: "cup" }],
+      ["futsal", "Taça De Portugal", { name: "Taça de Portugal", type: "cup" }],
+      ["futsal", "UEFA Futsal Champions League", { name: "Liga dos Campeões UEFA de Futsal", type: "europe" }],
+      ["roller_hockey", "Campeonato Placard", { name: "Campeonato Placard", type: "league" }],
+      ["roller_hockey", "Campeonato Placard HP - Fase Regular", { name: "Campeonato Placard", type: "league" }],
+      ["roller_hockey", "SuperTaça António Livramento  PLACARD", { name: "Supertaça", type: "supercup" }],
+      ["roller_hockey", "Elite Cup Masculina", { name: "Elite Cup", type: "cup" }],
+      ["roller_hockey", "Taça de Portugal Masculina", { name: "Taça de Portugal", type: "cup" }],
+      ["roller_hockey", "Liga dos Campeões WSE", { name: "Liga dos Campeões WSE", type: "europe" }],
+    ];
+    for (const [sport, raw, label] of cases) expect(competitionLabel(sport, null, raw)).toEqual(label);
   });
   it("não usa o mapa de futebol por id noutras modalidades", () => {
     expect(competitionLabel("handball", 94, "Andebol 1")).toEqual({ name: "Andebol 1", type: "league" });

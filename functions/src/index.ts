@@ -8,6 +8,7 @@ import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
 import { syncApiSports } from "./modalities/apiSportsSync";
+import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
@@ -170,5 +171,16 @@ export const apiSportsSync = onSchedule(
         now: () => new Date(),
       }),
     );
+  },
+);
+
+// Futsal (futsalportugal.com) e hóquei em patins (hp.fpp.pt com recurso no hoqueipatins.pt; Liga dos Campeões WSE pelo
+// hoqueipatins, com a fonte indicada na app). Sem segredo. Corre de 15 em 15 min mas cada competição só pede às fontes
+// em janela de jogo ([início - 15 min, início + 3 h]) ou de 6 em 6 h; depois de uma falha fora de janela espera 1 h.
+// Cada URL no máximo uma vez por execução. Reconciliação e alertas: ver modalities/freeSourcesSync.ts.
+export const freeSourcesSync = onSchedule(
+  { schedule: "every 15 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300 },
+  async () => {
+    await runJob(getFirestore(), "free_sources", () => syncFreeSources({ db: getFirestore(), fetch, now: () => new Date() }));
   },
 );

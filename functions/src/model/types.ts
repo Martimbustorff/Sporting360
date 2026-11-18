@@ -51,6 +51,15 @@ export interface MatchDoc {
     image?: string | null;
   } | null;
   referee: string | null;
-  source: { provider: string; id: string; fallbackUsed?: boolean };
+  source: {
+    provider: string;
+    id: string;
+    /** Fontes gratuitas (Task 17): o jogo, ou parte dele, veio da fonte de recurso. */
+    fallbackUsed?: boolean;
+    /** Fontes gratuitas: hora confirmada com fuso explícito na fonte. */
+    exactKickoff?: boolean;
+    /** Fonte a indicar na app (termos do hoqueipatins.pt); null quando não é preciso. */
+    attribution?: string | null;
+  };
   locked?: boolean;
 }
