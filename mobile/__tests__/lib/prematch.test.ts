@@ -26,6 +26,24 @@ describe('injuryReasonText', () => {
     expect(injuryReasonText('Back Injury')).toBe('Lesão nas costas');
     expect(injuryReasonText('Illness')).toBe('Doença');
   });
+  it('body parts match whole words only', () => {
+    expect(injuryReasonText('Hip Injury')).toBe('Lesão na anca');
+    expect(injuryReasonText('Toe Injury')).toBe('Lesão no pé');
+    expect(injuryReasonText('Head Injury')).toBe('Lesão na cabeça');
+    expect(injuryReasonText('ACL Injury')).toBe('Lesão no joelho');
+    expect(injuryReasonText('Meniscus Injury')).toBe('Lesão no joelho');
+    expect(injuryReasonText('Muscular problems')).toBe('Lesão muscular');
+    expect(injuryReasonText('Knees')).toBe('Lesão no joelho');
+    // Palavras que só contêm uma parte do corpo não contam.
+    expect(injuryReasonText('Championship ban')).toBe('Lesão');
+    expect(injuryReasonText('Setback')).toBe('Lesão');
+    expect(injuryReasonText('Overhead kick')).toBe('Lesão');
+    expect(injuryReasonText('Tacle')).toBe('Lesão');
+    expect(injuryReasonText('Football')).toBe('Lesão');
+    expect(injuryReasonText('Tiptoe')).toBe('Lesão');
+    expect(injuryReasonText('Calfskin')).toBe('Lesão');
+    expect(injuryReasonText('Flushed')).toBe('Lesão');
+  });
   it('bans are "Castigo"', () => {
     for (const r of ['Suspended', 'Red Card', 'Yellow Cards']) expect(injuryReasonText(r)).toBe('Castigo');
   });
@@ -44,11 +62,13 @@ describe('injuryText', () => {
     expect(injuryText('Missing Fixture', 'Red Card')).toBe('Fora, Castigo');
     expect(injuryText('Missing Fixture', 'Yellow Cards')).toBe('Fora, Castigo');
   });
-  it('unknown type keeps the original text; unknown reason is "Lesão"; empty parts are dropped', () => {
+  it('unknown type is "Fora" (never the English text); unknown reason is "Lesão"; empty parts are dropped', () => {
     expect(injuryText('Missing Fixture', 'Illness')).toBe('Fora, Doença');
     expect(injuryText('Missing Fixture', 'Broken nose')).toBe('Fora, Lesão');
-    expect(injuryText('Other', '')).toBe('Other');
+    expect(injuryText('Other', '')).toBe('Fora');
+    expect(injuryText('Doubtful', 'Knee Injury')).toBe('Fora, Lesão no joelho');
     expect(injuryText('', 'Injury')).toBe('Lesão');
+    expect(injuryText('', '')).toBe('');
   });
 });
 

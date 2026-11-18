@@ -16,21 +16,22 @@ export function formLetters(form: string | null): FormLetter[] {
 const TYPE_TEXT: Record<string, string> = { 'Missing Fixture': 'Fora', Questionable: 'Dúvida' };
 const BAN_REASONS = new Set(['suspended', 'red card', 'yellow cards']);
 // Por ordem: o mais específico primeiro ("Hamstring Muscle Injury" é dos isquiotibiais, não "muscular").
+// Palavras inteiras (`\b`): "Championship" não é anca, "Setback" não são costas, "Football" não é pé.
 const REASONS: [RegExp, string][] = [
-  [/hamstring/i, 'Lesão nos isquiotibiais'],
-  [/achilles/i, 'Lesão no tendão de Aquiles'],
-  [/knee|acl|cruciate|menisc/i, 'Lesão no joelho'],
-  [/ankle/i, 'Lesão no tornozelo'],
-  [/groin|adductor/i, 'Lesão na virilha'],
-  [/calf/i, 'Lesão na barriga da perna'],
-  [/thigh|quadriceps/i, 'Lesão na coxa'],
-  [/foot|toe/i, 'Lesão no pé'],
-  [/hip/i, 'Lesão na anca'],
-  [/shoulder/i, 'Lesão no ombro'],
-  [/back|lumbar/i, 'Lesão nas costas'],
-  [/head|concussion/i, 'Lesão na cabeça'],
-  [/muscle|strain/i, 'Lesão muscular'],
-  [/illness|virus|covid|flu/i, 'Doença'],
+  [/\bhamstrings?\b/i, 'Lesão nos isquiotibiais'],
+  [/\bachilles\b/i, 'Lesão no tendão de Aquiles'],
+  [/\b(knees?|acl|cruciate|menisc\w*)\b/i, 'Lesão no joelho'],
+  [/\bankles?\b/i, 'Lesão no tornozelo'],
+  [/\b(groin|adductors?)\b/i, 'Lesão na virilha'],
+  [/\b(calf|calves)\b/i, 'Lesão na barriga da perna'],
+  [/\b(thighs?|quadriceps)\b/i, 'Lesão na coxa'],
+  [/\b(foot|feet|toes?)\b/i, 'Lesão no pé'],
+  [/\bhips?\b/i, 'Lesão na anca'],
+  [/\bshoulders?\b/i, 'Lesão no ombro'],
+  [/\b(back|lumbar)\b/i, 'Lesão nas costas'],
+  [/\b(head|concussion)\b/i, 'Lesão na cabeça'],
+  [/\b(muscles?|muscular|strain\w*)\b/i, 'Lesão muscular'],
+  [/\b(illness|virus|covid\w*|flu)\b/i, 'Doença'],
 ];
 
 /**
@@ -43,11 +44,11 @@ export function injuryReasonText(reason: string): string {
   return REASONS.find(([re]) => re.test(r))?.[1] ?? 'Lesão';
 }
 
-/** "Dúvida, Lesão no joelho". Um tipo desconhecido mostra o texto original; partes vazias não aparecem. */
+/** "Dúvida, Lesão no joelho". Um tipo desconhecido é "Fora" (nunca o texto inglês); partes vazias não aparecem. */
 export function injuryText(type: string, reason: string): string {
   const t = type.trim();
   const r = reason.trim();
-  return [t ? (TYPE_TEXT[t] ?? t) : '', r ? injuryReasonText(r) : ''].filter(Boolean).join(', ');
+  return [t ? (TYPE_TEXT[t] ?? 'Fora') : '', r ? injuryReasonText(r) : ''].filter(Boolean).join(', ');
 }
 
 export type PrematchEmpty = Extract<PrematchDoc, { empty: true }>;

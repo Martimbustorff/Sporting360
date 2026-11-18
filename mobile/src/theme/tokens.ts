@@ -220,6 +220,13 @@ export const layout = {
   tieTeamGap: 8,
   tieScoreWidth: 32,
   tieBorder: 1,
+  // SEM FIGMA: leitor VSports e tab Vídeos (referência 818:20891: miniatura 16:9 a toda a largura, título por baixo)
+  videoAspect: 16 / 9,
+  videoRadius: 8,
+  videoPlayIcon: 56,
+  videoGap: 8, // miniatura ao título
+  videoListGap: 24, // entre vídeos
+  videoCloseBarHeight: 44, // barra do "Fechar" em cima do leitor
   // Welcome (Figma 564:7178)
   welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
