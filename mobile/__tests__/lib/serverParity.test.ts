@@ -35,10 +35,11 @@ const mobile = readFileSync(join(__dirname, '..', '..', 'src', 'lib', 'publicNam
 const profiles = read('functions/src/data/profiles.ts');
 const validation = read('functions/src/callables/validation.ts');
 
-describe('mobile/server parity (publicName, titleCasePt, validateDisplayName, validAvatarId)', () => {
+describe('mobile/server parity (publicName, titleCasePt, derivedName, validateDisplayName, validAvatarId)', () => {
   it.each([
     ['publicName', profiles],
     ['titleCasePt', profiles],
+    ['derivedName', profiles],
     ['validateDisplayName', validation],
     ['validAvatarId', validation],
   ])('%s is identical on both sides', (name, serverSrc) => {

@@ -1,8 +1,9 @@
 import { validateDisplayName } from "../callables/validation";
 
 /**
- * Nome mostrado no ranking. Nunca expõe email. displayName e name (campo legado, escrito pelo dono)
- * passam ambos por validateDisplayName (name longo tenta primeiro + último nome); inválido cai para "Sportinguista #<4 últimos do uid>".
+ * Nome mostrado no ranking. Nunca expõe email. Um displayName escolhido (válido) mostra-se como está.
+ * Sem ele, o nome deriva do campo legado name (escrito pelo dono): primeiro nome + inicial do último apelido
+ * ("Maria Albuquerque Costa" -> "Maria C."), por privacidade. Inválido ou reservado cai para "Sportinguista #<4 últimos do uid>".
  */
 export function publicName(
   user: { displayName?: string | null; name?: string | null },
@@ -11,19 +12,25 @@ export function publicName(
   const display = validateDisplayName(user.displayName ?? "");
   if (display.ok) return display.value;
 
-  const legacyName = titleCasePt((user.name ?? "").trim());
-  const legacy = validateDisplayName(legacyName);
-  if (legacy.ok) return legacy.value;
-  // Nome legado longo (ex.: nome completo): tenta "<primeiro> <último>" antes do fallback.
-  if (!legacy.ok && legacy.error === "TOO_LONG") {
-    const words = legacyName.split(" ");
-    if (words.length >= 2) {
-      const short = validateDisplayName(`${words[0]} ${words[words.length - 1]}`);
-      if (short.ok) return short.value;
-    }
-  }
+  const derived = validateDisplayName(derivedName(titleCasePt((user.name ?? "").trim())));
+  if (derived.ok) return derived.value;
 
   return `Sportinguista #${uid.slice(-4)}`;
+}
+
+// Primeiro nome + "." + inicial do último apelido que comece por letra e não seja partícula (da, de, do, das, dos, e).
+function derivedName(titled: string): string {
+  const words = titled.split(" ").filter(Boolean);
+  const first = words[0];
+  if (first === undefined) return "";
+  const particles = ["da", "de", "do", "das", "dos", "e"];
+  const surnames = words
+    .slice(1)
+    .filter((w) => !particles.includes(w.toLocaleLowerCase("pt-PT")) && /^\p{L}/u.test(w));
+  const last = surnames[surnames.length - 1];
+  if (last === undefined) return first;
+  const initial = [...last][0]?.toLocaleUpperCase("pt-PT") ?? "";
+  return `${first} ${initial}.`;
 }
 
 function titleCasePt(s: string): string {
