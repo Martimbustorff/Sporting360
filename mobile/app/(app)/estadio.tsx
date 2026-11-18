@@ -1,7 +1,7 @@
 // Figma: nós 450:5254 (mapa normal, 359 de largura) e 450:5095 (ampliado, 585 de largura, cortado pelo ecrã); mapa exportado
 // do nó 445:4511 (assets/images/estadio-mapa.png, com os sectores, NORTE/SUL e os três ícones). Botão Expand/Shrink 450:5414 /
 // 450:5416 no canto direito do Header; ligações 450:5379 (ícone 21.17 + gap 15 + etiqueta DIN 18) em baixo à esquerda.
-// SEM FIGMA: a animação entre os dois estados (escala em `layout.stadiumZoomMs`) e a linha do Museu escondida sem URL.
+// SEM FIGMA: a animação entre os dois estados (escala em `layout.stadiumZoomMs`). O Museu saiu da lista (decisão do Martim).
 // Usa o `Animated` do React Native (não o Reanimated) para as rotas continuarem a montar no teste de rotas.
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, View } from 'react-native';
@@ -17,7 +17,6 @@ import { Display } from '@/theme/typography';
 /* eslint-disable @typescript-eslint/no-require-imports */
 const MAP = require('../../assets/images/estadio-mapa.png'); // nó 445:4511
 const ICONS: Record<StadiumLink['id'] | 'expand' | 'shrink', number> = {
-  museu: require('../../assets/icons/museum.svg'), // 450:5381
   loja: require('../../assets/icons/cart.svg'), // 450:5385
   bilheteira: require('../../assets/icons/ticket.svg'), // 450:5388
   expand: require('../../assets/icons/expand.svg'), // 450:5414
@@ -69,7 +68,7 @@ export default function Estadio() {
         </Animated.View>
       </View>
       <View style={{ position: 'absolute', left: layout.stadiumLinksX, bottom: layout.stadiumLinksBottom, gap: layout.stadiumLinksGap }}>
-        {STADIUM_LINKS.filter((l) => l.url !== null).map((l) => (
+        {STADIUM_LINKS.map((l) => (
           <Pressable
             key={l.id}
             accessibilityRole="link"

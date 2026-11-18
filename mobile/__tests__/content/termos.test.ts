@@ -1,8 +1,7 @@
 // Task 27: termos e política de privacidade (responsável Martim Bustorff), pendentes para o Plano 5 e TermsView.
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { STADIUM_TODOS as CLUB_STADIUM_TODOS } from '@/content/clubLinks';
-import { STADIUM_TODOS, TERMS, TERMS_TODOS } from '@/content/termos';
+import { TERMS, TERMS_TODOS } from '@/content/termos';
 import { TermsView } from '@/components/TermsView';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AuthTermos from '../../app/(auth)/termos';
@@ -92,11 +91,6 @@ describe('pendentes para o Plano 5', () => {
     expect(TERMS_TODOS[0]!.startsWith('[A DEFINIR PELO MARTIM')).toBe(true);
     expect(TERMS_TODOS[0]).toMatch(/conservação/);
     for (const t of TERMS_TODOS) expect(all).toContain(t);
-  });
-
-  it('STADIUM_TODOS (Task 25) está junto de TERMS_TODOS', () => {
-    expect(STADIUM_TODOS).toBe(CLUB_STADIUM_TODOS);
-    expect(STADIUM_TODOS.length).toBeGreaterThan(0);
   });
 });
 

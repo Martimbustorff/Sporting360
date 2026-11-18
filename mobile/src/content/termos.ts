@@ -3,7 +3,6 @@
 // substitui o texto da V2 (QR de bilhetes, torniquetes, "voluntários" e "encriptadas de ponta a ponta" saíram).
 // Região dos dados: spec §7 (Firestore eur3), ruling F15 do preflight. pt-PT, sem travessões.
 // Depende do Plano 5: regras de users, gamebox, matchPredictions e mvpVotes só do dono antes de publicar.
-export { STADIUM_TODOS } from '@/content/clubLinks';
 
 export type TermsSection = { title: string; body: string };
 
@@ -11,8 +10,7 @@ export type TermsSection = { title: string; body: string };
 const RETENTION_TODO = '[A DEFINIR PELO MARTIM: prazos de conservação]';
 
 /**
- * Pendentes para o Martim. O Plano 5 bloqueia o build de produção enquanto isto não estiver vazio
- * (tal como STADIUM_TODOS, reexportado acima para ficarem juntos).
+ * Pendentes para o Martim. O Plano 5 bloqueia o build de produção enquanto isto não estiver vazio.
  */
 export const TERMS_TODOS: readonly string[] = [RETENTION_TODO];
 

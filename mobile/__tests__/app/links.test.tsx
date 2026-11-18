@@ -19,7 +19,7 @@ jest.mock('expo-image', () => {
   return { Image: (props: object) => <View {...props} /> };
 });
 
-import { CLUB_SITES, STADIUM_LINKS, STADIUM_TODOS } from '@/content/clubLinks';
+import { CLUB_SITES, STADIUM_LINKS } from '@/content/clubLinks';
 import Comunidade from '../../app/(app)/comunidade';
 import Estadio from '../../app/(app)/estadio';
 import Sites from '../../app/(app)/sites';
@@ -61,11 +61,12 @@ describe('Mapa do estádio', () => {
     expect(screen.getByLabelText('Ampliar mapa')).toBeTruthy();
   });
 
-  it('abre Loja Verde e Bilheteira no browser da app; sem URL do museu a linha não aparece', async () => {
+  it('abre Loja Verde e Bilheteira no browser da app; sem Museu', async () => {
     await render(wrap(<Estadio />));
-    expect(STADIUM_LINKS.find((l) => l.id === 'museu')?.url).toBeNull();
-    expect(STADIUM_TODOS.length).toBeGreaterThan(0);
+    expect(STADIUM_LINKS.map((l) => l.id)).toEqual(['loja', 'bilheteira']);
     expect(screen.queryByLabelText('Museu Sporting')).toBeNull();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    expect(Object.keys(require('@/content/clubLinks'))).not.toContain('STADIUM_TODOS');
     await fireEvent.press(screen.getByLabelText('Loja Verde'));
     expect(WebBrowser.openBrowserAsync).toHaveBeenLastCalledWith('https://lojaverde.sporting.pt/pt');
     await fireEvent.press(screen.getByLabelText('Bilheteira'));

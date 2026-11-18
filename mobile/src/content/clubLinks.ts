@@ -9,18 +9,12 @@ export const CLUB_SITES: readonly ClubSite[] = [
   { id: 'bilheteira', label: 'Bilheteira Online', url: 'https://tickets.sporting.pt/' },
 ];
 
-// Figma 450:5254 (lista por baixo do mapa). `url: null` esconde a linha: nunca se publica um URL de substituição.
-export type StadiumLink = { id: 'museu' | 'loja' | 'bilheteira'; label: string; url: string | null };
+// Figma 450:5254 (lista por baixo do mapa). O Museu saiu da lista (decisão do Martim, 18/11).
+export type StadiumLink = { id: 'loja' | 'bilheteira'; label: string; url: string };
 
 export const STADIUM_LINKS: readonly StadiumLink[] = [
-  { id: 'museu', label: 'Museu Sporting', url: null },
   { id: 'loja', label: 'Loja Verde', url: 'https://lojaverde.sporting.pt/pt' },
   { id: 'bilheteira', label: 'Bilheteira', url: 'https://tickets.sporting.pt/' },
-];
-
-/** Pendentes para o Martim (junto com TERMS_TODOS, Task 27). */
-export const STADIUM_TODOS: readonly string[] = [
-  'Museu Sporting: as ligações antigas de sporting.pt passaram a redirecionar para a página inicial. Indicar o URL atual do museu; até lá a linha fica escondida.',
 ];
 
 const HTTPS_URL = /^https:\/\/[^\s/?#]+/i;
