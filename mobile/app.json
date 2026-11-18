@@ -59,7 +59,14 @@
         }
       ],
       "expo-image",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permite à S360 usar o Face ID para desbloquear a app."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

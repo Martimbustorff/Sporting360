@@ -64,6 +64,8 @@ export const type = {
   // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)
   welcomeLogo: { fontFamily: fonts.display, fontSize: 110, color: colors.white, textTransform: 'uppercase' }, // 565:8145
   welcomeTagline: { fontFamily: fonts.display, fontSize: 30, color: colors.white, textTransform: 'uppercase', textAlign: 'center' }, // 564:7256
+  // Lock screen (Figma 310:9622, frame 348:37997): logo 565:21545, hint 348:38277
+  lockLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
   authLink: { fontFamily: fonts.body, fontSize: 12, color: colors.white }, // 564:6901 (white at 50%)
   authLinkAction: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primary }, // 564:6902
   authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
@@ -157,6 +159,17 @@ export const layout = {
   welcomeBottom: 16, // under "Criar uma conta", above the home indicator
   homeIndicator: 34, // iOS home indicator area included in Figma bottoms
   // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)
+  // Lock screen (Figma 310:9622 / 348:37997, no keypad). Offsets are from the top of the 812px frame.
+  lockLogoTop: 77, // logo top; status bar is 44 of it
+  lockHintGap: 33, // logo bottom (111) to hint text (144)
+  lockHintWidth: 315,
+  lockLion: { width: 669, height: 663, left: -40, top: 135 }, // "image 2" 348:37998 (clipped box)
+  lockLionImage: { width: 899.6, height: 698.8, left: -271.5, top: -35.8 }, // crop inside the box: 134.46% x 105.4%, -40.59% / -5.4%
+  lockButtonsGap: 20,
+  lockBottom: 16,
+  lockScrim: 'rgba(0, 0, 0, 0.6)', // SEM FIGMA: backdrop behind the enable-biometrics prompt
+  lockModalPad: 32,
+  lockModalGap: 16,
   authContentTop: 32, // header bottom to the first field
   authIntroTop: 24, // header bottom to the intro text (564:6971)
   authFieldsGap: 32,
