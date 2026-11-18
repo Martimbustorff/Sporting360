@@ -66,6 +66,7 @@ export const type = {
   sheetTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.black, textTransform: 'uppercase' }, // Figma 564:6981
   sheetTitleOpen: { fontFamily: fonts.display, fontSize: 24, color: colors.primary, textTransform: 'uppercase' }, // Figma 564:7119
   newsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
+  newsSummary: { fontFamily: fonts.bodyLight, fontSize: 12, color: colors.textMuted },
   newsMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
   // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)

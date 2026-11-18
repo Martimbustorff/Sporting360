@@ -575,8 +575,11 @@ export const SettlementSchema = z.looseObject({
 });
 export type Settlement = z.infer<typeof SettlementSchema>;
 
-/** news/{id}. `content` exists on the document but is never read. */
-export const NewsSchema = z.looseObject({
+/**
+ * news/{id}. The document also holds `content`; a plain `z.object` strips unknown keys,
+ * so the article body never reaches the app state.
+ */
+export const NewsSchema = z.object({
   id: str,
   title: str,
   image: nullable(str),

@@ -31,8 +31,9 @@ jest.mock('@/data/sports', () => ({
   useTeamStats: () => ({ status: 'loading' }),
   useSeasonFootballCompetitions: () => ({ status: 'loading' }),
 }));
-// Task 19: o Ranking lê o top 100 e a entrada do próprio (aqui ficam a carregar).
+// Task 19: o Ranking lê o top 100 e a entrada do próprio; Task 20: as Notícias leem a lista (aqui ficam a carregar).
 jest.mock('@/data/user', () => ({
+  useNews: () => ({ status: 'loading' }),
   useLeaderboard: () => ({ status: 'loading' }),
   useMyLeaderboardEntry: () => ({ status: 'loading' }),
   fetchMyPosition: jest.fn(),

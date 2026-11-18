@@ -9,6 +9,7 @@ export type NewsVM = {
   id: string;
   title: string;
   imageUrl: string | null;
+  summary?: string;
   source: string;
   publishedAt: Date;
   sport?: string;
@@ -38,8 +39,9 @@ export function NewsCard({ news, now, onPress }: { news: NewsVM; now: Date; onPr
       ) : (
         <View testID="news-placeholder" style={{ ...layout.newsImage, borderRadius: radius.md, backgroundColor: colors.surface10 }} />
       )}
-      <View style={{ flex: 1, justifyContent: 'space-between' }}>
-        <Text style={type.newsTitle} numberOfLines={3}>{news.title}</Text>
+      <View style={{ flex: 1, justifyContent: 'space-between', gap: spacing.xs }}>
+        <Text style={type.newsTitle} numberOfLines={2} ellipsizeMode="tail">{news.title}</Text>
+        {news.summary ? <Text style={type.newsSummary} numberOfLines={2} ellipsizeMode="tail">{news.summary}</Text> : null}
         <Text style={type.newsMeta} numberOfLines={1}>{`${news.source} · ${when}`}</Text>
       </View>
     </Pressable>

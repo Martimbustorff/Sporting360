@@ -115,6 +115,21 @@ describe('Ranking: lista', () => {
     expect(mockPosition).not.toHaveBeenCalled();
   });
 
+  it('o próprio já na lista visível: sem nota "Ainda não pontuaste" mesmo que a entrada própria falte', async () => {
+    mockBoard.current = ready([entry('a', 10, 'Ana'), entry('me', 8, 'Martim')]);
+    mockMine.current = { status: 'missing' };
+    await renderScreen();
+    expect(screen.queryByText(/Ainda não pontuaste/)).toBeNull();
+    expect(screen.queryByText('Não foi possível carregar a tua posição.')).toBeNull();
+  });
+
+  it('o próprio na lista e a leitura da entrada própria falha: sem nota de erro', async () => {
+    mockBoard.current = ready([entry('a', 10, 'Ana'), entry('me', 8, 'Martim')]);
+    mockMine.current = { status: 'error', error: new Error('x') };
+    await renderScreen();
+    expect(screen.queryByText('Não foi possível carregar a tua posição.')).toBeNull();
+  });
+
   it('próprio fora dos 100: linha fixa em baixo com a posição de fetchMyPosition (245)', async () => {
     mockMine.current = ready(entry('me', 3, 'Martim'));
     await renderScreen();

@@ -98,7 +98,8 @@ export default function Ranking() {
   } else {
     const offline = board.status === 'ready' && board.fromCache === true;
     const notes: React.JSX.Element[] = [];
-    if (uid !== null) {
+    // Com a linha própria já visível não há nota sobre a entrada própria.
+    if (uid !== null && !inList) {
       if (mine.status === 'error' || pinned === 'error') notes.push(<Note key="mine-error" text={RANKING_TEXT.mineError} />);
       else if (mine.status === 'missing' && rows.length > 0) notes.push(<Note key="none-yet" text={RANKING_TEXT.noneYet(kind)} />);
     }

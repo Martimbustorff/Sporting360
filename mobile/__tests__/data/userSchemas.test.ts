@@ -2,6 +2,7 @@ import {
   AppConfigSchema,
   GameboxDocSchema,
   MatchPredictionSchema,
+  NewsSchema,
   PointEventSchema,
   SettlementSchema,
   UserDocSchema,
@@ -97,5 +98,25 @@ describe('points and game documents', () => {
     const r = GameboxDocSchema.parse({ userid: 'u', gameboxNumber: 'enc', gameboxName: 'N', order: 1, pavilionSector: 'B' });
     expect(r.pavilionSector).toBe('B');
     expect(r.gameboxPort).toBeUndefined();
+  });
+});
+
+describe('NewsSchema', () => {
+  const doc = {
+    id: 'n1',
+    title: 'T',
+    image: null,
+    summary: 'R',
+    source: 'Record',
+    url: 'https://x.pt/a',
+    sport: 'football',
+    publishedAt: new Date('2026-11-18T09:00:00Z'),
+  };
+
+  it('strips `content` (and any unknown field) so it never reaches the app state', () => {
+    const r = NewsSchema.parse({ ...doc, content: '<p>corpo</p>', created_at: 1 });
+    expect(r).not.toHaveProperty('content');
+    expect(r).not.toHaveProperty('created_at');
+    expect(Object.keys(r).sort()).toEqual(['id', 'image', 'publishedAt', 'source', 'sport', 'summary', 'title', 'url']);
   });
 });
