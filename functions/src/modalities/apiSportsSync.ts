@@ -1,4 +1,4 @@
-import type { DocumentData, Firestore } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type Firestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 import { crestForSportTeam } from "../config/brand";
 import { competitionKey, competitionLabel, roundLabel } from "../model/labels";
@@ -24,6 +24,7 @@ const BEFORE_MS = 15 * MIN;
 const AFTER_MS = 3 * HOUR;
 const IDLE_MS = 3 * HOUR;
 const STANDINGS_MS = 6 * HOUR;
+const FAILURE_BACKOFF_MS = HOUR;
 /** Abaixo disto pára-se a modalidade: a quota gratuita é de 100 pedidos por dia por modalidade. */
 export const MIN_REMAINING = 10;
 
@@ -144,9 +145,14 @@ export function mapApiSportsGame(sport: Sport, g: ApiSportsGame, sportingTeamId:
 }
 
 /** Verdadeiro com um jogo em `[início - 15 min, início + 3 h]` ou sem execução nas últimas 3 h. */
+function inGameWindow(matches: Pick<MatchDoc, "kickoff">[], now: Date): boolean {
+  const t = now.getTime();
+  return matches.some((m) => t >= m.kickoff.getTime() - BEFORE_MS && t <= m.kickoff.getTime() + AFTER_MS);
+}
+
 export function apiSportsDue(state: { lastRunAt: Date | null }, matches: Pick<MatchDoc, "kickoff">[], now: Date): boolean {
   const t = now.getTime();
-  if (matches.some((m) => t >= m.kickoff.getTime() - BEFORE_MS && t <= m.kickoff.getTime() + AFTER_MS)) return true;
+  if (inGameWindow(matches, now)) return true;
   return state.lastRunAt === null || t - state.lastRunAt.getTime() > IDLE_MS;
 }
 
@@ -215,6 +221,8 @@ interface SportState {
   standingsAt: Record<string, Date>;
   /** `remaining` no fim da execução anterior (cada execução começa com um cliente novo, sem esse valor). */
   lastRemaining: number | null;
+  /** Última falha que não foi de quota; fora de janela de jogo trava 1 h. */
+  lastFailureAt: Date | null;
 }
 
 const stateRef = (db: Firestore, sport: Sport) => db.doc(`ingestState/apisports_state_${sport}`);
@@ -229,7 +237,7 @@ async function readState(db: Firestore, sport: Sport): Promise<SportState> {
   const raw = (snap.get("standingsAt") ?? {}) as Record<string, unknown>;
   const standingsAt: Record<string, Date> = {};
   for (const [k, v] of Object.entries(raw)) if (v) standingsAt[k] = fromFirestore(v as Date);
-  return { lastRunAt: get("lastRunAt"), standingsAt, lastRemaining: typeof rem === "number" ? rem : null };
+  return { lastRunAt: get("lastRunAt"), standingsAt, lastRemaining: typeof rem === "number" ? rem : null, lastFailureAt: get("lastFailureAt") };
 }
 
 async function sportMatchesNear(db: Firestore, sport: Sport, now: Date): Promise<MatchDoc[]> {
@@ -328,7 +336,10 @@ export async function syncApiSports(d: ApiSportsDeps): Promise<ApiSportsResult> 
     const state = await readState(d.db, sport);
     // Quota quase esgotada na execução anterior: não gastar o resto; volta a sondar passadas 3 h.
     if (state.lastRemaining !== null && state.lastRemaining < MIN_REMAINING && state.lastRunAt !== null && now.getTime() - state.lastRunAt.getTime() < IDLE_MS) continue;
-    if (!apiSportsDue(state, await sportMatchesNear(d.db, sport, now), now)) continue;
+    const near = await sportMatchesNear(d.db, sport, now);
+    if (!apiSportsDue(state, near, now)) continue;
+    // Falha recente (sem ser de quota) fora de janela de jogo: espera 1 h; em janela repete a cada tick.
+    if (state.lastFailureAt !== null && now.getTime() - state.lastFailureAt.getTime() < FAILURE_BACKOFF_MS && !inGameWindow(near, now)) continue;
 
     attempted++;
     const client = d.clients[sport];
@@ -355,6 +366,8 @@ export async function syncApiSports(d: ApiSportsDeps): Promise<ApiSportsResult> 
     // Falha que não é de quota: não avança `lastRunAt` (volta a tentar no tick seguinte; o travão é a quota).
     const patch: Record<string, unknown> = {};
     if (ok || quotaFailure) patch.lastRunAt = now;
+    if (ok) patch.lastFailureAt = FieldValue.delete();
+    else if (!quotaFailure) patch.lastFailureAt = now;
     if (remainingBySport[sport] !== null) patch.lastRemaining = remainingBySport[sport];
     if (Object.keys(patch).length > 0) await stateRef(d.db, sport).set(patch, { merge: true });
   }

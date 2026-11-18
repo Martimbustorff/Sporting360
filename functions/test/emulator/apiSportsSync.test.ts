@@ -245,9 +245,32 @@ describe("syncApiSports: classificações por liga e falhas isoladas", () => {
     await syncApiSports(deps(s, NOW));
     expect((await db.doc("ingestState/apisports_state_handball").get()).get("lastRunAt")).toBeUndefined();
     expect((await db.doc("ingestState/apisports_state_volleyball").get()).get("lastRunAt")).toBeDefined();
-    await expect(syncApiSports(deps(s, new Date(NOW.getTime() + 10 * MIN)))).rejects.toThrow();
+    await expect(syncApiSports(deps(s, new Date(NOW.getTime() + 60 * MIN)))).rejects.toThrow();
     expect(s.calls("handball", "games")).toHaveLength(2);
     expect(s.calls("volleyball", "games")).toHaveLength(1);
+  });
+
+  it("500 persistente fora de janela: pedidos em t0 e t0+60 min, não a cada tick", async () => {
+    const s = setup({ games: { handball: { status: 500, body: {} } } });
+    for (const m of [0, 10, 20, 50]) await syncApiSports(deps(s, new Date(NOW.getTime() + m * MIN))).catch(() => undefined);
+    expect(s.calls("handball", "games")).toHaveLength(1);
+    await syncApiSports(deps(s, new Date(NOW.getTime() + 60 * MIN))).catch(() => undefined);
+    expect(s.calls("handball", "games")).toHaveLength(2);
+  });
+
+  it("500 dentro de janela de jogo: repete no tick seguinte", async () => {
+    await db.doc("matches/hb_2").set({ sport: "handball", kickoff: new Date(NOW.getTime() + 5 * MIN) });
+    const s = setup({ games: { handball: { status: 500, body: {} } } });
+    await syncApiSports(deps(s, NOW)).catch(() => undefined);
+    await syncApiSports(deps(s, new Date(NOW.getTime() + 10 * MIN))).catch(() => undefined);
+    expect(s.calls("handball", "games")).toHaveLength(2);
+  });
+
+  it("sucesso limpa lastFailureAt", async () => {
+    await db.doc("ingestState/apisports_state_handball").set({ lastFailureAt: new Date(NOW.getTime() - 2 * 60 * MIN) });
+    const s = setup();
+    await syncApiSports(deps(s, NOW));
+    expect((await db.doc("ingestState/apisports_state_handball").get()).get("lastFailureAt")).toBeUndefined();
   });
 
   it("lastRemaining só é substituído por valores conhecidos", async () => {
