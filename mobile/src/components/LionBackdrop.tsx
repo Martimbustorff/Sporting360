@@ -9,8 +9,11 @@ const LION = require('../../assets/images/lock-lion.png');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const RINGS = require('../../assets/images/welcome-rings.svg');
 
-/** Fundo da Home: preto, leão recortado, verde a 50 % por cima e os anéis. Ocupa o pai inteiro, sem toques. */
-export function LionBackdrop() {
+/**
+ * Fundo da Home: preto, leão recortado, verde a 50 % por cima e os anéis. Ocupa o pai inteiro, sem toques.
+ * `blurred` (Sites do clube 348:44569 e Comunidade Leonina 406:13212): o mesmo leão desfocado e sem anéis.
+ */
+export function LionBackdrop({ blurred = false }: { blurred?: boolean }) {
   return (
     <View
       testID="lion-backdrop"
@@ -19,10 +22,10 @@ export function LionBackdrop() {
       style={[StyleSheet.absoluteFill, { backgroundColor: colors.black, pointerEvents: 'none' }]}
     >
       <View style={[styles.abs, styles.clip, layout.lockLion]}>
-        <Image source={LION} accessible={false} contentFit="fill" style={[styles.abs, layout.lockLionImage]} />
+        <Image source={LION} accessible={false} contentFit="fill" blurRadius={blurred ? layout.lionBlur : 0} style={[styles.abs, layout.lockLionImage]} />
       </View>
       <View style={[StyleSheet.absoluteFill, { backgroundColor: layout.lockTint, opacity: layout.lockTintOpacity }]} />
-      <Image source={RINGS} accessible={false} style={[styles.abs, layout.lockRings]} />
+      {blurred ? null : <Image source={RINGS} accessible={false} style={[styles.abs, layout.lockRings]} />}
     </View>
   );
 }

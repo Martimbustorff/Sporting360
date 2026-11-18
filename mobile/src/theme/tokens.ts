@@ -114,6 +114,7 @@ export const type = {
   // Folha vazia (Figma 348:39563): texto 13/22 e "insere manualmente" SemiBold primary sublinhado
   gameboxEmpty: { fontFamily: fonts.body, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
   gameboxEmptyLink: { fontFamily: fonts.bodySemiBold, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.primary, textDecorationLine: 'underline' },
+  communityName: { fontFamily: fonts.display, fontSize: 24, color: colors.white, textTransform: 'uppercase' }, // Figma 406:13223
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
@@ -197,6 +198,21 @@ export const layout = {
   sheetVelocity: 500, // px/s: a flick is enough to toggle
   consentSheetHeight: 380, // SEM FIGMA: analytics consent sheet (title, 5 lines of text, two buttons) above the home indicator
   consentGap: 16,
+  // Mapa do estádio (Figma 450:5254 normal, 450:5095 ampliado: mapa 359 -> 585 de largura) e ligações em baixo (450:5379)
+  stadiumMap: { width: 359, height: 383.698 },
+  stadiumZoomScale: 585 / 359,
+  stadiumZoomMs: 250, // SEM FIGMA: duração da animação de ampliar/reduzir
+  stadiumLinksX: 28,
+  stadiumLinksBottom: 30, // 812 - 695 - 87.5 (três linhas de 21.17 e duas folgas de 12)
+  stadiumLinksGap: 12,
+  stadiumLinkIcon: 21.17,
+  stadiumLinkIconGap: 15,
+  // Sites do clube e Comunidade Leonina (Figma 348:44569 / 406:13212)
+  lionBlur: 11, // "image 2" 348:44570, desfocado a 11
+  sitesRowGap: 28, // linhas a 72 px de passo: MenuRow (44) mais 28
+  sitesListTop: 24, // texto (termina em 148) a primeira linha (centro em 190)
+  communityGap: 24, // 406:13221
+  communityBottom: 24, // SEM FIGMA: folga no fim da lista
   sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
   // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
   emptyIcon: 122,
