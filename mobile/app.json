@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "S360",
-    "slug": "s360",
+    "slug": "s3602027",
     "scheme": "s360",
     "version": "7.0.0",
     "orientation": "portrait",
@@ -71,6 +71,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "sprintia-development",
+    "extra": {
+      "eas": {
+        "projectId": "f387402f-a79b-45e3-aefa-54c6c4ece63f"
+      }
     }
   }
 }
