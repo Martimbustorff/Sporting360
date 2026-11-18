@@ -3,9 +3,9 @@
 // tokens e apaga os dados e a conta de Auth. Nunca registar tokens, códigos Apple, emails nem passwords.
 import { Platform } from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, revokeToken } from '@react-native-firebase/auth';
-import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { authErrorMessage } from '@/lib/authErrors';
+import { codeOf, reportCode } from '@/lib/report';
 import { setSignOutNotice } from '@/lib/signOutNotice';
 import { signOut } from '@/services/auth';
 import { setBiometricEnabled } from '@/services/biometrics';
@@ -15,20 +15,6 @@ import { reauthenticateWithApple, reauthenticateWithGoogle } from '@/services/so
 export type ReauthOutcome = 'ok' | 'cancelled';
 
 const GENERIC = authErrorMessage(undefined);
-
-function codeOf(e: unknown): string | undefined {
-  return typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : undefined;
-}
-
-/** Crashlytics só recebe o código (nunca a mensagem: pode trazer email). */
-function reportCode(tag: string, e: unknown): void {
-  const code = (codeOf(e) ?? 'unknown').replace(/[^\w/.-]/g, '').slice(0, 64) || 'unknown';
-  try {
-    recordError(getCrashlytics(), new Error(`${tag} ${code}`));
-  } catch {
-    // nada mais a fazer
-  }
-}
 
 function isReauthRequired(e: unknown): boolean {
   const code = (codeOf(e) ?? '').replace(/^functions\//, '');
@@ -90,16 +76,27 @@ export async function deleteMyAccount(reauth: () => Promise<ReauthOutcome>): Pro
   const uid = user.uid;
 
   if (hasAppleFlow(providersOf(user))) {
-    const apple = await reauthenticateWithApple();
-    if (apple.status === 'cancelled') return 'cancelled';
-    // Revogar com uma nova tentativa; se falhar, regista e apaga na mesma (a falha nunca impede apagar a conta).
+    let apple: Awaited<ReturnType<typeof reauthenticateWithApple>> | undefined;
     try {
-      await revokeToken(authInstance(), apple.authorizationCode);
-    } catch {
+      apple = await reauthenticateWithApple();
+    } catch (e) {
+      // Outro Apple ID (auth/user-mismatch) com password ligada: reautentica com a password e salta a revogação
+      // (não há authorizationCode do Apple ID certo). Sem password, mantém o erro.
+      if (codeOf(e) !== 'auth/user-mismatch' || !providersOf(user).includes('password')) throw e;
+      reportCode('APPLE_REVOKE_SKIPPED', e);
+      if ((await reauth()) === 'cancelled') return 'cancelled';
+    }
+    if (apple?.status === 'cancelled') return 'cancelled';
+    if (apple?.status === 'ok') {
+      // Revogar com uma nova tentativa; se falhar, regista e apaga na mesma (a falha nunca impede apagar a conta).
       try {
         await revokeToken(authInstance(), apple.authorizationCode);
-      } catch (e) {
-        reportCode('APPLE_REVOKE_FAILED', e);
+      } catch {
+        try {
+          await revokeToken(authInstance(), apple.authorizationCode);
+        } catch (e) {
+          reportCode('APPLE_REVOKE_FAILED', e);
+        }
       }
     }
   }

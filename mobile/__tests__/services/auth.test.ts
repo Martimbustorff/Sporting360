@@ -19,6 +19,7 @@ import {
   signInWithEmailAndPassword,
   signOut as fbSignOut,
 } from '@react-native-firebase/auth';
+import { recordError } from '@react-native-firebase/crashlytics';
 import { setDoc } from '@react-native-firebase/firestore';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -80,6 +81,18 @@ describe('signUpEmail', () => {
     expect(mockUpdateProfileCall).toHaveBeenCalledTimes(1);
     expect(claimProfileEnsure('u9')).toBe(false); // already marked
   });
+  it('setDoc rejects: only the code reaches crashlytics (no message, no email)', async () => {
+    resetProfileEnsured();
+    (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue({ user: { uid: 'u9' } });
+    (setDoc as jest.Mock).mockRejectedValueOnce(
+      Object.assign(new Error('permission denied for z@x.pt'), { code: 'permission-denied' }),
+    );
+    await signUpEmail('Zé', 'z@x.pt', 'secret1');
+    expect(recordError).toHaveBeenCalledTimes(1);
+    const err = (recordError as jest.Mock).mock.calls[0][1] as Error;
+    expect(err.message).toBe('SIGN_UP_USERS_DOC_FAILED permission-denied');
+    expect(err.message).not.toContain('z@x.pt');
+  });
   it('createUser failing clears the sign-up flag so a later inherited session is ensured', async () => {
     resetProfileEnsured();
     (createUserWithEmailAndPassword as jest.Mock).mockRejectedValue({ code: 'auth/weak-password' });
@@ -125,5 +138,13 @@ describe('ensureProfile', () => {
   it('never throws; failures go to crashlytics', async () => {
     mockUpdateProfileCall.mockRejectedValue(new Error('boom'));
     await expect(ensureProfile()).resolves.toBeUndefined();
+  });
+  it('reports only the code, never the message or email', async () => {
+    mockUpdateProfileCall.mockRejectedValue(Object.assign(new Error('falhou para z@x.pt'), { code: 'functions/internal' }));
+    await ensureProfile();
+    expect(recordError).toHaveBeenCalledTimes(1);
+    const err = (recordError as jest.Mock).mock.calls[0][1] as Error;
+    expect(err.message).toBe('ENSURE_PROFILE_FAILED functions/internal');
+    expect(err.message).not.toContain('z@x.pt');
   });
 });

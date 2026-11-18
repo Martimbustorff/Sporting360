@@ -30,6 +30,22 @@ describe('AppConfigSchema', () => {
     expect(parsed.success).toBe(true);
   });
 
+  it('keeps the document valid when optional fields are malformed', () => {
+    const base = { minVersion: { ios: '7.0.0', android: '7.0.0' } };
+    for (const bad of [
+      { storeUrls: 'x' },
+      { storeUrls: { ios: 5 } },
+      { texts: 7 },
+      { texts: { updateButton: 5, updateRequiredTitle: 'Ok' } },
+    ]) {
+      expect(AppConfigSchema.safeParse({ ...base, ...bad }).success).toBe(true);
+    }
+    const parsed = AppConfigSchema.parse({ ...base, texts: { updateButton: 5, updateRequiredTitle: 'Ok' }, storeUrls: 'x' });
+    expect(parsed.storeUrls).toBeUndefined();
+    expect(parsed.texts?.updateButton).toBeUndefined();
+    expect(parsed.texts?.updateRequiredTitle).toBe('Ok');
+  });
+
   it.each([
     ['no minVersion', {}],
     ['minVersion without android', { minVersion: { ios: '7.0.0' } }],

@@ -203,6 +203,39 @@ describe('deleteMyAccount', () => {
       expect(recordError).not.toHaveBeenCalled();
     });
 
+    it('Apple ID diferente (user-mismatch) com password ligada: pede a password, não revoga e regista só o código', async () => {
+      mockUser.current = user('ua', ['apple.com', 'password']);
+      (reauthenticateWithApple as jest.Mock).mockRejectedValue(
+        Object.assign(new Error('mismatch ze@x.pt'), { code: 'auth/user-mismatch' }),
+      );
+      const reauth = jest.fn(() => Promise.resolve('ok' as const));
+      await expect(deleteMyAccount(reauth)).resolves.toBe('deleted');
+      expect(reauth).toHaveBeenCalledTimes(1);
+      expect(revokeToken).not.toHaveBeenCalled();
+      expect(mockDeleteCall).toHaveBeenCalledTimes(1);
+      const logged = (recordError as jest.Mock).mock.calls.map((c) => String((c[1] as Error).message));
+      expect(logged).toContain('APPLE_REVOKE_SKIPPED auth/user-mismatch');
+      expect(logged.join(' ')).not.toContain('ze@x.pt');
+    });
+
+    it('user-mismatch com password ligada e folha cancelada → cancelled, sem apagar', async () => {
+      mockUser.current = user('ua', ['apple.com', 'password']);
+      (reauthenticateWithApple as jest.Mock).mockRejectedValue({ code: 'auth/user-mismatch' });
+      await expect(deleteMyAccount(jest.fn(() => Promise.resolve('cancelled' as const)))).resolves.toBe('cancelled');
+      expect(mockDeleteCall).not.toHaveBeenCalled();
+      expect(revokeToken).not.toHaveBeenCalled();
+    });
+
+    it('user-mismatch sem password: mantém o erro', async () => {
+      (reauthenticateWithApple as jest.Mock).mockRejectedValue(
+        Object.assign(new Error('Outra conta'), { code: 'auth/user-mismatch' }),
+      );
+      const reauth = jest.fn();
+      await expect(deleteMyAccount(reauth)).rejects.toThrow('Outra conta');
+      expect(reauth).not.toHaveBeenCalled();
+      expect(mockDeleteCall).not.toHaveBeenCalled();
+    });
+
     it('Android: sem pedido Apple (não disponível); segue pelo caminho normal', async () => {
       Platform.OS = 'android';
       mockUser.current = user('ua', ['apple.com', 'password']);

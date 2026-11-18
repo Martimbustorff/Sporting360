@@ -14,7 +14,8 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "CFBundleDevelopmentRegion": "pt-PT",
-        "CFBundleAllowMixedLocalizations": true
+        "CFBundleAllowMixedLocalizations": true,
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

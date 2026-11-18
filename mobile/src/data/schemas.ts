@@ -11,14 +11,16 @@ const stringOrNumber = z.union([z.string(), z.number()]);
  */
 export const AppConfigSchema = z.looseObject({
   minVersion: z.object({ ios: z.string(), android: z.string() }),
-  storeUrls: z.object({ ios: z.string().nullish(), android: z.string().nullish() }).optional(),
+  // Opcionais e tolerantes: um valor malformado vira undefined em vez de invalidar o documento (a guarda falharia aberta).
+  storeUrls: z.object({ ios: z.string().nullish(), android: z.string().nullish() }).nullish().catch(undefined),
   texts: z
     .object({
-      updateRequiredTitle: z.string().nullish(),
-      updateRequiredBody: z.string().nullish(),
-      updateButton: z.string().nullish(),
+      updateRequiredTitle: z.string().nullish().catch(undefined),
+      updateRequiredBody: z.string().nullish().catch(undefined),
+      updateButton: z.string().nullish().catch(undefined),
     })
-    .optional(),
+    .nullish()
+    .catch(undefined),
 });
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 

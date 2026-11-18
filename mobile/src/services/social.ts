@@ -10,12 +10,12 @@ import {
   reauthenticateWithCredential,
   signInWithCredential,
 } from '@react-native-firebase/auth';
-import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { doc, getDoc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { authErrorMessage } from '@/lib/authErrors';
 import { beginSignUp, endSignUp, markProfileEnsured } from '@/lib/profileEnsured';
+import { codeOf, reportCode } from '@/lib/report';
 import { authInstance, db, fns } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
 
@@ -45,20 +45,6 @@ const APPLE_CANCELLED = 'ERR_REQUEST_CANCELED';
 class Cancelled extends Error {
   constructor() {
     super('CANCELLED');
-  }
-}
-
-function codeOf(e: unknown): string | undefined {
-  return typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : undefined;
-}
-
-/** Crashlytics só recebe o código do erro: nunca a mensagem (pode conter email), tokens ou nonces. */
-function reportCode(tag: string, e: unknown): void {
-  const code = (codeOf(e) ?? 'unknown').replace(/[^\w/.-]/g, '').slice(0, 64) || 'unknown';
-  try {
-    recordError(getCrashlytics(), new Error(`${tag} ${code}`));
-  } catch {
-    // nada mais a fazer
   }
 }
 

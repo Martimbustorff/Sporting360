@@ -31,6 +31,7 @@ export function UpdateGate({ children, fontsReady = true }: { children: ReactNod
   if (!blocked) return <>{children}</>;
   if (!fontsReady) return null;
 
+  const texts = config.status === 'ready' ? config.data.texts : undefined;
   const url = resolveStoreUrl(os, config.status === 'ready' ? config.data.storeUrls : undefined);
   const open = () => {
     try {
@@ -44,11 +45,13 @@ export function UpdateGate({ children, fontsReady = true }: { children: ReactNod
     <View testID="update-screen" accessibilityViewIsModal style={[StyleSheet.absoluteFill, styles.root]}>
       <Image source={LOGO} accessible={false} contentFit="contain" style={styles.logo} />
       <Text style={[type.screenTitle, styles.center]} accessibilityRole="header">
-        Atualização necessária
+        {texts?.updateRequiredTitle ?? 'Atualização obrigatória'}
       </Text>
-      <Text style={[type.authIntro, styles.center]}>Há uma nova versão da S360. Atualiza para continuar.</Text>
+      <Text style={[type.authIntro, styles.center]}>
+        {texts?.updateRequiredBody ?? 'Há uma versão nova da S360. Atualiza a app para continuar.'}
+      </Text>
       <View style={styles.button}>
-        <PrimaryButton label="Atualizar" onPress={open} />
+        <PrimaryButton label={texts?.updateButton ?? 'Atualizar'} onPress={open} />
       </View>
     </View>
   );

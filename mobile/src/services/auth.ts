@@ -4,17 +4,13 @@ import {
   signInWithEmailAndPassword,
   signOut as fbSignOut,
 } from '@react-native-firebase/auth';
-import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authErrorMessage } from '@/lib/authErrors';
 import { beginSignUp, endSignUp, markProfileEnsured } from '@/lib/profileEnsured';
+import { codeOf, reportCode } from '@/lib/report';
 import { authInstance, db } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
-
-function codeOf(e: unknown): string | undefined {
-  return typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : undefined;
-}
 
 function fail(e: unknown): never {
   throw new Error(authErrorMessage(codeOf(e)));
@@ -42,11 +38,7 @@ export async function signUpEmail(name: string, email: string, password: string)
       );
     } catch (e) {
       // A conta já existe e a sessão está aberta: não falhar. O nome cai para o fallback do uid.
-      try {
-        recordError(getCrashlytics(), e instanceof Error ? e : new Error(String(e)));
-      } catch {
-        // nada mais a fazer
-      }
+      reportCode('SIGN_UP_USERS_DOC_FAILED', e);
     }
     await ensureProfile();
     markProfileEnsured(uid);
