@@ -21,7 +21,7 @@ import { colors, layout, spacing } from '@/theme/tokens';
 export const NOTIFICACOES_TEXT = {
   loadError: 'Não foi possível carregar as tuas preferências.',
   notice: 'As notificações chegam numa próxima versão. As tuas escolhas ficam guardadas.',
-  OFFLINE: 'Sem ligação. A escolha fica neste telemóvel. As alterações vão ser enviadas quando houver ligação.',
+  OFFLINE: 'Sem ligação. A tua escolha fica guardada e é enviada quando houver ligação.',
   DENIED: 'Não tens permissão para guardar esta escolha.',
   UNKNOWN: 'Não foi possível guardar a escolha. Tenta outra vez.',
 } as const;

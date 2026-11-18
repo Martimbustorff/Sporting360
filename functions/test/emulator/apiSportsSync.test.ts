@@ -3,7 +3,8 @@ import * as path from "path";
 import { deleteApp, getApps } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
 import { SPORTING_CREST_URL } from "../../src/config/brand";
-import { syncApiSports, type ApiSportsConfig } from "../../src/modalities/apiSportsSync";
+import { logger } from "firebase-functions";
+import { runApiSportsJob, syncApiSports, type ApiSportsConfig } from "../../src/modalities/apiSportsSync";
 import { API_SPORTS } from "../../src/modalities/sourcesConfig";
 import { apiSports } from "../../src/sources/apiSports";
 import { clearAll, testDb } from "../helpers/emulatorDb";
@@ -204,6 +205,26 @@ const gameBody = (over: object) => {
   b.response = [{ ...b.response[0], id: 9, ...over }];
   return b;
 };
+
+describe("runApiSportsJob (o que o scheduler corre)", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("1 modalidade a falhar gera um só INGEST_ALERT (o da própria modalidade); a quota fica na saúde", async () => {
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const s = setup({
+      headers: { volleyball: { "x-ratelimit-requests-remaining": "80" } },
+      games: { handball: { status: 500, body: {} } },
+    });
+    await runApiSportsJob(db, deps(s, NOW));
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "apisports_handball" }));
+    const h = (await db.doc("ingestHealth/apisports").get()).data()!;
+    expect(h.lastFailed).toBe(0);
+    expect(h.remaining).toBe(80);
+    expect(h.lastError).toBeNull();
+  });
+});
 
 describe("syncApiSports: classificações por liga e falhas isoladas", () => {
   const stateSeed = async (sport: string, data: object) => db.doc(`ingestState/apisports_state_${sport}`).set(data);

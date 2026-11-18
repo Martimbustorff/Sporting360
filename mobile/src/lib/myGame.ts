@@ -36,7 +36,8 @@ function eventsByGame(events: PointEvent[]): Map<string, GameEvents> {
     if (e.gameId === null) continue;
     const g = byGame.get(e.gameId) ?? { types: new Set<string>(), points: 0, participationDate: null };
     g.types.add(e.type);
-    g.points += e.points;
+    // Só os eventos do prognóstico: o MVP do mesmo jogo fica de fora da linha (como `predictionPoints` na tab).
+    if (e.type.startsWith('prediction_')) g.points += e.points;
     if (e.type === 'prediction_participation') g.participationDate = e.gameDate;
     byGame.set(e.gameId, g);
   }

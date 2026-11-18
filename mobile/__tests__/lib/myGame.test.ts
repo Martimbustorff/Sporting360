@@ -43,6 +43,19 @@ describe('myGameStats', () => {
     expect(s).toMatchObject({ settled: 4, accuracyPct: 75, exact: 2, outcome: 1, streak: 2 });
   });
 
+  it('os pontos de cada jogo somam só os eventos prediction_* (o MVP fica de fora)', () => {
+    const h = myGameStats({ predictions, settlements, events }).history;
+    // g4: participação 1 + exato 5 = 6; mvp_participation 1 e mvp_correct 3 não entram.
+    expect(h.find((i) => i.gameId === 'g4')?.points).toBe(6);
+    const solo: PointEvent[] = [
+      ev('g1', 'prediction_participation', 1, day(3)),
+      ev('g1', 'prediction_exact', 3, day(3)),
+      ev('g1', 'mvp_participation', 1, day(3)),
+    ];
+    const s = myGameStats({ predictions: [pred('g1', 1, 1)], settlements: { g1: settle(1, 1) }, events: solo });
+    expect(s.history[0]?.points).toBe(4);
+  });
+
   it('mvp_correct conta em mvpCorrect, também em jogos sem prognóstico', () => {
     expect(myGameStats({ predictions, settlements, events }).mvpCorrect).toBe(2);
   });
@@ -72,7 +85,7 @@ describe('myGameStats', () => {
   it('histórico: palpite, resultado final (null por liquidar) e soma dos pontos do jogo', () => {
     const { history } = myGameStats({ predictions, settlements, events });
     expect(history[0]).toEqual({ gameId: 'g5', gameDate: day(15), pick: '1-0', final: null, points: 1 });
-    expect(history[1]).toEqual({ gameId: 'g4', gameDate: day(12), pick: '2-1', final: '2-1', points: 10 });
+    expect(history[1]).toEqual({ gameId: 'g4', gameDate: day(12), pick: '2-1', final: '2-1', points: 6 });
     expect(history[3]).toMatchObject({ gameId: 'g2', final: '0-2', points: 1 });
   });
 

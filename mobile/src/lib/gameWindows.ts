@@ -38,13 +38,18 @@ export function mvpWindow(m: Pick<Match, 'status' | 'elapsed' | 'finishedAt'>, n
 
 export type MvpCandidate = { playerId: string; name: string; number: number | null };
 
-/** Sporting players who played (minutes > 0), sorted by name (`localeCompare(…, 'pt')`), as the server does. */
+/**
+ * Sporting players who played (minutes > 0), sorted by name (`localeCompare(…, 'pt')`), as the server does. A repeated
+ * row of the same `playerId` counts once (the first is kept), also as on the server.
+ */
 export function mvpCandidates(doc: PlayersDoc | null, sportingTeamId = '228'): MvpCandidate[] {
   if (!doc) return [];
+  const seen = new Set<string>();
   return doc.teams
     .filter((t) => String(t.teamId) === sportingTeamId)
     .flatMap((t) => t.players)
     .filter((p) => p.minutes !== null && p.minutes > 0)
+    .filter((p) => !seen.has(String(p.playerId)) && seen.add(String(p.playerId)))
     .map((p) => ({ playerId: String(p.playerId), name: p.name, number: p.number }))
     .sort((a, b) => a.name.localeCompare(b.name, 'pt'));
 }

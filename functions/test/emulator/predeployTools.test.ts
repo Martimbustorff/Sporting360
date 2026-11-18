@@ -70,9 +70,9 @@ describe("compare-legacy (Firestore, só leitura)", () => {
   });
 
   it("documentos iguais nos dois lados: sem problemas; só o que mudou desde --since conta", async () => {
-    await db.doc("games/900").set(game("900", { scorehome: "3" })); // antigo, não está em sombra
-    const since = new Date();
-    await new Promise((r) => setTimeout(r, 5));
+    // `since` vem do relógio do servidor (writeTime do documento antigo) mais 1 ms: sem esperas nem corridas de relógio.
+    const old = await db.doc("games/900").set(game("900", { scorehome: "3" })); // antigo, não está em sombra
+    const since = new Date(old.writeTime.toDate().getTime() + 1);
     await db.doc("games/1001").set(game("1001", { channel: "Sport TV" }));
     await db.doc("_shadow_games/1001").set(game("1001", { _ingest: "v2027", isActive: true, endTime: "2026-12-01T21:55:00.000Z", channel: "" }));
     await db.doc("summaries/a").set({ GameId: "1001", playerSub: { name: "null" } });

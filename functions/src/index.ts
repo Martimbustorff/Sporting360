@@ -7,7 +7,7 @@ import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
-import { syncApiSports } from "./modalities/apiSportsSync";
+import { runApiSportsJob } from "./modalities/apiSportsSync";
 import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
 import { syncTweets } from "./social/tweetsSync";
@@ -185,13 +185,11 @@ export const apiSportsSync = onSchedule(
   { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [RAPIDAPI_KEY] },
   async () => {
     const key = RAPIDAPI_KEY.value();
-    await runJob(getFirestore(), "apisports", () =>
-      syncApiSports({
-        db: getFirestore(),
-        clients: { handball: apiSports({ sport: "handball", key }), volleyball: apiSports({ sport: "volleyball", key }), basketball: apiSports({ sport: "basketball", key }) },
-        now: () => new Date(),
-      }),
-    );
+    await runApiSportsJob(getFirestore(), {
+      db: getFirestore(),
+      clients: { handball: apiSports({ sport: "handball", key }), volleyball: apiSports({ sport: "volleyball", key }), basketball: apiSports({ sport: "basketball", key }) },
+      now: () => new Date(),
+    });
   },
 );
 

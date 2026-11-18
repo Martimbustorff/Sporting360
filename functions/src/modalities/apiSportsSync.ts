@@ -7,7 +7,7 @@ import { FINAL_STATUSES, apiSportsStatus } from "../model/status";
 import type { MatchDoc, Pair, TeamRef } from "../model/types";
 import type { ApiSportsClient, ApiSportsSport as Sport } from "../sources/apiSports";
 import { fromFirestore, saveMatch, writeDocs } from "../store/writer";
-import { recordRun } from "../store/health";
+import { recordRun, runJob } from "../store/health";
 import { isQuotaError } from "../football/competitionSync";
 import { API_SPORTS, type ApiSportsSport as SportConfig } from "./sourcesConfig";
 
@@ -375,4 +375,15 @@ export async function syncApiSports(d: ApiSportsDeps): Promise<ApiSportsResult> 
   if (attempted > 0 && threw === attempted) throw new Error(`apiSportsSync: as ${threw} modalidades falharam`);
   const known = Object.values(remainingBySport).filter((v): v is number => v !== null);
   return { count, failed, remaining: known.length > 0 ? Math.min(...known) : null, remainingBySport };
+}
+
+/**
+ * O que o scheduler corre: regista a saúde global `apisports` com `count` e `remaining` (a quota continua visível).
+ * Não passa `failed`: cada modalidade já regista a sua saúde e o seu alerta, e repeti-lo aqui duplicava o INGEST_ALERT.
+ */
+export function runApiSportsJob(db: Firestore, deps: ApiSportsDeps): Promise<void> {
+  return runJob(db, "apisports", async () => {
+    const { count, remaining } = await syncApiSports(deps);
+    return { count, remaining };
+  });
 }

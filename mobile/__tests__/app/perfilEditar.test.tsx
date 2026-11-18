@@ -161,8 +161,10 @@ describe('Notificações', () => {
     await render(wrap(<Notificacoes />));
     await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
     expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
-    expect(screen.getByText(/Sem ligação/)).toBeTruthy();
-    expect(screen.getByText(/As alterações vão ser enviadas quando houver ligação\./)).toBeTruthy();
+    expect(
+      screen.getByText('Sem ligação. A tua escolha fica guardada e é enviada quando houver ligação.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/neste telemóvel/)).toBeNull();
   });
 
   it('snapshot da 1.ª escrita com a 2.ª ainda pendente não perde a 2.ª escolha', async () => {

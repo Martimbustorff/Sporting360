@@ -1,6 +1,7 @@
 // Consentimento de Analytics (Task 6). A recolha do Firebase Analytics está desligada em firebase.json
 // e só liga depois de o utilizador aceitar. A escolha fica no dispositivo (SecureStore), não na conta.
 // Só o uid é enviado como identificador, e só com consentimento: nunca email nem nome.
+// O Crashlytics nunca recebe o uid, com ou sem consentimento (a política de privacidade diz que os relatórios não levam a conta).
 import { getAnalytics, logEvent, setAnalyticsCollectionEnabled, setUserId } from '@react-native-firebase/analytics';
 import * as SecureStore from 'expo-secure-store';
 

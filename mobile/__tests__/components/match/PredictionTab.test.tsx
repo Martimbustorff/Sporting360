@@ -196,6 +196,43 @@ describe('Prognóstico aberto', () => {
   });
 });
 
+describe('Relógio do prognóstico', () => {
+  // Há outros temporizadores na árvore (animações, etc.), por isso olha-se só aos intervalos de 30 s do relógio.
+  const clockIntervals = () => {
+    const created: unknown[] = [];
+    const cleared: unknown[] = [];
+    const realSet = global.setInterval;
+    const realClear = global.clearInterval;
+    jest.spyOn(global, 'setInterval').mockImplementation(((fn: () => void, ms?: number) => {
+      const id = realSet(fn, ms);
+      if (ms === 30_000) created.push(id);
+      return id;
+    }) as typeof setInterval);
+    jest.spyOn(global, 'clearInterval').mockImplementation(((id?: Parameters<typeof clearInterval>[0]) => {
+      cleared.push(id);
+      return realClear(id);
+    }) as typeof clearInterval);
+    return { created, cleared };
+  };
+  afterEach(() => jest.restoreAllMocks());
+
+  it('no kickoff o intervalo de 30 s é limpo (o formulário já fechou)', async () => {
+    const t = clockIntervals();
+    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 45_000) })} />, { wrapper });
+    expect(t.created).toHaveLength(1);
+    expect(t.cleared).not.toContain(t.created[0]);
+    await tick(45_000);
+    expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+    expect(t.cleared).toContain(t.created[0]);
+  });
+
+  it('jogo que já começou: nem chega a criar o intervalo', async () => {
+    const t = clockIntervals();
+    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() - 60_000) })} />, { wrapper });
+    expect(t.created).toHaveLength(0);
+  });
+});
+
 describe('Erros da callable', () => {
   async function submit21() {
     await render(<PredictionTab match={match()} />, { wrapper });

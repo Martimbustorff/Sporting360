@@ -189,7 +189,7 @@ describe('Perfil: meu jogo', () => {
     const rows = screen.getAllByTestId('history-row');
     expect(rows).toHaveLength(5);
     expect(screen.getByLabelText('15 novembro, prognóstico 1-0, por liquidar, 1 ponto')).toBeTruthy();
-    expect(screen.getByLabelText('12 novembro, prognóstico 2-1, final 2-1, 9 pontos')).toBeTruthy();
+    expect(screen.getByLabelText('12 novembro, prognóstico 2-1, final 2-1, 6 pontos')).toBeTruthy();
   });
 
   it('sem liquidados mostra "Ainda sem jogos liquidados."', async () => {

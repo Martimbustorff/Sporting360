@@ -64,7 +64,8 @@ describe('SessionProvider', () => {
     expect(states[states.length - 1]).toBe('signedIn');
     expect(ensureProfile).toHaveBeenCalledTimes(1);
     expect(setAnalyticsUser).toHaveBeenCalledWith('u1');
-    expect(setUserId).toHaveBeenCalledWith(expect.anything(), 'u1');
+    // O Crashlytics nunca recebe o uid (a política de privacidade diz que os relatórios não levam a conta).
+    expect(setUserId).not.toHaveBeenCalled();
   });
 
   it('no user -> signedOut, nothing ensured', async () => {

@@ -6,10 +6,15 @@ export interface PlayerLine {
   rating: number | null;
 }
 
-/** Candidatos a MVP: jogadores do Sporting que jogaram (minutes > 0), ordenados por nome. */
+/**
+ * Candidatos a MVP: jogadores do Sporting que jogaram (minutes > 0), ordenados por nome. Uma linha repetida do mesmo
+ * `playerId` conta uma vez (fica a primeira). A app tem a mesma regra em mobile/src/lib/gameWindows.ts.
+ */
 export function mvpCandidates(lines: PlayerLine[]): PlayerLine[] {
+  const seen = new Set<string>();
   return lines
     .filter((p) => p.teamIsSporting && p.minutes !== null && p.minutes > 0)
+    .filter((p) => !seen.has(p.playerId) && seen.add(p.playerId))
     .sort((a, b) => a.name.localeCompare(b.name, "pt"));
 }
 

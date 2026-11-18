@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, reload } from '@react-native-firebase/auth';
-import { getCrashlytics, setUserId as setCrashlyticsUserId } from '@react-native-firebase/crashlytics';
 import { markFreshSession } from '@/lib/lockSession';
 import { claimProfileEnsure, clearProfileEnsured } from '@/lib/profileEnsured';
 import { authInstance, setAnalyticsUser } from '@/services/firebase';
@@ -58,11 +57,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             },
       );
       setAnalyticsUser(u.uid).catch(() => {});
-      try {
-        void setCrashlyticsUserId(getCrashlytics(), u.uid);
-      } catch {
-        // telemetria nunca bloqueia
-      }
+      // O Crashlytics nunca recebe o uid (a política de privacidade: relatórios de erro sem identificador da conta).
       // R10: uma vez por uid, e nunca durante um sign-up (signUpEmail trata disso depois de escrever o nome).
       if (claimProfileEnsure(u.uid)) ensureProfile().catch(() => {});
     });

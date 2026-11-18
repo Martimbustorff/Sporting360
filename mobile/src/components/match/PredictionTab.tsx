@@ -63,18 +63,25 @@ function predictionPoints(events: PointEvent[]): number {
   return events.filter((e) => e.type.startsWith('prediction_')).reduce((sum, e) => sum + e.points, 0);
 }
 
-/** Relógio a cada 30 s e um disparo exato no `kickoff`, para o formulário fechar sozinho ao apito inicial. */
+/**
+ * Relógio a cada 30 s e um disparo exato no `kickoff`, para o formulário fechar sozinho ao apito inicial. Depois do
+ * `kickoff` o formulário já fechou: o intervalo pára (e nem chega a existir se o jogo já começou).
+ */
 function usePredictionClock(kickoff: Date): Date {
   const [now, setNow] = useState(() => new Date());
   const kickoffMs = kickoff.getTime();
   useEffect(() => {
     setNow(new Date());
-    const interval = setInterval(() => setNow(new Date()), TICK_MS);
     const left = kickoffMs - Date.now();
-    const atKickoff = left > 0 ? setTimeout(() => setNow(new Date()), left) : null;
+    if (left <= 0) return;
+    const interval = setInterval(() => setNow(new Date()), TICK_MS);
+    const atKickoff = setTimeout(() => {
+      clearInterval(interval);
+      setNow(new Date());
+    }, left);
     return () => {
       clearInterval(interval);
-      if (atKickoff) clearTimeout(atKickoff);
+      clearTimeout(atKickoff);
     };
   }, [kickoffMs]);
   return now;

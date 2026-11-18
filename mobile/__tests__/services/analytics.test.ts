@@ -2,17 +2,20 @@
 import * as SecureStore from 'expo-secure-store';
 
 jest.mock('@react-native-firebase/analytics');
+jest.mock('@react-native-firebase/crashlytics');
 
 type Mod = typeof import('@/services/analytics');
 type Fb = typeof import('@react-native-firebase/analytics');
+type Cr = typeof import('@react-native-firebase/crashlytics');
 type Store = typeof import('expo-secure-store') & { __reset: () => void };
 
-function load(): { a: Mod; fb: Fb; store: Store } {
-  let out!: { a: Mod; fb: Fb; store: Store };
+function load(): { a: Mod; fb: Fb; cr: Cr; store: Store } {
+  let out!: { a: Mod; fb: Fb; cr: Cr; store: Store };
   jest.isolateModules(() => {
     out = {
       a: require('@/services/analytics'),
       fb: require('@react-native-firebase/analytics'),
+      cr: require('@react-native-firebase/crashlytics'),
       store: require('expo-secure-store'),
     };
   });
@@ -93,6 +96,26 @@ describe('analytics consent', () => {
     a.track('x');
     expect(fb.logEvent).not.toHaveBeenCalled();
     expect(await a.getAnalyticsConsent()).toBeNull();
+  });
+});
+
+// Privacidade: o Crashlytics nunca recebe o uid, com ou sem consentimento (a política diz que os relatórios de erro
+// não levam identificador da conta). O uid só vai para o Analytics, e só com `granted`.
+describe('Crashlytics nunca recebe o uid', () => {
+  it('consentimento negado, aceite e retirado: nenhuma chamada a setUserId do Crashlytics', async () => {
+    const { a, fb, cr } = load();
+    await a.setAnalyticsUserId('u1');
+    await a.setAnalyticsConsent('denied');
+    expect(cr.setUserId).not.toHaveBeenCalled();
+
+    await a.setAnalyticsConsent('granted');
+    expect(fb.setUserId).toHaveBeenCalledWith(expect.anything(), 'u1');
+    expect(cr.setUserId).not.toHaveBeenCalled();
+
+    await a.setAnalyticsConsent('denied');
+    await a.setAnalyticsUserId(null);
+    expect(fb.setUserId).toHaveBeenLastCalledWith(expect.anything(), null);
+    expect(cr.setUserId).not.toHaveBeenCalled();
   });
 });
 

@@ -100,7 +100,7 @@
 | Ticker: pós-jogo 25 min × 1/min + 3 refrescos de notas + standings 8 | | ≈36 |
 | **Dia de jogo** | | **≈650 a 800** |
 
-Mês típico (10 jogos): ≈9.000 em dias de jogo + ≈2.250 de base ≈ **11.000/mês**, máximo diário < 1.000. Cabe no plano Pro da API-Football (7.500/dia); o Free (100/dia) não chega. API-Sports andebol, voleibol e basquetebol têm quotas separadas: ≈40/dia cada (jogos cada 3 h, cada 10 min só em janela de jogo, classificações 4×/dia). VSports e RSS não usam RapidAPI.
+Mês típico (10 jogos): ≈9.000 em dias de jogo + ≈2.250 de base ≈ **11.000/mês**, máximo diário ≈1.450 num dia com 2 jogos. Cabe no plano Pro da API-Football (7.500/dia); o Free (100/dia) não chega. API-Sports andebol, voleibol e basquetebol têm quotas separadas: ≈40/dia cada (jogos cada 3 h, cada 10 min só em janela de jogo, classificações 4×/dia). VSports e RSS não usam RapidAPI.
 
 ---
 

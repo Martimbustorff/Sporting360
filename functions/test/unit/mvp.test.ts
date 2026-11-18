@@ -16,6 +16,19 @@ function line(
 }
 
 describe("mvpCandidates", () => {
+  it("a mesma linha duas vezes dá um só candidato, a primeira", () => {
+    const lines: PlayerLine[] = [
+      line("p1", "Pote"),
+      line("p1", "Pote (repetido)"),
+      line("p2", "Ábel"),
+      line("p2", "Ábel"),
+    ];
+    expect(mvpCandidates(lines).map((p) => [p.playerId, p.name])).toEqual([
+      ["p2", "Ábel"],
+      ["p1", "Pote"],
+    ]);
+  });
+
   it("exclui adversários e jogadores do Sporting com minutes 0 ou null", () => {
     const lines: PlayerLine[] = [
       line("s1", "Pote", { minutes: 45 }),

@@ -1,6 +1,9 @@
 // Paridade com o servidor: a app duplica a lógica de nomes públicos de functions/. Se um lado mudar sem o outro, falha aqui.
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { mvpCandidates as serverMvpCandidates, type PlayerLine } from '../../../functions/src/game/mvp';
+import { mvpCandidates as appMvpCandidates } from '@/lib/gameWindows';
+import type { PlayersDoc } from '@/data/schemas';
 
 const root = join(__dirname, '..', '..', '..');
 const read = (p: string) => readFileSync(join(root, p), 'utf8');
@@ -60,5 +63,43 @@ describe('mobile/server parity (stageOf)', () => {
     const b = body(server, 'stageOf').replace(/"/g, "'");
     expect(a.length).toBeGreaterThan(40);
     expect(a).toBe(b);
+  });
+});
+
+// Candidatos a MVP: vetor de comportamento (as assinaturas diferem: o servidor recebe linhas planas, a app um
+// PlayersDoc). `functions/src/game/mvp.ts` não tem imports, por isso corre aqui tal como está.
+describe('mobile/server parity (mvpCandidates, linha duplicada)', () => {
+  type Row = { playerId: string; name: string; minutes: number | null; sporting: boolean; number: number | null };
+  const rows: Row[] = [
+    { playerId: '10', name: 'Pote', minutes: 90, sporting: true, number: 8 },
+    { playerId: '10', name: 'Pote (repetido)', minutes: 90, sporting: true, number: 99 },
+    { playerId: '20', name: 'Ábel', minutes: 45, sporting: true, number: 4 },
+    { playerId: '30', name: 'Banco', minutes: 0, sporting: true, number: 12 },
+    { playerId: '40', name: 'Adversário', minutes: 90, sporting: false, number: 9 },
+    { playerId: '20', name: 'Ábel', minutes: 45, sporting: true, number: 4 },
+  ];
+  const server: PlayerLine[] = rows.map((r) => ({
+    playerId: r.playerId,
+    name: r.name,
+    teamIsSporting: r.sporting,
+    minutes: r.minutes,
+    rating: 7,
+  }));
+  const doc = (teamId: string, sporting: boolean): PlayersDoc['teams'][number] => ({
+    teamId,
+    players: rows
+      .filter((r) => r.sporting === sporting)
+      .map((r) => ({ playerId: r.playerId, name: r.name, minutes: r.minutes, number: r.number, photo: null, position: null, rating: 7 })),
+  }) as PlayersDoc['teams'][number];
+  const app: PlayersDoc = { teams: [doc('228', true), doc('217', false)] };
+
+  it('a mesma linha duas vezes dá um só candidato, a primeira, nos dois lados', () => {
+    const s = serverMvpCandidates(server).map((p) => [p.playerId, p.name]);
+    const a = appMvpCandidates(app).map((p) => [p.playerId, p.name]);
+    expect(s).toEqual([
+      ['20', 'Ábel'],
+      ['10', 'Pote'],
+    ]);
+    expect(a).toEqual(s);
   });
 });
