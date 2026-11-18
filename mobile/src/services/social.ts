@@ -7,6 +7,7 @@ import {
   GoogleAuthProvider,
   linkWithCredential,
   OAuthProvider,
+  reauthenticateWithCredential,
   signInWithCredential,
 } from '@react-native-firebase/auth';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
@@ -105,7 +106,7 @@ function appleName(fullName: AppleAuthentication.AppleAuthenticationFullName | n
 }
 
 /** rawNonce aleatório (32 bytes); a Apple recebe o SHA-256 em hex, o Firebase e a callable recebem o rawNonce. */
-async function appleToken(): Promise<ProviderToken & { rawNonce: string }> {
+async function appleToken(): Promise<ProviderToken & { rawNonce: string; authorizationCode: string | null }> {
   const rawNonce = toHex(getRandomBytes(32));
   const nonce = await digestStringAsync(CryptoDigestAlgorithm.SHA256, rawNonce, { encoding: CryptoEncoding.HEX });
   let cred: AppleAuthentication.AppleAuthenticationCredential;
@@ -120,8 +121,14 @@ async function appleToken(): Promise<ProviderToken & { rawNonce: string }> {
   }
   if (!cred.identityToken) throw new Error('APPLE_NO_ID_TOKEN');
   // fullName e email só chegam na primeira autorização da app.
-  // R9 (T16): o authorizationCode serve para revogar o token Apple antes de apagar a conta; não é usado aqui.
-  return { idToken: cred.identityToken, rawNonce, name: appleName(cred.fullName), email: cred.email };
+  // R9 (T16): o authorizationCode serve só para revogar o token Apple antes de apagar a conta.
+  return {
+    idToken: cred.identityToken,
+    rawNonce,
+    name: appleName(cred.fullName),
+    email: cred.email,
+    authorizationCode: cred.authorizationCode ?? null,
+  };
 }
 
 function appleCredential(tok: ProviderToken) {
@@ -248,5 +255,43 @@ export async function linkAppleToCurrentUser(): Promise<'linked' | 'cancelled' |
     if (code === 'auth/credential-already-in-use') return 'inUse';
     if (code === 'auth/provider-already-linked') return 'linked';
     throw new Error(authErrorMessage(code));
+  }
+}
+
+// ---------- reautenticação (Task 16: apagar conta) ----------
+
+export type ReauthResult = { status: 'ok' } | { status: 'cancelled' };
+
+/**
+ * R9: novo pedido Apple + reauthenticateWithCredential. Devolve o authorizationCode (fresco, válido ~5 min) para
+ * quem apaga a conta o revogar com revokeToken antes de chamar deleteAccount. Nunca registar o código.
+ */
+export async function reauthenticateWithApple(): Promise<{ status: 'ok'; authorizationCode: string } | { status: 'cancelled' }> {
+  const user = authInstance().currentUser;
+  if (!user) throw new Error(authErrorMessage(undefined));
+  try {
+    const tok = await appleToken();
+    if (!tok.authorizationCode) throw new Error('APPLE_NO_AUTH_CODE');
+    await reauthenticateWithCredential(user, appleCredential(tok));
+    return { status: 'ok', authorizationCode: tok.authorizationCode };
+  } catch (e) {
+    if (e instanceof Cancelled) return { status: 'cancelled' };
+    reportCode('REAUTH_FAILED apple', e);
+    throw new Error(authErrorMessage(codeOf(e)));
+  }
+}
+
+/** Google silencioso (ou interativo se não houver sessão Google guardada) + reauthenticateWithCredential. */
+export async function reauthenticateWithGoogle(): Promise<ReauthResult> {
+  const user = authInstance().currentUser;
+  if (!user) throw new Error(authErrorMessage(undefined));
+  try {
+    const tok = await googleToken(true);
+    await reauthenticateWithCredential(user, GoogleAuthProvider.credential(tok.idToken));
+    return { status: 'ok' };
+  } catch (e) {
+    if (e instanceof Cancelled) return { status: 'cancelled' };
+    reportCode('REAUTH_FAILED google', e);
+    throw new Error(authErrorMessage(codeOf(e)));
   }
 }

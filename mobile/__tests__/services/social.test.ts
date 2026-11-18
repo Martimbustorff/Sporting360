@@ -38,7 +38,7 @@ jest.mock('@/services/firebase', () => ({
 }));
 
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { linkWithCredential, signInWithCredential } from '@react-native-firebase/auth';
+import { linkWithCredential, reauthenticateWithCredential, signInWithCredential } from '@react-native-firebase/auth';
 import { getDoc, setDoc } from '@react-native-firebase/firestore';
 import { recordError } from '@react-native-firebase/crashlytics';
 import { httpsCallable } from '@react-native-firebase/functions';
@@ -50,6 +50,8 @@ import {
   GOOGLE_WEB_CLIENT_ID,
   NEEDS_EXISTING_LOGIN_MESSAGE,
   linkAppleToCurrentUser,
+  reauthenticateWithApple,
+  reauthenticateWithGoogle,
   signInWithApple,
   signInWithGoogle,
 } from '@/services/social';
@@ -377,5 +379,59 @@ describe('linkAppleToCurrentUser', () => {
     (AppleAuthentication.signInAsync as jest.Mock).mockRejectedValue({ code: 'ERR_REQUEST_CANCELED' });
     await expect(linkAppleToCurrentUser()).resolves.toBe('cancelled');
     expect(linkWithCredential).not.toHaveBeenCalled();
+  });
+});
+
+// Task 16 (R9): reautenticação para apagar a conta.
+describe('reauthenticateWithApple', () => {
+  it('reautentica o utilizador atual com o rawNonce e devolve o authorizationCode', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue({ ...appleCredential('a-re'), authorizationCode: 'auth-code-1' });
+    await expect(reauthenticateWithApple()).resolves.toEqual({ status: 'ok', authorizationCode: 'auth-code-1' });
+    const [user, cred] = (reauthenticateWithCredential as jest.Mock).mock.calls[0];
+    expect(user).toEqual({ uid: 'me' });
+    expect(cred).toEqual(expect.objectContaining({ providerId: 'apple.com', token: 'a-re' }));
+    expect((AppleAuthentication.signInAsync as jest.Mock).mock.calls[0][0].nonce).toBe(sha256hex(cred.secret));
+  });
+
+  it('cancelado → cancelled, sem reautenticar', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockRejectedValue({ code: 'ERR_REQUEST_CANCELED' });
+    await expect(reauthenticateWithApple()).resolves.toEqual({ status: 'cancelled' });
+    expect(reauthenticateWithCredential).not.toHaveBeenCalled();
+  });
+
+  it('sem authorizationCode falha (não há como revogar o token)', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue({ ...appleCredential(), authorizationCode: null });
+    await expect(reauthenticateWithApple()).rejects.toThrow('Algo correu mal. Tenta outra vez.');
+    expect(reauthenticateWithCredential).not.toHaveBeenCalled();
+  });
+
+  it('erro do Firebase vira mensagem PT', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue(appleCredential());
+    (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/network-request-failed' });
+    await expect(reauthenticateWithApple()).rejects.toThrow('Sem ligação à internet.');
+  });
+});
+
+describe('reauthenticateWithGoogle', () => {
+  it('silencioso: reautentica com o idToken novo', async () => {
+    (GoogleSignin.signInSilently as jest.Mock).mockResolvedValue(googleSuccess('g-re'));
+    await expect(reauthenticateWithGoogle()).resolves.toEqual({ status: 'ok' });
+    expect(GoogleSignin.signIn).not.toHaveBeenCalled();
+    const [user, cred] = (reauthenticateWithCredential as jest.Mock).mock.calls[0];
+    expect(user).toEqual({ uid: 'me' });
+    expect(cred).toEqual(expect.objectContaining({ providerId: 'google.com', token: 'g-re' }));
+  });
+
+  it('sem sessão Google guardada pede interativo; cancelado → cancelled', async () => {
+    (GoogleSignin.signInSilently as jest.Mock).mockResolvedValue({ type: 'noSavedCredentialFound', data: null });
+    (GoogleSignin.signIn as jest.Mock).mockResolvedValue({ type: 'cancelled', data: null });
+    await expect(reauthenticateWithGoogle()).resolves.toEqual({ status: 'cancelled' });
+    expect(reauthenticateWithCredential).not.toHaveBeenCalled();
+  });
+
+  it('conta Google diferente (auth/user-mismatch) falha com mensagem genérica', async () => {
+    (GoogleSignin.signInSilently as jest.Mock).mockResolvedValue(googleSuccess());
+    (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/user-mismatch' });
+    await expect(reauthenticateWithGoogle()).rejects.toThrow('Algo correu mal. Tenta outra vez.');
   });
 });

@@ -15,15 +15,18 @@ export function AuthScaffold({
   footer,
   contentTop = layout.authContentTop,
   bottom = layout.authBottom,
+  fallbackHref = '/welcome',
 }: {
   title: string;
   children: ReactNode;
   footer: ReactNode;
   contentTop?: number;
   bottom?: number;
+  /** Para onde "Voltar" leva quando não há histórico (ecrãs de (app) usam '/'). */
+  fallbackHref?: '/welcome' | '/';
 }) {
   const router = useRouter();
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/welcome'));
+  const back = () => (router.canGoBack() ? router.back() : router.replace(fallbackHref));
   return (
     <Screen padded="none">
       <Header title={title} onBack={back} />

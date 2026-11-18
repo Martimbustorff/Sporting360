@@ -4,6 +4,7 @@
 // Fundo: no Figma é preto com um verde a 50% por cima (564:7179), que dá o mesmo verde do token bg.
 // R17: com `aviso=conta-apagada` mostra "Conta apagada." (SEM FIGMA: estado não desenhado).
 // Task 14 (SEM FIGMA): botões Google e, só em iOS, Apple, por baixo de "Criar uma conta".
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SocialButtons } from '@/components/SocialButtons';
+import { clearSignOutNotice } from '@/lib/signOutNotice';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -22,6 +24,8 @@ export default function Welcome() {
   const { bottom } = useSafeAreaInsets();
   // Figma: 50px do fundo = 34 da barra home + 16.
   const paddingBottom = Math.max(bottom, layout.homeIndicator) + layout.welcomeBottom;
+  // O aviso pendente (guarda de (app)) já chegou no parâmetro: não se repete no próximo signOut.
+  useEffect(() => clearSignOutNotice(), []);
 
   return (
     <View className="flex-1 overflow-hidden bg-s360-bg">

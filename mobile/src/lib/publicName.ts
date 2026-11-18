@@ -32,7 +32,7 @@ export function validAvatarId(v: unknown): v is string | null {
 
 /**
  * Nome mostrado no ranking. Nunca expõe email. displayName e name (campo legado, escrito pelo dono)
- * passam ambos por validateDisplayName; inválido cai para "Sportinguista #<4 últimos do uid>".
+ * passam ambos por validateDisplayName (name longo tenta primeiro + último nome); inválido cai para "Sportinguista #<4 últimos do uid>".
  */
 export function publicName(
   user: { displayName?: string | null; name?: string | null },
@@ -41,8 +41,17 @@ export function publicName(
   const display = validateDisplayName(user.displayName ?? "");
   if (display.ok) return display.value;
 
-  const legacy = validateDisplayName(titleCasePt((user.name ?? "").trim()));
+  const legacyName = titleCasePt((user.name ?? "").trim());
+  const legacy = validateDisplayName(legacyName);
   if (legacy.ok) return legacy.value;
+  // Nome legado longo (ex.: nome completo): tenta "<primeiro> <último>" antes do fallback.
+  if (!legacy.ok && legacy.error === "TOO_LONG") {
+    const words = legacyName.split(" ");
+    if (words.length >= 2) {
+      const short = validateDisplayName(`${words[0]} ${words[words.length - 1]}`);
+      if (short.ok) return short.value;
+    }
+  }
 
   return `Sportinguista #${uid.slice(-4)}`;
 }

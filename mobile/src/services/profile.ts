@@ -14,3 +14,15 @@ export async function ensureProfile(): Promise<void> {
     }
   }
 }
+
+/**
+ * Task 16: grava o nome público (callable updateProfile; avatarId ausente fica como está no servidor).
+ * Devolve o nome gravado pelo servidor. Erros passam tal como vêm (displayNameErrorMessage traduz o código).
+ */
+export async function updateDisplayName(name: string): Promise<string> {
+  const res = await httpsCallable<{ displayName: string }, { displayName: string; avatarId: string | null }>(
+    fns(),
+    'updateProfile',
+  )({ displayName: name });
+  return res.data.displayName;
+}

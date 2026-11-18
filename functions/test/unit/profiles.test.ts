@@ -29,6 +29,16 @@ describe("publicName", () => {
     expect(publicName({ name: "ana\u200Bpinto" }, "abcd1234")).toBe("Sportinguista #1234");
     expect(publicName({ name: "Sportinguista Ana" }, "abcd1234")).toBe("Sportinguista #1234");
   });
+  it("name legado com mais de 20 caracteres tenta o primeiro e o último nome antes do fallback", () => {
+    expect(publicName({ name: "MARTIM MARIA DE SOUSA BUSTORFF" }, "abcd1234")).toBe("Martim Bustorff");
+    expect(publicName({ name: "ana   maria pinto da costa e silva" }, "abcd1234")).toBe("Ana Silva");
+    // Só uma palavra, ou primeiro + último ainda inválido: cai para o uid.
+    expect(publicName({ name: "a".repeat(60) }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "Sportinguista Ana Maria Pinto Costa" }, "abcd1234")).toBe("Sportinguista #1234");
+    expect(publicName({ name: "Bartolomeuzinhodasilva Antunesdeoliveira" }, "abcd1234")).toBe("Sportinguista #1234");
+    // Só para nomes longos: um emoji no meio continua a cair para o uid.
+    expect(publicName({ name: "Ana 🦁 Pinto" }, "abcd1234")).toBe("Sportinguista #1234");
+  });
   it("displayName inválido também é ignorado", () => {
     expect(publicName({ displayName: "x".repeat(40), name: "ana pinto" }, "u1")).toBe("Ana Pinto");
   });

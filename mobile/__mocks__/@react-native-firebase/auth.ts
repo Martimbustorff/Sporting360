@@ -23,3 +23,10 @@ export class OAuthProvider {
     return { providerId: this.providerId, token: opts.idToken, secret: opts.rawNonce };
   }
 }
+// Task 16: reautenticação e revogação do token Apple (apagar conta).
+export const reauthenticateWithCredential = jest.fn(() => Promise.resolve({ user: {} }));
+export const revokeToken = jest.fn(() => Promise.resolve());
+export const EmailAuthProvider = {
+  PROVIDER_ID: 'password',
+  credential: jest.fn((email: string, password: string) => ({ providerId: 'password', token: email, secret: password })),
+};
