@@ -60,6 +60,16 @@ describe("publicName", () => {
     expect(publicName({ name: "ana\u200Bpinto" }, "abcd1234")).toBe("Sportinguista #1234");
     expect(publicName({ name: "🦁 Pinto" }, "abcd1234")).toBe("Sportinguista #1234");
   });
+  it("name em NFD mantém o acento da inicial", () => {
+    expect(publicName({ name: "ana évora".normalize("NFD") }, "u1")).toBe("Ana É.");
+    expect(publicName({ name: "joão silva".normalize("NFD") }, "u1")).toBe("João S.");
+  });
+  it("iniciais à cabeça são ignoradas quando sobra outra palavra", () => {
+    expect(publicName({ name: "D. Maria Costa" }, "u1")).toBe("Maria C.");
+    expect(publicName({ name: "j. silva costa" }, "u1")).toBe("Silva C.");
+    expect(publicName({ name: "J. Silva" }, "u1")).toBe("Silva");
+    expect(publicName({ name: "A B. Pinto" }, "u1")).toBe("Pinto");
+  });
   it("displayName inválido também é ignorado", () => {
     expect(publicName({ displayName: "x".repeat(40), name: "ana pinto" }, "u1")).toBe("Ana P.");
   });
