@@ -6,7 +6,8 @@
 //
 // V2_OPS: app da loja 6.1.2 (código em SCP360_V2-master/src). `afterLaunch` diz o que acontece com as
 // regras finais (firestore.final.rules): "allowed" continua a funcionar, "denied" deixa de funcionar
-// no lançamento (login por PIN, GameBox sem sessão, palpites, votos MVP e ranking antigos).
+// no lançamento (login por PIN, GameBox sem sessão, palpites, voto MVP e ranking antigos). A leitura de
+// manofmatch continua (o ecrã do jogo da V2 depende dela).
 // NEW_APP_OPS: app nova 7.0.0 (mobile/src). Tem de passar toda nas duas versões das regras.
 import type { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import {
@@ -217,7 +218,7 @@ export const V2_OPS: V2Op[] = [
   },
   {
     name: "votos MVP do jogo where GameId (api/firebase/manOfTheMatch.ts:27-28)",
-    afterLaunch: "denied",
+    afterLaunch: "allowed",
     run: async (env) => {
       await seed(env, { [`manofmatch/${GAME}_bob`]: { ...v2MvpVote, userId: "bob", id: `${GAME}_bob` } });
       return getDocs(query(collection(as(env, ALICE), "manofmatch"), where("GameId", "==", GAME)));

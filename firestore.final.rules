@@ -5,19 +5,22 @@
 // lojas (App Store e Google Play) mostrem a 7.0.0. Publica-se copiando este ficheiro por cima de
 // firestore.rules (o deploy só lê firestore.rules). Se uma loja atrasar, ficam as regras da fase 2.
 //
-// ATENÇÃO: a partir desse momento a V2 (6.1.2) perde o login por PIN, a lista de GameBox quando não tem
-// sessão Firebase e os palpites, votos MVP e ranking antigos (predictions, manofmatch, rankings). A V2 não
-// tem ecrã de atualização: não há forma de avisar quem ainda não atualizou.
+// ATENÇÃO: a partir desse momento a V2 (6.1.2) perde o login por PIN, a lista de GameBox de quem só entrou
+// por PIN (sem sessão Firebase), os palpites, o voto MVP e o +1 no ranking (predictions, rankings e a escrita
+// em manofmatch). A V2 mantém o ecrã do jogo com o resultado ao vivo: esse ecrã lê manofmatch
+// (details.tsx:219) sem try/catch antes de subscrever o jogo (:224), por isso manofmatch fica com leitura
+// pública. A V2 não tem ecrã de atualização: não há forma de avisar quem ainda não atualizou.
 //
-// Face à fase 2: `users` e `gamebox` só o dono lê; `predictions`, `manofmatch` e `rankings` ficam como
-// arquivo, sem acesso da app (deixa de haver o risco do +1 sem limite em `rankings`). Os dados antigos
+// Face à fase 2: `users` e `gamebox` só o dono lê; `predictions` e `rankings` ficam como arquivo, sem acesso
+// da app (deixa de haver o risco do +1 sem limite em `rankings`); `manofmatch` só leitura. Os dados antigos
 // (games, news, ...) mantêm a leitura pública. Nenhuma regra deixa ler o email de outro utilizador.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid).
+    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid). Pressupõe uids sem '_'
+    // (uids gerados pelo Firebase Auth; não há custom tokens). Um uid com '_' reabriria a sondagem de existência.
     function idEndsWithUid(id) {
       return id.size() > request.auth.uid.size()
           && id[id.size() - request.auth.uid.size() - 1:] == '_' + request.auth.uid;
@@ -103,7 +106,11 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userid == request.auth.uid;
     }
 
-    // predictions, manofmatch e rankings (V2): arquivo, sem leitura nem escrita da app (negado por omissão).
+    // manofmatch (V2): só leitura pública (get e a query where GameId do ecrã do jogo da V2), sem escrita.
+    // Os documentos têm GameId, playerId, userId, season e id; nunca email.
+    match /manofmatch/{id} { allow read: if true; }
+
+    // predictions e rankings (V2): arquivo, sem leitura nem escrita da app (negado por omissão).
 
     // Tudo o resto: negado por omissão.
   }

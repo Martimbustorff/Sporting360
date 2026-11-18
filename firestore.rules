@@ -25,7 +25,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid).
+    // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid). Pressupõe uids sem '_'
+    // (uids gerados pelo Firebase Auth; não há custom tokens). Um uid com '_' reabriria a sondagem de existência.
     function idEndsWithUid(id) {
       return id.size() > request.auth.uid.size()
           && id[id.size() - request.auth.uid.size() - 1:] == '_' + request.auth.uid;

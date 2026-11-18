@@ -1,6 +1,6 @@
 // Regras FINAIS (firestore.final.rules), publicadas no lançamento (passo L5 da Task 12 do Plano 5).
-// A app nova tem de funcionar toda; a V2 perde o login por PIN, a GameBox sem sessão, os palpites, os votos MVP
-// e o ranking antigos.
+// A app nova tem de funcionar toda; a V2 perde o login por PIN, a GameBox sem sessão, os palpites, o voto MVP
+// e o ranking antigos, mas continua a ler manofmatch (ecrã do jogo).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -70,7 +70,28 @@ describe("public-read data collections (old and new data model)", () => {
   );
 });
 
-describe.each(["predictions", "manofmatch", "rankings"])("%s: archive, no client access", (col) => {
+describe("manofmatch: public read-only (V2 game screen)", () => {
+  const path = "manofmatch/m1_alice";
+  const vote = { GameId: "m1", playerId: "10", userId: "alice", season: "2026-2027", id: "m1_alice" };
+  it("anonymous and bob can read (get and query where GameId)", async () => {
+    await seed(path, vote);
+    await assertSucceeds(getDoc(doc(anon(), path)));
+    await assertSucceeds(getDoc(doc(as("bob"), path)));
+    await assertSucceeds(getDocs(query(collection(anon(), "manofmatch"), where("GameId", "==", "m1"))));
+    await assertSucceeds(getDocs(query(collection(as("bob"), "manofmatch"), where("GameId", "==", "m1"))));
+  });
+  it("nobody can create, update or delete, not even the owner", async () => {
+    await assertFails(setDoc(doc(as("alice"), path), vote));
+    await assertFails(setDoc(doc(anon(), path), vote));
+    await seed(path, vote);
+    await assertFails(updateDoc(doc(as("alice"), path), { playerId: "11" }));
+    await assertFails(updateDoc(doc(as("bob"), path), { playerId: "11" }));
+    await assertFails(deleteDoc(doc(as("alice"), path)));
+    await assertFails(deleteDoc(doc(anon(), path)));
+  });
+});
+
+describe.each(["predictions", "rankings"])("%s: archive, no client access", (col) => {
   const path = `${col}/m1_alice`;
   it("no read by anonymous, by bob or by the owner (get and query)", async () => {
     await seed(path, { userId: "alice", season: "2026-2027", GameId: "m1" });
