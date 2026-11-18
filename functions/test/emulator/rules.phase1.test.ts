@@ -236,3 +236,34 @@ describe("unlisted collections", () => {
     await assertFails(setDoc(doc(as("alice"), "foo/x"), { a: 1 }));
   });
 });
+
+describe("new data model (Plan 2)", () => {
+  const readable = [
+    "matches/1001", "matches/1001/details/events", "matches/1001/videos/v1",
+    "competitions/football_94_2026", "competitions/football_94_2026/data/standings",
+    "competitions/football_94_2026/data/bracket", "teams/football_228", "teams/football_228/data/squad",
+    "venues/1", "config/app",
+  ];
+  it.each(readable)("anonymous can read %s", async (p) => {
+    await assertSucceeds(getDoc(doc(anon(), p)));
+  });
+  it.each(readable)("authenticated cannot create %s", async (p) => {
+    await assertFails(setDoc(doc(as("alice"), p), { a: 1 }));
+  });
+  it.each(readable)("authenticated cannot update or delete %s", async (p) => {
+    await seed(p, { a: 1 });
+    await assertFails(updateDoc(doc(as("alice"), p), { a: 2 }));
+    await assertFails(deleteDoc(doc(as("alice"), p)));
+  });
+  it.each(readable)("anonymous cannot write %s", async (p) => {
+    await assertFails(setDoc(doc(anon(), p), { a: 1 }));
+  });
+  it.each(["ingestHealth/x", "ingestState/x", "ingestState/match_1", "_shadow_games/x", "_shadow_news/x", "point_events/x"])(
+    "%s: no read, no write",
+    async (p) => {
+      await assertFails(getDoc(doc(anon(), p)));
+      await assertFails(getDoc(doc(as("alice"), p)));
+      await assertFails(setDoc(doc(as("alice"), p), { a: 1 }));
+    },
+  );
+});

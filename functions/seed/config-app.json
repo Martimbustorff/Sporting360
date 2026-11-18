@@ -1,0 +1,16 @@
+{
+  "minVersion": { "ios": "0.0.0", "android": "0.0.0" },
+  "texts": {
+    "updateRequiredTitle": "Atualização obrigatória",
+    "updateRequiredBody": "Há uma versão nova da S360. Atualiza a app para continuar.",
+    "updateButton": "Atualizar"
+  },
+  "comunidadeLeonina": [
+    { "name": "Sporting 160", "description": null, "image": null, "links": {} },
+    { "name": "Sporting Tactico", "description": null, "image": null, "links": {} },
+    { "name": "3 Gerações", "description": null, "image": null, "links": {} },
+    { "name": "Universo Sporting", "description": null, "image": null, "links": {} },
+    { "name": "Spaces Sporting", "description": null, "image": null, "links": {} },
+    { "name": "Defender o Sporting", "description": null, "image": null, "links": {} }
+  ]
+}

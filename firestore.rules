@@ -5,10 +5,9 @@
 //   - `users` is publicly readable: the V2 PIN login reads it without a session.
 //   - `gamebox` is publicly readable: V2 queries where('userid','==',uid), possibly without a session.
 //
-// DO NOT DEPLOY THESE RULES YET. The legacy V2 schedulers write games, players, news, standings,
-// summary, videos, lineups, statistics and tweets through the UNAUTHENTICATED web client SDK, so
-// these rules would break all of them. They MUST NOT be deployed until Plan 2 moves those writers
-// to the Admin SDK (which bypasses rules). Until then production keeps its current rules.
+// Publicar so depois de apagar as functions antigas (Plano 2, Task 21): os agendadores legados
+// escrevem games, players, news, standings, summary, videos, lineups, statistics e tweets pelo SDK
+// web NAO autenticado, e estas regras partiam-nos. Ate la a producao mantem as regras atuais.
 //
 // Accepted phase-1 risk: `rankings` allows unlimited +1 increments by the owner. V2 increments
 // points client-side (one +1 per prediction transaction), so this cannot be tightened without
@@ -38,6 +37,19 @@ service cloud.firestore {
     match /matchPredictions/{id} { allow read: if true; }
     match /leaderboards/{id} { allow read: if true; }
     match /leaderboards/{id}/entries/{entry} { allow read: if true; }
+
+    // Modelo novo (Plano 2): leitura publica, escrita so pelo Admin SDK (que ignora as regras).
+    // `ingestHealth`, `ingestState` e as coleções `_shadow_*` (ensaio em sombra) ficam fechadas
+    // pelo "negado por omissao" no fim do ficheiro.
+    match /matches/{id} { allow read: if true; }
+    match /matches/{id}/{sub=**} { allow read: if true; }
+    match /competitions/{id} { allow read: if true; }
+    match /competitions/{id}/{sub=**} { allow read: if true; }
+    match /teams/{id} { allow read: if true; }
+    match /teams/{id}/{sub=**} { allow read: if true; }
+    match /venues/{id} { allow read: if true; }
+    // config/app e lido SEM sessao (portao de atualizacao obrigatoria antes do login).
+    match /config/{id} { allow read: if true; }
 
     // users: public read (phase 1), owner-only writes.
     match /users/{uid} {
