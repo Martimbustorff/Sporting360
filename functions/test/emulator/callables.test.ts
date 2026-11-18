@@ -193,6 +193,85 @@ describe("handleVoteMvp", () => {
     expect(await handleVoteMvp(db, alice, { gameId: "m1", playerId: "10" }, new Date(fin.getTime() + 19 * MIN))).toEqual({ ok: true });
   });
 
+  describe("mvpTallies", () => {
+    const tally = async () => (await db.doc("mvpTallies/m1").get()).data();
+    async function seedTwoCandidates() {
+      await seedPlayerLines(db, "m1", [
+        {
+          teamId: "228",
+          players: [
+            { playerId: "p10", name: "Gyokeres", rating: 8.1, minutes: 90 },
+            { playerId: "p7", name: "Trincao", rating: 7.4, minutes: 90 },
+          ],
+        },
+      ]);
+    }
+
+    it("vote creates mvpTallies with counts and total", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      const t = (await tally())!;
+      expect(t.gameId).toBe("m1");
+      expect(t.counts).toEqual({ p10: 1 });
+      expect(t.total).toBe(1);
+      expect(t.updatedAt).toBeInstanceOf(Timestamp);
+    });
+
+    it("second voter adds to the same tally", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      await handleVoteMvp(db, { uid: "bob" }, { gameId: "m1", playerId: "p7" }, now);
+      const t = (await tally())!;
+      expect(t.counts).toEqual({ p10: 1, p7: 1 });
+      expect(t.total).toBe(2);
+    });
+
+    it("repeated call after saved vote does not count twice", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      await handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now);
+      expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "p7" }, now)))?.code).toBe("already-exists");
+      const t = (await tally())!;
+      expect(t.counts).toEqual({ p10: 1 });
+      expect(t.total).toBe(1);
+      expect((await db.doc("mvpVotes/m1_alice").get()).data()?.playerId).toBe("p10");
+    });
+
+    it("rejected vote does not touch the tally (before, closed, invalid player)", async () => {
+      await live(79);
+      await seedTwoCandidates();
+      expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, now)))?.message).toBe("MVP_NOT_OPEN");
+      expect(await tally()).toBeUndefined();
+
+      const fin = new Date(KICKOFF.getTime() + 110 * MIN);
+      await seedGame({ status: "FT", statusRaw: "FT", finishedAt: fin, elapsed: 90 });
+      const late = new Date(fin.getTime() + 21 * MIN);
+      expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "p10" }, late)))?.message).toBe("MVP_CLOSED");
+      expect(await tally()).toBeUndefined();
+
+      await live(85);
+      expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "999" }, now)))?.code).toBe("invalid-argument");
+      expect(await tally()).toBeUndefined();
+    });
+
+    it("50 parallel votes give total 50", async () => {
+      await live(85);
+      await seedTwoCandidates();
+      const uids = Array.from({ length: 50 }, (_, i) => `u${i}`);
+      const results = await Promise.all(
+        uids.map((uid, i) => handleVoteMvp(db, { uid }, { gameId: "m1", playerId: i % 2 === 0 ? "p10" : "p7" }, now)),
+      );
+      expect(results.every((r) => r.ok)).toBe(true);
+      const t = (await tally())!;
+      expect(t.total).toBe(50);
+      const counts = t.counts as Record<string, number>;
+      expect(Object.values(counts).reduce((a, b) => a + b, 0)).toBe(50);
+      expect(counts).toEqual({ p10: 25, p7: 25 });
+    }, 60_000);
+  });
+
   it("jogo inexistente -> not-found; dados inválidos -> invalid-argument", async () => {
     expect((await code(handleVoteMvp(db, alice, { gameId: "zzz", playerId: "10" }, now)))?.code).toBe("not-found");
     expect((await code(handleVoteMvp(db, alice, { gameId: "m1", playerId: "" }, now)))?.code).toBe("invalid-argument");

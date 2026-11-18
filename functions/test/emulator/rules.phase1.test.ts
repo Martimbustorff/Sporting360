@@ -75,6 +75,19 @@ describe("backend-owned collections", () => {
   });
 });
 
+describe("mvpTallies", () => {
+  it("anonymous can read mvpTallies/g1", async () => {
+    await seed("mvpTallies/g1", { gameId: "g1", counts: { p10: 1 }, total: 1 });
+    await assertSucceeds(getDoc(doc(anon(), "mvpTallies/g1")));
+  });
+  it("authenticated cannot create, update or delete mvpTallies/g1", async () => {
+    await assertFails(setDoc(doc(as("alice"), "mvpTallies/g2"), { gameId: "g2", counts: {}, total: 0 }));
+    await seed("mvpTallies/g1", { gameId: "g1", counts: { p10: 1 }, total: 1 });
+    await assertFails(updateDoc(doc(as("alice"), "mvpTallies/g1"), { total: increment(1) }));
+    await assertFails(deleteDoc(doc(as("alice"), "mvpTallies/g1")));
+  });
+});
+
 describe("publicProfiles", () => {
   it("anonymous can read publicProfiles/u1", async () => {
     await assertSucceeds(getDoc(doc(anon(), "publicProfiles/u1")));

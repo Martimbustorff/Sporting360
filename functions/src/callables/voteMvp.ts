@@ -32,6 +32,7 @@ export async function handleVoteMvp(
   }
 
   const ref = db.doc(`mvpVotes/${gameId}_${auth.uid}`);
+  const tallyRef = db.doc(`mvpTallies/${gameId}`);
   const found: { data: Record<string, unknown> | null } = { data: null };
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
@@ -46,6 +47,18 @@ export async function handleVoteMvp(
       createdAt: FieldValue.serverTimestamp(),
       source: "v2027",
     });
+    // Contagem anónima, escrita só aqui e na mesma transação do voto. Não é lida
+    // (incrementos cegos), por isso não há contenção de leitura na rajada do minuto 80.
+    tx.set(
+      tallyRef,
+      {
+        gameId,
+        counts: { [playerId]: FieldValue.increment(1) },
+        total: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
   });
 
   const existing = found.data;
