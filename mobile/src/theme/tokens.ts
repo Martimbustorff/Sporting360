@@ -171,6 +171,10 @@ export const layout = {
   rankingRowMinHeight: 44,
   avatarSize: 32,
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
+  // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens
+  formChip: 24, // V / E / D square in the "Forma" row
+  formChipGap: 4,
+  venuePhotoAspect: 16 / 9, // stadium photo under "Informação do Jogo"
   // Welcome (Figma 564:7178)
   welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)

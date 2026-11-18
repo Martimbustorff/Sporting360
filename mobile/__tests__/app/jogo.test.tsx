@@ -8,7 +8,12 @@ import type { GameStatus, Match } from '@/data/schemas';
 const mockMatch: { current: unknown } = { current: { status: 'loading' } };
 const mockParams: { current: Record<string, string> } = { current: { id: '1001' } };
 
-jest.mock('@/data/sports', () => ({ useMatch: jest.fn(() => mockMatch.current) }));
+jest.mock('@/data/sports', () => ({
+  useMatch: jest.fn(() => mockMatch.current),
+  // Tab Sumário (Task 9): jogo sem detalhes ainda.
+  useMatchDetail: jest.fn(() => ({ status: 'missing' })),
+  useVenue: jest.fn(() => ({ status: 'missing' })),
+}));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
   useLocalSearchParams: () => mockParams.current,
@@ -96,10 +101,10 @@ describe('futebol', () => {
   it('abre no Sumário e mudar de tab troca o conteúdo', async () => {
     await render(ui());
     expect(screen.getByRole('tab', { name: 'Sumário' }).props.accessibilityState.selected).toBe(true);
-    expect(screen.getByText('Sumário em breve.')).toBeTruthy();
+    expect(screen.getByText('Disponível no dia de jogo')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: 'Formações' }));
     expect(screen.getByText('Formações em breve.')).toBeTruthy();
-    expect(screen.queryByText('Sumário em breve.')).toBeNull();
+    expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
   });
 
   it('?tab=prognostico abre o Prognóstico', async () => {
