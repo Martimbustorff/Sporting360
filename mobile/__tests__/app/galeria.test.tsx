@@ -43,6 +43,17 @@ describe('galeria', () => {
     }
   });
 
+  it('mostra uma secção por componente novo do Plano 4', async () => {
+    g.__DEV__ = true;
+    await renderGaleria();
+    for (const name of [
+      'MatchRow', 'StatRow', 'Pitch', 'StandingsTable', 'BracketView', 'VideoPlayer',
+      'ShareCard', 'ToggleRow', 'OfflineBanner', 'EmptyState', 'GameboxCard',
+    ]) {
+      expect(screen.getByText(name)).toBeTruthy();
+    }
+  });
+
   it('mostra o GameHeader agendado e ao vivo', async () => {
     g.__DEV__ = true;
     await renderGaleria();

@@ -4,20 +4,35 @@ import Feather from '@expo/vector-icons/Feather';
 import { Redirect, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { View } from 'react-native';
+import { BracketView } from '@/components/BracketView';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
+import { EmptyState } from '@/components/EmptyState';
 import { EventRow, type EventVM } from '@/components/EventRow';
+import { GameboxCard } from '@/components/GameboxCard';
 import { GameHeader, type GameHeaderVM } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
+import { MatchRow } from '@/components/MatchRow';
 import { MenuRow } from '@/components/MenuRow';
 import { NewsCard, type NewsVM } from '@/components/NewsCard';
+import { OfflineBanner } from '@/components/OfflineBanner';
+import { Pitch } from '@/components/Pitch';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { RankingRow, type RankingVM } from '@/components/RankingRow';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
+import { ShareCard } from '@/components/ShareCard';
 import { Sheet } from '@/components/Sheet';
+import { StandingsTable } from '@/components/StandingsTable';
+import { StatRow } from '@/components/StatRow';
 import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
+import { ToggleRow } from '@/components/ToggleRow';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { buildFixtures, SPORTING_TEAM_ID } from '@/data/fixtures';
+import { BracketDocSchema, MatchSchema, StandingsDocSchema, VideoSchema } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
+import type { GameboxView } from '@/lib/gamebox';
+import { pitchRows } from '@/lib/pitch';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
 
@@ -66,6 +81,26 @@ const RANKING: RankingVM[] = [
   { position: 4, uid: 'u4', displayName: 'Inês Pereira', points: 1 },
 ];
 
+// Dados reais do emulador (fixtures) passados pelos schemas: a galeria mostra o que a app vai ler.
+const FIXTURES = new Map(buildFixtures(NOW).map((d) => [d.path, d.data]));
+const fixture = (path: string): unknown => FIXTURES.get(path);
+const MATCH_FT = MatchSchema.parse(fixture('matches/9000'));
+const MATCH_LIVE = MatchSchema.parse(fixture('matches/9002'));
+const MATCH_PST = MatchSchema.parse(fixture('matches/9004'));
+const MATCH_FUTSAL = MatchSchema.parse(fixture('matches/9101'));
+const STANDINGS = StandingsDocSchema.parse(fixture('competitions/football_94_2026/data/standings'));
+const BRACKET = BracketDocSchema.parse(fixture('competitions/football_96_2026/data/bracket'));
+const VIDEO = VideoSchema.parse({ ...(fixture('matches/9000/videos/v1') as object) });
+const LINEUPS = (fixture('matches/9002/details/lineups') as { teams: { startXI: Parameters<typeof pitchRows>[0] }[] }).teams;
+const GAMEBOX: GameboxView = {
+  id: 'g1',
+  number: '1234567890123',
+  name: 'Gamebox principal',
+  order: 0,
+  stadium: { port: '10', sector: 'A', line: '12', seat: '34' },
+  pavilion: { port: '2', sector: 'B', line: '3', seat: '4' },
+};
+
 function Section({ title, caption, children }: { title: string; caption?: string; children: ReactNode }) {
   return (
     <View style={{ gap: spacing.sm, marginTop: spacing.xl }}>
@@ -83,6 +118,7 @@ function Gallery() {
   const [equal, setEqual] = useState<'a' | 'b' | 'c'>('a');
   const [scroll, setScroll] = useState('t1');
   const [open, setOpen] = useState(false);
+  const [toggle, setToggle] = useState(true);
 
   return (
     <>
@@ -106,7 +142,7 @@ function Gallery() {
           <TextField label="Email" value="erro" onChangeText={() => {}} error="Email inválido" />
         </Section>
 
-        <Section title="Tabs" caption="SEM FIGMA (modo igual e deslizante) — confirmar: sublinhado ativo branco, etiquetas brancas">
+        <Section title="Tabs" caption="SEM FIGMA (modo igual e deslizante): confirmar: sublinhado ativo branco, etiquetas brancas">
           <Tabs
             mode="equal"
             value={equal}
@@ -153,7 +189,7 @@ function Gallery() {
           <MenuRow icon={<Feather name="external-link" size={layout.menuRowIcon} color={colors.white} />} label="Loja oficial" external onPress={() => {}} />
         </Section>
 
-        <Section title="Sheet" caption="SEM FIGMA (gesto) — confirmar: direção da seta e arrastar">
+        <Section title="Sheet" caption="SEM FIGMA (gesto): confirmar: direção da seta e arrastar">
           <View style={{ height: 320 }}>
             <Sheet title="GameBox Digital" collapsedHeight={124} expandedHeight={320} open={open} onOpenChange={setOpen}>
               <Body variant="body" style={{ color: colors.black }}>Conteúdo da folha aberta.</Body>
@@ -161,16 +197,72 @@ function Gallery() {
           </View>
         </Section>
 
-        <Section title="NewsCard" caption="SEM FIGMA — aprovar: cartão de notícia (com imagem, sem imagem, data inválida)">
+        <Section title="NewsCard" caption="SEM FIGMA: aprovar: cartão de notícia (com imagem, sem imagem, data inválida)">
           {NEWS.map((n) => (
             <NewsCard key={n.id} news={n} now={NOW} onPress={() => {}} />
           ))}
         </Section>
 
-        <Section title="RankingRow" caption="SEM FIGMA — aprovar: linha de ranking (linha “Tu” destacada e linha com 1 ponto)">
+        <Section title="RankingRow" caption="SEM FIGMA: aprovar: linha de ranking (linha “Tu” destacada e linha com 1 ponto)">
           {RANKING.map((r) => (
             <RankingRow key={r.uid} row={r} highlighted={r.uid === 'me'} />
           ))}
+        </Section>
+
+        <Section title="MatchRow" caption="Jogo terminado, ao vivo, adiado e futsal com fonte">
+          {[MATCH_FT, MATCH_LIVE, MATCH_PST, MATCH_FUTSAL].map((m) => (
+            <MatchRow key={m.id} match={m} onPress={() => {}} />
+          ))}
+        </Section>
+
+        <Section title="StatRow">
+          <StatRow label="Posse de bola" home="58%" away="42%" />
+          <StatRow label="Cartões amarelos" home="2" away="1" card="yellow" />
+          <StatRow label="Antes do jogo" home="0" away="0" muted />
+        </Section>
+
+        <Section title="Pitch">
+          <Pitch
+            home={pitchRows(LINEUPS[0]?.startXI ?? [])}
+            away={pitchRows(LINEUPS[1]?.startXI ?? [])}
+            ratings={{ '1001': '8.1', '1002': '7.4' }}
+            sportingSide="home"
+          />
+        </Section>
+
+        <Section title="StandingsTable">
+          <StandingsTable groups={STANDINGS.groups} highlightTeamId={SPORTING_TEAM_ID} sport="football" />
+        </Section>
+
+        <Section title="BracketView">
+          <BracketView bracket={BRACKET} highlightTeamId={SPORTING_TEAM_ID} />
+        </Section>
+
+        <Section title="VideoPlayer">
+          <VideoPlayer video={VIDEO} />
+        </Section>
+
+        <Section title="ShareCard">
+          <ShareCard match={MATCH_LIVE} home={2} away={1} />
+        </Section>
+
+        <Section title="ToggleRow">
+          <ToggleRow icon={<Feather name="bell" size={layout.menuRowIcon} color={colors.white} />} label="Notificações" value={toggle} onChange={setToggle} />
+          <ToggleRow icon={<Feather name="lock" size={layout.menuRowIcon} color={colors.white} />} label="Desativado" value={false} onChange={() => {}} disabled />
+        </Section>
+
+        <Section title="OfflineBanner">
+          <OfflineBanner visible />
+        </Section>
+
+        <Section title="EmptyState">
+          <EmptyState text="Sem jogos agendados." />
+          <EmptyState text="Sem informação disponível." icon="info" />
+        </Section>
+
+        <Section title="GameboxCard">
+          <GameboxCard gamebox={GAMEBOX} />
+          <GameboxCard gamebox={{ ...GAMEBOX, id: 'g2', number: 'invalido', pavilion: null }} index={1} />
         </Section>
       </Screen>
     </>
