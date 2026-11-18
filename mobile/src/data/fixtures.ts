@@ -64,7 +64,7 @@ export function buildFixtures(now: Date = new Date()): SeedDoc[] {
   docs.push({
     path: 'config/app',
     data: {
-      minVersion: { ios: '7.0.0', android: '7.0.0' },
+      minVersion: { ios: '2.0.0', android: '2.0.0' },
       storeUrls: {
         ios: 'https://apps.apple.com/app/id0000000000',
         android: 'https://play.google.com/store/apps/details?id=com.sporting360.app',
