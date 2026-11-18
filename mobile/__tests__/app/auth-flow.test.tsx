@@ -1,5 +1,14 @@
 // Ecrãs de autenticação e guardas de rotas (Task 13). Serviços mockados; router real (expo-router/testing-library).
 jest.unmock('expo-router');
+// Task 5: a Home (destino depois de entrar) lê dados e tem a folha GameBox; aqui ficam de fora.
+// expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest com a Sheet.
+jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
+jest.mock('@/data/hooks', () => ({
+  useMyUser: () => ({ status: 'loading' }),
+  usePublicProfile: () => ({ status: 'loading' }),
+  useAppConfig: () => ({ status: 'loading' }),
+}));
+jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'loading' }) }));
 
 const mockSession: { current: { status: 'loading' | 'signedOut' | 'signedIn'; user: unknown } } = {
   current: { status: 'signedOut', user: null },

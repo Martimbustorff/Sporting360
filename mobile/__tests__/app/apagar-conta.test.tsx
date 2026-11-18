@@ -2,6 +2,15 @@
 // Mockados: Firebase (callable, reauth), signOut (passa a sessão a signedOut), biometria, BiometricGate.
 // R17: depois de apagar, a guarda de (app) leva ao Welcome e "Conta apagada." tem de aparecer.
 jest.unmock('expo-router');
+// Task 5: a Home (destino depois de entrar) lê dados e tem a folha GameBox; aqui ficam de fora.
+// expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest com a Sheet.
+jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
+jest.mock('@/data/hooks', () => ({
+  useMyUser: () => ({ status: 'loading' }),
+  usePublicProfile: () => ({ status: 'loading' }),
+  useAppConfig: () => ({ status: 'loading' }),
+}));
+jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'loading' }) }));
 
 type S = { status: 'loading' | 'signedOut' | 'signedIn'; user: unknown };
 const SIGNED_IN: S = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } };

@@ -67,6 +67,10 @@ export const type = {
   welcomeTagline: { fontFamily: fonts.display, fontSize: 30, color: colors.white, textTransform: 'uppercase', textAlign: 'center' }, // 564:7256
   // Lock screen (Figma 310:9622, frame 348:37997): logo 565:21545, hint 348:38277
   lockLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
+  // Home (Figma 1561:5056): name 1561:5135, "Sócio desde" label and value 1561:5136 (line height 27)
+  homeName: { fontFamily: fonts.display, fontSize: 24, color: colors.white, textTransform: 'uppercase' },
+  homeSinceLabel: { fontFamily: fonts.display, fontSize: 14, lineHeight: 27, color: colors.white, textTransform: 'uppercase' },
+  homeSinceValue: { fontFamily: fonts.display, fontSize: 20, lineHeight: 27, color: colors.white, textTransform: 'uppercase' },
   authLink: { fontFamily: fonts.body, fontSize: 12, color: colors.white }, // 564:6901 (white at 50%)
   authLinkAction: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primary }, // 564:6902
   authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
@@ -179,6 +183,14 @@ export const layout = {
   lockScrim: 'rgba(0, 0, 0, 0.6)', // SEM FIGMA: backdrop behind the enable-biometrics prompt
   lockModalPad: 32,
   lockModalGap: 16,
+  // Home (Figma 1561:5056). Same lion, tint and rings as the lock screen (lockLion / lockRings / lockTint).
+  homeLogoTop: 77, // logo row top (1561:5137); status bar is 44 of it
+  homeNameGap: 82, // logo bottom (111, cap-trimmed) to the name (193), measured like lockHintGap
+  homeSinceGap: 14, // name bottom (222) to "Sócio desde" (236)
+  homeSinceLabelOpacity: 0.5,
+  homeBlockGap: 32, // SEM FIGMA: between name, next-game card and menu (card is not on 1561:5056)
+  homeMenuSheetGap: 41, // menu bottom (812 - 141) to the collapsed sheet top (712)
+  homeSheetExpandedRatio: 0.8, // SEM FIGMA: open GameBox sheet height as a share of the window (content in Task 24)
   authContentTop: 32, // header bottom to the first field
   authIntroTop: 24, // header bottom to the intro text (564:6971)
   authFieldsGap: 32,
