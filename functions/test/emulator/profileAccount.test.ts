@@ -43,12 +43,12 @@ describe("updateProfile", () => {
     expect(r.code).toBe("unauthenticated");
   });
 
-  it("{} for a V2 user publishes a title-cased name and never an email", async () => {
+  it("{} for a V2 user publishes first name + surname initial and never an email", async () => {
     await db.doc("users/u1").set({ name: "MARTIM BUSTORFF", email: "m@x.pt" });
     const out = await handleUpdateProfile(db, { uid: "u1" }, {}, NOW);
-    expect(out).toEqual({ displayName: "Martim Bustorff", avatarId: null });
+    expect(out).toEqual({ displayName: "Martim B.", avatarId: null });
     const pub = (await db.doc("publicProfiles/u1").get()).data()!;
-    expect(pub.displayName).toBe("Martim Bustorff");
+    expect(pub.displayName).toBe("Martim B.");
     expect(pub.avatarId).toBeNull();
     expect(pub.updatedAt).toBeDefined();
     expect(JSON.stringify(pub)).not.toContain("@");

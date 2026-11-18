@@ -3,7 +3,6 @@ import {
   DEPLOY_DATA_FUNCTIONS,
   DEPLOY_ENGINE_FUNCTIONS,
   LEGACY_FUNCTIONS,
-  PENDING_MERGE_FUNCTIONS,
   V2027_FUNCTIONS,
   deployArg,
 } from "../../scripts/deployLists";
@@ -29,19 +28,20 @@ const endpoint = (name: string): Endpoint => {
   return ep;
 };
 
+const PLAN3_CALLABLES = ["updateProfile", "deleteAccount", "linkProviderByEmail"];
+
 const DEPLOYED = [...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS, ...DEPLOY_ENGINE_FUNCTIONS] as string[];
 
 describe("listas de publicação", () => {
-  it("os exports do index são exatamente as três listas (só os do Plano 3 podem faltar até ao merge)", () => {
-    // PENDING_MERGE_FUNCTIONS: apagar quando o v2027-app for integrado; o teste passa então a ser estrito.
-    const pending = new Set<string>(PENDING_MERGE_FUNCTIONS);
-    const expected = DEPLOYED.filter((n) => !pending.has(n) || exported.includes(n)).sort();
-    expect(exported).toEqual(expected);
+  it("os exports do index são exatamente as três listas", () => {
+    expect(exported).toEqual([...DEPLOYED].sort());
   });
 
-  it("as três callables do Plano 3 estão no motor e são as únicas pendentes", () => {
-    expect([...PENDING_MERGE_FUNCTIONS].sort()).toEqual(["deleteAccount", "linkProviderByEmail", "updateProfile"]);
-    for (const n of PENDING_MERGE_FUNCTIONS) expect(DEPLOY_ENGINE_FUNCTIONS).toContain(n);
+  it("as três callables do Plano 3 estão exportadas e no motor", () => {
+    for (const n of PLAN3_CALLABLES) {
+      expect(exported).toContain(n);
+      expect(DEPLOY_ENGINE_FUNCTIONS).toContain(n);
+    }
   });
 
   it("tamanhos e nomes sem repetições", () => {
@@ -78,7 +78,7 @@ describe("configuração de cada function exportada", () => {
 
   it("as callables do motor são onCall e as restantes são agendadas", () => {
     const callables = exported.filter((n) => endpoint(n).callableTrigger);
-    expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PENDING_MERGE_FUNCTIONS].includes(n)).sort());
+    expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PLAN3_CALLABLES].includes(n)).sort());
     expect(scheduled.length + callables.length).toBe(exported.length);
   });
 
@@ -100,10 +100,12 @@ describe("configuração de cada function exportada", () => {
     settleScheduler: [],
     submitPrediction: [],
     voteMvp: [],
+    updateProfile: [],
+    deleteAccount: [],
+    linkProviderByEmail: [],
   };
   it("todas as functions publicadas têm a lista de segredos verificada", () => {
-    const pending = new Set<string>(PENDING_MERGE_FUNCTIONS);
-    expect(Object.keys(SECRETS).sort()).toEqual(DEPLOYED.filter((n) => !pending.has(n)).sort());
+    expect(Object.keys(SECRETS).sort()).toEqual([...DEPLOYED].sort());
   });
   it.each(Object.entries(SECRETS))("%s: segredos %j", (name, secrets) => {
     expect((endpoint(name).secretEnvironmentVariables ?? []).map((s) => s.key).sort()).toEqual([...secrets].sort());

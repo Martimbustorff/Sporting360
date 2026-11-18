@@ -30,12 +30,6 @@ export const DEPLOY_ENGINE_FUNCTIONS = [
   "linkProviderByEmail",
 ] as const;
 
-/**
- * Callables do Plano 3 que só existem no branch v2027-app. Apagar esta lista quando o v2027-app for
- * integrado: o `exports.test.ts` passa então a exigir todas as functions das listas.
- */
-export const PENDING_MERGE_FUNCTIONS = ["updateProfile", "deleteAccount", "linkProviderByEmail"] as const;
-
 /** Functions antigas da V2 (codebase por omissão, `us-central1`), apagadas por nome no corte. */
 export const LEGACY_FUNCTIONS = [
   "gamesSheduler",
