@@ -3,7 +3,7 @@
 // SEM FIGMA: o cartão do próximo jogo não está no 1561:5056 (fica entre o nome e o menu, GameHeader sem tabs);
 // as linhas RANKING (ícone Feather "award") e COMUNIDADE LEONINA (Feather "users") não estão no menu 1561:5307;
 // "News" do Figma passa a "NOTÍCIAS" (pt-PT). O ecrã faz scroll quando não cabe; o menu fica encostado à folha.
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Link, router, type Href } from 'expo-router';
@@ -13,6 +13,7 @@ import { GameHeader } from '@/components/GameHeader';
 import { HomeGameboxSheet, useGameboxSheetCollapsedHeight } from '@/components/HomeGameboxSheet';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
+import { useNow } from '@/data/clock';
 import { useAppConfig, useMyUser, usePublicProfile } from '@/data/hooks';
 import { useNextFootballMatch } from '@/data/sports';
 import { toGameHeaderVM } from '@/lib/matchVM';
@@ -60,7 +61,8 @@ export default function Home() {
   const user = useMyUser(uid);
   const profile = usePublicProfile(uid);
   const config = useAppConfig();
-  const [now] = useState(() => new Date());
+  // Home fica montada como raiz da Stack: o relógio anda (blocos de 10 min e ao voltar à app).
+  const now = useNow();
   const next = useNextFootballMatch(now);
   const { top } = useSafeAreaInsets();
   const sheetHeight = useGameboxSheetCollapsedHeight();

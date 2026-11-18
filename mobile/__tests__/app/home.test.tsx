@@ -1,5 +1,5 @@
 // Task 5: Home. Dados mockados (hooks); expo-router global (jest.setup) com `router.push` estável.
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Match } from '@/data/schemas';
@@ -20,6 +20,7 @@ jest.mock('@/data/hooks', () => ({
 jest.mock('@/data/sports', () => ({ useNextFootballMatch: jest.fn(() => mockNext.current) }));
 
 import { router } from 'expo-router';
+import { useNextFootballMatch } from '@/data/sports';
 import Home from '../../app/(app)/index';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
@@ -72,6 +73,7 @@ beforeEach(() => {
   mockProfile.current = { status: 'missing' };
   mockConfig.current = config(undefined);
   mockNext.current = { status: 'ready', data: null };
+  (useNextFootballMatch as jest.Mock).mockImplementation(() => mockNext.current);
 });
 
 describe('menu', () => {
@@ -179,6 +181,27 @@ describe('próximo jogo', () => {
     await render(ui());
     expect(screen.queryByRole('button', { name: 'Próximo jogo' })).toBeNull();
     expect(screen.queryByText(/erro/i)).toBeNull();
+  });
+
+  it('o relógio anda com a Home montada: depois dos jogos acabarem aparece o seguinte', async () => {
+    jest.useFakeTimers();
+    try {
+      jest.setSystemTime(new Date('2026-11-18T22:55:00Z'));
+      const after = new Date('2026-11-18T23:00:00Z').getTime();
+      // A query do bloco antigo só traz jogos terminados (null); a do bloco seguinte traz o 1001.
+      (useNextFootballMatch as jest.Mock).mockImplementation((now: Date) =>
+        now.getTime() >= after ? { status: 'ready', data: MATCH } : { status: 'ready', data: null },
+      );
+      await render(ui());
+      expect(screen.queryByRole('button', { name: 'Próximo jogo' })).toBeNull();
+      await act(async () => {
+        jest.advanceTimersByTime(5 * 60_000);
+      });
+      expect(screen.getByRole('button', { name: 'Próximo jogo' })).toBeTruthy();
+      expect(screen.getByText('J11')).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('a carregar ou com erro também não há cartão', async () => {

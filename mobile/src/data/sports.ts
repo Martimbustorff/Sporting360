@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type { z } from 'zod';
 import { collection, limit, orderBy, query, where, type Query } from '@react-native-firebase/firestore';
 import { db } from '@/services/firebase';
+import { BLOCK_MS } from './clock';
 import { useCollection, useDocument, type Loadable } from './hooks';
 import {
   BracketDocSchema,
@@ -52,8 +53,7 @@ import {
 } from './schemas';
 
 const HOUR = 3_600_000;
-/** List queries are rebuilt at most once per 10-minute block of `now` (no resubscribe per render). */
-const BLOCK_MS = 600_000;
+// List queries are rebuilt at most once per BLOCK_MS block of `now` (no resubscribe per render).
 const LIST_LIMIT = 40;
 const NEXT_LIMIT = 3;
 /** A game started up to 4 h ago still counts as "upcoming" (it may be live). */
