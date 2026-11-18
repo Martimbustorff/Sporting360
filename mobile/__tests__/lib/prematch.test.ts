@@ -66,7 +66,8 @@ describe('injuryText', () => {
     expect(injuryText('Missing Fixture', 'Illness')).toBe('Fora, Doença');
     expect(injuryText('Missing Fixture', 'Broken nose')).toBe('Fora, Lesão');
     expect(injuryText('Other', '')).toBe('Fora');
-    expect(injuryText('Doubtful', 'Knee Injury')).toBe('Fora, Lesão no joelho');
+    expect(injuryText('Doubtful', 'Knee Injury')).toBe('Dúvida, Lesão no joelho');
+    expect(injuryText('Unknown status', 'Knee Injury')).toBe('Fora, Lesão no joelho');
     expect(injuryText('', 'Injury')).toBe('Lesão');
     expect(injuryText('', '')).toBe('');
   });

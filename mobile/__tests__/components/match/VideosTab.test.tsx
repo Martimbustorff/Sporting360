@@ -110,9 +110,9 @@ describe('Vídeos', () => {
   });
 
   it('um embed fora de vsports.pt não aparece na lista', async () => {
-    mockVideos.current = ready([v('ok'), v('bad', { embedSrc: 'https://evil.com/x' }), v('look', { embedSrc: 'https://vsports.pt.evil.com/e' })]);
+    mockVideos.current = ready([v('ok'), v('real', { embedSrc: 'https://sporting.vsports.pt/embd/100020/m/19776/scp/abc?autostart=false' }), v('bad', { embedSrc: 'https://evil.com/x' }), v('look', { embedSrc: 'https://vsports.pt.evil.com/e' })]);
     await render(<VideosTab match={match()} />);
-    expect(rows()).toEqual(['video-row-ok']);
+    expect(rows()).toEqual(['video-row-ok', 'video-row-real']);
   });
 
   it('só embeds recusados conta como vazia', async () => {

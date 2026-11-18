@@ -1,6 +1,7 @@
 // Task 15: leitor VSports. WebView e expo-screen-orientation vêm dos mocks em __mocks__.
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { Video } from '@/data/schemas';
 
@@ -9,7 +10,7 @@ jest.mock('expo-image', () => {
   return { Image: (props: object) => <View {...props} /> };
 });
 
-import { isAllowedEmbed, VideoPlayer } from '@/components/VideoPlayer';
+import { isAllowedEmbed, shouldLoad, VideoPlayer } from '@/components/VideoPlayer';
 
 const { LANDSCAPE, PORTRAIT_UP } = ScreenOrientation.OrientationLock;
 const lockAsync = ScreenOrientation.lockAsync as jest.Mock;
@@ -26,10 +27,15 @@ const video = (over: Partial<Video> = {}): Video => ({
   ...over,
 });
 
+const REAL = 'https://sporting.vsports.pt/embd/100020/m/19776/scp/abc';
+let openURL: jest.SpyInstance;
+
 beforeEach(() => {
   lockAsync.mockClear();
   webView.mockClear();
+  openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
 });
+afterEach(() => openURL.mockRestore());
 
 const lastWebViewProps = () => webView.mock.calls[webView.mock.calls.length - 1][0] as Record<string, unknown>;
 
@@ -39,6 +45,7 @@ describe('isAllowedEmbed', () => {
     'https://www.vsports.pt/embed/1?autoplay=1',
     'https://player.cdn.vsports.pt/e/9',
     'HTTPS://WWW.VSPORTS.PT/embed/1',
+    `${REAL}?autostart=false`,
   ])('aceita %s', (u) => expect(isAllowedEmbed(u)).toBe(true));
 
   it.each([
@@ -57,6 +64,31 @@ describe('isAllowedEmbed', () => {
   ])('recusa %s', (u) => expect(isAllowedEmbed(u)).toBe(false));
 });
 
+describe('shouldLoad', () => {
+  it.each([
+    ['topo em vsports.pt', { url: 'https://www.vsports.pt/embed/1', isTopFrame: true }, true],
+    ['topo no host real', { url: `${REAL}?autostart=true`, isTopFrame: true }, true],
+    ['topo noutro host', { url: 'https://evil.com/x', isTopFrame: true }, false],
+    ['topo com host parecido', { url: 'https://vsports.pt.evil.com/x', isTopFrame: true }, false],
+    ['topo em http', { url: 'http://www.vsports.pt/embed/1', isTopFrame: true }, false],
+    ['topo javascript:', { url: 'javascript:alert(1)', isTopFrame: true }, false],
+    ['Android sem isTopFrame, vsports', { url: 'https://www.vsports.pt/embed/1' }, true],
+    ['Android sem isTopFrame, outro host', { url: 'https://evil.com/x' }, false],
+    ['Android sem isTopFrame, intent:', { url: 'intent://x#Intent;end' }, false],
+    ['iframe iOS https noutro host', { url: 'https://cdn.example/player', isTopFrame: false }, true],
+    ['iframe iOS about:blank', { url: 'about:blank', isTopFrame: false }, true],
+    ['iframe iOS blob:', { url: 'blob:https://www.vsports.pt/1', isTopFrame: false }, true],
+    ['iframe iOS data:', { url: 'data:text/html,x', isTopFrame: false }, true],
+    ['iframe iOS http', { url: 'http://cdn.example/player', isTopFrame: false }, false],
+    ['iframe iOS javascript:', { url: 'javascript:alert(1)', isTopFrame: false }, false],
+    ['iframe iOS itms-apps:', { url: 'itms-apps://x', isTopFrame: false }, false],
+    ['iframe iOS tel:', { url: 'tel:123', isTopFrame: false }, false],
+  ])('%s', (_name, req, ok) => {
+    expect(shouldLoad(req)).toBe(ok);
+    expect(openURL).not.toHaveBeenCalled();
+  });
+});
+
 describe('VideoPlayer', () => {
   it('miniatura com play, título e minuto; sem WebView antes do toque', async () => {
     await render(<VideoPlayer video={video()} />);
@@ -73,7 +105,7 @@ describe('VideoPlayer', () => {
     await fireEvent.press(screen.getByTestId('video-open'));
     expect(screen.getByTestId('webview')).toBeTruthy();
     const p = lastWebViewProps();
-    expect(p.source).toEqual({ uri: 'https://www.vsports.pt/embed/1' });
+    expect(p.source).toEqual({ uri: 'https://www.vsports.pt/embed/1?autostart=true' });
     expect((p.source as Record<string, unknown>).html).toBeUndefined();
     expect(p.allowsFullscreenVideo).toBe(true);
     expect(p.allowsInlineMediaPlayback).toBe(true);
@@ -84,7 +116,6 @@ describe('VideoPlayer', () => {
     expect(p.allowFileAccessFromFileURLs).toBe(false);
     expect(p.allowUniversalAccessFromFileURLs).toBe(false);
     expect(p.setSupportMultipleWindows).toBe(false);
-    expect(p.originWhitelist).toEqual(['https://vsports.pt', 'https://*.vsports.pt']);
     expect(lockAsync).toHaveBeenCalledTimes(1);
     expect(lockAsync).toHaveBeenLastCalledWith(LANDSCAPE);
   });
@@ -96,15 +127,24 @@ describe('VideoPlayer', () => {
     expect(modal.props.supportedOrientations).toEqual(expect.arrayContaining(['portrait', 'landscape-left', 'landscape-right']));
   });
 
-  it('a navegação no topo fica em vsports.pt; subframes não são cortados', async () => {
+  it('originWhitelist ["*"] e shouldLoad ligado: o WebView nunca abre nada fora (Linking)', async () => {
     await render(<VideoPlayer video={video()} />);
     await fireEvent.press(screen.getByTestId('video-open'));
-    const should = lastWebViewProps().onShouldStartLoadWithRequest as (r: { url: string; isTopFrame?: boolean }) => boolean;
-    expect(should({ url: 'https://www.vsports.pt/embed/1', isTopFrame: true })).toBe(true);
+    const p = lastWebViewProps();
+    expect(p.originWhitelist).toEqual(['*']);
+    expect(p.onShouldStartLoadWithRequest).toBe(shouldLoad);
+    const should = p.onShouldStartLoadWithRequest as typeof shouldLoad;
     expect(should({ url: 'https://evil.com/phish', isTopFrame: true })).toBe(false);
-    expect(should({ url: 'https://vsports.pt.evil.com/', isTopFrame: true })).toBe(false);
-    expect(should({ url: 'http://www.vsports.pt/embed/1' })).toBe(false);
-    expect(should({ url: 'https://ads.example/frame', isTopFrame: false })).toBe(true);
+    expect(should({ url: 'intent://x#Intent;end', isTopFrame: false })).toBe(false);
+    expect(openURL).not.toHaveBeenCalled();
+  });
+
+  it('forma real: abre com autostart=true, o embedSrc guardado não muda', async () => {
+    const v = video({ embedSrc: `${REAL}?autostart=false` });
+    await render(<VideoPlayer video={v} />);
+    await fireEvent.press(screen.getByTestId('video-open'));
+    expect(lastWebViewProps().source).toEqual({ uri: `${REAL}?autostart=true` });
+    expect(v.embedSrc).toBe(`${REAL}?autostart=false`);
   });
 
   it('"Fechar" fecha e volta a vertical', async () => {

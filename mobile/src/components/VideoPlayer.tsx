@@ -3,8 +3,9 @@
 // tokens: ícone de play por cima da miniatura, minuto (`minute`) antes do título, e o ecrã total (Modal preto com a
 // barra "Fechar" em cima, WebView por baixo). Erro: texto centrado no mesmo espaço.
 //
-// Segurança: só se carrega `embedSrc` (https em vsports.pt ou num subdomínio), nunca HTML; a navegação do topo não
-// sai de vsports.pt. Orientação (preflight P3): abrir trava em horizontal; fechar, desmontar ou erro voltam sempre a
+// Segurança: só se carrega `embedSrc` (https em vsports.pt ou num subdomínio, com `autostart=true` por `playerUri`),
+// nunca HTML. `originWhitelist={['*']}` para o react-native-webview nunca abrir nada fora (`Linking`); o único filtro
+// é `shouldLoad`: o topo fica em vsports.pt, os subframes do iOS só https/about/blob/data; o resto é recusado. Orientação (preflight P3): abrir trava em horizontal; fechar, desmontar ou erro voltam sempre a
 // PORTRAIT_UP (a raiz trava PORTRAIT_UP no arranque).
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, StatusBar, View } from 'react-native';
@@ -12,13 +13,15 @@ import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView, type WebViewNavigation } from 'react-native-webview';
+import { WebView } from 'react-native-webview';
 import type { Video } from '@/data/schemas';
+import { playerUri } from '@/lib/vsports';
 import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { colors, layout, spacing } from '@/theme/tokens';
 
 export const VIDEO_ERROR = 'Não foi possível abrir o vídeo.';
-const ORIGINS = ['https://vsports.pt', 'https://*.vsports.pt'];
+const ORIGINS = ['*'];
+const SUBFRAME_SCHEMES = /^(https|about|blob|data):/i;
 const ORIENTATIONS = ['portrait', 'landscape-left', 'landscape-right'] as const;
 
 /**
@@ -33,9 +36,14 @@ export function isAllowedEmbed(src: string): boolean {
   return host === 'vsports.pt' || host.endsWith('.vsports.pt');
 }
 
-/** Navegação do topo só em vsports.pt; os subframes do próprio player (iOS) não se cortam aqui. */
-function allowNavigation(r: Pick<WebViewNavigation, 'url'> & { isTopFrame?: boolean }): boolean {
-  return r.isTopFrame === false || isAllowedEmbed(r.url);
+/**
+ * Único filtro de navegação do WebView. Topo (`isTopFrame` diferente de `false`; o Android não o envia): só
+ * `isAllowedEmbed`. Subframes do iOS (`isTopFrame === false`): só https, about, blob e data. O resto é recusado
+ * em silêncio, sem abrir nada fora da app.
+ */
+export function shouldLoad(req: { url: string; isTopFrame?: boolean }): boolean {
+  if (req.isTopFrame === false) return SUBFRAME_SCHEMES.test(req.url);
+  return isAllowedEmbed(req.url);
 }
 
 function lock(o: ScreenOrientation.OrientationLock) {
@@ -48,7 +56,7 @@ function Frame({ children }: { children?: React.ReactNode }) {
       style={{
         width: '100%',
         aspectRatio: layout.videoAspect,
-        borderRadius: radius.md,
+        borderRadius: layout.videoRadius,
         overflow: 'hidden',
         backgroundColor: colors.surface10,
         alignItems: 'center',
@@ -63,7 +71,8 @@ function Frame({ children }: { children?: React.ReactNode }) {
 export function VideoPlayer({ video }: { video: Video }) {
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
-  const allowed = isAllowedEmbed(video.embedSrc);
+  const uri = playerUri(video.embedSrc);
+  const allowed = isAllowedEmbed(video.embedSrc) && isAllowedEmbed(uri);
 
   useEffect(() => {
     if (!open || failed) return;
@@ -150,9 +159,9 @@ export function VideoPlayer({ video }: { video: Video }) {
             ) : (
               <WebView
                 style={{ flex: 1, backgroundColor: colors.black }}
-                source={{ uri: video.embedSrc }}
+                source={{ uri }}
                 originWhitelist={ORIGINS}
-                onShouldStartLoadWithRequest={allowNavigation}
+                onShouldStartLoadWithRequest={shouldLoad}
                 allowsFullscreenVideo
                 allowsInlineMediaPlayback
                 mediaPlaybackRequiresUserAction={false}

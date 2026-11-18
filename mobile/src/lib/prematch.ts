@@ -13,7 +13,7 @@ export function formLetters(form: string | null): FormLetter[] {
   return letters.slice(-5);
 }
 
-const TYPE_TEXT: Record<string, string> = { 'Missing Fixture': 'Fora', Questionable: 'Dúvida' };
+const TYPE_TEXT: Record<string, string> = { 'Missing Fixture': 'Fora', Questionable: 'Dúvida', Doubtful: 'Dúvida' };
 const BAN_REASONS = new Set(['suspended', 'red card', 'yellow cards']);
 // Por ordem: o mais específico primeiro ("Hamstring Muscle Injury" é dos isquiotibiais, não "muscular").
 // Palavras inteiras (`\b`): "Championship" não é anca, "Setback" não são costas, "Football" não é pé.
