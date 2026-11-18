@@ -27,6 +27,7 @@ export const colors = {
   // Match events
   cardYellow: '#F7CF46',
   cardYellowAlt: '#FFB648',
+  cardYellowStat: '#FFC700', // Figma 498:28525 (cartão amarelo nas Estatísticas)
   cardRed: '#F74C66',
 } as const;
 
@@ -175,6 +176,12 @@ export const layout = {
   formChip: 24, // V / E / D square in the "Forma" row
   formChipGap: 4,
   venuePhotoAspect: 16 / 9, // stadium photo under "Informação do Jogo"
+  // Estatísticas (Figma 500:28650): linha de 23 px, 20 px entre linhas e divisória; valores a 30 % antes do jogo (500:29279)
+  statRowGap: 20,
+  statRowHeight: 23,
+  statValueWidth: 64,
+  statCardGap: 9,
+  statMutedOpacity: 0.3,
   // Welcome (Figma 564:7178)
   welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)

@@ -32,6 +32,7 @@ const POSTPONED = 'Jogo adiado. A nova data aparece aqui quando for conhecida.';
 const CANCELLED = 'Jogo cancelado.';
 const NO_EVENTS_LIVE = 'Os lances aparecem aqui durante o jogo.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
+const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
 const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.cardRed };
 
@@ -163,8 +164,8 @@ function Injuries({ doc, match }: { doc: InjuriesDoc; match: Match }) {
       {teams.map(({ team, items }) => (
         <View key={team.id}>
           <Body variant="tab" style={{ paddingHorizontal: spacing.md, opacity: layout.mutedOpacity }}>{team.name}</Body>
-          {items.map((i) => (
-            <TextRow key={i.playerId} left={i.name} right={injuryText(i.type ?? '', i.reason ?? '')} muted />
+          {items.map((i, n) => (
+            <TextRow key={`${team.id}-${i.playerId}-${n}`} left={i.name} right={injuryText(i.type ?? '', i.reason ?? '')} muted />
           ))}
         </View>
       ))}
@@ -180,7 +181,11 @@ function PreMatch({ match }: { match: Match }) {
   const injuriesDoc = injuries.status === 'ready' ? injuries.data : null;
   const known = new Set([match.home.id, match.away.id]);
   const hasInjuries = !!injuriesDoc && injuriesDoc.items.some((i) => known.has(i.teamId));
-  if (!full && !hasInjuries) return <EmptyState text={EMPTY_PREMATCH} />;
+  if (!full && !hasInjuries) {
+    // Uma leitura falhada nunca se mostra como "sem dados".
+    const failed = prematch.status === 'error' || injuries.status === 'error';
+    return failed ? <EmptyState icon="info" text={LOAD_ERROR} /> : <EmptyState text={EMPTY_PREMATCH} />;
+  }
   return (
     <>
       {full ? (
@@ -200,6 +205,7 @@ function PreMatch({ match }: { match: Match }) {
 function Events({ match, live }: { match: Match; live: boolean }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
+  if (events.status === 'error') return <EmptyState icon="info" text={LOAD_ERROR} />;
   const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id) : [];
   if (groups.length === 0) return <EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />;
   return (
