@@ -2,13 +2,12 @@
 // raster: nenhuma específica, só o `NewsCard` aprovado na galeria, Plano 3). Compõe `Header`, `Tabs` 'scroll'
 // (500:28976, "Todas" + modalidades), `NewsCard` e `OfflineBanner`; o resto com tokens.
 // - Só título, imagem, resumo, fonte e data; o `content` do artigo nunca é lido (NewsSchema retira-o).
-// - O artigo abre no browser interno (`expo-web-browser`), só para URLs https; nunca numa app externa.
+// - O toque abre a página original com `openLink` (browser interno, só https, falha reportada).
 // - "há X tempo" em Europe/Lisbon, com o relógio a avançar de minuto a minuto.
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
 import { useCallback, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { NewsCard } from '@/components/NewsCard';
@@ -18,6 +17,7 @@ import { Tabs } from '@/components/Tabs';
 import { useNow } from '@/data/clock';
 import type { News, Sport } from '@/data/schemas';
 import { useNews } from '@/data/user';
+import { openLink } from '@/lib/openLink';
 import { SPORTS, sportLabel } from '@/lib/sports';
 import { spacing } from '@/theme/tokens';
 
@@ -32,14 +32,6 @@ export const NOTICIAS_TEXT = {
     filter === 'all' ? 'Sem notícias por agora.' : `Sem notícias de ${sportLabel(filter).toLowerCase()} por agora.`,
 } as const;
 
-const HTTPS_URL = /^https:\/\/[^\s/?#]+/i;
-
-/** Abre o artigo no browser interno. Só https; qualquer outro esquema é ignorado. */
-function openArticle(url: string): void {
-  if (!HTTPS_URL.test(url)) return;
-  WebBrowser.openBrowserAsync(url).catch(() => undefined);
-}
-
 export default function Noticias() {
   const router = useRouter();
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -50,7 +42,7 @@ export default function Noticias() {
   const onPress = useCallback(
     (id: string) => {
       const found = byId?.find((n) => n.id === id);
-      if (found) openArticle(found.url);
+      if (found) void openLink(found.url);
     },
     [byId],
   );

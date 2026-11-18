@@ -10,7 +10,7 @@ Os argumentos `--only functions:v2027:...` abaixo foram gerados por `deployArg` 
 - Comandos `npx tsx scripts/...`: dentro de `functions/`. Os scripts usam as credenciais ADC: `gcloud auth application-default login` uma vez.
 - Nunca `firebase deploy` sem `--only`, nunca `--only functions` sem nomes, nunca `--force`.
 - `firebase functions:delete` só com nomes de functions, **nunca** com um nome de codebase (`v2027`, `default`): apagaria o codebase inteiro.
-- Se durante um deploy aparecer `Enter a string value for ...` (parâmetro em falta no `functions/.env.scp360-37a74`): **Ctrl-C e parar**. O CLI gravaria a resposta no ficheiro, e um `LEGACY_COLLECTION_PREFIX` em falta vale `""`, ou seja, escrever nas coleções reais. O ficheiro tem de ter `LEGACY_COLLECTION_PREFIX` e `VSPORTS_SEASON_ID` (vazio = calculado), os dois `defineString` de `src/config/secrets.ts`.
+- Se durante um deploy aparecer `Enter a string value for ...` (parâmetro em falta no `functions/.env.scp360-37a74`): **Ctrl-C e parar**. O CLI gravaria a resposta no ficheiro, e um `LEGACY_COLLECTION_PREFIX` em falta vale `""`, ou seja, escrever nas coleções reais. O ficheiro tem de ter `LEGACY_COLLECTION_PREFIX`, `VSPORTS_SEASON_ID` (vazio = calculado) e `NEWS_LEGACY_CONTENT` (`true` até ao passo L6), os `defineString` e o `defineBoolean` de `src/config/secrets.ts`.
 - Functions antigas: codebase por omissão, região `us-central1` (o `index.ts` antigo não define região nem `setGlobalOptions`, e o código está no bucket `gcf-v2-sources-394641993263-us-central1`). Functions novas: codebase `v2027`, região `europe-west1`. Um deploy do codebase `v2027` nunca mexe nas antigas.
 - Chaves só no terminal do Martim, nunca no repositório, em ficheiros, em logs ou na conversa. Para pôr uma chave no ambiente sem ficar no histórico:
   - bash: `read -rs RAPIDAPI_KEY && export RAPIDAPI_KEY` (o mesmo para `VSPORTS_KEY`)
@@ -129,11 +129,12 @@ O CLI pode perguntar duas vezes (primeiro pelos índices, depois pelos field ove
 
 ## 6. Modo sombra (PARAGEM (Martim))
 
-Pré-requisitos: secções 2 a 5 feitas, e a 7 e a 8 (emblema e alerta) de preferência também. O `functions/.env.scp360-37a74` tem exatamente estas duas linhas, sem segredos:
+Pré-requisitos: secções 2 a 5 feitas, e a 7 e a 8 (emblema e alerta) de preferência também. O `functions/.env.scp360-37a74` tem exatamente estas três linhas, sem segredos:
 
 ```
 LEGACY_COLLECTION_PREFIX=_shadow_
 VSPORTS_SEASON_ID=
+NEWS_LEGACY_CONTENT=true
 ```
 
 ```bash
@@ -273,9 +274,9 @@ Corte, por esta ordem:
    ```bash
    firebase functions:delete predictionsSettlementScheduler --region us-central1 --project scp360-37a74
    ```
-2. Mudar `functions/.env.scp360-37a74` para `LEGACY_COLLECTION_PREFIX=` (vazio; `VSPORTS_SEASON_ID=` fica), **fazer commit** (senão um deploy futuro a partir de outra cópia do repositório volta a pôr os writers em `_shadow_`, congela os dados da V2 e pára a `legacyPredictionSettlement`) e publicar as de dados com a liquidação nova:
+2. Mudar `functions/.env.scp360-37a74` para `LEGACY_COLLECTION_PREFIX=` (vazio; `VSPORTS_SEASON_ID=` e `NEWS_LEGACY_CONTENT=true` ficam: a V2 ainda lê `content` até ao passo L6), **fazer commit** (senão um deploy futuro a partir de outra cópia do repositório volta a pôr os writers em `_shadow_`, congela os dados da V2 e pára a `legacyPredictionSettlement`) e publicar as de dados com a liquidação nova:
    ```bash
-   printf 'LEGACY_COLLECTION_PREFIX=\nVSPORTS_SEASON_ID=\n' > functions/.env.scp360-37a74
+   printf 'LEGACY_COLLECTION_PREFIX=\nVSPORTS_SEASON_ID=\nNEWS_LEGACY_CONTENT=true\n' > functions/.env.scp360-37a74
    cat functions/.env.scp360-37a74
    git add functions/.env.scp360-37a74
    git commit -m "chore: cutover, legacy collections written by v2027"
@@ -421,7 +422,7 @@ O modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `in
 
 1. Parar as novas nas coleções antigas: `functions/.env.scp360-37a74` de volta a `_shadow_` **com commit**, apagar a liquidação nova **antes** de repor a antiga, e republicar as de dados (passam a escrever em sombra):
    ```bash
-   printf 'LEGACY_COLLECTION_PREFIX=_shadow_\nVSPORTS_SEASON_ID=\n' > functions/.env.scp360-37a74
+   printf 'LEGACY_COLLECTION_PREFIX=_shadow_\nVSPORTS_SEASON_ID=\nNEWS_LEGACY_CONTENT=true\n' > functions/.env.scp360-37a74
    git add functions/.env.scp360-37a74
    git commit -m "chore: revert cutover, v2027 back to shadow collections"
    firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74

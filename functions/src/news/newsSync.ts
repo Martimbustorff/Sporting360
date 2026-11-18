@@ -83,6 +83,8 @@ export interface NewsDeps {
   fetch: FetchFn;
   now: () => Date;
   prefix?: string;
+  /** `true` grava `content` (a V2 mostra-o como corpo; `news` é a mesma coleção); `false` depois do corte. */
+  writeLegacyContent: boolean;
 }
 
 /**
@@ -112,7 +114,8 @@ export async function syncNews(d: NewsDeps): Promise<{ count: number; failed: nu
             title: item.title,
             image: item.image,
             summary,
-            content: item.summary, // texto integral do snippet, como o legado: o V2 mostra-o como corpo
+            // Texto integral do snippet, como o legado: a V2 mostra-o como corpo. Depois do corte deixa de ser gravado.
+            ...(d.writeLegacyContent ? { content: item.summary } : {}),
             source: item.source,
             url: item.link,
             created_at: date.toISOString(),

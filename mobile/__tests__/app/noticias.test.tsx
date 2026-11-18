@@ -1,5 +1,5 @@
 // Task 20: ecrã das Notícias. Hooks mockados (sem rede); o browser interno é o mock de expo-web-browser.
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -16,12 +16,14 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@/data/user', () => ({ useNews: jest.fn(() => mockNews.current) }));
 jest.mock('@/data/clock', () => ({ useNow: jest.fn(() => mockNow.current) }));
+jest.mock('@/lib/report', () => ({ reportCode: jest.fn() }));
 jest.mock('expo-image', () => {
   const { View } = require('react-native');
   return { Image: (props: object) => <View {...props} /> };
 });
 
 import { useNow } from '@/data/clock';
+import { reportCode } from '@/lib/report';
 import { useNews } from '@/data/user';
 import Noticias from '../../app/(app)/noticias';
 
@@ -101,7 +103,7 @@ describe('Notícias: abrir o artigo', () => {
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://www.record.pt/a');
   });
 
-  it.each(['http://www.record.pt/x', 'javascript:alert(1)', 'intent://x', 'mailto:a@b.pt', '//record.pt/x', 'record.pt/x'])(
+  it.each(['', 'http://www.record.pt/x', 'javascript:alert(1)', 'intent://x', 'mailto:a@b.pt', '//record.pt/x', 'record.pt/x'])(
     'não abre o url %s (só https)',
     async (url) => {
       mockNews.current = ready([item('a', { url })]);
@@ -116,6 +118,7 @@ describe('Notícias: abrir o artigo', () => {
     await renderScreen();
     await fireEvent.press(screen.getAllByRole('link')[0]!);
     expect(screen.getByText('Título a')).toBeTruthy();
+    await waitFor(() => expect(reportCode).toHaveBeenCalledWith('OPEN_LINK_FAILED https://www.record.pt/a', expect.any(Error)));
   });
 });
 

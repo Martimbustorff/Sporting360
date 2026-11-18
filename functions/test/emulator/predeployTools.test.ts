@@ -2,6 +2,7 @@ import { deleteApp, getApps } from "firebase-admin/app";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import { checkFirestore, checkShadowIsolation, firestoreFailures, shadowFailures } from "../../scripts/check-predeploy";
 import { compareAll, hasProblems } from "../../scripts/compare-legacy";
+import { stripNewsContent } from "../../scripts/strip-news-content";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 
 let db: Firestore;
@@ -97,5 +98,42 @@ describe("compare-legacy (Firestore, só leitura)", () => {
     expect(games.expectedExtra).toEqual(["2001"]);
     expect(summaries).toMatchObject({ extra: [], expectedExtra: ["x"] });
     expect(hasProblems([games, summaries])).toBe(true);
+  });
+});
+
+describe("strip-news-content (só no emulador)", () => {
+  const news = (id: string, withContent: boolean) => ({
+    id,
+    title: `Título ${id}`,
+    summary: `Resumo ${id}`,
+    source: "Record",
+    url: `https://www.record.pt/${id}`,
+    sport: "football",
+    ...(withContent ? { content: `Texto integral ${id}` } : {}),
+  });
+  const seedNews = async () => {
+    await db.doc("news/a").set(news("a", true));
+    await db.doc("news/b").set(news("b", true));
+    await db.doc("news/c").set(news("c", true));
+    await db.doc("news/d").set(news("d", false));
+  };
+
+  it("dryRun conta e não muda nada", async () => {
+    await seedNews();
+    expect(await stripNewsContent(db, { dryRun: true })).toEqual({ scanned: 4, stripped: 3 });
+    expect((await db.doc("news/a").get()).data()).toEqual(news("a", true));
+    expect((await db.doc("news/d").get()).data()).toEqual(news("d", false));
+  });
+
+  it("sem dryRun nenhum documento fica com content e os outros campos ficam iguais", async () => {
+    await seedNews();
+    expect(await stripNewsContent(db, { dryRun: false })).toEqual({ scanned: 4, stripped: 3 });
+    for (const id of ["a", "b", "c", "d"]) expect((await db.doc(`news/${id}`).get()).data()).toEqual(news(id, false));
+  });
+
+  it("mais de 400 documentos passam por vários lotes", async () => {
+    for (let i = 0; i < 405; i++) await db.doc(`news/n${i}`).set(news(`n${i}`, true));
+    expect(await stripNewsContent(db, { dryRun: false })).toEqual({ scanned: 405, stripped: 405 });
+    expect((await db.collection("news").get()).docs.some((d) => "content" in d.data())).toBe(false);
   });
 });

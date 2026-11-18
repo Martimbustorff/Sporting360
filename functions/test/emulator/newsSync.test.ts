@@ -21,7 +21,13 @@ const ok = () =>
     [/maisfutebol\.iol\.pt\/rss/, "rss/maisfutebol.xml"],
     [/record\.pt\/rss/, "rss/record.xml"],
   ]);
-const deps = (f: ReturnType<typeof fakeFetch>, prefix?: string) => ({ db, fetch: f, now: () => NOW, prefix });
+const deps = (f: ReturnType<typeof fakeFetch>, prefix?: string, writeLegacyContent = true) => ({
+  db,
+  fetch: f,
+  now: () => NOW,
+  prefix,
+  writeLegacyContent,
+});
 
 describe("syncNews", () => {
   it("fontes", () => {
@@ -48,6 +54,21 @@ describe("syncNews", () => {
     expect(d).not.toHaveProperty("updatedAt");
     const mf = (await db.doc("news/maisfutebol-iol-pt-sporting-exemplo-3").get()).data()!;
     expect(mf).toMatchObject({ source: "Maisfutebol", image: "https://cdn.iol.pt/img/exemplo-3.jpg" });
+  });
+
+  it("com writeLegacyContent=false o documento não tem content e tem os 9 campos", async () => {
+    await syncNews(deps(ok(), undefined, false));
+    const d = (await db.doc("news/www-record-pt-futebol-sporting-exemplo-1").get()).data()!;
+    expect(d).not.toHaveProperty("content");
+    expect(Object.keys(d).sort()).toEqual(
+      ["created_at", "id", "image", "publishedAt", "source", "sport", "summary", "title", "url"].sort(),
+    );
+  });
+
+  it("com writeLegacyContent=true o documento tem content", async () => {
+    await syncNews(deps(ok(), undefined, true));
+    const d = (await db.doc("news/www-record-pt-futebol-sporting-exemplo-1").get()).data()!;
+    expect(d).toHaveProperty("content");
   });
 
   it("item longo: content integral, summary truncado", async () => {
