@@ -92,6 +92,46 @@ describe('analytics consent', () => {
   });
 });
 
+// Task 17 (revisão): arranque a frio pelo link partilhado; `share_open` chega antes de a escolha guardada ser lida.
+describe('eventos antes de a escolha guardada ser aplicada', () => {
+  it('ficam em espera e seguem quando a escolha guardada é granted', async () => {
+    const { a, fb, store } = load();
+    await store.setItemAsync(KEY, 'granted');
+    a.track('share_open', { game: '1001', src: 'share' });
+    expect(fb.logEvent).not.toHaveBeenCalled();
+    await a.applyStoredConsent();
+    expect(fb.logEvent).toHaveBeenCalledTimes(1);
+    expect(fb.logEvent).toHaveBeenCalledWith(expect.anything(), 'share_open', { game: '1001', src: 'share' });
+    a.track('share_open', { game: '1002' });
+    expect(fb.logEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it('são descartados quando a escolha guardada é denied, e não voltam depois', async () => {
+    const { a, fb, store } = load();
+    await store.setItemAsync(KEY, 'denied');
+    a.track('share_open', { game: '1001', src: 'share' });
+    await a.applyStoredConsent();
+    expect(fb.logEvent).not.toHaveBeenCalled();
+    await a.setAnalyticsConsent('granted');
+    expect(fb.logEvent).not.toHaveBeenCalled();
+  });
+
+  it('sem escolha guardada também são descartados', async () => {
+    const { a, fb } = load();
+    a.track('share_open', { game: '1001' });
+    await a.applyStoredConsent();
+    expect(fb.logEvent).not.toHaveBeenCalled();
+  });
+
+  it('a espera tem limite', async () => {
+    const { a, fb, store } = load();
+    await store.setItemAsync(KEY, 'granted');
+    for (let i = 0; i < 30; i++) a.track('e', { i });
+    await a.applyStoredConsent();
+    expect(fb.logEvent).toHaveBeenCalledTimes(20);
+  });
+});
+
 describe('setAnalyticsUserId (F14)', () => {
   it('denied: não chama setUserId com um uid', async () => {
     const { a, fb, store } = load();

@@ -120,14 +120,14 @@ describe('Prognóstico aberto', () => {
     expect(screen.getByText('SC Braga')).toBeTruthy();
     expect(screen.getByText('Fecha em 2 h 15 min')).toBeTruthy();
     expect(screen.getByText('+1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
-    expect(screen.queryByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
+    expect(screen.queryByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
     expect(value('Sporting CP')).toBe(0);
     expect(value('SC Braga')).toBe(0);
   });
 
   it('em taças mostra a regra do prolongamento e penáltis', async () => {
     await render(<PredictionTab match={match({ type: 'cup' })} />, { wrapper });
-    expect(screen.getByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
+    expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
   // Task 17 (carry da revisão da Task 16): o servidor conta prolongamento e penáltis em todos os jogos a eliminar.
@@ -137,12 +137,12 @@ describe('Prognóstico aberto', () => {
     ['play-off europeu', { type: 'europe' as const, round: 'Knockout Round Play-offs' }],
   ])('%s mostra a regra do prolongamento e penáltis', async (_, over) => {
     await render(<PredictionTab match={match(over)} />, { wrapper });
-    expect(screen.getByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
+    expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
   it('fase de liga europeia não mostra a regra do prolongamento', async () => {
     await render(<PredictionTab match={match({ type: 'europe', round: 'League Stage - 3' })} />, { wrapper });
-    expect(screen.queryByText('Nas taças conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
+    expect(screen.queryByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
   });
 
   it('sem prognóstico não há botão de partilha', async () => {

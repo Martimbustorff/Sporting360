@@ -29,7 +29,7 @@ import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
 export const PREDICTION_TEXT = {
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
-  cupRule: 'Nas taças conta o resultado com prolongamento; penáltis contam como empate.',
+  cupRule: 'Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.',
   submit: 'Submeter prognóstico',
   closed: 'Os prognósticos fecharam ao apito inicial.',
   postponed: 'Jogo adiado. Podes fazer o prognóstico quando houver nova data.',

@@ -11,6 +11,11 @@ const KEY = 's360.analyticsConsent';
 // Estado em memória: `consent` é o último valor conhecido (null = ainda não lido ou sem escolha).
 let consent: Consent | null = null;
 let currentUid: string | null = null;
+// Task 17: até a escolha guardada ser aplicada (arranque a frio, por exemplo ao abrir o link partilhado), os eventos
+// esperam aqui. Aplicada: `granted` envia-os, `denied` ou sem escolha descarta-os. Limite para nunca crescer.
+let settled = false;
+const MAX_PENDING = 20;
+let pending: { name: string; params?: Record<string, string | number> }[] = [];
 
 function isConsent(v: string | null): v is Consent {
   return v === 'granted' || v === 'denied';
@@ -30,6 +35,18 @@ async function applyCollection(next: Consent | null): Promise<void> {
   consent = next;
   await setAnalyticsCollectionEnabled(getAnalytics(), next === 'granted');
   if (next === 'granted' && currentUid) await setUserId(getAnalytics(), currentUid);
+  settled = true;
+  const queued = pending;
+  pending = [];
+  if (consent === 'granted') for (const e of queued) send(e.name, e.params);
+}
+
+function send(name: string, params?: Record<string, string | number>): void {
+  try {
+    Promise.resolve(logEvent(getAnalytics(), name, params)).catch(() => {});
+  } catch {
+    // telemetria nunca bloqueia
+  }
 }
 
 export async function setAnalyticsConsent(c: Consent): Promise<void> {
@@ -61,12 +78,14 @@ export async function setAnalyticsUserId(uid: string | null): Promise<void> {
   if (consent === 'granted' && currentUid === uid) await setUserId(getAnalytics(), uid);
 }
 
-/** Evento de utilização. Só com `granted`; nunca lança. */
+/**
+ * Evento de utilização. Só com `granted`; nunca lança. Antes de a escolha guardada ser aplicada o evento fica em
+ * espera (ver `pending`) em vez de se perder.
+ */
 export function track(name: string, params?: Record<string, string | number>): void {
-  if (consent !== 'granted') return;
-  try {
-    Promise.resolve(logEvent(getAnalytics(), name, params)).catch(() => {});
-  } catch {
-    // telemetria nunca bloqueia
+  if (!settled) {
+    if (pending.length < MAX_PENDING) pending.push({ name, params });
+    return;
   }
+  if (consent === 'granted') send(name, params);
 }

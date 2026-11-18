@@ -76,6 +76,22 @@ describe('hosting/public', () => {
   });
 });
 
+// Revisão da Task 17: functions/src/config/brand.ts (SPORTING_CREST_URL) aponta para /brand/sporting-cp-2026.png no
+// Hosting; o deploy substitui o site todo, por isso o emblema tem de estar nesta pasta. Fonte: brand/sporting-cp-2026.png
+// (a que o runbook do Plano 2 indica, docs/superpowers/notes/2026-12-01-publicacao-plano2.md secção 7).
+describe('emblema do Sporting no Hosting', () => {
+  it('existe em /brand/sporting-cp-2026.png e é igual ao ficheiro do repositório', () => {
+    const served = path.join(pub, 'brand/sporting-cp-2026.png');
+    expect(fs.existsSync(served)).toBe(true);
+    expect(fs.readFileSync(served).equals(fs.readFileSync(path.join(repo, 'brand/sporting-cp-2026.png')))).toBe(true);
+  });
+
+  it('o caminho é o do SPORTING_CREST_URL das functions', () => {
+    const brand = fs.readFileSync(path.join(repo, 'functions/src/config/brand.ts'), 'utf8');
+    expect(brand).toContain('"https://scp360-37a74.web.app/brand/sporting-cp-2026.png"');
+  });
+});
+
 describe('firebase.json hosting', () => {
   const fb = JSON.parse(fs.readFileSync(path.join(repo, 'firebase.json'), 'utf8'));
 
