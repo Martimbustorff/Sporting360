@@ -8,6 +8,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { SessionProvider, useSession } from '@/providers/SessionProvider';
+import { UpdateGate } from '@/providers/UpdateGate';
 import { initFirebase } from '@/services/firebase';
 import { legacyCleanup } from '@/services/legacyCleanup';
 
@@ -46,11 +47,13 @@ export default function RootLayout() {
   // GestureHandlerRootView: obrigatório para os gestos do Sheet (e de qualquer GestureDetector).
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {/* teclado (KeyboardProvider) > fontes/splash > (UpdateGate, T17) > SessionProvider > guardas de rota > (BiometricGate, T15) */}
+      {/* teclado (KeyboardProvider) > UpdateGate (esconde o splash quando bloqueia) > SessionProvider > RootStack/guardas de rota > (BiometricGate, T15) */}
       <KeyboardProvider>
-        <SessionProvider>
-          <RootStack fontsReady={loaded || !!error} />
-        </SessionProvider>
+        <UpdateGate fontsReady={loaded || !!error}>
+          <SessionProvider>
+            <RootStack fontsReady={loaded || !!error} />
+          </SessionProvider>
+        </UpdateGate>
       </KeyboardProvider>
     </GestureHandlerRootView>
   );
