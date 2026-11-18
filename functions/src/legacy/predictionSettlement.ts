@@ -6,6 +6,9 @@ import { getMatch } from "../store/writer";
 // Mesma janela da V2 (Games.getRecentGames): um filtro de intervalo em `timestamp`, sem índice composto.
 const RECENT_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 
+/** Espera após o apito final: dá tempo ao refresh pós-jogo (finishedAt+25 min) de corrigir o resultado; um +3 errado nunca é revogado. */
+export const LEGACY_SETTLE_DELAY_MS = 30 * 60_000;
+
 interface LegacyGame {
   api: string;
   scorehome: string;
@@ -25,7 +28,7 @@ interface LegacyPrediction {
 /**
  * Porta da liquidação "resultado exato" (+3) dos palpites da V2 (`predictions`, `rankings`, `point_events`), que os
  * utilizadores V2 usam até ao cutover. Igual a legacy/v2-functions/.../predictionSettlement.ts, com uma diferença:
- * o jogo só conta como terminado se `matches/{api}.status` ∈ FINAL_STATUSES e `finishedAt <= now` (a V2 usava
+ * o jogo só conta como terminado se `matches/{api}.status` ∈ FINAL_STATUSES e `finishedAt + 30 min <= now` (a V2 usava
  * `isActive === false && endTime <= now`, o que liquidava adiados como 0-0).
  * Escreve só nas coleções sem prefixo: usar através de `settleLegacyPredictionsIfProduction`.
  */
@@ -40,8 +43,12 @@ export async function settleLegacyPredictions(db: Firestore, now: Date): Promise
     if (game.predictionsSettled) continue;
     if (!game.api) continue;
     const match = await getMatch(db, String(game.api));
-    if (!match || !FINAL_STATUSES.has(match.status)) continue;
-    if (!match.finishedAt || match.finishedAt.getTime() > now.getTime()) continue;
+    if (!match) {
+      logger.warn(`Legacy settlement: games/${doc.id} has no matches/${game.api} document.`);
+      continue;
+    }
+    if (!FINAL_STATUSES.has(match.status)) continue;
+    if (!match.finishedAt || match.finishedAt.getTime() + LEGACY_SETTLE_DELAY_MS > now.getTime()) continue;
 
     predictions += await settleGame(db, doc.ref, game);
     games += 1;

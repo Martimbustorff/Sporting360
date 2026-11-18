@@ -38,7 +38,7 @@ const ft = (minAgo: number) => ({ status: "FT" as const, finishedAt: new Date(NO
 
 describe("settleLegacyPredictions", () => {
   it("liquida palpites exatos (+3, point_event) e marca o jogo", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     await seedPred("1001_bob", "bob", 1, 1);
 
@@ -58,8 +58,24 @@ describe("settleLegacyPredictions", () => {
     expect((await db.doc("games/g1001").get()).get("predictionsSettled")).toBe(true);
   });
 
-  it("segunda execução não muda nada", async () => {
+  it("FT terminado há 10 min ainda não é liquidado; há 31 min sim", async () => {
     await seedGame("1001", ft(10));
+    await seedPred("1001_alice", "alice", 2, 1);
+    expect(await settleLegacyPredictions(db, NOW)).toEqual({ games: 0, predictions: 0 });
+    await db.doc("matches/1001").set({ finishedAt: new Date(NOW.getTime() - 31 * MIN) }, { merge: true });
+    expect(await settleLegacyPredictions(db, NOW)).toEqual({ games: 1, predictions: 1 });
+  });
+
+  it("duas execuções concorrentes: +3 uma vez, um point_event", async () => {
+    await seedGame("1001", ft(31));
+    await seedPred("1001_alice", "alice", 2, 1);
+    await Promise.all([settleLegacyPredictions(db, NOW), settleLegacyPredictions(db, NOW)]);
+    expect((await db.doc(`rankings/alice_${SEASON}`).get()).get("points")).toBe(3);
+    expect((await db.collection("point_events").get()).size).toBe(1);
+  });
+
+  it("segunda execução não muda nada", async () => {
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     await settleLegacyPredictions(db, NOW);
     await settleLegacyPredictions(db, NOW);
@@ -92,11 +108,11 @@ describe("settleLegacyPredictions", () => {
   });
 
   it("não toca em palpites com `source` (v2027) nem em jogos já liquidados ou fora da janela de 3 dias", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_carol", "carol", 2, 1, "1001", { source: "v2027" });
-    await seedGame("1006", ft(10), { predictionsSettled: true });
+    await seedGame("1006", ft(31), { predictionsSettled: true });
     await seedPred("1006_alice", "alice", 2, 1, "1006");
-    await seedGame("1007", ft(10), { timestamp: Timestamp.fromDate(new Date(NOW.getTime() - 4 * 24 * 60 * MIN)) });
+    await seedGame("1007", ft(31), { timestamp: Timestamp.fromDate(new Date(NOW.getTime() - 4 * 24 * 60 * MIN)) });
     await seedPred("1007_alice", "alice", 2, 1, "1007");
 
     await settleLegacyPredictions(db, NOW);
@@ -107,7 +123,7 @@ describe("settleLegacyPredictions", () => {
   });
 
   it("reexecução após falha parcial: não duplica nem perde pontos", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     await seedPred("1001_dave", "dave", 2, 1);
 
@@ -133,7 +149,7 @@ describe("settleLegacyPredictions", () => {
   });
 
   it("palpite não marcado mas com point_event já existente: marca scored sem repetir os pontos", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     await db.doc("point_events/exact_score_1001_alice").set({ userId: "alice", type: "exact_score", points: 3 });
     await db.doc(`rankings/alice_${SEASON}`).set({ userId: "alice", season: SEASON, points: 3 });
@@ -145,13 +161,13 @@ describe("settleLegacyPredictions", () => {
 
 describe("guarda do modo sombra", () => {
   it("com prefixo não vazio não escreve nada", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     expect(await settleLegacyPredictionsIfProduction(db, NOW, "_shadow_")).toBeNull();
     expect((await db.doc("predictions/1001_alice").get()).get("scored")).toBe(false);
   });
   it("com prefixo vazio corre", async () => {
-    await seedGame("1001", ft(10));
+    await seedGame("1001", ft(31));
     await seedPred("1001_alice", "alice", 2, 1);
     expect(await settleLegacyPredictionsIfProduction(db, NOW, "")).toEqual({ games: 1, predictions: 1 });
   });
