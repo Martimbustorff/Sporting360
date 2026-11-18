@@ -5,6 +5,7 @@ import {
   FixturesDocSchema,
   LineupsDocSchema,
   MatchSchema,
+  MvpTallySchema,
   PlayersDocSchema,
   PrematchDocSchema,
   StatisticsDocSchema,
@@ -159,6 +160,18 @@ describe('competition docs', () => {
       items: [{ id: '1', kickoff: fakeTs('2026-11-20T20:30:00Z'), round: 'Regular Season - 12', roundLabel: 'J12', home: { id: '228', name: 'Sporting CP', logo: null }, away: { id: '211', name: 'Benfica', logo: null }, status: 'NS', score: { home: null, away: null, extraHome: null, extraAway: null, penaltyHome: null, penaltyAway: null } }],
     });
     expect(r.items[0]!.kickoff).toBeInstanceOf(Date);
+  });
+});
+
+describe('MvpTallySchema', () => {
+  it('aceita o documento do agregador, com updatedAt a mais', () => {
+    const r = MvpTallySchema.safeParse({ gameId: '1001', counts: { '10': 3, '20': 1 }, total: 4, updatedAt: fakeTs('2026-11-21T21:40:00Z') });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.total).toBe(4);
+  });
+
+  it('rejeita total negativo', () => {
+    expect(MvpTallySchema.safeParse({ gameId: '1001', counts: { '10': 1 }, total: -1 }).success).toBe(false);
   });
 });
 

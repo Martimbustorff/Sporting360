@@ -86,9 +86,34 @@ describe('voteMvp', () => {
     ['failed-precondition', 'MVP_CLOSED', 'CLOSED'],
     ['already-exists', 'Já votaste neste jogo.', 'ALREADY'],
     ['invalid-argument', 'Jogador inválido.', 'INVALID'],
-    ['unavailable', 'x', 'OFFLINE'],
   ])('%s (%s) → %s', async (code, message, expected) => {
     mockCall.mockRejectedValueOnce(err(code, message));
     expect(await codeOf(voteMvp('1001', '2001'))).toBe(expected);
+    expect(mockCall).toHaveBeenCalledTimes(1);
+  });
+
+  it('unavailable: repete uma vez e o voto passa', async () => {
+    mockCall.mockRejectedValueOnce(err('unavailable'));
+    await voteMvp('1001', '2001');
+    expect(mockCall).toHaveBeenCalledTimes(2);
+    expect(mockCall).toHaveBeenLastCalledWith({ gameId: '1001', playerId: '2001' });
+  });
+
+  it('unavailable duas vezes: só uma repetição e depois OFFLINE', async () => {
+    mockCall.mockRejectedValue(err('unavailable'));
+    expect(await codeOf(voteMvp('1001', '2001'))).toBe('OFFLINE');
+    expect(mockCall).toHaveBeenCalledTimes(2);
+  });
+
+  it('unavailable e a repetição dá already-exists (o primeiro voto chegou a gravar): ALREADY', async () => {
+    mockCall.mockRejectedValueOnce(err('unavailable')).mockRejectedValueOnce(err('already-exists'));
+    expect(await codeOf(voteMvp('1001', '2001'))).toBe('ALREADY');
+    expect(mockCall).toHaveBeenCalledTimes(2);
+  });
+
+  it('o prognóstico não repete em unavailable', async () => {
+    mockCall.mockRejectedValue(err('unavailable'));
+    expect(await codeOf(submitPrediction('1001', 2, 1))).toBe('OFFLINE');
+    expect(mockCall).toHaveBeenCalledTimes(1);
   });
 });

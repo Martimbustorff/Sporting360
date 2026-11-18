@@ -77,6 +77,11 @@ function stateFixtures(now: Date, base: Record<string, unknown>): SeedDoc[] {
       ],
     },
   });
+  // MVP tallies of the LIVE game (votes of other fans; the aggregator also writes `updatedAt`).
+  docs.push({
+    path: 'mvpTallies/9002',
+    data: { gameId: '9002', counts: { '1001': 5, '1002': 3, '1003': 1, '1004': 1 }, total: 10, updatedAt: now },
+  });
   docs.push({
     path: 'matches/9002/details/events',
     data: {

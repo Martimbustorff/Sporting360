@@ -1,6 +1,6 @@
 // Task 18: tab MVP. Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__), chamada pelo
 // services/game real, para testar o caminho completo até ao código de erro do servidor (functions/src/callables/voteMvp.ts).
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import type { GameStatus, Match } from '@/data/schemas';
 
 type L =
@@ -8,11 +8,12 @@ type L =
   | { status: 'missing' }
   | { status: 'error'; error: Error }
   | { status: 'ready'; data: unknown; fromCache?: boolean };
-const mockData: { vote: L; settlement: L; points: L; players: L } = {
+const mockData: { vote: L; settlement: L; points: L; players: L; tally: L } = {
   vote: { status: 'missing' },
   settlement: { status: 'missing' },
   points: { status: 'ready', data: [] },
   players: { status: 'missing' },
+  tally: { status: 'missing' },
 };
 const mockSession: { status: 'signedIn' | 'signedOut' } = { status: 'signedIn' };
 const mockCall = jest.fn();
@@ -33,13 +34,14 @@ jest.mock('@/data/user', () => ({
 }));
 jest.mock('@/data/sports', () => ({
   useMatchDetail: jest.fn(() => mockData.players),
+  useMvpTally: jest.fn(() => mockData.tally),
 }));
 
 import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { recordError } from '@react-native-firebase/crashlytics';
-import { useMatchDetail } from '@/data/sports';
+import { useMatchDetail, useMvpTally } from '@/data/sports';
 import { MvpTab } from '@/components/match/MvpTab';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 44, left: 0, right: 0, bottom: 34 } };
@@ -104,6 +106,7 @@ beforeEach(() => {
   mockData.settlement = { status: 'missing' };
   mockData.points = { status: 'ready', data: [] };
   mockData.players = players();
+  mockData.tally = { status: 'missing' };
   (httpsCallable as jest.Mock).mockImplementation(() => mockCall);
   mockCall.mockResolvedValue({ data: { ok: true } });
 });
@@ -301,9 +304,11 @@ describe('Erros da callable', () => {
   }
 
   // Review Focus 3
-  it('sem rede (unavailable): mensagem clara, a escolha fica e pode tentar outra vez', async () => {
+  it('sem rede (unavailable): repete uma vez e depois mensagem clara, a escolha fica e pode tentar outra vez', async () => {
+    mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'unavailable' }));
     mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'unavailable' }));
     await voteTrincao();
+    expect(mockCall).toHaveBeenCalledTimes(2);
     expect(screen.getByText('Sem ligação. O teu voto não foi enviado; tenta outra vez.')).toBeTruthy();
     expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
     expect(recordError).not.toHaveBeenCalled();
@@ -311,8 +316,16 @@ describe('Erros da callable', () => {
     await press('Votar em Trincão');
     await press('Confirmar');
     await flush();
+    expect(mockCall).toHaveBeenCalledTimes(3);
+    expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
+  });
+
+  it('unavailable uma vez (contenção): a repetição passa e o voto fica registado', async () => {
+    mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'unavailable' }));
+    await voteTrincao();
     expect(mockCall).toHaveBeenCalledTimes(2);
     expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
+    expect(screen.queryByText('Sem ligação. O teu voto não foi enviado; tenta outra vez.')).toBeNull();
   });
 
   it('sem rede (internal com mensagem de rede): mensagem de sem ligação e não vai ao Crashlytics', async () => {
@@ -341,7 +354,6 @@ describe('Erros da callable', () => {
   });
 
   it.each([
-    ['already-exists', 'Já votaste neste jogo.'],
     ['invalid-argument', 'Este jogador não está entre os candidatos. Escolhe outro.'],
     ['unauthenticated', 'A sessão terminou. Entra outra vez para votares.'],
     ['not-found', 'Não foi possível enviar o voto. Tenta outra vez.'],
@@ -349,6 +361,14 @@ describe('Erros da callable', () => {
     mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code }));
     await voteTrincao();
     expect(screen.getByText(text)).toBeTruthy();
+  });
+
+  it('already-exists: "já votaste" sem erro e sem a lista', async () => {
+    mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'already-exists' }));
+    await voteTrincao();
+    expect(screen.getByText('Já votaste neste jogo.')).toBeTruthy();
+    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(recordError).not.toHaveBeenCalled();
   });
 
   it('o desconhecido (not-found) vai ao Crashlytics', async () => {
@@ -444,5 +464,99 @@ describe('Adiado e cancelado (Review Focus 2)', () => {
     await render(<MvpTab match={match({ status: 'CANC', elapsed: null })} />, { wrapper });
     expect(screen.getByText('Sem votação: jogo cancelado.')).toBeTruthy();
     expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+  });
+});
+
+describe('Percentagens', () => {
+  const tally = (counts: Record<string, number>, total: number): L => ({ status: 'ready', data: { gameId: '1001', counts, total } });
+  const closedMatch = () => match({ status: 'FT', elapsed: 90, finishedAt: new Date(NOW.getTime() - 30 * 60_000) });
+
+  it('aberta sem voto: nenhuma percentagem, mesmo com tally, e o documento nem é pedido', async () => {
+    mockData.tally = tally({ '10': 3, '20': 1 }, 4);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByText(/votos?$/)).toBeNull();
+    expect(useMvpTally).toHaveBeenLastCalledWith(null);
+  });
+
+  it('aberta com voto do próprio: 75%, 25% e "4 votos"', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = tally({ '10': 3, '20': 1 }, 4);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(useMvpTally).toHaveBeenLastCalledWith('1001');
+    expect(within(screen.getByTestId('mvp-result-10')).getByText('75%')).toBeTruthy();
+    expect(within(screen.getByTestId('mvp-result-20')).getByText('25%')).toBeTruthy();
+    expect(screen.getByText('4 votos')).toBeTruthy();
+    expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
+  });
+
+  it('um único voto: "1 voto"', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = tally({ '10': 1 }, 1);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.getByText('1 voto')).toBeTruthy();
+    expect(screen.getByText('100%')).toBeTruthy();
+    expect(screen.getByText('0%')).toBeTruthy();
+  });
+
+  it('acabou de votar (sem snapshot ainda): as percentagens aparecem', async () => {
+    mockData.tally = tally({ '10': 1, '20': 1 }, 2);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+    await press('Votar em Trincão');
+    await press('Confirmar');
+    await flush();
+    expect(within(screen.getByTestId('mvp-result-10')).getByText('50%')).toBeTruthy();
+    expect(screen.getByText('2 votos')).toBeTruthy();
+  });
+
+  it('fechada sem voto: percentagens visíveis', async () => {
+    mockData.tally = tally({ '10': 3, '20': 1 }, 4);
+    await render(<MvpTab match={closedMatch()} />, { wrapper });
+    expect(within(screen.getByTestId('mvp-result-10')).getByText('75%')).toBeTruthy();
+    expect(screen.getByText('A votação já fechou.')).toBeTruthy();
+    expect(screen.getByText('A apurar o MVP oficial.')).toBeTruthy();
+  });
+
+  it('apurado com MVP oficial: percentagens visíveis', async () => {
+    mockData.settlement = { status: 'ready', data: { finalHome: 1, finalAway: 0, officialMvp: ['10'] } };
+    mockData.tally = tally({ '10': 3, '20': 1 }, 4);
+    await render(<MvpTab match={closedMatch()} />, { wrapper });
+    expect(screen.getByText('MVP oficial: Trincão')).toBeTruthy();
+    expect(within(screen.getByTestId('mvp-result-20')).getByText('25%')).toBeTruthy();
+  });
+
+  it('adiado: nenhuma percentagem', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = tally({ '10': 3, '20': 1 }, 4);
+    await render(<MvpTab match={match({ status: 'PST', elapsed: null })} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+
+  it('tally inexistente: sem percentagens, sem texto extra e sem erro', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = { status: 'missing' };
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByText(/votos?$/)).toBeNull();
+    expect(screen.queryByText('Não foi possível carregar os dados.')).toBeNull();
+    expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
+  });
+
+  it('total 0: sem percentagens e sem texto extra', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = tally({}, 0);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByText(/votos?$/)).toBeNull();
+  });
+
+  it('erro de leitura do tally: sem percentagens e sem mensagem', async () => {
+    mockData.vote = vote('10');
+    mockData.tally = { status: 'error', error: new Error('x') };
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByText(/%/)).toBeNull();
+    expect(screen.queryByText('Não foi possível carregar os dados.')).toBeNull();
+    expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
   });
 });

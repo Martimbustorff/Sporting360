@@ -16,6 +16,7 @@ import {
   InjuriesDocSchema,
   LineupsDocSchema,
   MatchSchema,
+  MvpTallySchema,
   PlayersDocSchema,
   PlayerStatsDocSchema,
   PrematchDocSchema,
@@ -39,6 +40,7 @@ import {
   type FixturesDoc,
   type GameStatus,
   type Match,
+  type MvpTally,
   type PlayerStatsDoc,
   type RoundsDoc,
   type SidelinedDoc,
@@ -88,6 +90,11 @@ const DETAIL_SCHEMAS: { [K in DetailKind]: z.ZodType<DetailDocs[K]> } = {
   prematch: PrematchDocSchema,
   injuries: InjuriesDocSchema,
 };
+
+/** Percentagens do MVP: mvpTallies/{gameId}, escrito pelo servidor ao minuto (as shards não se leem). Inexistente = `missing`. */
+export function useMvpTally(gameId: string | null): Loadable<MvpTally> {
+  return useDocument(gameId ? `mvpTallies/${gameId}` : null, MvpTallySchema);
+}
 
 export function useMatchDetail<K extends DetailKind>(id: string | null, kind: K): Loadable<DetailDocs[K]> {
   return useDocument(id ? `matches/${id}/details/${kind}` : null, DETAIL_SCHEMAS[kind]);

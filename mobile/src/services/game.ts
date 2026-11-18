@@ -40,9 +40,20 @@ function toCode(e: unknown): GameActionCode {
   }
 }
 
-async function call(name: string, payload: object): Promise<void> {
+const isUnavailable = (e: unknown): boolean => (codeOf(e) ?? '').replace(/^functions\//, '') === 'unavailable';
+
+/**
+ * `retryOnUnavailable`: o servidor responde `unavailable` (TRY_AGAIN) quando há contenção; repete-se uma vez antes de
+ * desistir. Só para chamadas idempotentes: se a primeira chegou a gravar, a repetição dá `already-exists`.
+ */
+async function call(name: string, payload: object, retryOnUnavailable = false): Promise<void> {
   try {
-    await httpsCallable(fns(), name)(payload);
+    try {
+      await httpsCallable(fns(), name)(payload);
+    } catch (e) {
+      if (!retryOnUnavailable || !isUnavailable(e)) throw e;
+      await httpsCallable(fns(), name)(payload);
+    }
   } catch (e) {
     const code = toCode(e);
     if (code === 'UNKNOWN') reportCode(`${name.toUpperCase()}_FAILED`, e);
@@ -55,7 +66,7 @@ export function submitPrediction(gameId: string, home: number, away: number): Pr
   return call('submitPrediction', { gameId, home, away });
 }
 
-/** Voto definitivo no MVP de um jogo (Task 18). */
+/** Voto definitivo no MVP de um jogo (Task 18); repete uma vez em `unavailable`. */
 export function voteMvp(gameId: string, playerId: string): Promise<void> {
-  return call('voteMvp', { gameId, playerId });
+  return call('voteMvp', { gameId, playerId }, true);
 }

@@ -1,7 +1,9 @@
 // SEM FIGMA: tab MVP sem frame vetorial; referência na imagem raster da página "Appstore S360" (Mapa do Figma do
 // Plano 4: "Vídeos, Prognóstico, MVP, cartão S360 MATCHDAY", nó 818:21193, visto com get_screenshot). Composto com
 // tokens: lista de candidatos em linhas com contorno e cantos arredondados, a escolhida preenchida a primary com o
-// visto; sem as percentagens da referência (os votos dos outros não são lidos pela app). Confirmação numa folha
+// visto. As percentagens da referência aparecem depois de votar ou quando a votação fecha (antes disso puxariam o voto
+// para o mais votado e o voto é definitivo): linha só de leitura com a percentagem à direita (estilo secundário) e
+// "{n} votos" por baixo (mvpTallies, escrito pelo servidor ao minuto, pode atrasar-se). Confirmação numa folha
 // inferior em Modal, FormMessage para erros e OfflineBanner, como na tab Prognóstico. Sem fotografias.
 // Regras (spec §6): abre ao minuto 80, fecha 20 minutos depois do apito final; um voto definitivo, só pela callable
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
@@ -14,8 +16,8 @@ import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import type { Match, PlayersDoc, PointEvent } from '@/data/schemas';
-import { useMatchDetail } from '@/data/sports';
+import type { Match, MvpTally, PlayersDoc, PointEvent } from '@/data/schemas';
+import { useMatchDetail, useMvpTally } from '@/data/sports';
 import { useMyGamePoints, useMyMvpVote, useSettlement } from '@/data/user';
 import {
   clockText,
@@ -27,6 +29,7 @@ import {
   type GameActionCode,
   type MvpCandidate,
 } from '@/lib/gameWindows';
+import { mvpPercentages } from '@/lib/mvpPercent';
 import { useSession } from '@/providers/SessionProvider';
 import { voteMvp } from '@/services/game';
 import { Body, Display } from '@/theme/typography';
@@ -41,6 +44,7 @@ export const MVP_TEXT = {
   noOfficial: 'Sem MVP oficial neste jogo.',
   officialUnknown: 'MVP oficial apurado.',
   voteRecorded: 'O teu voto foi registado.',
+  alreadyVoted: 'Já votaste neste jogo.',
   postponed: 'Sem votação: jogo adiado.',
   cancelled: 'Sem votação: jogo cancelado.',
   error: 'Não foi possível carregar os dados.',
@@ -51,7 +55,7 @@ export const MVP_TEXT = {
 export const MVP_ERRORS: Record<GameActionCode, string> = {
   CLOSED: MVP_TEXT.closed,
   NOT_OPEN: 'A votação ainda não abriu. Tenta daqui a pouco.',
-  ALREADY: 'Já votaste neste jogo.',
+  ALREADY: MVP_TEXT.alreadyVoted,
   INVALID: 'Este jogador não está entre os candidatos. Escolhe outro.',
   OFFLINE: 'Sem ligação. O teu voto não foi enviado; tenta outra vez.',
   UNAUTHENTICATED: 'A sessão terminou. Entra outra vez para votares.',
@@ -60,6 +64,8 @@ export const MVP_ERRORS: Record<GameActionCode, string> = {
 
 const FINISHED: ReadonlyArray<Match['status']> = ['FT', 'AET', 'PEN'];
 const TICK_MS = 1_000;
+
+const votesText = (n: number) => `${n} ${n === 1 ? 'voto' : 'votos'}`;
 
 const pointsText = (n: number) => `+${n} ${n === 1 ? 'ponto' : 'pontos'}`;
 
@@ -140,6 +146,46 @@ function CandidateRow({ candidate, selected, onPress }: { candidate: MvpCandidat
   );
 }
 
+/** Linha só de leitura: nome à esquerda, percentagem à direita (estilo secundário). O voto do próprio fica a primary. */
+function ResultRow({ candidate, percent, mine }: { candidate: MvpCandidate; percent: number; mine: boolean }) {
+  return (
+    <View
+      testID={`mvp-result-${candidate.playerId}`}
+      style={{
+        minHeight: layout.mvpRowHeight,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md,
+        borderRadius: radius.md,
+        borderWidth: layout.separator,
+        borderColor: mine ? colors.primary : colors.textDisabled,
+        backgroundColor: mine ? colors.primary : undefined,
+      }}
+    >
+      <Body variant="body" numberOfLines={1} style={{ flex: 1 }}>
+        {candidate.name}
+      </Body>
+      <Text style={[type.newsMeta, { textAlign: 'right' }, mine ? { color: colors.white } : null]}>{`${percent}%`}</Text>
+    </View>
+  );
+}
+
+function Results({ candidates, tally, mineId }: { candidates: MvpCandidate[]; tally: MvpTally; mineId: string | null }) {
+  const percent = mvpPercentages(
+    tally,
+    candidates.map((c) => c.playerId),
+  );
+  return (
+    <View style={{ gap: spacing.sm }}>
+      {candidates.map((c) => (
+        <ResultRow key={c.playerId} candidate={c} percent={percent[c.playerId] ?? 0} mine={c.playerId === mineId} />
+      ))}
+      <Text style={[type.newsMeta, { textAlign: 'center' }]}>{votesText(tally.total)}</Text>
+    </View>
+  );
+}
+
 function ConfirmSheet({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
   const { bottom } = useSafeAreaInsets();
   return (
@@ -173,11 +219,13 @@ function VoteForm({
   candidates,
   onSent,
   onClosed,
+  onAlready,
 }: {
   match: Match;
   candidates: MvpCandidate[];
   onSent: (playerId: string) => void;
   onClosed: () => void;
+  onAlready: () => void;
 }) {
   // A escolha fica aqui enquanto a lista existe: um erro (sem rede, etc.) não a apaga.
   const [selected, setSelected] = useState<string | null>(null);
@@ -203,6 +251,11 @@ function VoteForm({
       const code = e instanceof GameActionError ? e.code : 'UNKNOWN';
       if (code === 'CLOSED') {
         onClosed();
+        return;
+      }
+      // Já tinha votado (por exemplo, a primeira tentativa gravou mas a resposta perdeu-se): não é um erro.
+      if (code === 'ALREADY') {
+        onAlready();
         return;
       }
       setError(MVP_ERRORS[code]);
@@ -270,9 +323,17 @@ export function MvpTab({ match }: { match: Match }) {
   const closesAtMs = FINISHED.includes(match.status) && finishedAtMs !== null ? finishedAtMs + MVP_CLOSE_AFTER_MS : null;
   const now = useMvpClock(closesAtMs, serverClosed || settlement.status === 'ready');
   const [sent, setSent] = useState<string | null>(null);
+  // O servidor disse "já votaste" mas o snapshot do voto ainda não chegou.
+  const [alreadyVoted, setAlreadyVoted] = useState(false);
   useEffect(() => {
     setServerClosed(false);
   }, [match.status, finishedAtMs]);
+
+  // As percentagens só se mostram depois de votar ou de a votação fechar: antes disso nem se lê o documento.
+  const hasVoted = (vote.status === 'ready' && vote.data.playerId !== null) || sent !== null || alreadyVoted;
+  const closedNow = serverClosed || mvpWindow(match, now).state === 'closed' || settlement.status === 'ready';
+  const showPercent = match.status !== 'PST' && match.status !== 'CANC' && uid !== null && (hasVoted || closedNow);
+  const tally = useMvpTally(showPercent ? match.id : null);
 
   if (match.status === 'CANC') return <EmptyState icon="info" text={MVP_TEXT.cancelled} />;
   if (match.status === 'PST') return <EmptyState icon="info" text={MVP_TEXT.postponed} />;
@@ -288,6 +349,7 @@ export function MvpTab({ match }: { match: Match }) {
   const offline = (vote.status === 'ready' && vote.fromCache === true) || (players.status === 'ready' && players.fromCache === true);
 
   const parts: React.JSX.Element[] = [];
+  const tallyData = showPercent && tally.status === 'ready' && tally.data.total > 0 ? tally.data : null;
   if (voted !== null) {
     const name = nameOf(doc, voted);
     parts.push(
@@ -295,6 +357,8 @@ export function MvpTab({ match }: { match: Match }) {
         {name ? `O teu voto: ${name}` : MVP_TEXT.voteRecorded}
       </Display>,
     );
+  } else if (alreadyVoted) {
+    parts.push(<Info key="already" text={MVP_TEXT.alreadyVoted} />);
   } else if (state === 'closed') {
     parts.push(<Info key="closed" text={MVP_TEXT.closed} />);
   } else if (state === 'before') {
@@ -308,7 +372,13 @@ export function MvpTab({ match }: { match: Match }) {
     // Leitura falhada: erro, nunca a mensagem de "ainda sem candidatos".
     else if (players.status === 'error') parts.push(<EmptyState key="players-error" icon="info" text={MVP_TEXT.error} />);
     else if (candidates.length === 0) parts.push(<EmptyState key="empty" icon="info" text={MVP_TEXT.noCandidates} />);
-    else parts.push(<VoteForm key="form" match={match} candidates={candidates} onSent={setSent} onClosed={() => setServerClosed(true)} />);
+    else parts.push(<VoteForm key="form" match={match} candidates={candidates} onSent={setSent} onClosed={() => setServerClosed(true)} onAlready={() => setAlreadyVoted(true)} />);
+  }
+
+  // Votou ou fechou: lista de leitura com as percentagens (sem tally, sem votos ou erro de leitura: nada).
+  if (tallyData && (voted !== null || state === 'closed' || alreadyVoted || settled !== null)) {
+    const list = mvpCandidates(doc);
+    if (list.length > 0) parts.push(<Results key="results" candidates={list} tally={tallyData} mineId={voted} />);
   }
 
   if (state === 'open') {

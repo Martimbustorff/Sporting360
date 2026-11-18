@@ -573,6 +573,17 @@ export const MvpVoteSchema = z.looseObject({
 });
 export type MvpVote = z.infer<typeof MvpVoteSchema>;
 
+/**
+ * mvpTallies/{gameId}, written every minute by the aggregator (`updatedAt` and any other field are tolerated and
+ * ignored). The shards under it are not client-readable.
+ */
+export const MvpTallySchema = z.object({
+  gameId: z.string(),
+  counts: z.record(z.string(), z.number().int().nonnegative()),
+  total: z.number().int().nonnegative(),
+});
+export type MvpTally = z.infer<typeof MvpTallySchema>;
+
 /** settlements/{gameId}, written once by the server. */
 export const SettlementSchema = z.looseObject({
   finalHome: num,
