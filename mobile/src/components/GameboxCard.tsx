@@ -5,14 +5,12 @@
 // Task 24: o número decifrado só se mostra no ecrã; nunca vai para logs.
 import { Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { gameboxLabel, normalizeGameboxNumber, type GameboxView, type Seat } from '@/lib/gamebox';
+import { gameboxLabel, normalizeGameboxNumber, VENUE_NAMES, type GameboxView, type Seat } from '@/lib/gamebox';
 import { colors, layout, type } from '@/theme/tokens';
 
 export const CARD_TEXT = {
   stadium: 'Estádio',
-  stadiumName: 'José Alvalade',
   pavilion: 'Pavilhão',
-  pavilionName: 'João Rocha',
   unreadable: 'Não foi possível ler o número desta GameBox. Corrige-o em Gestão de Gamebox.',
 } as const;
 
@@ -81,9 +79,9 @@ export function GameboxCard({ gamebox, index = 0 }: { gamebox: GameboxView; inde
         )}
       </View>
       <View style={{ alignSelf: 'stretch', gap: layout.gameboxQrGap }}>
-        <SeatBlock venue={CARD_TEXT.stadium} venueName={CARD_TEXT.stadiumName} seat={gamebox.stadium} />
+        <SeatBlock venue={CARD_TEXT.stadium} venueName={VENUE_NAMES.stadium} seat={gamebox.stadium} />
         {gamebox.pavilion ? (
-          <SeatBlock venue={CARD_TEXT.pavilion} venueName={CARD_TEXT.pavilionName} seat={gamebox.pavilion} />
+          <SeatBlock venue={CARD_TEXT.pavilion} venueName={VENUE_NAMES.pavilion} seat={gamebox.pavilion} />
         ) : null}
       </View>
     </View>

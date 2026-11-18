@@ -241,6 +241,49 @@ describe('Formulário da Gamebox', () => {
     expect(screen.getByLabelText('Número da GameBox').props.value).toBe('999999');
   });
 
+  // Task 24 (F12 revisto): o leitor volta a esta instância com dismissTo e só o parâmetro `numero` muda.
+  it('nova: o que se escreveu antes de ler fica depois da volta do leitor; guardar não deixa outro formulário', async () => {
+    mockParams.current = { id: 'nova' };
+    mockBoxes.current = ready([]);
+    const { rerender } = await render(wrap(<GameboxForm />));
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'João');
+    await fireEvent.changeText(screen.getByLabelText('Porta'), '5');
+    await fireEvent.press(screen.getByRole('button', { name: 'Ler código da GameBox' }));
+    expect(mockRouter.push).toHaveBeenCalledWith('/gamebox/ler?from=nova');
+    mockParams.current = { id: 'nova', numero: '266571276572' };
+    await rerender(wrap(<GameboxForm />));
+    expect(screen.getByLabelText('Número da GameBox').props.value).toBe('266571276572');
+    expect(screen.getByLabelText('Nome').props.value).toBe('João');
+    expect(screen.getByLabelText('Porta').props.value).toBe('5');
+    await fireEvent.press(save());
+    expect(saveGamebox).toHaveBeenCalledTimes(1);
+    expect(mockRouter.replace).toHaveBeenCalledTimes(1);
+    expect(mockRouter.replace).toHaveBeenCalledWith('/gamebox');
+    expect(mockRouter.push).toHaveBeenCalledTimes(1);
+  });
+
+  it('editar: o número lido substitui o guardado e mantém o resto do que se escreveu', async () => {
+    mockParams.current = { id: 'g1' };
+    mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' })]);
+    const { rerender } = await render(wrap(<GameboxForm />));
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Pai');
+    mockParams.current = { id: 'g1', numero: '999999' };
+    await rerender(wrap(<GameboxForm />));
+    expect(screen.getByLabelText('Número da GameBox').props.value).toBe('999999');
+    expect(screen.getByLabelText('Nome').props.value).toBe('Pai');
+    expect(screen.getByLabelText('Sector').props.value).toBe('A27');
+  });
+
+  it('um numero inválido no parâmetro não apaga o número escrito', async () => {
+    mockParams.current = { id: 'nova' };
+    mockBoxes.current = ready([]);
+    const { rerender } = await render(wrap(<GameboxForm />));
+    await fireEvent.changeText(screen.getByLabelText('Número da GameBox'), '123456');
+    mockParams.current = { id: 'nova', numero: 'abc' };
+    await rerender(wrap(<GameboxForm />));
+    expect(screen.getByLabelText('Número da GameBox').props.value).toBe('123456');
+  });
+
   it('apagar pede confirmação e só apaga depois de confirmar', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     mockParams.current = { id: 'g1' };

@@ -1,9 +1,9 @@
 // Task 24: leitor da GameBox (/gamebox/ler). Câmara e router mockados; a leitura dispara-se pela prop capturada.
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Linking } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) };
+const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), dismissTo: jest.fn(), canGoBack: jest.fn(() => true) };
 const mockParams: { current: Record<string, string> } = { current: {} };
 jest.mock('expo-router', () => ({
   useRouter: () => mockRouter,
@@ -11,7 +11,7 @@ jest.mock('expo-router', () => ({
 }));
 
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import GameboxLer, { LER_TEXT } from '../../app/(app)/gamebox/ler';
+import GameboxLer, { LER_TEXT, UNKNOWN_CLEAR_MS } from '../../app/(app)/gamebox/ler';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 const ui = () => (
@@ -27,6 +27,7 @@ const lastProps = (): ScanProps => cameraMock.mock.calls[cameraMock.mock.calls.l
 beforeEach(() => {
   jest.clearAllMocks();
   mockParams.current = {};
+  permMock.mockReturnValue([{ granted: true }, jest.fn(), jest.fn()]);
 });
 
 describe('/gamebox/ler', () => {
@@ -74,12 +75,65 @@ describe('/gamebox/ler', () => {
     expect(mockRouter.replace).toHaveBeenCalledWith('/gamebox/nova?numero=266571276572');
   });
 
-  it('Confirmar devolve ao formulário de onde veio', async () => {
+  it('Confirmar volta à mesma instância do formulário de onde veio (dismissTo), sem novo formulário', async () => {
     mockParams.current = { from: 'abc123' };
     await render(ui());
     await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));
     await fireEvent.press(screen.getByRole('button', { name: LER_TEXT.confirm }));
-    expect(mockRouter.replace).toHaveBeenCalledWith('/gamebox/abc123?numero=266571276572');
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith({ pathname: '/gamebox/[id]', params: { id: 'abc123', numero: '266571276572' } });
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+    expect(mockRouter.push).not.toHaveBeenCalled();
+  });
+
+  it('Confirmar com from=nova volta ao formulário novo', async () => {
+    mockParams.current = { from: 'nova' };
+    await render(ui());
+    await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));
+    await fireEvent.press(screen.getByRole('button', { name: LER_TEXT.confirm }));
+    expect(mockRouter.dismissTo).toHaveBeenCalledWith({ pathname: '/gamebox/[id]', params: { id: 'nova', numero: '266571276572' } });
+  });
+
+  it.each(['../definicoes', 'abc?x=1', 'a/b', ''])('from inválido (%p) cai em /gamebox/nova', async (bad) => {
+    mockParams.current = { from: bad };
+    await render(ui());
+    await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));
+    await fireEvent.press(screen.getByRole('button', { name: LER_TEXT.confirm }));
+    expect(mockRouter.dismissTo).not.toHaveBeenCalled();
+    expect(mockRouter.replace).toHaveBeenCalledWith('/gamebox/nova?numero=266571276572');
+  });
+
+  it.each([
+    ['12345', false],
+    ['123456', true],
+    ['12345678901234567890', true],
+    ['123456789012345678901', false],
+  ])('limites: %p aceite = %p', async (data, ok) => {
+    await render(ui());
+    await act(async () => lastProps().onBarcodeScanned!({ data, type: 'code128' }));
+    if (ok) {
+      expect(screen.getByText(`${LER_TEXT.read} ${data}`)).toBeTruthy();
+    } else {
+      expect(screen.getByText(LER_TEXT.unknown)).toBeTruthy();
+      expect(lastProps().onBarcodeScanned).toEqual(expect.any(Function));
+    }
+  });
+
+  it('"Código não reconhecido." desaparece passado um pouco, ou na leitura válida seguinte', async () => {
+    jest.useFakeTimers();
+    try {
+      await render(ui());
+      await act(async () => lastProps().onBarcodeScanned!({ data: 'abc', type: 'qr' }));
+      expect(screen.getByText(LER_TEXT.unknown)).toBeTruthy();
+      await act(async () => jest.advanceTimersByTime(UNKNOWN_CLEAR_MS));
+      expect(screen.queryByText(LER_TEXT.unknown)).toBeNull();
+      expect(screen.getByText(LER_TEXT.hint)).toBeTruthy();
+      await act(async () => lastProps().onBarcodeScanned!({ data: 'abc', type: 'qr' }));
+      expect(screen.getByText(LER_TEXT.unknown)).toBeTruthy();
+      await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));
+      expect(screen.queryByText(LER_TEXT.unknown)).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('Inserir manualmente com origem: volta ao formulário', async () => {
@@ -97,7 +151,7 @@ describe('/gamebox/ler', () => {
 
   it('permissão negada: explica, abre as definições e mantém a entrada manual', async () => {
     const request = jest.fn(() => Promise.resolve({ granted: false }));
-    permMock.mockReturnValue([{ granted: false, canAskAgain: false }, request]);
+    permMock.mockReturnValue([{ granted: false, canAskAgain: false }, request, jest.fn()]);
     const settings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
     try {
       await render(ui());
@@ -109,18 +163,37 @@ describe('/gamebox/ler', () => {
       expect(screen.getByRole('button', { name: LER_TEXT.manual })).toBeTruthy();
     } finally {
       settings.mockRestore();
-      permMock.mockReturnValue([{ granted: true }, jest.fn()]);
     }
   });
 
-  it('permissão por pedir: pede uma vez', async () => {
-    const request = jest.fn(() => Promise.resolve({ granted: false }));
-    permMock.mockReturnValue([{ granted: false, canAskAgain: true }, request]);
+  it('primeiro pedido: pede uma vez e não mostra "sem acesso" enquanto o diálogo está aberto', async () => {
+    let resolve: (v: { granted: boolean }) => void = () => {};
+    const request = jest.fn(() => new Promise<{ granted: boolean }>((r) => (resolve = r)));
+    permMock.mockReturnValue([{ granted: false, canAskAgain: true }, request, jest.fn()]);
+    await render(ui());
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(LER_TEXT.denied)).toBeNull();
+    expect(screen.getByTestId('gamebox-ler-loading')).toBeTruthy();
+    await act(async () => resolve({ granted: false }));
+    expect(screen.getByText(LER_TEXT.denied)).toBeTruthy();
+    expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('ao voltar à app (definições) volta a ler a permissão', async () => {
+    const getPermission = jest.fn(() => Promise.resolve({ granted: true }));
+    permMock.mockReturnValue([{ granted: false, canAskAgain: false }, jest.fn(), getPermission]);
+    const listeners: ((s: string) => void)[] = [];
+    const spy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_t, l) => {
+      listeners.push(l as (s: string) => void);
+      return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
+    });
     try {
       await render(ui());
-      expect(request).toHaveBeenCalledTimes(1);
+      expect(getPermission).not.toHaveBeenCalled();
+      await act(async () => listeners.forEach((l) => l('active')));
+      expect(getPermission).toHaveBeenCalledTimes(1);
     } finally {
-      permMock.mockReturnValue([{ granted: true }, jest.fn()]);
+      spy.mockRestore();
     }
   });
 });

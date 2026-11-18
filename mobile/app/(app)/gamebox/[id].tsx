@@ -5,7 +5,8 @@
 // descarregados dos nós. O botão "GUARDAR" de 327:15134 não se usa: os nós mais recentes guardam no ✓.
 // SEM FIGMA: mensagens de erro e de rede, estados de carregamento e "já não existe".
 // Task 23: /gamebox/nova cria, /gamebox/{id} edita. Lê `?numero=` (vindo do leitor, Task 24) para preencher o número;
-// abre o leitor com `?from={id|nova}`. Apagar pede confirmação. Sem rede: mensagem clara e o formulário fica.
+// abre o leitor com `?from={id|nova}`. Task 24 (F12 revisto): o leitor volta a esta mesma instância com `dismissTo` e um
+// `numero` novo; só o número muda, o resto do que se escreveu fica. Apagar pede confirmação. Sem rede: mensagem clara e o formulário fica.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -75,6 +76,7 @@ function GameboxFormView({
   initial,
   existing,
   newOrder,
+  scanned,
 }: {
   uid: string;
   routeId: string;
@@ -82,9 +84,15 @@ function GameboxFormView({
   initial: Form;
   existing: { id: string; order: number } | null;
   newOrder: number;
+  scanned: string | undefined;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(initial);
+  // Número lido pelo leitor depois de o formulário já existir: substitui só o número.
+  useEffect(() => {
+    const n = scanned ? normalizeGameboxNumber(scanned) : null;
+    if (n) setForm((f) => (f.number === n ? f : { ...f, number: n }));
+  }, [scanned]);
   const [venue, setVenue] = useState<Venue>('stadium');
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -313,6 +321,7 @@ export default function GameboxEditar() {
         initial={initial.form}
         existing={initial.existing}
         newOrder={initial.newOrder}
+        scanned={scanned}
       />
     );
   }

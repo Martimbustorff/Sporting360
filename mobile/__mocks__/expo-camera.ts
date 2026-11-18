@@ -6,4 +6,5 @@ export const CameraView = jest.fn((props: Record<string, unknown>) =>
   React.createElement(View, { testID: 'camera-view', ...props }),
 );
 export const requestPermission = jest.fn(() => Promise.resolve({ granted: true }));
-export const useCameraPermissions = jest.fn(() => [{ granted: true }, requestPermission]);
+export const getPermission = jest.fn(() => Promise.resolve({ granted: true }));
+export const useCameraPermissions = jest.fn(() => [{ granted: true }, requestPermission, getPermission]);

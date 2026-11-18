@@ -11,6 +11,14 @@ export type GameboxInput = { number: string; name: string; stadium: Seat; pavili
 export type GameboxView = GameboxInput & { id: string; order: number };
 
 export const EMPTY_SEAT: Seat = { port: '', sector: '', line: '', seat: '' };
+
+/** Recintos fixos dos lugares da V2 (`gameboxPort...` estádio, `pavilion*` pavilhão); os nomes vêm do Figma 450:5419. */
+export const VENUE_NAMES = { stadium: 'José Alvalade', pavilion: 'João Rocha' } as const;
+
+/** Id de rota do formulário: `nova` ou um id de documento do Firestore (ids automáticos: 20 letras e algarismos). */
+export function isGameboxRouteId(v: string | undefined | null): v is string {
+  return typeof v === 'string' && (v === 'nova' || /^[A-Za-z0-9]{1,64}$/.test(v));
+}
 export const GAMEBOX_NUMBER_MIN = 6;
 export const GAMEBOX_NUMBER_MAX = 20;
 
