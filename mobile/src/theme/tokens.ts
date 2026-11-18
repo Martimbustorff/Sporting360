@@ -275,6 +275,7 @@ export const layout = {
   authNoteWidth: 267, // terms note under "Criar conta"
   // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
   shareCardWidth: 347,
+  shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
   shareQr: 72,
   shareQrQuietZone: 4,
   termsTop: 16, // header bottom to text (564:7169)

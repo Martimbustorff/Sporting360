@@ -162,7 +162,9 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
             alignItems: 'stretch',
           }}
         >
-          <View style={{ alignItems: 'center' }}>
+          {/* A área do cartão vai até `shareCardInset` da borda do ecrã (o padding da folha é maior); o cartão
+              escala-se sozinho para caber nela (ShareCard.shareCardScale). */}
+          <View style={{ alignItems: 'center', marginHorizontal: layout.shareCardInset - layout.lockModalPad }}>
             <ShareCard ref={card} match={match} home={home} away={away} />
           </View>
           {error ? <FormMessage text={error} /> : null}

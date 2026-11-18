@@ -1,4 +1,4 @@
-import { formatKickoffDate, formatTime } from '@/lib/ptDate';
+import { formatDayMonth, formatKickoffDate, formatTime } from '@/lib/ptDate';
 
 describe('ptDate', () => {
   it('formats the hour in Europe/Lisbon (summer, UTC+1)', () => {
@@ -18,5 +18,11 @@ describe('ptDate', () => {
   it('other week: short date with fixed month table', () => {
     expect(formatKickoffDate(new Date('2026-09-14T19:30:00Z'), new Date('2026-09-09T10:00:00Z'))).toBe('14 Set');
     expect(formatKickoffDate(new Date('2026-11-05T19:30:00Z'), new Date('2026-11-17T10:00:00Z'))).toBe('5 Nov');
+  });
+  // Task 18 (carry da revisão da Task 17): data absoluta para o cartão partilhado, nunca relativa à semana.
+  it('formatDayMonth: dia e mês por extenso, em minúsculas, no fuso de Lisboa', () => {
+    expect(formatDayMonth(new Date('2027-04-16T19:15:00Z'))).toBe('16 abril');
+    expect(formatDayMonth(new Date('2026-09-14T23:30:00Z'))).toBe('15 setembro');
+    expect(formatDayMonth(new Date('2026-03-01T00:30:00Z'))).toBe('1 março');
   });
 });

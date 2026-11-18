@@ -1,6 +1,10 @@
 // Datas pt-PT com tabela fixa (ruling R8): os motores Intl (Node, Hermes) divergem nos meses curtos.
 // Intl só é usado para hora/minuto e dia civil no fuso Europe/Lisbon.
 export const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'] as const;
+export const MONTHS_LONG = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+] as const;
 export const WEEKDAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'] as const;
 
 const TZ = 'Europe/Lisbon';
@@ -39,4 +43,10 @@ export function formatKickoffDate(d: Date, now: Date = new Date()): string {
   const sameWeek = n - weekIndex(n) === nowN - weekIndex(nowN);
   if (sameWeek) return `${WEEKDAYS[new Date(n * 86_400_000).getUTCDay()]}, ${p.day}`;
   return `${p.day} ${MONTHS_SHORT[p.month - 1]}`;
+}
+
+/** "16 abril": data absoluta (cartão partilhado, que dura mais do que a semana do jogo). */
+export function formatDayMonth(d: Date): string {
+  const p = lisbonParts(d);
+  return `${p.day} ${MONTHS_LONG[p.month - 1]}`;
 }
