@@ -1,5 +1,6 @@
 // Task 14: ecrã mínimo para ligar a Apple à conta com sessão aberta. As Definições (Plano 4, Task 26) trazem cá o
-// utilizador: a ligação faz-se só aqui, com o botão oficial da Apple (HIG). Depois de ligada, o botão desaparece.
+// utilizador: a ligação faz-se só aqui, com o botão oficial da Apple (HIG). Depois de ligada, o botão desaparece e a
+// sessão relê os providers (refreshProviders, Task 27), para a linha das Definições desaparecer logo.
 // SEM FIGMA: não desenhado; compõe Header, botão oficial da Apple e FormMessage.
 import { useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -12,6 +13,7 @@ import {
 import { FormMessage } from '@/components/AuthForm';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
+import { useRefreshProviders } from '@/providers/SessionProvider';
 import { APPLE_IN_USE_MESSAGE, linkAppleToCurrentUser } from '@/services/social';
 import { layout, radius, spacing } from '@/theme/tokens';
 
@@ -21,6 +23,7 @@ type Message = { text: string; tone: 'error' | 'info' };
 
 export default function LigarApple() {
   const router = useRouter();
+  const refreshProviders = useRefreshProviders();
   const [message, setMessage] = useState<Message | null>(null);
   const [linked, setLinked] = useState(false);
   const busy = useRef(false);
@@ -34,8 +37,9 @@ export default function LigarApple() {
       if (r === 'linked') {
         setLinked(true);
         setMessage({ text: LIGAR_APPLE_TEXT.linked, tone: 'info' });
-      }
-      else if (r === 'inUse') setMessage({ text: APPLE_IN_USE_MESSAGE, tone: 'error' });
+        // A ligação já está feita: uma falha a reler (ex.: sem rede) não é erro; o próximo arranque corrige.
+        refreshProviders().catch(() => {});
+      } else if (r === 'inUse') setMessage({ text: APPLE_IN_USE_MESSAGE, tone: 'error' });
     } catch (e) {
       setMessage({ text: e instanceof Error ? e.message : String(e), tone: 'error' });
     } finally {

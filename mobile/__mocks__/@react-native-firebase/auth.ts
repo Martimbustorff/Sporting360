@@ -31,3 +31,5 @@ export const EmailAuthProvider = {
   credential: jest.fn((email: string, password: string) => ({ providerId: 'password', token: email, secret: password })),
 };
 export const updatePassword = jest.fn(() => Promise.resolve());
+// Task 27: refreshProviders() relê o utilizador depois de ligar a Apple.
+export const reload = jest.fn(() => Promise.resolve());

@@ -4,17 +4,24 @@ import { act, render } from '@testing-library/react-native';
 
 jest.mock('@react-native-firebase/auth');
 jest.mock('@react-native-firebase/crashlytics');
+const mockAuth: { currentUser: unknown } = { currentUser: null };
 jest.mock('@/services/firebase', () => ({
-  authInstance: jest.fn(() => ({ __mock: 'auth' })),
+  authInstance: jest.fn(() => mockAuth),
   setAnalyticsUser: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('@/services/profile', () => ({ ensureProfile: jest.fn(() => Promise.resolve()) }));
 
-import { onAuthStateChanged } from '@react-native-firebase/auth';
+import { onAuthStateChanged, reload } from '@react-native-firebase/auth';
 import { setUserId } from '@react-native-firebase/crashlytics';
 import { setAnalyticsUser } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
-import { SessionProvider, useSession, markProfileEnsured, resetProfileEnsured } from '@/providers/SessionProvider';
+import {
+  SessionProvider,
+  useRefreshProviders,
+  useSession,
+  markProfileEnsured,
+  resetProfileEnsured,
+} from '@/providers/SessionProvider';
 import { beginSignUp } from '@/lib/profileEnsured';
 import { consumeColdStart, resetColdStartForTests } from '@/lib/lockSession';
 
@@ -36,6 +43,7 @@ const user = (uid: string) => ({ uid, email: 'a@b.pt', providerData: [{ provider
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockAuth.currentUser = null;
   states.length = 0;
   resetProfileEnsured();
   (onAuthStateChanged as jest.Mock).mockImplementation((_a: unknown, cb: Listener) => {
@@ -108,5 +116,50 @@ describe('SessionProvider', () => {
     await render(tree());
     await act(async () => listener(user('u1')));
     expect(consumeColdStart()).toBe(true);
+  });
+
+  describe('refreshProviders (Task 27: depois de ligar a Apple)', () => {
+    let refresh: () => Promise<void>;
+    function ProvidersProbe() {
+      const s = useSession();
+      refresh = useRefreshProviders();
+      return <Text testID="p">{s.user?.providers.join(',') ?? '-'}</Text>;
+    }
+    const ptree = () => (
+      <SessionProvider>
+        <ProvidersProbe />
+      </SessionProvider>
+    );
+
+    it('faz reload() ao utilizador atual e atualiza os providers da sessão', async () => {
+      const r = await render(ptree());
+      await act(async () => listener(user('u1')));
+      expect(r.getByTestId('p')).toHaveTextContent('password');
+      const current = { ...user('u1'), providerData: [{ providerId: 'password' }] };
+      mockAuth.currentUser = current;
+      (reload as jest.Mock).mockImplementationOnce(async () => {
+        current.providerData = [{ providerId: 'password' }, { providerId: 'apple.com' }];
+      });
+      await act(async () => refresh());
+      expect(reload).toHaveBeenCalledWith(current);
+      expect(r.getByTestId('p')).toHaveTextContent('password,apple.com');
+    });
+
+    it('sem utilizador atual não faz nada', async () => {
+      await render(ptree());
+      await act(async () => listener(null));
+      await act(async () => refresh());
+      expect(reload).not.toHaveBeenCalled();
+    });
+
+    it('fora do provider é um no-op', async () => {
+      let fallback: (() => Promise<void>) | undefined;
+      function Bare() {
+        fallback = useRefreshProviders();
+        return null;
+      }
+      await render(<Bare />);
+      await expect(fallback!()).resolves.toBeUndefined();
+    });
   });
 });

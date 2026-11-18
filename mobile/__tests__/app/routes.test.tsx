@@ -4,6 +4,7 @@ jest.unmock('expo-router');
 
 jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } }),
+  useRefreshProviders: () => () => Promise.resolve(),
 }));
 jest.mock('@/providers/BiometricGate', () => ({
   BiometricGate: ({ children }: { children: unknown }) => children,

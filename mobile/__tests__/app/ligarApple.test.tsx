@@ -19,6 +19,9 @@ jest.mock('@/services/social', () => ({
   linkAppleToCurrentUser: jest.fn(),
 }));
 
+const mockRefresh = jest.fn(() => Promise.resolve());
+jest.mock('@/providers/SessionProvider', () => ({ useRefreshProviders: () => mockRefresh }));
+
 import { linkAppleToCurrentUser } from '@/services/social';
 import LigarApple from '../../app/(app)/ligar-apple';
 
@@ -48,6 +51,17 @@ describe('Ligar Apple', () => {
     await fireEvent.press(screen.getByTestId('apple-link'));
     expect(screen.getByText('Conta Apple ligada.')).toBeTruthy();
     expect(screen.queryByTestId('apple-link')).toBeNull();
+    // Task 27: a sessão relê os providers, para a linha das Definições desaparecer logo.
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('sucesso mesmo que reler os providers falhe (a ligação já foi feita)', async () => {
+    (linkAppleToCurrentUser as jest.Mock).mockResolvedValueOnce('linked');
+    mockRefresh.mockRejectedValueOnce(new Error('offline'));
+    await render(wrap(<LigarApple />));
+    await fireEvent.press(screen.getByTestId('apple-link'));
+    expect(screen.getByText('Conta Apple ligada.')).toBeTruthy();
+    expect(screen.queryByText('offline')).toBeNull();
   });
 
   it('Apple já usada noutra conta: APPLE_IN_USE_MESSAGE e o botão fica', async () => {
@@ -56,6 +70,7 @@ describe('Ligar Apple', () => {
     await fireEvent.press(screen.getByTestId('apple-link'));
     expect(screen.getByText('Esta conta Apple já está ligada a outra conta S360.')).toBeTruthy();
     expect(screen.getByTestId('apple-link')).toBeTruthy();
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 
   it('cancelar não mostra mensagem', async () => {

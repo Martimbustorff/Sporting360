@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged } from '@react-native-firebase/auth';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, reload } from '@react-native-firebase/auth';
 import { getCrashlytics, setUserId as setCrashlyticsUserId } from '@react-native-firebase/crashlytics';
 import { markFreshSession } from '@/lib/lockSession';
 import { claimProfileEnsure, clearProfileEnsured } from '@/lib/profileEnsured';
@@ -21,7 +21,17 @@ export function useSession(): Session {
   return useContext(SessionContext);
 }
 
+// Ligar a Apple (/ligar-apple) não dispara onAuthStateChanged: sem isto as Definições continuavam a mostrar a linha.
+const RefreshProvidersContext = createContext<() => Promise<void>>(async () => {});
+
+/** Volta a ler do servidor os métodos de entrada ligados à conta atual (user.reload()) e atualiza a sessão. */
+export function useRefreshProviders(): () => Promise<void> {
+  return useContext(RefreshProvidersContext);
+}
+
 type AuthUser = { uid: string; email: string | null; providerData?: { providerId?: string }[] };
+
+const providerIds = (u: AuthUser) => (u.providerData ?? []).map((p) => p.providerId ?? '').filter(Boolean);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session>(LOADING);
@@ -43,7 +53,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
               user: {
                 uid: u.uid,
                 email: u.email ?? null,
-                providers: (u.providerData ?? []).map((p) => p.providerId ?? '').filter(Boolean),
+                providers: providerIds(u),
               },
             },
       );
@@ -58,6 +68,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const refreshProviders = useCallback(async () => {
+    const current = authInstance().currentUser;
+    if (!current) return;
+    await reload(current);
+    const u: AuthUser = authInstance().currentUser ?? current;
+    const providers = providerIds(u);
+    setSession((prev) =>
+      prev.status === 'signedIn' && prev.user.uid === u.uid ? { status: 'signedIn', user: { ...prev.user, providers } } : prev,
+    );
+  }, []);
+
   const value = useMemo(() => session, [session]);
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return (
+    <RefreshProvidersContext.Provider value={refreshProviders}>
+      <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+    </RefreshProvidersContext.Provider>
+  );
 }
