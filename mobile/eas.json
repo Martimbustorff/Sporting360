@@ -28,5 +28,14 @@
       "autoIncrement": true,
       "node": "22.13.0"
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleTeamId": "5U6HWPNTZ3",
+        "bundleIdentifier": "com.scp360",
+        "language": "pt-PT"
+      }
+    }
   }
 }
