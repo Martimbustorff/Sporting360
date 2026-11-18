@@ -173,6 +173,8 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
 
 ### Task 6: Domínio do link de partilha numa só configuração
 
+> Decisão do Martim (18/11): o Hosting usa o site `s360-prognostico-download` (`https://s360-prognostico-download.web.app`). Tudo o que hoje aponta para `scp360-37a74.web.app` passa para este host: link de partilha, QR, `associatedDomains`, `intentFilters`, testes, e também `functions/src/config/brand.ts` (`SPORTING_CREST_URL`) e o `User-Agent` em `functions/src/sources/free/common.ts`. O `firebase.json` passa a indicar `"site": "s360-prognostico-download"` no bloco `hosting`.
+
 **Files:**
 - Create: `mobile/share.config.json`, `mobile/app.config.ts`
 - Modify: `mobile/app.json` (sai `ios.associatedDomains` e `android.intentFilters`), `mobile/src/lib/shareLink.ts`, `mobile/app/(app)/j.tsx` (comentário)
@@ -181,7 +183,7 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
 
 **Interfaces:**
 - Produces:
-  - `share.config.json` = `{ "host": "scp360-37a74.web.app", "extraHosts": [] }`. `host` é o domínio principal (cartão, QR, mensagem). `extraHosts` são domínios que também abrem a app (ex.: o `web.app` quando o principal for um domínio próprio).
+  - `share.config.json` = `{ "host": "s360-prognostico-download.web.app", "extraHosts": [] }` (decisão do Martim, 18/11: site Hosting criado com esse nome; o site `scp360-37a74` não existe). `host` é o domínio principal (cartão, QR, mensagem). `extraHosts` são domínios que também abrem a app (ex.: o `web.app` quando o principal for um domínio próprio).
   - `app.config.ts`: `export default ({ config }: ConfigContext): ExpoConfig` que parte do `app.json` e acrescenta `ios.associatedDomains = allHosts.map(h => 'applinks:' + h)` e um `intentFilter` `VIEW`, `autoVerify: true`, `BROWSABLE`/`DEFAULT`, com um `data` `{ scheme: 'https', host, pathPrefix: '/j' }` por host; `allHosts = [host, ...extraHosts]` sem repetidos.
   - `shareLink.ts`: `SHARE_HOST = 'https://' + share.host`; `SHARE_SHORT_TEXT = share.host + '/j'`; `shareLink` igual.
   - Mudar de domínio = editar `share.config.json` (e, se o domínio antigo já foi partilhado, pô-lo em `extraHosts`) e fazer um build nativo novo. O Hosting não muda: AASA e `assetlinks.json` não dependem do domínio, e um domínio próprio ligado ao mesmo site serve os mesmos ficheiros.
