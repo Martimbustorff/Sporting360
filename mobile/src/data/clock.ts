@@ -7,9 +7,10 @@ export const BLOCK_MS = 600_000;
 const floorTo = (ms: number, step: number) => new Date(Math.floor(ms / step) * step);
 
 /**
- * Current time floored to `stepMs`. Re-renders at each step boundary (one timeout to the next boundary,
- * then every step) and when the app comes back to the foreground. Timers and the AppState
- * subscription are cleared on unmount.
+ * Current time floored to `stepMs`. Re-renders at each step boundary and when the app comes back
+ * to the foreground. The timeout reschedules itself from the real clock after every fire, so a
+ * timer that fires early (native timers are not exact) aims at the boundary it missed instead of
+ * waiting a whole step. The timer and the AppState subscription are cleared on unmount.
  */
 export function useNow(stepMs: number = BLOCK_MS): Date {
   const [now, setNow] = useState(() => floorTo(Date.now(), stepMs));
@@ -21,18 +22,21 @@ export function useNow(stepMs: number = BLOCK_MS): Date {
         const next = floorTo(Date.now(), stepMs);
         return next.getTime() === prev.getTime() ? prev : next;
       });
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    // Always the time left to the next boundary, between 1 and stepMs.
+    const schedule = () => {
+      timer = setTimeout(() => {
+        tick();
+        schedule();
+      }, stepMs - (Date.now() % stepMs));
+    };
     tick();
-    let interval: ReturnType<typeof setInterval> | null = null;
-    const first = setTimeout(() => {
-      tick();
-      interval = setInterval(tick, stepMs);
-    }, stepMs - (Date.now() % stepMs));
+    schedule();
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') tick();
     });
     return () => {
-      clearTimeout(first);
-      if (interval) clearInterval(interval);
+      if (timer) clearTimeout(timer);
       sub.remove();
     };
   }, [stepMs]);

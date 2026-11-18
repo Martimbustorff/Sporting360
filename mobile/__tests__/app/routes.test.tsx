@@ -15,7 +15,12 @@ jest.mock('@/data/hooks', () => ({
 jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
 // Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.
 jest.mock('@/components/AnalyticsConsentSheet', () => ({ AnalyticsConsentSheet: () => null }));
-jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'ready', data: null }) }));
+jest.mock('@/data/sports', () => ({
+  useNextFootballMatch: () => ({ status: 'ready', data: null }),
+  // Task 7: a Agenda lê as duas listas da modalidade escolhida.
+  useUpcomingMatches: () => ({ status: 'ready', data: [] }),
+  useResultMatches: () => ({ status: 'ready', data: [] }),
+}));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));
 jest.mock('@/services/biometrics', () => ({ setBiometricEnabled: jest.fn() }));

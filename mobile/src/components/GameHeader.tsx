@@ -39,9 +39,11 @@ export type GameHeaderVM = {
   score?: { home: number; away: number } | null;
 };
 
-export function TeamCrest({ team, testID }: { team: TeamVM; testID?: string }) {
+/** `size`: 'lg' no cabeçalho (75x87, Figma 500:28798), 'sm' nas linhas da Agenda (30x35, Figma 500:28825). */
+export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'sm' }) {
+  const box = size === 'lg' ? layout.crestSize : layout.crestSmall;
   const source = team.id === SPORTING_API_ID ? SPORTING_CREST : team.crestUrl ? { uri: team.crestUrl } : null;
-  if (!source) return <View testID={testID} style={layout.crestSize} />;
+  if (!source) return <View testID={testID} style={box} />;
   return (
     <Image
       testID={testID}
@@ -49,7 +51,7 @@ export function TeamCrest({ team, testID }: { team: TeamVM; testID?: string }) {
       contentFit="contain"
       accessibilityElementsHidden
       importantForAccessibility="no"
-      style={layout.crestSize}
+      style={box}
     />
   );
 }

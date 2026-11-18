@@ -53,6 +53,9 @@ export const type = {
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.white },
   badge: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
   badgeSmall: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white }, // Figma 500:28830 / 500:28917
+  // Linha de jogo da Agenda (Figma 500:28822): nome de equipa 500:28824; caixa de resultado 489:7158
+  rowTeam: { fontFamily: fonts.body, fontSize: 12, color: colors.white },
+  rowScore: { fontFamily: fonts.display, fontSize: 24, color: colors.bg },
   // Text field (Figma 564:6907 / 564:6938)
   fieldPlaceholder: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
   fieldLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
@@ -130,6 +133,11 @@ export const layout = {
   badgeSmallPadX: 6, // small competition badge (Figma 500:28830)
   badgeSmallPadY: 2,
   mutedOpacity: 0.7, // date line under the round badge
+  // Agenda match row (Figma 500:28822 / 489:7038: 102px row) and list separator (500:28839)
+  matchRowPadY: 12, // row top to the badge line
+  matchRowGap: 15, // badge line to the crests line
+  separator: 1, // 1px rgba(255,255,255,0.2) line between rows
+  skeletonRowHeight: 102, // SEM FIGMA: loading placeholder, the height of a match row
   // Event rows (Figma 655:31908 / 655:31916)
   eventRowGap: 16,
   eventRowMinHeight: 40,

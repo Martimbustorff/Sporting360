@@ -70,32 +70,49 @@ it("atualiza quando a app volta a 'active' (timers parados em segundo plano)", a
   expect(result.current.getTime()).toBe(at('2026-11-18T15:40:00Z'));
 });
 
-it('ao desmontar limpa os timers e a subscrição do AppState', async () => {
+// Task 7 (carry da revisão da Task 5): o passo volta a marcar-se a si próprio, por isso um disparo
+// adiantado (precisão dos temporizadores nativos) não adia a atualização um bloco inteiro.
+it('um disparo adiantado volta a marcar o que falta, não um bloco inteiro', async () => {
+  const { result } = await renderHook(() => useNow());
+  // setSystemTime desloca o relógio e os temporizadores juntos: o primeiro passa a disparar 1 ms antes da fronteira.
+  await act(async () => {
+    jest.setSystemTime(T0 - 1);
+  });
+  await act(async () => {
+    jest.advanceTimersByTime(7 * 60_000); // 12:09:59.999: ainda é o bloco das 12:00
+  });
+  expect(result.current.getTime()).toBe(at('2026-11-18T12:00:00Z'));
+  await act(async () => {
+    jest.advanceTimersByTime(1); // 12:10:00.000
+  });
+  expect(result.current.getTime()).toBe(at('2026-11-18T12:10:00Z'));
+});
+
+it('ao desmontar limpa o temporizador e a subscrição do AppState', async () => {
   const setT = jest.spyOn(global, 'setTimeout');
-  const setI = jest.spyOn(global, 'setInterval');
   const clearT = jest.spyOn(global, 'clearTimeout');
-  const clearI = jest.spyOn(global, 'clearInterval');
   const { unmount } = await renderHook(() => useNow());
   const first = setT.mock.results.find((r, i) => setT.mock.calls[i]?.[1] === 7 * 60_000)?.value;
   expect(first).toBeDefined();
   await act(async () => {
-    jest.advanceTimersByTime(7 * 60_000); // dispara o primeiro timeout e arranca o intervalo
+    jest.advanceTimersByTime(7 * 60_000); // dispara o primeiro e volta a marcar-se
   });
-  const interval = setI.mock.results.find((r, i) => setI.mock.calls[i]?.[1] === BLOCK_MS)?.value;
-  expect(interval).toBeDefined();
+  const second = setT.mock.results.find((r, i) => setT.mock.calls[i]?.[1] === BLOCK_MS)?.value;
+  expect(second).toBeDefined();
   await unmount();
   expect(remove).toHaveBeenCalledTimes(1);
-  expect(clearT).toHaveBeenCalledWith(first);
-  expect(clearI).toHaveBeenCalledWith(interval);
+  expect(clearT).toHaveBeenCalledWith(second);
 });
 
-it('desmontar antes da primeira fronteira limpa o timeout e não deixa intervalo', async () => {
-  const setI = jest.spyOn(global, 'setInterval');
+it('desmontar antes da primeira fronteira limpa o temporizador e não marca mais nenhum', async () => {
+  const setT = jest.spyOn(global, 'setTimeout');
+  const ours = () => setT.mock.calls.filter((c) => c[1] === 7 * 60_000 || c[1] === BLOCK_MS).length;
   const { unmount } = await renderHook(() => useNow());
+  expect(ours()).toBe(1);
   await unmount();
   await act(async () => {
     jest.advanceTimersByTime(2 * BLOCK_MS);
   });
-  expect(setI.mock.calls.some((c) => c[1] === BLOCK_MS)).toBe(false);
+  expect(ours()).toBe(1);
   expect(remove).toHaveBeenCalledTimes(1);
 });
