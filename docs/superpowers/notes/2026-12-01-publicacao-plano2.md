@@ -304,6 +304,13 @@ for c in games summaries stastistics lineups players standings videos news tweet
 done
 ```
 
+Notícias sem `content` (passo L6 do lançamento, só depois de `NEWS_LEGACY_CONTENT=false` publicado; sem `--apply` é só ensaio e não altera nada):
+
+```bash
+npx tsx scripts/strip-news-content.ts --project scp360-37a74
+npx tsx scripts/strip-news-content.ts --project scp360-37a74 --apply
+```
+
 ## 10. Preencher o modelo novo (PARAGEM (Martim): chave no ambiente)
 
 ```bash

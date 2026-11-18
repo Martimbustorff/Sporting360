@@ -2,7 +2,7 @@ import { deleteApp, getApps } from "firebase-admin/app";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import { checkFirestore, checkShadowIsolation, firestoreFailures, shadowFailures } from "../../scripts/check-predeploy";
 import { compareAll, hasProblems } from "../../scripts/compare-legacy";
-import { stripNewsContent } from "../../scripts/strip-news-content";
+import { parseArgs, stripNewsContent } from "../../scripts/strip-news-content";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 
 let db: Firestore;
@@ -135,5 +135,35 @@ describe("strip-news-content (só no emulador)", () => {
     for (let i = 0; i < 405; i++) await db.doc(`news/n${i}`).set(news(`n${i}`, true));
     expect(await stripNewsContent(db, { dryRun: false })).toEqual({ scanned: 405, stripped: 405 });
     expect((await db.collection("news").get()).docs.some((d) => "content" in d.data())).toBe(false);
+  });
+});
+
+describe("strip-news-content (argumentos da linha de comandos)", () => {
+  it("sem flag é um ensaio (apply=false)", () => {
+    expect(parseArgs(["--project", "p1"])).toEqual({ ok: true, project: "p1", apply: false });
+  });
+
+  it("--apply apaga a sério", () => {
+    expect(parseArgs(["--project", "p1", "--apply"])).toEqual({ ok: true, project: "p1", apply: true });
+  });
+
+  it("sem --project (ou sem valor) falha", () => {
+    expect(parseArgs([]).ok).toBe(false);
+    expect(parseArgs(["--apply"]).ok).toBe(false);
+    expect(parseArgs(["--project"]).ok).toBe(false);
+    expect(parseArgs(["--project", "--apply"]).ok).toBe(false);
+  });
+
+  it("--dry-run foi removido e é rejeitado", () => {
+    const r = parseArgs(["--project", "p1", "--dry-run"]);
+    expect(r).toMatchObject({ ok: false });
+    expect(r.ok === false && r.message).toMatch(/removido/);
+  });
+
+  it("CLI sem --project sai com código != 0 sem tocar em nada", async () => {
+    const { spawnSync } = await import("node:child_process");
+    const r = spawnSync("npx", ["tsx", "scripts/strip-news-content.ts"], { cwd: __dirname + "/../..", encoding: "utf8" });
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/--project/);
   });
 });

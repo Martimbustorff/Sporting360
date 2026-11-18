@@ -159,7 +159,7 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
 - Produces:
   - `NewsDeps` ganha `writeLegacyContent: boolean`. Com `true` grava `content` como hoje (a V2 mostra-o como corpo em `NewsDetail`, e `news` é a mesma coleção para as duas apps). Com `false` grava só `id, title, image, summary, source, url, created_at, sport, publishedAt`.
   - `NEWS_LEGACY_CONTENT = defineBoolean("NEWS_LEGACY_CONTENT", { default: true })` em `secrets.ts`; `.env.scp360-37a74` passa a ter `NEWS_LEGACY_CONTENT=true` (sem a linha o CLI pergunta no deploy, ver guia secção 0). Passa a `false` no passo L6 da Task 12.
-  - `stripNewsContent(db: Firestore, o: { dryRun: boolean }): Promise<{ scanned: number; stripped: number }>` (lotes de 400 com `FieldValue.delete()`); CLI `npx tsx scripts/strip-news-content.ts --project <id> [--dry-run]`.
+  - `stripNewsContent(db: Firestore, o: { dryRun: boolean }): Promise<{ scanned: number; stripped: number }>` (lotes de 400 com `FieldValue.delete()`); CLI `npx tsx scripts/strip-news-content.ts --project <id> [--apply]` (sem `--apply` é só ensaio).
   - App: `openArticle` sai; o toque chama `openLink(url)` (só https, falha reportada). A app nova não tem tweets nem outros posts (verificado: `grep -rn tweet mobile/src mobile/app` vazio), por isso não há mais nada a reencaminhar.
 
 - [ ] **Step 1: Escrever os testes.**
@@ -247,7 +247,7 @@ store/listing.pt-PT.json, store/privacidade-lojas.md, store/capturas.md
 
 **Interfaces:**
 - Consumes: `ENGINE_COLLECTIONS`.
-- Produces: `resetEngine(db: Firestore, o: { dryRun: boolean; now: Date }): Promise<{ counts: Record<string, number>; deleted: boolean }>`. Recusa (lança `RESET_BLOCKED_LIVE_GAME`) se houver um `matches` de futebol do Sporting (`sport == 'football'`, `sportingSide != null`) com `kickoff` entre `now - 6 h` e `now + 6 h` ou com `status` `LIVE`/`HT`. Sem `dryRun` faz `db.recursiveDelete(db.collection(c))` para cada coleção de `ENGINE_COLLECTIONS` (inclui `leaderboards/*/entries`). Não toca em `users`, `publicProfiles`, `matches`, `config` nem nas coleções da V2. CLI: `npx tsx scripts/reset-engine.ts --project <id> [--dry-run]`; sem `--dry-run` pede que se escreva o id do projeto para confirmar.
+- Produces: `resetEngine(db: Firestore, o: { dryRun: boolean; now: Date }): Promise<{ counts: Record<string, number>; deleted: boolean }>`. Recusa (lança `RESET_BLOCKED_LIVE_GAME`) se houver um `matches` de futebol do Sporting (`sport == 'football'`, `sportingSide != null`) com `kickoff` entre `now - 6 h` e `now + 6 h` ou com `status` `LIVE`/`HT`. Sem `dryRun` faz `db.recursiveDelete(db.collection(c))` para cada coleção de `ENGINE_COLLECTIONS` (inclui `leaderboards/*/entries`). Não toca em `users`, `publicProfiles`, `matches`, `config` nem nas coleções da V2. CLI: `npx tsx scripts/reset-engine.ts --project <id> [--apply]` (sem `--apply` é só ensaio); sem `--dry-run` pede que se escreva o id do projeto para confirmar.
 
 - [ ] **Step 1: Escrever os testes (emulador).** Semear 1 documento em cada coleção do motor (e 1 `entries`), mais `users/a`, `publicProfiles/a`, `predictions/x`: `dryRun` devolve as contagens e não apaga; sem `dryRun` as 6 coleções ficam vazias e as outras intactas; um jogo do Sporting `LIVE` faz falhar com `RESET_BLOCKED_LIVE_GAME`. Unitário: `ENGINE_COLLECTIONS` contém `mvpTallies`.
 - [ ] **Step 2:** `npm run test:emulator -- predeployTools && npm test -- checkPredeploy`. Esperado: FAIL.
@@ -357,7 +357,7 @@ Ordem obrigatória. Cada **PARAGEM** espera o OK explícito do Martim. "Guia §N
   firebase deploy --only firestore:rules --project scp360-37a74
   ```
   Verificar com a app da loja: entrar, GameBox, prognóstico, voto, ranking, perfil, Definições, Conta; nos logs nenhum `PERMISSION_DENIED` da app nova. Voltar atrás: consola, Regras, versão anterior.
-- [ ] **L6 (PARAGEM): notícias sem `content`.** `.env.scp360-37a74` com `NEWS_LEGACY_CONTENT=false`, commit, `firebase deploy --only functions:v2027:newsSync --project scp360-37a74`; depois `npx tsx scripts/strip-news-content.ts --project scp360-37a74 --dry-run` e sem `--dry-run`. Verificar: uma notícia nova e uma antiga sem `content`.
+- [ ] **L6 (PARAGEM): notícias sem `content`.** `.env.scp360-37a74` com `NEWS_LEGACY_CONTENT=false`, commit, `firebase deploy --only functions:v2027:newsSync --project scp360-37a74`; depois `npx tsx scripts/strip-news-content.ts --project scp360-37a74` (ensaio) e depois com `--apply`. Verificar: uma notícia nova e uma antiga sem `content`.
 - [ ] **L7 (PARAGEM, D+7, opcional):** App Check: consola → App Check → métricas do Firestore; se os pedidos verificados da app nova estiverem perto de 100%, "Aplicar". Apagar a `legacyPredictionSettlement` quando já não houver palpites da V2 por liquidar: `firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74`. Apagar a cópia `pre-corte-*` do balde no prazo dos Termos.
 
 ---
