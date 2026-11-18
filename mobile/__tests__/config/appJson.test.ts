@@ -16,6 +16,8 @@ describe('app.json', () => {
     expect(entry).toBeTruthy();
     expect(entry[1].cameraPermission).toBe('A S360 usa a câmara para ler o código da tua GameBox.');
     expect(entry[1].recordAudioAndroid).toBe(false);
+    // The app never records audio: no microphone permission on iOS either.
+    expect(entry[1].microphonePermission).toBe(false);
   });
 
   it('registers the orientation and web-browser plugins and keeps kotlin 2.4.0', () => {

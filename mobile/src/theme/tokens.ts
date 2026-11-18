@@ -143,6 +143,12 @@ export const layout = {
   sheetChevron: 24,
   sheetVelocity: 500, // px/s: a flick is enough to toggle
   sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
+  // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
+  emptyIcon: 122,
+  emptyGap: 16,
+  // SEM FIGMA: offline banner and the "info" empty icon
+  offlineBannerPadY: 8,
+  emptyInfoIconOpacity: 0.3, // matches the 30% of the calendar SVG
   // SEM FIGMA: news card and ranking row (built from tokens)
   newsImage: { width: 96, height: 72 },
   newsGap: 12,

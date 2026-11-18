@@ -1,0 +1,250 @@
+// Typed read hooks for games, competitions and the Sporting team (Plan 2 read contract,
+// docs/superpowers/plans/2026-11-18-plan-4-ecras.md, "Contrato de leitura").
+import { useMemo } from 'react';
+import type { z } from 'zod';
+import { collection, limit, orderBy, query, where, type Query } from '@react-native-firebase/firestore';
+import { db } from '@/services/firebase';
+import { useCollection, useDocument, type Loadable } from './hooks';
+import {
+  BracketDocSchema,
+  CoachDocSchema,
+  CompetitionSchema,
+  EventsDocSchema,
+  FixturesDocSchema,
+  InjuriesDocSchema,
+  LineupsDocSchema,
+  MatchSchema,
+  PlayersDocSchema,
+  PlayerStatsDocSchema,
+  PrematchDocSchema,
+  RoundsDocSchema,
+  SidelinedDocSchema,
+  SquadDocSchema,
+  StandingsDocSchema,
+  StatisticsDocSchema,
+  TeamInjuriesDocSchema,
+  TeamStatsDocSchema,
+  TopListDocSchema,
+  TransfersDocSchema,
+  TrophiesDocSchema,
+  VenueSchema,
+  VideoSchema,
+  type Bracket,
+  type CoachDoc,
+  type Competition,
+  type DetailDocs,
+  type FixturesDoc,
+  type GameStatus,
+  type Match,
+  type PlayerStatsDoc,
+  type RoundsDoc,
+  type SidelinedDoc,
+  type Sport,
+  type SquadDoc,
+  type StandingsDoc,
+  type TeamInjuriesDoc,
+  type TeamStatsDoc,
+  type TopListDoc,
+  type TransfersDoc,
+  type TrophiesDoc,
+  type Venue,
+  type Video,
+} from './schemas';
+
+const HOUR = 3_600_000;
+/** List queries are rebuilt at most once per 10-minute block of `now` (no resubscribe per render). */
+const BLOCK_MS = 600_000;
+const LIST_LIMIT = 40;
+const NEXT_LIMIT = 3;
+/** A game started up to 4 h ago still counts as "upcoming" (it may be live). */
+const UPCOMING_GRACE_MS = 4 * HOUR;
+const DONE: ReadonlySet<GameStatus> = new Set<GameStatus>(['FT', 'AET', 'PEN', 'CANC']);
+const TEAM = 'teams/football_228';
+
+/** Same Loadable with `data` transformed; keeps `fromCache`. Memoized on the input object. */
+function useMapped<A, B>(l: Loadable<A>, f: (a: A) => B): Loadable<B> {
+  // `f` must be a module-level function: only the Loadable identity is a dependency.
+  return useMemo(() => (l.status === 'ready' ? { status: 'ready', data: f(l.data), fromCache: l.fromCache } : l), [l]);
+}
+
+/** Start of the 10-minute block that holds `now`, as a stable number for memo deps. */
+const blockOf = (now: Date): number => Math.floor(now.getTime() / BLOCK_MS) * BLOCK_MS;
+
+// --- Matches ---------------------------------------------------------------------------------
+
+export function useMatch(id: string | null): Loadable<Match> {
+  return useDocument(id ? `matches/${id}` : null, MatchSchema);
+}
+
+export type DetailKind = keyof DetailDocs;
+
+const DETAIL_SCHEMAS: { [K in DetailKind]: z.ZodType<DetailDocs[K]> } = {
+  events: EventsDocSchema,
+  statistics: StatisticsDocSchema,
+  lineups: LineupsDocSchema,
+  players: PlayersDocSchema,
+  prematch: PrematchDocSchema,
+  injuries: InjuriesDocSchema,
+};
+
+export function useMatchDetail<K extends DetailKind>(id: string | null, kind: K): Loadable<DetailDocs[K]> {
+  return useDocument(id ? `matches/${id}/details/${kind}` : null, DETAIL_SCHEMAS[kind]);
+}
+
+const byPublishedAt = (vs: Video[]): Video[] =>
+  [...vs].sort((a, b) => {
+    if (a.publishedAt === null) return b.publishedAt === null ? 0 : 1;
+    if (b.publishedAt === null) return -1;
+    return a.publishedAt.getTime() - b.publishedAt.getTime();
+  });
+
+/** Videos of a game, oldest first; videos without `publishedAt` go last. */
+export function useMatchVideos(id: string | null): Loadable<Video[]> {
+  const q = useMemo(() => (id ? collection(db(), `matches/${id}/videos`) : null), [id]);
+  return useMapped(useCollection(q, VideoSchema), byPublishedAt);
+}
+
+function upcomingQuery(sport: Sport, block: number, n: number): Query {
+  return query(
+    collection(db(), 'matches'),
+    where('sport', '==', sport),
+    where('kickoff', '>=', new Date(block - UPCOMING_GRACE_MS)),
+    orderBy('kickoff', 'asc'),
+    limit(n),
+  );
+}
+
+/** Games of `sport` from 4 h before `now` on, soonest first (40). `now` counts per 10-minute block. */
+export function useUpcomingMatches(sport: Sport | null, now: Date): Loadable<Match[]> {
+  const block = blockOf(now);
+  const q = useMemo(() => (sport ? upcomingQuery(sport, block, LIST_LIMIT) : null), [sport, block]);
+  return useCollection(q, MatchSchema);
+}
+
+/** Games of `sport` that kicked off before `now`, latest first (40). `now` counts per 10-minute block. */
+export function useResultMatches(sport: Sport | null, now: Date): Loadable<Match[]> {
+  const block = blockOf(now);
+  const q = useMemo(
+    () =>
+      sport
+        ? query(
+            collection(db(), 'matches'),
+            where('sport', '==', sport),
+            where('kickoff', '<', new Date(block)),
+            orderBy('kickoff', 'desc'),
+            limit(LIST_LIMIT),
+          )
+        : null,
+    [sport, block],
+  );
+  return useCollection(q, MatchSchema);
+}
+
+const firstOpen = (ms: Match[]): Match | null => ms.find((m) => !DONE.has(m.status)) ?? null;
+
+/** Next football game not yet finished or cancelled (a live one counts); null when none is scheduled. */
+export function useNextFootballMatch(now: Date): Loadable<Match | null> {
+  const block = blockOf(now);
+  const q = useMemo(() => upcomingQuery('football', block, NEXT_LIMIT), [block]);
+  return useMapped(useCollection(q, MatchSchema), firstOpen);
+}
+
+// --- Competitions ----------------------------------------------------------------------------
+
+export function useCompetition(key: string | null): Loadable<Competition> {
+  return useDocument(key ? `competitions/${key}` : null, CompetitionSchema);
+}
+
+export type CompetitionDataDocs = {
+  standings: StandingsDoc;
+  fixtures: FixturesDoc;
+  rounds: RoundsDoc;
+  bracket: Bracket;
+  topscorers: TopListDoc;
+  topassists: TopListDoc;
+  topyellowcards: TopListDoc;
+  topredcards: TopListDoc;
+};
+export type CompetitionDataKind = keyof CompetitionDataDocs;
+
+const COMPETITION_SCHEMAS: { [K in CompetitionDataKind]: z.ZodType<CompetitionDataDocs[K]> } = {
+  standings: StandingsDocSchema,
+  fixtures: FixturesDocSchema,
+  rounds: RoundsDocSchema,
+  bracket: BracketDocSchema,
+  topscorers: TopListDocSchema,
+  topassists: TopListDocSchema,
+  topyellowcards: TopListDocSchema,
+  topredcards: TopListDocSchema,
+};
+
+export function useCompetitionData<K extends CompetitionDataKind>(
+  key: string | null,
+  kind: K,
+): Loadable<CompetitionDataDocs[K]> {
+  return useDocument(key ? `competitions/${key}/data/${kind}` : null, COMPETITION_SCHEMAS[kind]);
+}
+
+type SeasonCompetition = { key: string; leagueId: string; name: string };
+
+const distinctCompetitions = (ms: Match[]): SeasonCompetition[] => {
+  const seen = new Map<string, SeasonCompetition>();
+  for (const m of ms) {
+    const c = m.competition;
+    if (c.type === 'friendly' || seen.has(c.key)) continue;
+    seen.set(c.key, { key: c.key, leagueId: c.id, name: c.name });
+  }
+  return [...seen.values()];
+};
+
+/** Competitions of the football `season` (start year), from its games, without friendlies. */
+export function useSeasonFootballCompetitions(season: string): Loadable<SeasonCompetition[]> {
+  const q = useMemo(
+    () =>
+      query(
+        collection(db(), 'matches'),
+        where('sport', '==', 'football'),
+        where('competition.season', '==', season),
+      ),
+    [season],
+  );
+  return useMapped(useCollection(q, MatchSchema), distinctCompetitions);
+}
+
+// --- Team ------------------------------------------------------------------------------------
+
+export type TeamDataDocs = {
+  squad: SquadDoc;
+  coach: CoachDoc;
+  injuries: TeamInjuriesDoc;
+  transfers: TransfersDoc;
+  trophies: TrophiesDoc;
+  sidelined: SidelinedDoc;
+};
+export type TeamDataKind = keyof TeamDataDocs;
+
+const TEAM_SCHEMAS: { [K in TeamDataKind]: z.ZodType<TeamDataDocs[K]> } = {
+  squad: SquadDocSchema,
+  coach: CoachDocSchema,
+  injuries: TeamInjuriesDocSchema,
+  transfers: TransfersDocSchema,
+  trophies: TrophiesDocSchema,
+  sidelined: SidelinedDocSchema,
+};
+
+export function useTeamData<K extends TeamDataKind>(kind: K): Loadable<TeamDataDocs[K]> {
+  return useDocument(`${TEAM}/data/${kind}`, TEAM_SCHEMAS[kind]);
+}
+
+/** `season` is the football season (`footballSeason`, August start), e.g. "2026". */
+export function usePlayerStats(season: string): Loadable<PlayerStatsDoc> {
+  return useDocument(`${TEAM}/data/playerStats_${season}`, PlayerStatsDocSchema);
+}
+
+export function useTeamStats(leagueId: string, season: string): Loadable<TeamStatsDoc> {
+  return useDocument(`${TEAM}/data/teamStats_${leagueId}_${season}`, TeamStatsDocSchema);
+}
+
+export function useVenue(id: string | null): Loadable<Venue> {
+  return useDocument(id ? `venues/${id}` : null, VenueSchema);
+}

@@ -76,6 +76,7 @@
         "expo-camera",
         {
           "cameraPermission": "A S360 usa a câmara para ler o código da tua GameBox.",
+          "microphonePermission": false,
           "recordAudioAndroid": false
         }
       ],

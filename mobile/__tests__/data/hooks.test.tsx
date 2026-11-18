@@ -26,20 +26,24 @@ const snapMock = onSnapshot as unknown as jest.Mock;
 type Next = (snap: unknown) => void;
 type Err = (e: Error) => void;
 
-function lastSubscription(): { next: Next; error: Err; unsubscribe: jest.Mock } {
+// onSnapshot(ref, options, next, error): the callbacks are the function arguments, in order.
+function lastSubscription(): { next: Next; error: Err; unsubscribe: jest.Mock; args: unknown[] } {
   const i = snapMock.mock.calls.length - 1;
-  const call = snapMock.mock.calls[i] as [unknown, Next, Err];
+  const args = snapMock.mock.calls[i] as unknown[];
+  const fns = args.filter((a): a is (...x: never[]) => void => typeof a === 'function');
   const unsubscribe = snapMock.mock.results[i]?.value as jest.Mock;
-  return { next: call[1], error: call[2], unsubscribe };
+  return { next: fns[0] as Next, error: fns[1] as Err, unsubscribe, args };
 }
 
-const docSnap = (data: unknown | null) => ({
+const docSnap = (data: unknown | null, fromCache = false) => ({
   exists: () => data !== null,
   data: () => data,
   id: 'x',
+  metadata: { fromCache, hasPendingWrites: false },
 });
-const querySnap = (docs: { id: string; data: unknown }[]) => ({
+const querySnap = (docs: { id: string; data: unknown }[], fromCache = false) => ({
   docs: docs.map((d) => ({ id: d.id, data: () => d.data, exists: () => true })),
+  metadata: { fromCache, hasPendingWrites: false },
 });
 
 const ItemSchema = z.object({ name: z.string() });
@@ -67,7 +71,7 @@ describe('useDocument', () => {
     expect(out().status).toBe('loading');
     expect(doc).toHaveBeenCalledWith(expect.anything(), 'things/a');
     await act(async () => lastSubscription().next(docSnap({ name: 'Leão' })));
-    expect(out()).toEqual({ status: 'ready', data: { name: 'Leão' } });
+    expect(out()).toEqual({ status: 'ready', data: { name: 'Leão' }, fromCache: false });
   });
 
   it('reports a missing document', async () => {
@@ -112,6 +116,34 @@ describe('useDocument', () => {
     expect(first.unsubscribe).toHaveBeenCalledTimes(1);
     expect(snapMock).toHaveBeenCalledTimes(2);
     expect(out().status).toBe('loading');
+  });
+});
+
+describe('cache state (Review Focus 3)', () => {
+  it('subscribes with includeMetadataChanges', async () => {
+    await render(<DocProbe path="things/a" />);
+    expect(lastSubscription().args[1]).toEqual({ includeMetadataChanges: true });
+  });
+
+  it('document: fromCache follows the snapshot metadata', async () => {
+    await render(<DocProbe path="things/a" />);
+    await act(async () => lastSubscription().next(docSnap({ name: 'A' }, true)));
+    expect(out()).toEqual({ status: 'ready', data: { name: 'A' }, fromCache: true });
+    await act(async () => lastSubscription().next(docSnap({ name: 'A' }, false)));
+    expect(out()).toEqual({ status: 'ready', data: { name: 'A' }, fromCache: false });
+  });
+
+  it('collection: fromCache follows the snapshot metadata', async () => {
+    const q = { __k: 'cache' } as unknown as Parameters<typeof useCollection>[0];
+    function C() {
+      return <Probe value={useCollection(q, ItemSchema)} />;
+    }
+    await render(<C />);
+    expect(lastSubscription().args[1]).toEqual({ includeMetadataChanges: true });
+    await act(async () => lastSubscription().next(querySnap([{ id: 'a', data: { name: 'A' } }], true)));
+    expect(out()).toEqual({ status: 'ready', data: [{ id: 'a', name: 'A' }], fromCache: true });
+    await act(async () => lastSubscription().next(querySnap([{ id: 'a', data: { name: 'A' } }], false)));
+    expect(out()).toEqual({ status: 'ready', data: [{ id: 'a', name: 'A' }], fromCache: false });
   });
 });
 
@@ -198,6 +230,7 @@ describe('useCollection', () => {
         { id: 'a', name: 'A' },
         { id: 'c', name: 'C' },
       ],
+      fromCache: false,
     });
     expect(recordError).toHaveBeenCalledTimes(1);
   });
@@ -205,7 +238,7 @@ describe('useCollection', () => {
   it('an empty collection is ready with []', async () => {
     await render(<ColProbe query={q} />);
     await act(async () => lastSubscription().next(querySnap([])));
-    expect(out()).toEqual({ status: 'ready', data: [] });
+    expect(out()).toEqual({ status: 'ready', data: [], fromCache: false });
   });
 
   it('never subscribes when the query is null', async () => {

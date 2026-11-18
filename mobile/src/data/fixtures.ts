@@ -1,6 +1,11 @@
 // Firestore-shaped seed data for the emulator (scripts/seed-emulator.mjs) and for tests.
-// Plain data only: no imports, no TS-only runtime syntax, so Node can load it directly.
+// Plain data, no TS-only runtime syntax, so Node can load it directly. The only import is
+// ../lib/periods.ts, written with its extension because Node needs the explicit path
+// (tsconfig has allowImportingTsExtensions); that file has no imports of its own.
 // View-model fixtures for the gallery (Task 8) live in galleryFixtures.ts, not here.
+import { periodKeys } from '../lib/periods.ts';
+
+export { periodKeys };
 
 export const PROJECT_ID = 'scp360-37a74';
 export const SPORTING_TEAM_ID = '228';
@@ -15,36 +20,6 @@ export const TEST_USER = {
 export interface SeedDoc {
   path: string;
   data: Record<string, unknown>;
-}
-
-const pad = (n: number): string => String(n).padStart(2, '0');
-
-/** Same keys as functions/src/time/periods.ts (Europe/Lisbon, season starts in July). */
-export function periodKeys(at: Date): { week: string; month: string; season: string } {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Lisbon',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(at);
-  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
-  const year = get('year');
-  const month = get('month');
-  const day = get('day');
-
-  // ISO week: shift to the Thursday of this week, then count weeks from Jan 1.
-  const d = new Date(Date.UTC(year, month - 1, day));
-  const weekday = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
-  d.setUTCDate(d.getUTCDate() + 4 - weekday);
-  const isoYear = d.getUTCFullYear();
-  const week = Math.ceil(((d.getTime() - Date.UTC(isoYear, 0, 1)) / 86_400_000 + 1) / 7);
-
-  const startYear = month >= 7 ? year : year - 1;
-  return {
-    week: `${isoYear}-W${pad(week)}`,
-    month: `${year}-${pad(month)}`,
-    season: `${startYear}-${startYear + 1}`,
-  };
 }
 
 const DAY = 86_400_000;

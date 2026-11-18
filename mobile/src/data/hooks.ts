@@ -14,11 +14,15 @@ import {
 
 export type Loadable<T> =
   | { status: 'loading' }
-  | { status: 'ready'; data: T }
+  /** `fromCache`: the data came from the local cache (offline or not yet confirmed by the server). */
+  | { status: 'ready'; data: T; fromCache?: boolean }
   | { status: 'missing' }
   | { status: 'error'; error: Error };
 
 const LOADING: Loadable<never> = { status: 'loading' };
+
+/** Metadata changes are needed so a cached snapshot is followed by the server-confirmed one. */
+const SNAPSHOT_OPTIONS = { includeMetadataChanges: true } as const;
 
 /** Invalid documents are sent to Crashlytics once per path per app run. */
 const reportedPaths = new Set<string>();
@@ -56,6 +60,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
     if (path === null) return undefined;
     return onSnapshot(
       doc(db(), path),
+      SNAPSHOT_OPTIONS,
       (snap) => {
         if (!snap.exists()) {
           setState({ status: 'missing' });
@@ -63,7 +68,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
         }
         const parsed = schemaRef.current.safeParse(snap.data());
         if (parsed.success) {
-          setState({ status: 'ready', data: parsed.data });
+          setState({ status: 'ready', data: parsed.data, fromCache: snap.metadata?.fromCache === true });
         } else {
           const error = new Error(`Documento inválido em ${path}: ${parsed.error.message}`);
           if (!reportedPaths.has(path)) {
@@ -103,6 +108,7 @@ export function useCollection<T>(
     const setState = (value: Loadable<Array<T & { id: string }>>) => setHeld({ key: query, value });
     return onSnapshot(
       query,
+      SNAPSHOT_OPTIONS,
       (snap) => {
         const items: Array<T & { id: string }> = [];
         let dropped = 0;
@@ -122,7 +128,7 @@ export function useCollection<T>(
         if (dropped > 0 && badPaths.length > 0) {
           report(new Error(`${dropped} documento(s) inválido(s) descartado(s): ${badPaths.join(', ')}`), 'collection');
         }
-        setState({ status: 'ready', data: items });
+        setState({ status: 'ready', data: items, fromCache: snap.metadata?.fromCache === true });
       },
       (e) => {
         report(e, 'collection listener failed');
