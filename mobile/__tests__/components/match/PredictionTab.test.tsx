@@ -226,6 +226,15 @@ describe('Relógio do prognóstico', () => {
     expect(t.cleared).toContain(t.created[0]);
   });
 
+  it('kickoff a 30 dias: o intervalo continua ativo (o setTimeout longo não dispara logo)', async () => {
+    const t = clockIntervals();
+    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 30 * 24 * 3600_000) })} />, { wrapper });
+    expect(t.created).toHaveLength(1);
+    await tick(5 * 60_000);
+    expect(t.cleared).not.toContain(t.created[0]);
+    expect(screen.getByLabelText('Submeter prognóstico')).toBeTruthy();
+  });
+
   it('jogo que já começou: nem chega a criar o intervalo', async () => {
     const t = clockIntervals();
     await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() - 60_000) })} />, { wrapper });

@@ -42,15 +42,26 @@ export function reportDataError(e: unknown, context: string): void {
   }
 }
 
-/** Reports dropped (invalid) documents of a query, each path once per app run. */
+/** Caminho sem os ids dos documentos (levam o uid): só os segmentos de coleção, por exemplo `pointEvents`. */
+export function collectionOf(path: string): string {
+  return path
+    .split('/')
+    .filter((_, i) => i % 2 === 0)
+    .join('/');
+}
+
+/**
+ * Reports dropped (invalid) documents of a query, each path once per app run. O Crashlytics só recebe os nomes das
+ * coleções e a contagem: nunca ids de documentos (levam o uid).
+ */
 export function reportInvalidDocs(paths: string[], context: string): void {
   const fresh = paths.filter((p) => !reportedPaths.has(p));
   if (fresh.length === 0) return;
   for (const p of fresh) reportedPaths.add(p);
-  reportDataError(
-    new Error(`${paths.length} documento(s) inválido(s) descartado(s): ${fresh.join(', ')}`),
-    context,
-  );
+  const counts = new Map<string, number>();
+  for (const p of fresh) counts.set(collectionOf(p), (counts.get(collectionOf(p)) ?? 0) + 1);
+  const where = [...counts].map(([c, n]) => `${c} x${n}`).join(', ');
+  reportDataError(new Error(`${fresh.length} documento(s) inválido(s) descartado(s): ${where}`), context);
 }
 
 /**

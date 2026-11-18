@@ -55,6 +55,7 @@ export const PREDICTION_ERRORS: Record<GameActionCode, string> = {
 /** A contagem atualiza a cada 30 s. */
 const TICK_MS = 30_000;
 const MAX_GOALS = 20;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 const pointsText = (n: number) => `+${n} ${n === 1 ? 'ponto' : 'pontos'}`;
 
@@ -75,13 +76,18 @@ function usePredictionClock(kickoff: Date): Date {
     const left = kickoffMs - Date.now();
     if (left <= 0) return;
     const interval = setInterval(() => setNow(new Date()), TICK_MS);
-    const atKickoff = setTimeout(() => {
-      clearInterval(interval);
-      setNow(new Date());
-    }, left);
+    // setTimeout limita o atraso a 2^31-1 ms (~24,8 dias); acima disso dispararia logo. O intervalo de 30 s
+    // continua a correr e, ao chegar o kickoff, o formulário fecha na mesma.
+    const atKickoff =
+      left > MAX_TIMEOUT_MS
+        ? null
+        : setTimeout(() => {
+            clearInterval(interval);
+            setNow(new Date());
+          }, left);
     return () => {
       clearInterval(interval);
-      clearTimeout(atKickoff);
+      if (atKickoff) clearTimeout(atKickoff);
     };
   }, [kickoffMs]);
   return now;

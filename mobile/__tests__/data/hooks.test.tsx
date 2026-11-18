@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { collection, doc, onSnapshot } from '@react-native-firebase/firestore';
 import { recordError } from '@react-native-firebase/crashlytics';
 import {
+  reportInvalidDocs,
   useAppConfig,
   useCollection,
   useDocument,
@@ -294,5 +295,20 @@ describe('typed wrappers', () => {
   it('with no uid only config/app is subscribed', async () => {
     await render(<Wrappers uid={null} />);
     expect(snapMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('reportInvalidDocs (privacidade)', () => {
+  it('a mensagem para o Crashlytics leva só coleções e contagem, nunca o uid dos ids', () => {
+    reportInvalidDocs(
+      ['matchPredictions/1001_UID-ABC123', 'pointEvents/UID-ABC123_1001_prediction_exact', 'users/UID-ABC123/pointEvents/x1'],
+      'collection',
+    );
+    expect(recordError).toHaveBeenCalledTimes(1);
+    const msg = ((recordError as jest.Mock).mock.calls[0][1] as Error).message;
+    expect(msg).not.toContain('UID-ABC123');
+    expect(msg).toContain('matchPredictions x1');
+    expect(msg).toContain('pointEvents x1');
+    expect(msg).toContain('users/pointEvents x1');
   });
 });

@@ -161,7 +161,8 @@ describe('useSettlements', () => {
     await act(async () => lastNext()(snap));
     expect(out()).toEqual(['s-ok']);
     expect(recordError).toHaveBeenCalledTimes(1);
-    expect(String((recordError as jest.Mock).mock.calls[0]?.[1])).toContain('settlements/s-bad');
+    expect(String((recordError as jest.Mock).mock.calls[0]?.[1])).toContain('settlements x1');
+    expect(String((recordError as jest.Mock).mock.calls[0]?.[1])).not.toContain('s-bad');
     await act(async () => lastNext()(snap));
     expect(recordError).toHaveBeenCalledTimes(1);
   });
