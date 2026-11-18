@@ -2,6 +2,7 @@
 // singular (decisão do Martim). Texto escrito a partir dos pontos decididos na proposta de termos e do plano 4;
 // substitui o texto da V2 (QR de bilhetes, torniquetes, "voluntários" e "encriptadas de ponta a ponta" saíram).
 // Região dos dados: spec §7 (Firestore eur3), ruling F15 do preflight. pt-PT, sem travessões.
+// Depende do Plano 5: regras de users, gamebox, matchPredictions e mvpVotes só do dono antes de publicar.
 export { STADIUM_TODOS } from '@/content/clubLinks';
 
 export type TermsSection = { title: string; body: string };
@@ -22,7 +23,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '2. QUEM DISPONIBILIZA A APP',
-    body: 'A App é desenvolvida e disponibilizada por Martim Bustorff, pessoa singular, a título pessoal e sem fins comerciais. Contacto: martimbustorff@gmail.com.',
+    body: 'A App é desenvolvida e disponibilizada por Martim Bustorff, pessoa singular, a título pessoal e sem fins comerciais. Contacto: app.scp360@gmail.com.',
   },
   {
     title: '3. APP NÃO OFICIAL',
@@ -66,11 +67,11 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '1. RESPONSÁVEL PELO TRATAMENTO',
-    body: 'O responsável pelo tratamento dos dados pessoais é Martim Bustorff, pessoa singular. Para qualquer questão sobre privacidade ou para exercer os seus direitos, o utilizador pode escrever para martimbustorff@gmail.com.',
+    body: 'O responsável pelo tratamento dos dados pessoais é Martim Bustorff, pessoa singular. Para qualquer questão sobre privacidade ou para exercer os seus direitos, o utilizador pode escrever para app.scp360@gmail.com.',
   },
   {
     title: '2. DADOS QUE RECOLHEMOS',
-    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado cifrado, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o identificador da conta, o modelo do telemóvel e a versão da App. Utilização da App (Firebase Analytics): só com consentimento.',
+    body: 'Conta: nome, email e método de entrada (email e password, Google ou Apple). A password é gerida pelo Firebase Authentication e a App nunca a vê. Nome público: o nome mostrado no ranking. Perfil, se o utilizador quiser preencher: número de sócio, sócio desde, lugar anual, modalidade e jogador favoritos. GameBox: nome, número e lugares; o número é guardado de forma ofuscada, para não ficar em texto simples na base de dados. Jogo: prognósticos, votos no MVP e pontos. Preferências: notificações e escolha sobre a análise de utilização. Dados técnicos: relatórios de erros (Crashlytics), com o identificador da conta, o modelo do telemóvel e a versão da App. Utilização da App (Firebase Analytics): só com consentimento.',
   },
   {
     title: '3. FINALIDADES E FUNDAMENTOS',
@@ -102,7 +103,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '10. OS SEUS DIREITOS',
-    body: 'Nos termos do RGPD, o utilizador tem direito de acesso, retificação (pode editar o perfil na App), apagamento (com "Apagar conta"), limitação, portabilidade e oposição, e pode retirar o consentimento da análise de utilização nas Definições. Para exercer estes direitos, basta escrever para martimbustorff@gmail.com. Tem também o direito de apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD), em www.cnpd.pt.',
+    body: 'Nos termos do RGPD, o utilizador tem direito de acesso, retificação (pode editar o perfil na App), apagamento (com "Apagar conta"), limitação, portabilidade e oposição, e pode retirar o consentimento da análise de utilização nas Definições. Para exercer estes direitos, basta escrever para app.scp360@gmail.com. Tem também o direito de apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD), em www.cnpd.pt.',
   },
   {
     title: '11. ALTERAÇÕES A ESTA POLÍTICA',

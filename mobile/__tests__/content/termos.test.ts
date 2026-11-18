@@ -22,7 +22,8 @@ describe('TERMS', () => {
   it('responsável é Martim Bustorff, pessoa singular, com o contacto decidido', () => {
     expect(all).toContain('Martim Bustorff');
     expect(all).toContain('pessoa singular');
-    expect(all).toContain('martimbustorff@gmail.com');
+    expect(all).toContain('app.scp360@gmail.com');
+    expect(all).not.toContain('martimbustorff@gmail.com');
   });
 
   it('diz que a app é não oficial e sem ligação ao Sporting Clube de Portugal', () => {
@@ -54,12 +55,16 @@ describe('TERMS', () => {
     expect(all).not.toContain('região do Firestore]');
   });
 
-  it('saem as frases da V2 (QR, torniquetes, voluntários, ponta a ponta) e o contacto antigo', () => {
+  it('saem as frases da V2 (QR, torniquetes, voluntários, ponta a ponta)', () => {
     expect(all).not.toMatch(/ponta a ponta/i);
     expect(all).not.toMatch(/torniquete/i);
     expect(all).not.toMatch(/QR code/i);
     expect(all).not.toMatch(/voluntári/i);
-    expect(all).not.toContain('app.scp360@gmail.com');
+  });
+
+  it('GameBox guardada de forma ofuscada, nunca "cifrada" nem "encriptada"', () => {
+    expect(all).toContain('de forma ofuscada');
+    expect(all).not.toMatch(/cifrad|encriptad/i);
   });
 
   it('sem travessões', () => {
