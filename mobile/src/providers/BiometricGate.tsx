@@ -1,8 +1,10 @@
 // Figma: ecrã de bloqueio segue o frame 348:37997 (secção 310:9622, "PIN Code") SEM o teclado e os pontos do PIN:
 // logótipo 565:21545 (DIN 48, "S" verde) a 77px do topo, texto a 144px, leão "image 2" 348:37998 ao fundo.
 // Os botões ocupam o lugar do teclado e seguem o par de botões do Welcome (564:7259 / 564:7261).
-// Os anéis (Group 1743, 348:38000) ficam de fora: são 72 elipses mascaradas e não há asset equivalente no projeto
-// (o SVG do Welcome tem outra escala). A validar com o Martim.
+// Anéis (Group 1743): o SVG do Welcome (72 elipses iguais) a 659,006x659,029 (escala ~0,9295) na posição da Frame 39.
+// "Ellipse 7" (348:38001) usa o mesmo asset da máscara da Frame 39 (e0688.svg): é só máscara, não um fundo visível.
+// A máscara não é reproduzida (RN não tem máscara elíptica sem SVG); a validar com o Martim.
+// "Rectangle 954" (348:37999) é o verde do Figma a 50% por cima do leão.
 // SEM FIGMA: a folha "Ativar {label}?" (modal feito com tokens) e o estado "não foi possível desbloquear".
 import { Image } from 'expo-image';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
@@ -10,6 +12,7 @@ import { AppState, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { shouldLock } from '@/lib/biometricPolicy';
+import { consumeColdStart } from '@/lib/lockSession';
 import { useSession } from '@/providers/SessionProvider';
 import { signOut } from '@/services/auth';
 import {
@@ -26,18 +29,8 @@ import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const LION = require('../../assets/images/lock-lion.png');
-
-// "Arranque a frio" = primeira avaliação desde que o bundle JS arrancou. Vive no módulo (não no componente)
-// para sobreviver a remontagens do layout; é gasto na primeira avaliação.
-let coldStartPending = true;
-
-/** Chamar quando se observa signedOut: um login novo nesta sessão do bundle nunca conta como arranque a frio. */
-export function markFreshSession(): void {
-  coldStartPending = false;
-}
-export function resetBiometricGateForTests(): void {
-  coldStartPending = true;
-}
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const RINGS = require('../../assets/images/welcome-rings.svg');
 
 type Phase = 'checking' | 'locked' | 'open';
 
@@ -50,6 +43,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   const [leaving, setLeaving] = useState(false);
   const [label, setLabel] = useState<BiometricLabel>('biometria');
   const [askEnable, setAskEnable] = useState(false);
+  const [privacy, setPrivacy] = useState(false);
 
   const uidRef = useRef(uid);
   uidRef.current = uid;
@@ -59,8 +53,12 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   const inFlight = useRef(false);
   const pendingPrompt = useRef(false);
   const promptChecked = useRef(false);
+  // Cache em memória: permite bloquear de forma síncrona ao voltar do background (sem esperar pelo secure-store).
+  const enabledRef = useRef<boolean | null>(null);
+  const everOpenRef = useRef(false);
 
   const open = useCallback(() => {
+    everOpenRef.current = true;
     setPhase('open');
     setEverOpen(true);
     setFailed(false);
@@ -87,29 +85,44 @@ export function BiometricGate({ children }: { children: ReactNode }) {
     else setFailed(true);
   }, [open]);
 
-  const evaluate = useCallback(
-    async (coldStart: boolean) => {
-      const id = uidRef.current;
-      if (!id) return;
-      const enabled = await isBiometricEnabled(id);
-      const lock = shouldLock({ enabled, signedIn: true, coldStart, backgroundedAt: backgroundedAt.current, now: Date.now() });
-      backgroundedAt.current = null;
+  // Opção ligada e é preciso bloquear: confirma que a biometria existe e pede-a.
+  const lockOrOpen = useCallback(
+    async (id: string) => {
+      const status = await biometricStatus();
       if (!mounted.current) return;
-      if (!lock) {
-        if (coldStart) open();
+      if (status === 'error') {
+        // Falha nativa transitória: mantém a opção e deixa entrar sem pedir desta vez.
+        open();
         return;
       }
-      // Review Focus 3: ligada mas a biometria deixou de estar disponível (ex.: dedos removidos): desliga e deixa entrar.
-      if ((await biometricStatus()) !== 'available') {
+      if (status !== 'available') {
+        // Review Focus 3: ligada mas a biometria deixou de estar disponível: desliga e deixa entrar.
+        enabledRef.current = false;
         await setBiometricEnabled(id, false).catch(() => {});
         if (mounted.current) open();
         return;
       }
-      if (!mounted.current) return;
       setPhase('locked');
       void attempt();
     },
     [attempt, open],
+  );
+
+  const evaluateStart = useCallback(
+    async (coldStart: boolean) => {
+      const id = uidRef.current;
+      if (!id) return;
+      const enabled = await isBiometricEnabled(id);
+      enabledRef.current = enabled;
+      const lock = shouldLock({ enabled, signedIn: true, coldStart, backgroundedAt: null, now: Date.now() });
+      if (!mounted.current) return;
+      if (!lock) {
+        open();
+        return;
+      }
+      await lockOrOpen(id);
+    },
+    [lockOrOpen, open],
   );
 
   useEffect(() => {
@@ -127,22 +140,35 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!uid || evaluatedFor.current === uid) return;
     evaluatedFor.current = uid;
-    const cold = coldStartPending;
-    coldStartPending = false;
-    void evaluate(cold);
-  }, [uid, evaluate]);
+    void evaluateStart(consumeColdStart());
+  }, [uid, evaluateStart]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'background') {
-        backgroundedAt.current = Date.now();
-      } else if (s === 'active') {
-        if (pendingPrompt.current) void attempt();
-        else if (backgroundedAt.current !== null && evaluatedFor.current) void evaluate(false);
+      if (s === 'background' || s === 'inactive') {
+        if (s === 'background') backgroundedAt.current = Date.now();
+        // Cobertura de privacidade (snapshot do seletor de apps do iOS): só se a app já abriu e a opção está ligada.
+        if (everOpenRef.current && enabledRef.current) setPrivacy(true);
+        return;
+      }
+      if (s !== 'active') return;
+      setPrivacy(false);
+      if (pendingPrompt.current) {
+        void attempt();
+        return;
+      }
+      const bg = backgroundedAt.current;
+      const id = uidRef.current;
+      if (bg === null || !id || !evaluatedFor.current) return;
+      backgroundedAt.current = null;
+      // Síncrono, antes de qualquer await: o conteúdo nunca aparece depois de `active`.
+      if (shouldLock({ enabled: enabledRef.current === true, signedIn: true, coldStart: false, backgroundedAt: bg, now: Date.now() })) {
+        setPhase('locked');
+        void lockOrOpen(id);
       }
     });
     return () => sub.remove();
-  }, [attempt, evaluate]);
+  }, [attempt, lockOrOpen]);
 
   // Folha "Ativar {label}?": uma vez por uid, depois de a app abrir sem bloqueio.
   useEffect(() => {
@@ -156,11 +182,22 @@ export function BiometricGate({ children }: { children: ReactNode }) {
     })().catch(() => {});
   }, [phase, uid]);
 
+  // "Ativar" pede o Face ID já (dispara a permissão do iOS) e só liga a opção se passar.
   const answerPrompt = async (enable: boolean) => {
-    setAskEnable(false);
     if (!uid) return;
-    if (enable) await setBiometricEnabled(uid, true).catch(() => {});
     await setBiometricPromptAnswered(uid);
+    if (enable) {
+      inFlight.current = true;
+      try {
+        if (await unlock()) {
+          await setBiometricEnabled(uid, true).catch(() => {});
+          enabledRef.current = true;
+        }
+      } finally {
+        inFlight.current = false;
+      }
+    }
+    if (mounted.current) setAskEnable(false);
   };
 
   const otherAccount = async () => {
@@ -172,10 +209,11 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       if (mounted.current) setLeaving(false);
       return;
     }
+    enabledRef.current = false;
     if (id) await setBiometricEnabled(id, false).catch(() => {});
   };
 
-  const covered = phase !== 'open';
+  const covered = phase !== 'open' || privacy;
   return (
     <View style={styles.fill}>
       {everOpen ? (
@@ -187,16 +225,17 @@ export function BiometricGate({ children }: { children: ReactNode }) {
           {children}
         </View>
       ) : null}
-      {covered ? (
+      {phase === 'checking' ? <Blank testID="lock-checking" /> : null}
+      {phase === 'locked' ? (
         <LockScreen
           label={label}
-          ready={phase === 'locked'}
           failed={failed}
           busy={leaving}
           onUnlock={() => void attempt()}
           onOtherAccount={() => void otherAccount()}
         />
       ) : null}
+      {phase === 'open' && privacy ? <Blank testID="privacy-cover" /> : null}
       {askEnable && phase === 'open' ? (
         <EnablePrompt label={label} onEnable={() => void answerPrompt(true)} onLater={() => void answerPrompt(false)} />
       ) : null}
@@ -204,16 +243,19 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   );
 }
 
+// Vista neutra, da cor do splash e sem texto: arranque (a verificar) e cobertura de privacidade.
+function Blank({ testID }: { testID: string }) {
+  return <View testID={testID} accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]} />;
+}
+
 function LockScreen({
   label,
-  ready,
   failed,
   busy,
   onUnlock,
   onOtherAccount,
 }: {
   label: BiometricLabel;
-  ready: boolean;
   failed: boolean;
   busy: boolean;
   onUnlock: () => void;
@@ -223,10 +265,20 @@ function LockScreen({
   const paddingTop = Math.max(top, layout.statusBarHeight) + (layout.lockLogoTop - layout.statusBarHeight);
   const paddingBottom = Math.max(bottom, layout.homeIndicator) + layout.lockBottom;
   return (
-    <View testID="lock-screen" accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}>
+    <View testID="lock-screen" accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: colors.black }]}>
       <View pointerEvents="none" style={[styles.lion, layout.lockLion]}>
         <Image source={LION} accessible={false} contentFit="fill" style={[styles.lionImage, layout.lockLionImage]} />
       </View>
+      <View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: layout.lockTint, opacity: layout.lockTintOpacity }]}
+      />
+      <Image
+        testID="lock-rings"
+        source={RINGS}
+        accessible={false}
+        style={[styles.lionImage, layout.lockRings, { pointerEvents: 'none' }]}
+      />
       <View style={{ paddingTop, alignItems: 'center' }}>
         <Text style={type.lockLogo} accessibilityRole="header" accessibilityLabel="S360">
           <Text style={{ color: colors.primary }}>S</Text>360
@@ -238,14 +290,12 @@ function LockScreen({
           {failed ? 'Não foi possível desbloquear.' : 'A S360 está bloqueada.'}
         </Text>
       </View>
-      {ready ? (
-        <View
-          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.authX, paddingBottom, gap: layout.lockButtonsGap }}
-        >
-          <PrimaryButton label={failed ? 'Tentar outra vez' : `Desbloquear com ${label}`} onPress={onUnlock} disabled={busy} />
-          <PrimaryButton label="Entrar com outra conta" variant="secondary" onPress={onOtherAccount} disabled={busy} />
-        </View>
-      ) : null}
+      <View
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.authX, paddingBottom, gap: layout.lockButtonsGap }}
+      >
+        <PrimaryButton label={failed ? 'Tentar outra vez' : `Desbloquear com ${label}`} onPress={onUnlock} disabled={busy} />
+        <PrimaryButton label="Entrar com outra conta" variant="secondary" onPress={onOtherAccount} disabled={busy} />
+      </View>
     </View>
   );
 }

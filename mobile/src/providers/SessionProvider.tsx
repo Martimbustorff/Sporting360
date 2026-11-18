@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged } from '@react-native-firebase/auth';
 import { getCrashlytics, setUserId as setCrashlyticsUserId } from '@react-native-firebase/crashlytics';
+import { markFreshSession } from '@/lib/lockSession';
 import { claimProfileEnsure, clearProfileEnsured } from '@/lib/profileEnsured';
 import { authInstance, setAnalyticsUser } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
@@ -28,6 +29,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     return onAuthStateChanged(authInstance(), (u: AuthUser | null) => {
       if (!u) {
+        markFreshSession();
         clearProfileEnsured();
         setAnalyticsUser(null).catch(() => {});
         setSession({ status: 'signedOut', user: null });

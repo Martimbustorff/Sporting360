@@ -16,6 +16,7 @@ import { setAnalyticsUser } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
 import { SessionProvider, useSession, markProfileEnsured, resetProfileEnsured } from '@/providers/SessionProvider';
 import { beginSignUp } from '@/lib/profileEnsured';
+import { consumeColdStart, resetColdStartForTests } from '@/lib/lockSession';
 
 type Listener = (u: unknown) => void;
 let listener: Listener;
@@ -92,5 +93,20 @@ describe('SessionProvider', () => {
     const r = await render(tree());
     await act(async () => listener(user('u1')));
     expect(r.getByTestId('s')).toHaveTextContent('signedIn:u1');
+  });
+
+  it('signedOut observed at start: the next login is not a cold start (biometric gate must not lock)', async () => {
+    resetColdStartForTests();
+    await render(tree());
+    await act(async () => listener(null));
+    await act(async () => listener(user('u1')));
+    expect(consumeColdStart()).toBe(false);
+  });
+
+  it('inherited session (never signedOut) keeps the cold start for the gate', async () => {
+    resetColdStartForTests();
+    await render(tree());
+    await act(async () => listener(user('u1')));
+    expect(consumeColdStart()).toBe(true);
   });
 });

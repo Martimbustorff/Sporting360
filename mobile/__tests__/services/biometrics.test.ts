@@ -35,9 +35,9 @@ describe('biometricStatus', () => {
     la.isEnrolledAsync.mockResolvedValue(false);
     expect(await biometricStatus()).toBe('notEnrolled');
   });
-  it('native failure degrades to noHardware', async () => {
+  it('native failure is a transient error, not noHardware', async () => {
     la.hasHardwareAsync.mockRejectedValue(new Error('x'));
-    expect(await biometricStatus()).toBe('noHardware');
+    expect(await biometricStatus()).toBe('error');
   });
 });
 

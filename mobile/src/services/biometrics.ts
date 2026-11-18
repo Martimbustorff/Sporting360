@@ -2,7 +2,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export type BiometricStatus = 'available' | 'notEnrolled' | 'noHardware';
+// 'error' = leitura nativa falhou (transitório): nunca desliga a opção.
+export type BiometricStatus = 'available' | 'notEnrolled' | 'noHardware' | 'error';
 export type BiometricLabel = 'Face ID' | 'Touch ID' | 'impressão digital' | 'biometria';
 
 const enabledKey = (uid: string) => `s360.biometric.${uid}`;
@@ -14,7 +15,7 @@ export async function biometricStatus(): Promise<BiometricStatus> {
     if (!(await LocalAuthentication.isEnrolledAsync())) return 'notEnrolled';
     return 'available';
   } catch {
-    return 'noHardware';
+    return 'error';
   }
 }
 

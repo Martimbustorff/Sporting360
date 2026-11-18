@@ -165,6 +165,9 @@ export const layout = {
   lockHintWidth: 315,
   lockLion: { width: 669, height: 663, left: -40, top: 135 }, // "image 2" 348:37998 (clipped box)
   lockLionImage: { width: 899.6, height: 698.8, left: -271.5, top: -35.8 }, // crop inside the box: 134.46% x 105.4%, -40.59% / -5.4%
+  lockRings: { width: 659.006, height: 659.029, left: -5.94, top: -23.78 }, // Frame 39 (348:38002); same ring SVG as welcome at ~0.9295 scale
+  lockTint: '#003625', // "Rectangle 954" 348:37999, over the lion
+  lockTintOpacity: 0.5,
   lockButtonsGap: 20,
   lockBottom: 16,
   lockScrim: 'rgba(0, 0, 0, 0.6)', // SEM FIGMA: backdrop behind the enable-biometrics prompt

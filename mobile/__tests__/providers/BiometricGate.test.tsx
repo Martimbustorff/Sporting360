@@ -9,7 +9,8 @@ jest.mock('@/providers/SessionProvider', () => ({
   useSession: jest.fn(() => ({ status: 'signedIn', user: { uid: 'u1', email: 'a@b.pt', providers: ['password'] } })),
 }));
 
-import { BiometricGate, resetBiometricGateForTests } from '@/providers/BiometricGate';
+import { markFreshSession, resetColdStartForTests } from '@/lib/lockSession';
+import { BiometricGate } from '@/providers/BiometricGate';
 import { signOut } from '@/services/auth';
 import * as bio from '@/services/biometrics';
 
@@ -31,7 +32,7 @@ const setAppState = (s: string) => Object.defineProperty(AppState, 'currentState
 
 beforeEach(() => {
   jest.clearAllMocks();
-  resetBiometricGateForTests();
+  resetColdStartForTests();
   now = 1_000_000;
   jest.spyOn(Date, 'now').mockImplementation(() => now);
   setAppState('active');
@@ -195,5 +196,124 @@ describe('BiometricGate: folha "Ativar {label}?"', () => {
     await render(tree());
     await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
     expect(screen.queryByText(/^Ativar /)).toBeNull();
+  });
+});
+
+describe('BiometricGate: login novo (não é arranque a frio)', () => {
+  beforeEach(() => markFreshSession());
+
+  it('opção ligada: mostra os filhos e não pede unlock', async () => {
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
+    expect(m.unlock).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+  });
+
+  it('opção desligada: mostra os filhos', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
+    expect(m.unlock).not.toHaveBeenCalled();
+  });
+
+  it('a folha "Ativar" aparece depois de um login novo', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    m.hasBiometricPromptAnswered.mockResolvedValue(false);
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('Ativar Face ID?')).toBeTruthy());
+  });
+});
+
+describe('BiometricGate: estado de verificação', () => {
+  it('sem texto de bloqueio enquanto verifica (opção desligada não vê "bloqueada")', async () => {
+    m.isBiometricEnabled.mockImplementation(() => new Promise(() => {}));
+    await render(tree());
+    await flush();
+    expect(screen.getByTestId('lock-checking')).toBeTruthy();
+    expect(screen.queryByText('A S360 está bloqueada.')).toBeNull();
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+  });
+
+  it('o ecrã de bloqueio tem texto e anéis', async () => {
+    m.unlock.mockImplementation(() => new Promise(() => {}));
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('A S360 está bloqueada.')).toBeTruthy());
+    expect(screen.getByTestId('lock-rings')).toBeTruthy();
+  });
+});
+
+describe('BiometricGate: erro nativo transitório', () => {
+  it('biometricStatus=error: mantém a opção, abre e não pede unlock', async () => {
+    m.biometricStatus.mockResolvedValue('error');
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
+    expect(m.setBiometricEnabled).not.toHaveBeenCalled();
+    expect(m.unlock).not.toHaveBeenCalled();
+  });
+});
+
+describe('BiometricGate: sem flash ao voltar do background', () => {
+  async function unlocked() {
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
+    m.isBiometricEnabled.mockClear();
+    m.unlock.mockClear();
+  }
+
+  it('após 5 min o bloqueio aparece de forma síncrona em `active` (sem esperar por I/O)', async () => {
+    await unlocked();
+    m.isBiometricEnabled.mockImplementation(() => new Promise(() => {}));
+    m.biometricStatus.mockImplementation(() => new Promise(() => {}));
+    await act(async () => emit('background'));
+    now += 300_000;
+    await act(async () => {
+      emit('active');
+    });
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    expect(screen.getByText('A S360 está bloqueada.')).toBeTruthy();
+  });
+
+  it('cobertura de privacidade em inactive/background, removida em active', async () => {
+    await unlocked();
+    await act(async () => emit('inactive'));
+    expect(screen.getByTestId('privacy-cover')).toBeTruthy();
+    await act(async () => emit('active'));
+    expect(screen.queryByTestId('privacy-cover')).toBeNull();
+    await act(async () => emit('background'));
+    expect(screen.getByTestId('privacy-cover')).toBeTruthy();
+  });
+
+  it('sem cobertura se a opção está desligada', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('conteudo')).toBeTruthy());
+    await act(async () => emit('inactive'));
+    expect(screen.queryByTestId('privacy-cover')).toBeNull();
+  });
+});
+
+describe('BiometricGate: "Ativar" confirma com o Face ID', () => {
+  beforeEach(() => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    m.hasBiometricPromptAnswered.mockResolvedValue(false);
+  });
+
+  it('unlock true: liga a opção', async () => {
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('Ativar Face ID?')).toBeTruthy());
+    fireEvent.press(screen.getByText('Ativar'));
+    await waitFor(() => expect(m.setBiometricEnabled).toHaveBeenCalledWith('u1', true));
+    expect(m.unlock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.queryByText('Ativar Face ID?')).toBeNull());
+  });
+
+  it('unlock false: a opção fica desligada, a resposta fica gravada e a folha fecha', async () => {
+    m.unlock.mockResolvedValue(false);
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('Ativar Face ID?')).toBeTruthy());
+    fireEvent.press(screen.getByText('Ativar'));
+    await waitFor(() => expect(m.setBiometricPromptAnswered).toHaveBeenCalledWith('u1'));
+    await waitFor(() => expect(screen.queryByText('Ativar Face ID?')).toBeNull());
+    expect(m.setBiometricEnabled).not.toHaveBeenCalled();
   });
 });
