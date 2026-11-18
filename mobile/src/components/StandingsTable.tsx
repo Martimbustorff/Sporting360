@@ -3,7 +3,8 @@
 // (1.º 500:29423 amarelo, 2.º 500:29433 prata, 3.º 500:29443 bronze, restantes sem fundo e número a branco),
 // nome em SemiBold 12 (500:29419, `tableTeam`) e valores DIN 20 (500:29420); golos "8:4" (500:29421).
 // Variante 500:30076: emblema de cada equipa à esquerda do nome (29x34 no Figma, `TeamCrest` sm de 30x35, 8 px
-// de intervalo, 500:30126/500:30127); o Sporting usa sempre o emblema local 2026 (id 228).
+// de intervalo, 500:30126/500:30127); no futebol o Sporting usa sempre o emblema local 2026 (id 228); nas outras
+// modalidades os ids são da api-sports e o emblema é sempre o `logo` da linha.
 // Diferenças deliberadas: colunas em flex (largura fixa por coluna, nome com flex 1) em vez de posições absolutas;
 // da 500:30076 só se tira o emblema: as colunas J/V/E/D/G/P, a tipografia e o círculo ficam os de 500:29367 (a
 // variante só tem PJ/G/P, noutra fonte), por isso o nome fica mais curto e corta com reticências.
@@ -12,7 +13,7 @@
 import { View } from 'react-native';
 import { TeamCrest } from '@/components/GameHeader';
 import { SectionBar } from '@/components/SectionBar';
-import type { StandingRow, StandingsDoc } from '@/data/schemas';
+import type { Sport, StandingRow, StandingsDoc } from '@/data/schemas';
 import { goalsText } from '@/lib/standings';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -55,7 +56,7 @@ export function PositionCircle({ rank }: { rank: number }) {
   );
 }
 
-function Row({ row, highlight }: { row: StandingRow; highlight: boolean }) {
+function Row({ row, highlight, sport }: { row: StandingRow; highlight: boolean; sport: Sport | null }) {
   const values = [row.played, row.win, row.draw, row.lose, goalsText(row), row.points];
   return (
     <View
@@ -74,7 +75,9 @@ function Row({ row, highlight }: { row: StandingRow; highlight: boolean }) {
     >
       <PositionCircle rank={row.rank} />
       <TeamCrest
-        team={{ id: Number(row.teamId) || null, name: row.name, crestUrl: row.logo }}
+        // Só no futebol o id é da API-Football (228 = Sporting, emblema local); nas outras modalidades é da
+        // api-sports e um 228 seria outra equipa: fica o emblema do documento.
+        team={{ id: sport === 'football' ? Number(row.teamId) || null : null, name: row.name, crestUrl: row.logo }}
         size="sm"
         testID={`standings-crest-${row.teamId}`}
       />
@@ -120,7 +123,16 @@ function HeadRow() {
   );
 }
 
-export function StandingsTable({ groups, highlightTeamId }: { groups: StandingsDoc['groups']; highlightTeamId: string }) {
+export function StandingsTable({
+  groups,
+  highlightTeamId,
+  sport,
+}: {
+  groups: StandingsDoc['groups'];
+  highlightTeamId: string;
+  /** Modalidade da competição; null quando não se sabe (nunca o emblema local do Sporting). */
+  sport: Sport | null;
+}) {
   const shown = groups.filter((g) => g.rows.length > 0);
   const named = shown.length > 1;
   return (
@@ -136,7 +148,7 @@ export function StandingsTable({ groups, highlightTeamId }: { groups: StandingsD
           {g.rows.map((r, ri) => (
             <View key={`${r.teamId}-${ri}`} style={{ gap: layout.tableRowGap, paddingBottom: layout.tableRowGap }}>
               <Separator />
-              <Row row={r} highlight={r.teamId === highlightTeamId} />
+              <Row row={r} highlight={r.teamId === highlightTeamId} sport={sport} />
             </View>
           ))}
         </View>

@@ -395,6 +395,7 @@ describe('fixtureToMatch (preflight F9)', () => {
     expect(m.score.penalty).toBeNull();
     expect(m.score.extratime).toBeNull();
     // O adversário usa o seu id (o lado "home" não é o Sporting só por omissão: o id não é 228).
-    expect(toGameHeaderVM(m).home.id).not.toBe(228);
+    expect(toGameHeaderVM(m).home.id).toBe(212);
+    expect(toGameHeaderVM(m).away.id).toBe(211);
   });
 });

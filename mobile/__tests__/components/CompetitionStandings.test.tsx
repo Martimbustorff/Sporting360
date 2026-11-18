@@ -199,9 +199,30 @@ describe('CompetitionStandings: estados', () => {
   });
 });
 
+describe('CompetitionStandings: modalidade dos emblemas', () => {
+  const crest = () => screen.getByTestId('standings-crest-228', { includeHiddenElements: true }).props.source;
+  const logo = 'https://media.api-sports.io/hockey/teams/228.png';
+  const table: StandingsDoc = { groups: [{ name: '', rows: [{ ...row(1, '228', 'Sporting CP', 13), logo }] }] };
+
+  it('sem o documento da competição, a modalidade vem da chave (roller_hockey tem "_" no nome)', async () => {
+    mockData.standings = { status: 'ready', data: table };
+    const { rerender } = await render(<CompetitionStandings competitionKey="roller_hockey_5_2026" />);
+    expect(crest()).toEqual({ uri: logo });
+    await rerender(<CompetitionStandings competitionKey="football_94_2026" />);
+    expect(crest()).toEqual({ testUri: expect.stringContaining('sporting-cp-2026') });
+  });
+
+  it('com o documento, manda o `sport` dele', async () => {
+    mockData.standings = { status: 'ready', data: table };
+    mockData.competition = { status: 'ready', data: { sport: 'futsal', leagueId: '5', name: 'Liga Placard', type: 'league', logo: null } };
+    await render(<CompetitionStandings competitionKey="football_94_2026" />);
+    expect(crest()).toEqual({ uri: logo });
+  });
+});
+
 describe('StandingsTable', () => {
   it('colunas, golos 8:4 e linha do Sporting destacada', async () => {
-    await render(<StandingsTable groups={standings.groups} highlightTeamId="228" />);
+    await render(<StandingsTable groups={standings.groups} highlightTeamId="228" sport="football" />);
     // O cabeçalho fica fora da acessibilidade: cada linha tem o seu rótulo completo.
     for (const h of ['#', 'Equipa', 'J', 'V', 'E', 'D', 'G', 'P']) {
       expect(screen.getByText(h, { includeHiddenElements: true })).toBeTruthy();
@@ -217,10 +238,16 @@ describe('StandingsTable', () => {
     expect(screen.queryByText('Fase de liga')).toBeNull();
   });
 
+  it('fora do futebol o id da linha não é da API-Football: nunca o emblema local do Sporting', async () => {
+    const logo = 'https://media.api-sports.io/handball/teams/228.png';
+    await render(<StandingsTable groups={[{ name: '', rows: [{ ...row(1, '228', 'Outra equipa', 13), logo }] }]} highlightTeamId="228" sport="futsal" />);
+    expect(screen.getByTestId('standings-crest-228', { includeHiddenElements: true }).props.source).toEqual({ uri: logo });
+  });
+
   it('Review Focus 4: nome de 40 caracteres numa linha com reticências; os pontos continuam visíveis', async () => {
     const long = 'Sporting Clube de Portugal B Sub-23 Xtra'; // 40 caracteres
     expect(long).toHaveLength(40);
-    await render(<StandingsTable groups={[{ name: '', rows: [row(1, '999', long, 13)] }]} highlightTeamId="228" />);
+    await render(<StandingsTable groups={[{ name: '', rows: [row(1, '999', long, 13)] }]} highlightTeamId="228" sport="football" />);
     const name = screen.getByText(long);
     expect(name.props.numberOfLines).toBe(1);
     expect(name.props.ellipsizeMode).toBe('tail');
@@ -240,6 +267,7 @@ describe('StandingsTable', () => {
           { name: 'Grupo B', rows: [row(1, '212', 'FC Porto', 6)] },
         ]}
         highlightTeamId="228"
+        sport="football"
       />,
     );
     expect(screen.getByText('Grupo A')).toBeTruthy();

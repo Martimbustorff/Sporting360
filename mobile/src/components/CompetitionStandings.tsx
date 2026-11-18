@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { StandingsTable } from '@/components/StandingsTable';
 import { Tabs } from '@/components/Tabs';
+import { SportSchema, type Sport } from '@/data/schemas';
 import { useCompetition, useCompetitionData } from '@/data/sports';
 import {
   getViewChoice,
@@ -30,6 +31,8 @@ import { colors, layout, spacing } from '@/theme/tokens';
 export const STANDINGS_ERROR = 'Não foi possível carregar os dados.';
 const NO_STANDINGS = 'Sem classificação para esta competição.';
 const SPORTING = String(SPORTING_API_ID);
+/** `roller_hockey_…` também tem "_" no nome: compara o prefixo com cada modalidade. Desconhecida: null. */
+const sportOfKey = (key: string): Sport | null => SportSchema.options.find((s) => key.startsWith(`${s}_`)) ?? null;
 const VIEWS: { key: StandingsView; label: string }[] = [
   { key: 'table', label: 'Tabela' },
   { key: 'bracket', label: 'Eliminatórias' },
@@ -54,6 +57,8 @@ export function CompetitionStandings({
   if (reads.some((r) => r.status === 'error')) return <EmptyState icon="info" text={STANDINGS_ERROR} />;
 
   const view = competition.status === 'ready' ? competition.data.view : undefined;
+  // Sem o documento da competição, a modalidade vem da chave `{sport}_{leagueId}_{season}`.
+  const sport = competition.status === 'ready' ? competition.data.sport : sportOfKey(competitionKey);
   const table = standings.status === 'ready' ? standings.data : null;
   const knockout = bracket.status === 'ready' ? bracket.data : null;
   const hasRows = hasTableRows(table);
@@ -79,7 +84,7 @@ export function CompetitionStandings({
       {selector ? (
         <Tabs items={VIEWS} value={shown} onChange={choose} mode="equal" />
       ) : null}
-      {shown === 'table' && table ? <StandingsTable groups={table.groups} highlightTeamId={SPORTING} /> : null}
+      {shown === 'table' && table ? <StandingsTable groups={table.groups} highlightTeamId={SPORTING} sport={sport} /> : null}
       {shown === 'bracket' && knockout ? <BracketView bracket={knockout} highlightTeamId={SPORTING} /> : null}
       {showCompetitionLink ? (
         <Pressable
