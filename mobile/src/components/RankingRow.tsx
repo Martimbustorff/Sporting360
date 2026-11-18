@@ -16,7 +16,7 @@ export type RankingVM = {
 };
 
 /** Primeira letra do nome público, em maiúscula; `?` se o nome vier vazio. */
-function initialOf(name: string): string {
+export function initialOf(name: string): string {
   const first = [...name.trim()][0];
   return first ? first.toLocaleUpperCase('pt-PT') : '?';
 }

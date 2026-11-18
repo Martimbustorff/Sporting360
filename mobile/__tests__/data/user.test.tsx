@@ -22,6 +22,7 @@ import {
   useNews,
   useSettlements,
 } from '@/data/user';
+import { recordError } from '@react-native-firebase/crashlytics';
 import type { Loadable } from '@/data/hooks';
 
 jest.mock('@react-native-firebase/app');
@@ -141,6 +142,42 @@ describe('useSettlements', () => {
     expect(out()).toEqual([]);
     await view.rerender(<P ids={Array.from({ length: 30 }, (_, i) => `g${i}`)} />);
     expect(snapMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops an invalid settlement and reports it to Crashlytics once', async () => {
+    (recordError as jest.Mock).mockClear();
+    const ids = ['s-ok', 's-bad'];
+    function P() {
+      return <Out v={useSettlements(ids)} pick={(r) => Object.keys(r)} />;
+    }
+    await render(<P />);
+    const snap = {
+      docs: [
+        { id: 's-ok', ref: { path: 'settlements/s-ok' }, data: () => ({ finalHome: 1, finalAway: 0 }) },
+        { id: 's-bad', ref: { path: 'settlements/s-bad' }, data: () => ({ finalHome: 'x' }) },
+      ],
+      metadata: { fromCache: false },
+    };
+    await act(async () => lastNext()(snap));
+    expect(out()).toEqual(['s-ok']);
+    expect(recordError).toHaveBeenCalledTimes(1);
+    expect(String((recordError as jest.Mock).mock.calls[0]?.[1])).toContain('settlements/s-bad');
+    await act(async () => lastNext()(snap));
+    expect(recordError).toHaveBeenCalledTimes(1);
+  });
+
+  it('a listener failure is an error and is reported to Crashlytics', async () => {
+    (recordError as jest.Mock).mockClear();
+    const ids = ['s-err'];
+    function P() {
+      return <Out v={useSettlements(ids)} />;
+    }
+    await render(<P />);
+    const call = snapMock.mock.calls[snapMock.mock.calls.length - 1] as unknown[];
+    const onError = call.filter((a) => typeof a === 'function')[1] as (e: unknown) => void;
+    await act(async () => onError(new Error('permission-denied')));
+    expect(out()).toBe('error');
+    expect(recordError).toHaveBeenCalledTimes(1);
   });
 
   it('a new array with the same ids does not resubscribe', async () => {

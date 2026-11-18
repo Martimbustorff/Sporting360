@@ -14,7 +14,7 @@ import {
   type Query,
 } from '@react-native-firebase/firestore';
 import { db } from '@/services/firebase';
-import { useCollection, useDocument, type Loadable } from './hooks';
+import { reportDataError, reportInvalidDocs, useCollection, useDocument, type Loadable } from './hooks';
 import {
   GameboxDocSchema,
   LeaderboardEntrySchema,
@@ -139,7 +139,10 @@ export function useMyPredictions(uid: string | null): Loadable<MatchPrediction[]
   return useMapped(useCollection(q, MatchPredictionSchema), onlyV2027);
 }
 
-/** Settlements of several games by id, in chunks of 30 (Firestore `in` limit). Keyed by game id. */
+/**
+ * Settlements of several games by id, in chunks of 30 (Firestore `in` limit). Keyed by game id.
+ * Like `useCollection`: invalid documents are dropped and reported, a listener failure is reported and is `error`.
+ */
 export function useSettlements(gameIds: string[]): Loadable<Record<string, Settlement>> {
   // Stable key: the same set of ids never resubscribes.
   const key = useMemo(() => [...new Set(gameIds)].sort().join('|'), [gameIds]);
@@ -171,17 +174,24 @@ export function useSettlements(gameIds: string[]): Loadable<Record<string, Settl
       onSnapshot(
         query(collection(db(), 'settlements'), where(documentId(), 'in', chunk)),
         { includeMetadataChanges: true },
-        (snap: { docs: Array<{ id: string; data: () => unknown }>; metadata?: { fromCache?: boolean } }) => {
+        (snap: {
+          docs: Array<{ id: string; ref?: { path?: string }; data: () => unknown }>;
+          metadata?: { fromCache?: boolean };
+        }) => {
           const part: Record<string, Settlement> = {};
+          const badPaths: string[] = [];
           for (const d of snap.docs) {
             const parsed = SettlementSchema.safeParse(d.data());
             if (parsed.success) part[d.id] = parsed.data;
+            else badPaths.push(d.ref?.path ?? `settlements/${d.id}`);
           }
+          reportInvalidDocs(badPaths, 'settlements');
           parts[i] = part;
           cached[i] = snap.metadata?.fromCache === true;
           publish();
         },
         (e: unknown) => {
+          reportDataError(e, 'settlements listener failed');
           failed = e instanceof Error ? e : new Error(String(e));
           publish();
         },

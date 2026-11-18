@@ -37,6 +37,10 @@ jest.mock('@/data/user', () => ({
   useLeaderboard: () => ({ status: 'loading' }),
   useMyLeaderboardEntry: () => ({ status: 'loading' }),
   fetchMyPosition: jest.fn(),
+  // Task 21: o Perfil lê os prognósticos, os eventos de pontos e as liquidações (aqui ficam a carregar).
+  useMyPredictions: () => ({ status: 'loading' }),
+  useMyPointEvents: () => ({ status: 'loading' }),
+  useSettlements: () => ({ status: 'loading' }),
 }));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));

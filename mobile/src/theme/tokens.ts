@@ -188,6 +188,10 @@ export const layout = {
   positionCircle: 26, // Figma 500:29423
   rankingRowMinHeight: 44,
   avatarSize: 32,
+  // SEM FIGMA: Perfil (Task 21), composto com tokens
+  profileAvatar: 72, // círculo com a inicial do nome público
+  profileHeaderGap: 16, // avatar ao nome
+  statTileMinWidth: 140, // dois mosaicos por linha em 347 pt
   playerPhoto: 96, // SEM FIGMA: foto redonda no topo do detalhe do jogador (Task 14)
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
   // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens

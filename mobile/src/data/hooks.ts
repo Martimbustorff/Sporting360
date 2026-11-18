@@ -31,7 +31,8 @@ function toError(e: unknown): Error {
   return e instanceof Error ? e : new Error(String(e));
 }
 
-function report(e: unknown, context: string): void {
+/** Sends a data-layer error to Crashlytics (never throws). Used by every live read. */
+export function reportDataError(e: unknown, context: string): void {
   const err = toError(e);
   if (__DEV__) console.warn(`[data] ${context}`, err);
   try {
@@ -39,6 +40,17 @@ function report(e: unknown, context: string): void {
   } catch {
     // reporting must never break rendering
   }
+}
+
+/** Reports dropped (invalid) documents of a query, each path once per app run. */
+export function reportInvalidDocs(paths: string[], context: string): void {
+  const fresh = paths.filter((p) => !reportedPaths.has(p));
+  if (fresh.length === 0) return;
+  for (const p of fresh) reportedPaths.add(p);
+  reportDataError(
+    new Error(`${paths.length} documento(s) inválido(s) descartado(s): ${fresh.join(', ')}`),
+    context,
+  );
 }
 
 /**
@@ -73,13 +85,13 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
           const error = new Error(`Documento inválido em ${path}: ${parsed.error.message}`);
           if (!reportedPaths.has(path)) {
             reportedPaths.add(path);
-            report(error, `invalid document ${path}`);
+            reportDataError(error, `invalid document ${path}`);
           }
           setState({ status: 'error', error });
         }
       },
       (e) => {
-        report(e, `listener failed ${path}`);
+        reportDataError(e, `listener failed ${path}`);
         setState({ status: 'error', error: toError(e) });
       },
     );
@@ -111,27 +123,17 @@ export function useCollection<T>(
       SNAPSHOT_OPTIONS,
       (snap) => {
         const items: Array<T & { id: string }> = [];
-        let dropped = 0;
         const badPaths: string[] = [];
         for (const d of snap.docs) {
           const parsed = schemaRef.current.safeParse(d.data());
           if (parsed.success) items.push({ ...parsed.data, id: d.id });
-          else {
-            dropped += 1;
-            const p = d.ref?.path ?? d.id;
-            if (!reportedPaths.has(p)) {
-              reportedPaths.add(p);
-              badPaths.push(p);
-            }
-          }
+          else badPaths.push(d.ref?.path ?? d.id);
         }
-        if (dropped > 0 && badPaths.length > 0) {
-          report(new Error(`${dropped} documento(s) inválido(s) descartado(s): ${badPaths.join(', ')}`), 'collection');
-        }
+        reportInvalidDocs(badPaths, 'collection');
         setState({ status: 'ready', data: items, fromCache: snap.metadata?.fromCache === true });
       },
       (e) => {
-        report(e, 'collection listener failed');
+        reportDataError(e, 'collection listener failed');
         setState({ status: 'error', error: toError(e) });
       },
     );

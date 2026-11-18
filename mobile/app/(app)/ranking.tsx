@@ -5,7 +5,7 @@
 // - A linha do próprio fica destacada; se não está nos 100, linha fixa em baixo com a posição de `fetchMyPosition`.
 // - Só nomes públicos (`leaderboards/.../entries`); o ecrã não lê `users` nem `publicProfiles` (nunca email nem "@").
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -16,7 +16,8 @@ import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
 import { useNow } from '@/data/clock';
 import type { LeaderboardEntry } from '@/data/schemas';
-import { fetchMyPosition, useLeaderboard, useMyLeaderboardEntry } from '@/data/user';
+import { useMyPosition } from '@/data/myPosition';
+import { useLeaderboard, useMyLeaderboardEntry } from '@/data/user';
 import { periodKeys } from '@/lib/periods';
 import { rankPositions } from '@/lib/ranking';
 import { useSession } from '@/providers/SessionProvider';
@@ -39,28 +40,6 @@ export const RANKING_TEXT = {
   empty: (kind: Kind) => `Ainda não há pontos ${PERIOD_TEXT[kind]}.`,
   noneYet: (kind: Kind) => `Ainda não pontuaste ${PERIOD_TEXT[kind]}.`,
 } as const;
-
-/** Posição do próprio quando está fora dos 100: contagem no servidor; `error` se a contagem falhar. */
-function usePinnedPosition(kind: Kind, key: string, points: number | null): number | 'error' | null {
-  const [state, setState] = useState<{ id: string; value: number | 'error' } | null>(null);
-  const id = points === null ? null : `${kind}_${key}_${points}`;
-  useEffect(() => {
-    if (id === null || points === null) return undefined;
-    let cancelled = false;
-    fetchMyPosition(kind, key, points).then(
-      (value) => {
-        if (!cancelled) setState({ id, value });
-      },
-      () => {
-        if (!cancelled) setState({ id, value: 'error' });
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [id, kind, key, points]);
-  return id !== null && state?.id === id ? state.value : null;
-}
 
 function Note({ text }: { text: string }) {
   return (
@@ -88,7 +67,7 @@ export default function Ranking() {
   const mineEntry = mine.status === 'ready' ? mine.data : null;
   const inList = uid !== null && list.some((e) => e.uid === uid);
   const pinnedPoints = board.status === 'ready' && mineEntry !== null && !inList ? mineEntry.points : null;
-  const pinned = usePinnedPosition(kind, key, pinnedPoints);
+  const pinned = useMyPosition(kind, key, pinnedPoints);
 
   let body: React.JSX.Element;
   if (board.status === 'loading') {
