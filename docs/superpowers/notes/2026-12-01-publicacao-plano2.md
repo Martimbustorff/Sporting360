@@ -38,6 +38,7 @@ Esperado: saída 0 e as linhas:
 - `rankings: N documentos, 0 fora do formato` (todos com `season` `aaaa-aaaa` e id `userId_season`, senão as regras novas negam os +1 da V2 nesses documentos);
 - `predictions: ... 0 com source` e `manofmatch: ... 0 com source`;
 - `functions antigas (us-central1): 13/13` e nenhuma `functions desconhecidas` (um `cleanup` antigo, por exemplo, faz falhar: apagar por nome depois do OK do Martim, ou explicar);
+- `rankings com email em userName (informativo)`: N (herança da V2, limpa no Plano 5);
 - `motor v2027 (informativo)`: contagens de `matchPredictions`, `mvpVotes`, `pointEvents`, `leaderboards`, `settlements` (o corte do Plano 5 apaga o que lá estiver).
 
 No painel da RapidAPI: confirmar API-Football **Pro** (7.500/dia) e as subscrições de andebol, voleibol e basquetebol (mesma conta, plano gratuito, 100/dia cada).
@@ -143,7 +144,7 @@ firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:foot
 
 Com o prefixo `_shadow_`, as coleções antigas são escritas em `_shadow_games`, `_shadow_summaries`, etc.; o modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `ingestState`) é escrito nas coleções reais, que a V2 não lê. A `legacyPredictionSettlement` **não** é publicada aqui.
 
-**Teste de isolamento, logo depois da primeira execução do `footballFixturesSync`** (até 3 h; pode correr-se à mão na consola do Cloud Scheduler, "Forçar execução"):
+**Teste de isolamento, logo a seguir à publicação:** na consola do Cloud Scheduler, "Forçar execução" no `footballFixturesSync` (não esperar pelas 3 h), esperar 2 minutos e correr:
 
 ```bash
 cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74 --phase shadow
@@ -257,8 +258,8 @@ gcloud firestore databases describe --database="(default)" --format="value(locat
 
 | `locationId` | `--location` do balde |
 |---|---|
-| `eur3` (multirregião Europa; a do projeto, segundo o plano) | `EU` (ou uma região europeia, ex. `europe-west1`) |
-| `nam5` (multirregião EUA) | `US` (ou uma região dos EUA, ex. `us-central1`) |
+| `eur3` (multirregião Europa; a do projeto, segundo o plano) | `EU` (ou uma das regiões que a compõem: `europe-west1`, `europe-west4`) |
+| `nam5` (multirregião EUA) | `US` (ou uma das regiões que a compõem: `us-central1`, `us-central2`) |
 | região única (ex. `europe-west1`) | a mesma região |
 
 ```bash
@@ -308,6 +309,7 @@ done
 cd functions
 read -rs RAPIDAPI_KEY && export RAPIDAPI_KEY
 GOOGLE_CLOUD_PROJECT=scp360-37a74 npx tsx scripts/backfill-season.ts --season 2026 --new-model-only
+unset RAPIDAPI_KEY
 ```
 
 Escreve só `matches` e `details` dos jogos terminados da época 2026/2027 (1 pedido pela época mais 1 por cada 20 jogos). O script não aceita `--project`: o projeto vem de `GOOGLE_CLOUD_PROJECT` (PowerShell: `$env:GOOGLE_CLOUD_PROJECT = "scp360-37a74"`).
