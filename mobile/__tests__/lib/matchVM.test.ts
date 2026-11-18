@@ -175,6 +175,29 @@ describe('toGameHeaderVM', () => {
     expect(vm.venue).toBeNull();
   });
 
+  it('crest ids: Sporting side is always 228; opponent id only in football', () => {
+    const away = toGameHeaderVM(match({ sportingSide: 'away', home: { id: '217', name: 'SC Braga', logo: 'b' }, away: { id: '228', name: 'Sporting CP', logo: 's' } }));
+    expect(away.home.id).toBe(217);
+    expect(away.away.id).toBe(228);
+
+    const futsal = toGameHeaderVM(
+      match({
+        sport: 'futsal',
+        sportingSide: 'home',
+        home: { id: '5001', name: 'Sporting CP', logo: 's' },
+        away: { id: '228', name: 'Benfica', logo: 'https://example.com/benfica.png' },
+      }),
+    );
+    expect(futsal.home.id).toBe(228);
+    expect(futsal.away).toEqual({ id: null, name: 'Benfica', crestUrl: 'https://example.com/benfica.png' });
+
+    const hockey = toGameHeaderVM(
+      match({ sport: 'roller_hockey', sportingSide: 'away', away: { id: '777', name: 'Sporting CP', logo: null } }),
+    );
+    expect(hockey.away.id).toBe(228);
+    expect(hockey.home.id).toBeNull();
+  });
+
   it('other sports carry the venue name', () => {
     expect(toGameHeaderVM(match({ sport: 'futsal' })).venue).toBe('Estádio José Alvalade');
     expect(toGameHeaderVM(match({ sport: 'futsal', venue: null })).venue).toBeNull();
@@ -241,6 +264,16 @@ describe('groupEvents', () => {
       { label: '2ª Parte', score: '1-1' },
     ]);
     expect(groups[0]?.events[0]?.primary).toBe('A');
+  });
+
+  it('an own goal counts for the other team (API-Football: event team is the scorer\'s)', () => {
+    const groups = groupEvents(
+      [ev({ minute: 10, teamId: '217', detail: 'Own Goal' }), ev({ minute: 30, teamId: '228', detail: 'Own Goal' })],
+      '228',
+    );
+    expect(groups.map((g) => g.score)).toEqual(['1-1']);
+    const one = groupEvents([ev({ minute: 10, teamId: '217', detail: 'Own Goal' })], '228');
+    expect(one[0]?.score).toBe('1-0');
   });
 
   it('no events gives []', () => {

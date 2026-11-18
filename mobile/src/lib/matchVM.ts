@@ -1,6 +1,6 @@
 // View-models puros dos jogos (Agenda, detalhe do jogo, Home): estado, minuto, resultado, competição
 // e lances. Sem React nem Firestore; só recebem `Match`/`EventItem` já validados (data/schemas.ts).
-import type { GameHeaderVM } from '@/components/GameHeader';
+import { SPORTING_API_ID, type GameHeaderVM } from '@/components/GameHeader';
 import type { EventVM } from '@/components/EventRow';
 import type { EventItem, GameStatus, Match } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
@@ -58,13 +58,19 @@ export function scoreText(m: Match): string | null {
 }
 
 export function toGameHeaderVM(m: Match): GameHeaderVM {
-  const team = (t: Match['home']) => ({ id: Number(t.id), name: t.name, crestUrl: t.logo });
+  // Id do emblema: o lado do Sporting é sempre 228 (emblema local 2026, em qualquer modalidade). O adversário
+  // só guarda o id no futebol: as outras modalidades usam ids api-sports, que podem colidir com 228.
+  const team = (t: Match['home'], side: 'home' | 'away') => ({
+    id: side === m.sportingSide ? SPORTING_API_ID : m.sport === 'football' ? Number(t.id) : null,
+    name: t.name,
+    crestUrl: t.logo,
+  });
   const { name, round } = competitionText(m.competition);
   return {
     competitionName: name,
     round,
-    home: team(m.home),
-    away: team(m.away),
+    home: team(m.home, 'home'),
+    away: team(m.away, 'away'),
     state: uiState(m.status),
     kickoff: m.kickoff,
     tv: null,
@@ -130,6 +136,13 @@ function isScoredGoal(e: EventItem): boolean {
   return e.type === 'goal' && e.detail.toLowerCase() !== 'missed penalty';
 }
 
+/** Lado que marcou. API-Football: no "Own Goal" a equipa do lance é a do jogador, ou seja, a que sofreu. */
+function scoringSide(e: EventItem, homeTeamId: string): 'home' | 'away' {
+  const eventHome = e.teamId === homeTeamId;
+  const ownGoal = e.detail.toLowerCase() === 'own goal';
+  return eventHome !== ownGoal ? 'home' : 'away';
+}
+
 /**
  * Lances agrupados por parte, com o resultado no fim de cada parte. Partes sem lances não aparecem.
  * Nos penáltis o resultado é só o do desempate (ex.: "4-3"), não somado ao do jogo.
@@ -148,7 +161,7 @@ export function groupEvents(
   for (const part of PARTS) {
     const events = sorted.filter((e) => partOf(e) === part);
     const tally = part === 'Penáltis' ? shootout : game;
-    for (const e of events) if (isScoredGoal(e)) tally[e.teamId === homeTeamId ? 'home' : 'away'] += 1;
+    for (const e of events) if (isScoredGoal(e)) tally[scoringSide(e, homeTeamId)] += 1;
     if (events.length === 0) continue;
     groups.push({
       label: part,
