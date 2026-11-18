@@ -6,8 +6,10 @@
 // A máscara não é reproduzida (RN não tem máscara elíptica sem SVG); a validar com o Martim.
 // "Rectangle 954" (348:37999) é o verde do Figma a 50% por cima do leão.
 // SEM FIGMA: a folha "Ativar {label}?" (modal feito com tokens) e o estado "não foi possível desbloquear".
+// Task 26 (Plano 4): `useBiometricControl` dá às Definições o estado e o interruptor. Ligar pede logo o Face ID (como
+// "Ativar"); ligar e desligar mudam `enabledRef` de imediato, sem esperar pelo próximo arranque.
 import { Image } from 'expo-image';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -17,6 +19,7 @@ import { useSession } from '@/providers/SessionProvider';
 import { signOut } from '@/services/auth';
 import {
   type BiometricLabel,
+  type BiometricStatus,
   biometricLabel,
   biometricStatus,
   hasBiometricPromptAnswered,
@@ -34,6 +37,28 @@ const RINGS = require('../../assets/images/welcome-rings.svg');
 
 type Phase = 'checking' | 'locked' | 'open';
 
+export type BiometricToggleResult = 'ok' | 'cancelled' | 'notEnrolled';
+export type BiometricControl = {
+  status: BiometricStatus;
+  label: BiometricLabel;
+  enabled: boolean;
+  /** Ligar: só com biometria disponível e `unlock()` aceite. Desligar: vale já. Falha a gravar: rejeita. */
+  setEnabled: (on: boolean) => Promise<BiometricToggleResult>;
+};
+
+const FALLBACK: BiometricControl = {
+  status: 'noHardware',
+  label: 'biometria',
+  enabled: false,
+  setEnabled: async () => 'notEnrolled',
+};
+const BiometricControlContext = createContext<BiometricControl>(FALLBACK);
+
+/** Controlo da opção de desbloqueio (Definições). Fora do BiometricGate a opção aparece indisponível. */
+export function useBiometricControl(): BiometricControl {
+  return useContext(BiometricControlContext);
+}
+
 export function BiometricGate({ children }: { children: ReactNode }) {
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
@@ -44,6 +69,8 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   const [label, setLabel] = useState<BiometricLabel>('biometria');
   const [askEnable, setAskEnable] = useState(false);
   const [privacy, setPrivacy] = useState(false);
+  const [status, setStatus] = useState<BiometricStatus>('error');
+  const [enabled, setEnabledState] = useState(false);
 
   const uidRef = useRef(uid);
   uidRef.current = uid;
@@ -56,6 +83,17 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   // Cache em memória: permite bloquear de forma síncrona ao voltar do background (sem esperar pelo secure-store).
   const enabledRef = useRef<boolean | null>(null);
   const everOpenRef = useRef(false);
+
+  // Ref (leitura síncrona no regresso do background) e estado (interruptor das Definições) sempre juntos.
+  const markEnabled = useCallback((on: boolean) => {
+    enabledRef.current = on;
+    if (mounted.current) setEnabledState(on);
+  }, []);
+  const refreshStatus = useCallback(async () => {
+    const s = await biometricStatus();
+    if (mounted.current) setStatus(s);
+    return s;
+  }, []);
 
   const open = useCallback(() => {
     everOpenRef.current = true;
@@ -97,7 +135,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       }
       if (status !== 'available') {
         // Review Focus 3: ligada mas a biometria deixou de estar disponível: desliga e deixa entrar.
-        enabledRef.current = false;
+        markEnabled(false);
         await setBiometricEnabled(id, false).catch(() => {});
         if (mounted.current) open();
         return;
@@ -105,16 +143,16 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       setPhase('locked');
       void attempt();
     },
-    [attempt, open],
+    [attempt, open, markEnabled],
   );
 
   const evaluateStart = useCallback(
     async (coldStart: boolean) => {
       const id = uidRef.current;
       if (!id) return;
-      const enabled = await isBiometricEnabled(id);
-      enabledRef.current = enabled;
-      const lock = shouldLock({ enabled, signedIn: true, coldStart, backgroundedAt: null, now: Date.now() });
+      const on = await isBiometricEnabled(id);
+      markEnabled(on);
+      const lock = shouldLock({ enabled: on, signedIn: true, coldStart, backgroundedAt: null, now: Date.now() });
       if (!mounted.current) return;
       if (!lock) {
         open();
@@ -122,7 +160,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       }
       await lockOrOpen(id);
     },
-    [lockOrOpen, open],
+    [lockOrOpen, open, markEnabled],
   );
 
   useEffect(() => {
@@ -134,7 +172,8 @@ export function BiometricGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     biometricLabel().then((l) => mounted.current && setLabel(l), () => {});
-  }, []);
+    refreshStatus().catch(() => {});
+  }, [refreshStatus]);
 
   // Primeira avaliação por uid (a guarda por ref torna o efeito idempotente em StrictMode).
   useEffect(() => {
@@ -153,6 +192,8 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       }
       if (s !== 'active') return;
       setPrivacy(false);
+      // A biometria pode ter sido configurada (ou retirada) nos ajustes do telemóvel entretanto.
+      refreshStatus().catch(() => {});
       if (pendingPrompt.current) {
         void attempt();
         return;
@@ -168,7 +209,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       }
     });
     return () => sub.remove();
-  }, [attempt, lockOrOpen]);
+  }, [attempt, lockOrOpen, refreshStatus]);
 
   // Folha "Ativar {label}?": uma vez por uid, depois de a app abrir sem bloqueio.
   useEffect(() => {
@@ -191,7 +232,7 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       try {
         if (await unlock()) {
           await setBiometricEnabled(uid, true).catch(() => {});
-          enabledRef.current = true;
+          markEnabled(true);
         }
       } finally {
         inFlight.current = false;
@@ -209,37 +250,70 @@ export function BiometricGate({ children }: { children: ReactNode }) {
       if (mounted.current) setLeaving(false);
       return;
     }
-    enabledRef.current = false;
+    markEnabled(false);
     if (id) await setBiometricEnabled(id, false).catch(() => {});
   };
 
+  // Definições: ligar pede logo a biometria; desligar vale de imediato. A escolha conta como resposta à folha "Ativar".
+  const setEnabled = useCallback(
+    async (on: boolean): Promise<BiometricToggleResult> => {
+      const id = uidRef.current;
+      if (!id) return 'cancelled';
+      if (!on) {
+        markEnabled(false);
+        await setBiometricPromptAnswered(id);
+        await setBiometricEnabled(id, false);
+        return 'ok';
+      }
+      const s = await refreshStatus();
+      if (s === 'notEnrolled' || s === 'noHardware') return 'notEnrolled';
+      if (s !== 'available' || inFlight.current) return 'cancelled';
+      inFlight.current = true;
+      let ok = false;
+      try {
+        ok = await unlock();
+      } finally {
+        inFlight.current = false;
+      }
+      if (!ok || uidRef.current !== id) return 'cancelled';
+      await setBiometricPromptAnswered(id);
+      await setBiometricEnabled(id, true);
+      markEnabled(true);
+      return 'ok';
+    },
+    [markEnabled, refreshStatus],
+  );
+  const control = useMemo<BiometricControl>(() => ({ status, label, enabled, setEnabled }), [status, label, enabled, setEnabled]);
+
   const covered = phase !== 'open' || privacy;
   return (
-    <View style={styles.fill}>
-      {everOpen ? (
-        <View
-          style={styles.fill}
-          accessibilityElementsHidden={covered}
-          importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
-        >
-          {children}
-        </View>
-      ) : null}
-      {phase === 'checking' ? <Blank testID="lock-checking" /> : null}
-      {phase === 'locked' ? (
-        <LockScreen
-          label={label}
-          failed={failed}
-          busy={leaving}
-          onUnlock={() => void attempt()}
-          onOtherAccount={() => void otherAccount()}
-        />
-      ) : null}
-      {phase === 'open' && privacy ? <Blank testID="privacy-cover" /> : null}
-      {askEnable && phase === 'open' ? (
-        <EnablePrompt label={label} onEnable={() => void answerPrompt(true)} onLater={() => void answerPrompt(false)} />
-      ) : null}
-    </View>
+    <BiometricControlContext.Provider value={control}>
+      <View style={styles.fill}>
+        {everOpen ? (
+          <View
+            style={styles.fill}
+            accessibilityElementsHidden={covered}
+            importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
+          >
+            {children}
+          </View>
+        ) : null}
+        {phase === 'checking' ? <Blank testID="lock-checking" /> : null}
+        {phase === 'locked' ? (
+          <LockScreen
+            label={label}
+            failed={failed}
+            busy={leaving}
+            onUnlock={() => void attempt()}
+            onOtherAccount={() => void otherAccount()}
+          />
+        ) : null}
+        {phase === 'open' && privacy ? <Blank testID="privacy-cover" /> : null}
+        {askEnable && phase === 'open' ? (
+          <EnablePrompt label={label} onEnable={() => void answerPrompt(true)} onLater={() => void answerPrompt(false)} />
+        ) : null}
+      </View>
+    </BiometricControlContext.Provider>
   );
 }
 

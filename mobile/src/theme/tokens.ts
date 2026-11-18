@@ -213,6 +213,12 @@ export const layout = {
   sitesListTop: 24, // texto (termina em 148) a primeira linha (centro em 190)
   communityGap: 24, // 406:13221
   communityBottom: 24, // SEM FIGMA: folga no fim da lista
+  settingsListTop: 32, // Definições 323:11630: fim do Header (96) à primeira linha (128)
+  settingsRowGap: 28, // linhas a 72 px de passo, como nos Sites
+  settingsFooterGap: 16, // SEM FIGMA: "Terminar sessão", "Apagar conta" e a versão empilhados
+  settingsFooterBottom: 24, // "Log Out" (733) acima do indicador de início; o Screen já aplica a safe area
+  settingsFormGap: 32, // Mudar password 348:26562: campos a 32 entre si
+  settingsButtonTop: 48, // SEM FIGMA no ecrã (teclado no frame): folga do último campo ao "Guardar"
   sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
   // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
   emptyIcon: 122,

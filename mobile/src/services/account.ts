@@ -2,7 +2,7 @@
 // A callable deleteAccount (Plano 3 T10) exige login com menos de 5 min (REAUTH_REQUIRED), revoga os refresh
 // tokens e apaga os dados e a conta de Auth. Nunca registar tokens, códigos Apple, emails nem passwords.
 import { Platform } from 'react-native';
-import { EmailAuthProvider, reauthenticateWithCredential, revokeToken } from '@react-native-firebase/auth';
+import { EmailAuthProvider, reauthenticateWithCredential, revokeToken, updatePassword } from '@react-native-firebase/auth';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { authErrorMessage } from '@/lib/authErrors';
 import { codeOf, reportCode } from '@/lib/report';
@@ -35,6 +35,34 @@ export async function reauthenticateWithPassword(password: string): Promise<void
   if (!user?.email) throw new Error(GENERIC);
   try {
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  } catch (e) {
+    throw new Error(authErrorMessage(codeOf(e)));
+  }
+}
+
+export const MIN_PASSWORD_LENGTH = 6;
+export const CHANGE_PASSWORD_TEXT = {
+  tooShort: 'A nova password tem de ter pelo menos 6 caracteres.',
+  wrongCurrent: 'A password atual está incorreta.',
+} as const;
+const WRONG_CURRENT = new Set(['auth/wrong-password', 'auth/invalid-credential', 'auth/user-mismatch']);
+
+/**
+ * Task 26 (Plano 4): mudar a password. Valida a nova (6 ou mais caracteres) antes de qualquer chamada, reautentica com
+ * a atual e só depois muda. Erros com mensagem pronta para o ecrã; nunca regista passwords.
+ */
+export async function changePassword(current: string, next: string): Promise<void> {
+  if (next.length < MIN_PASSWORD_LENGTH) throw new Error(CHANGE_PASSWORD_TEXT.tooShort);
+  const user = authInstance().currentUser;
+  if (!user?.email) throw new Error(GENERIC);
+  try {
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+  } catch (e) {
+    const code = codeOf(e);
+    throw new Error(code && WRONG_CURRENT.has(code) ? CHANGE_PASSWORD_TEXT.wrongCurrent : authErrorMessage(code));
+  }
+  try {
+    await updatePassword(user, next);
   } catch (e) {
     throw new Error(authErrorMessage(codeOf(e)));
   }

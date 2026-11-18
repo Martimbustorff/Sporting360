@@ -10,7 +10,7 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 
 import { markFreshSession, resetColdStartForTests } from '@/lib/lockSession';
-import { BiometricGate } from '@/providers/BiometricGate';
+import { BiometricGate, type BiometricToggleResult, useBiometricControl } from '@/providers/BiometricGate';
 import { signOut } from '@/services/auth';
 import * as bio from '@/services/biometrics';
 
@@ -314,6 +314,94 @@ describe('BiometricGate: "Ativar" confirma com o Face ID', () => {
     fireEvent.press(screen.getByText('Ativar'));
     await waitFor(() => expect(m.setBiometricPromptAnswered).toHaveBeenCalledWith('u1'));
     await waitFor(() => expect(screen.queryByText('Ativar Face ID?')).toBeNull());
+    expect(m.setBiometricEnabled).not.toHaveBeenCalled();
+  });
+});
+
+describe('BiometricGate: controlo das Definições (useBiometricControl)', () => {
+  const results: BiometricToggleResult[] = [];
+  function Controls() {
+    const c = useBiometricControl();
+    return (
+      <>
+        <Text>conteudo</Text>
+        <Text testID="ctl-state">{`${c.status}|${c.label}|${c.enabled ? 'on' : 'off'}`}</Text>
+        <Text onPress={() => void c.setEnabled(true).then((r) => results.push(r))}>ligar</Text>
+        <Text onPress={() => void c.setEnabled(false).then((r) => results.push(r))}>desligar</Text>
+      </>
+    );
+  }
+  const ctlTree = () => (
+    <SafeAreaProvider initialMetrics={METRICS}>
+      <BiometricGate>
+        <Controls />
+      </BiometricGate>
+    </SafeAreaProvider>
+  );
+  const state = () => screen.getByTestId('ctl-state').props.children as string;
+  async function sixMinutesAway() {
+    await act(async () => emit('background'));
+    now += 6 * 60_000;
+    await act(async () => emit('active'));
+    await flush();
+  }
+
+  beforeEach(() => {
+    results.length = 0;
+  });
+
+  it('ligada: desligar no interruptor e voltar 6 min depois não bloqueia', async () => {
+    await render(ctlTree());
+    await waitFor(() => expect(state()).toBe('available|Face ID|on'));
+    m.unlock.mockClear();
+    fireEvent.press(screen.getByText('desligar'));
+    await waitFor(() => expect(results).toEqual(['ok']));
+    expect(state()).toBe('available|Face ID|off');
+    expect(m.setBiometricEnabled).toHaveBeenCalledWith('u1', false);
+    await sixMinutesAway();
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+    expect(m.unlock).not.toHaveBeenCalled();
+  });
+
+  it('desligada: ligar pede o Face ID logo e, voltando 6 min depois, bloqueia', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    await render(ctlTree());
+    await waitFor(() => expect(state()).toBe('available|Face ID|off'));
+    fireEvent.press(screen.getByText('ligar'));
+    await waitFor(() => expect(results).toEqual(['ok']));
+    expect(m.unlock).toHaveBeenCalledTimes(1);
+    expect(m.setBiometricEnabled).toHaveBeenCalledWith('u1', true);
+    expect(m.setBiometricPromptAnswered).toHaveBeenCalledWith('u1');
+    expect(state()).toBe('available|Face ID|on');
+    m.unlock.mockResolvedValue(false);
+    await act(async () => emit('background'));
+    now += 6 * 60_000;
+    await act(async () => emit('active'));
+    expect(screen.getByTestId('lock-screen')).toBeTruthy();
+    await waitFor(() => expect(m.unlock).toHaveBeenCalledTimes(2));
+  });
+
+  it('ligar com unlock false: cancelled e continua desligada (não bloqueia depois)', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    m.unlock.mockResolvedValue(false);
+    await render(ctlTree());
+    await waitFor(() => expect(state()).toBe('available|Face ID|off'));
+    fireEvent.press(screen.getByText('ligar'));
+    await waitFor(() => expect(results).toEqual(['cancelled']));
+    expect(m.setBiometricEnabled).not.toHaveBeenCalled();
+    expect(state()).toBe('available|Face ID|off');
+    await sixMinutesAway();
+    expect(screen.queryByTestId('lock-screen')).toBeNull();
+  });
+
+  it('notEnrolled: o estado diz notEnrolled e ligar não pede unlock', async () => {
+    m.isBiometricEnabled.mockResolvedValue(false);
+    m.biometricStatus.mockResolvedValue('notEnrolled');
+    await render(ctlTree());
+    await waitFor(() => expect(state()).toBe('notEnrolled|Face ID|off'));
+    fireEvent.press(screen.getByText('ligar'));
+    await waitFor(() => expect(results).toEqual(['notEnrolled']));
+    expect(m.unlock).not.toHaveBeenCalled();
     expect(m.setBiometricEnabled).not.toHaveBeenCalled();
   });
 });

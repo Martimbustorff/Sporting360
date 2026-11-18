@@ -5,7 +5,11 @@ jest.unmock('expo-router');
 jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } }),
 }));
-jest.mock('@/providers/BiometricGate', () => ({ BiometricGate: ({ children }: { children: unknown }) => children }));
+jest.mock('@/providers/BiometricGate', () => ({
+  BiometricGate: ({ children }: { children: unknown }) => children,
+  // Task 26: as Definições leem o controlo da biometria.
+  useBiometricControl: () => ({ status: 'noHardware', label: 'biometria', enabled: false, setEnabled: jest.fn() }),
+}));
 jest.mock('@/data/hooks', () => ({
   useMyUser: () => ({ status: 'loading' }),
   usePublicProfile: () => ({ status: 'loading' }),

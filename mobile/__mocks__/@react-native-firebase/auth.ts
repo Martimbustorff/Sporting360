@@ -30,3 +30,4 @@ export const EmailAuthProvider = {
   PROVIDER_ID: 'password',
   credential: jest.fn((email: string, password: string) => ({ providerId: 'password', token: email, secret: password })),
 };
+export const updatePassword = jest.fn(() => Promise.resolve());

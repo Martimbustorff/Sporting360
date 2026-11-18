@@ -20,11 +20,17 @@ jest.mock('@/services/social', () => ({
   reauthenticateWithGoogle: jest.fn(),
 }));
 
-import { EmailAuthProvider, reauthenticateWithCredential, revokeToken } from '@react-native-firebase/auth';
+import { EmailAuthProvider, reauthenticateWithCredential, revokeToken, updatePassword } from '@react-native-firebase/auth';
 import { recordError } from '@react-native-firebase/crashlytics';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { clearSignOutNotice, peekSignOutNotice } from '@/lib/signOutNotice';
-import { deleteMyAccount, providerReauth, reauthenticateWithPassword } from '@/services/account';
+import {
+  CHANGE_PASSWORD_TEXT,
+  changePassword,
+  deleteMyAccount,
+  providerReauth,
+  reauthenticateWithPassword,
+} from '@/services/account';
 import { signOut } from '@/services/auth';
 import { updateDisplayName } from '@/services/profile';
 import { setBiometricEnabled } from '@/services/biometrics';
@@ -319,6 +325,33 @@ describe('reauthenticateWithPassword', () => {
   it('password errada → mensagem de authErrorMessage', async () => {
     (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/wrong-password' });
     await expect(reauthenticateWithPassword('x')).rejects.toThrow('Email ou password incorretos.');
+  });
+});
+
+describe('changePassword (Task 26)', () => {
+  it('nova com 5 caracteres lança sem chamar o Firebase', async () => {
+    await expect(changePassword('atual1', '12345')).rejects.toThrow(CHANGE_PASSWORD_TEXT.tooShort);
+    expect(reauthenticateWithCredential).not.toHaveBeenCalled();
+    expect(updatePassword).not.toHaveBeenCalled();
+  });
+
+  it('reautentica com a atual e muda para a nova', async () => {
+    await changePassword('atual1', '123456');
+    expect(EmailAuthProvider.credential).toHaveBeenCalledWith('ze@x.pt', 'atual1');
+    expect(updatePassword).toHaveBeenCalledWith(mockUser.current, '123456');
+    const reauthOrder = (reauthenticateWithCredential as jest.Mock).mock.invocationCallOrder[0];
+    expect(reauthOrder).toBeLessThan((updatePassword as jest.Mock).mock.invocationCallOrder[0]!);
+  });
+
+  it('password atual errada: mensagem própria e não muda nada', async () => {
+    (reauthenticateWithCredential as jest.Mock).mockRejectedValueOnce({ code: 'auth/wrong-password' });
+    await expect(changePassword('errada', '123456')).rejects.toThrow(CHANGE_PASSWORD_TEXT.wrongCurrent);
+    expect(updatePassword).not.toHaveBeenCalled();
+  });
+
+  it('erro ao mudar: mensagem de authErrorMessage', async () => {
+    (updatePassword as jest.Mock).mockRejectedValueOnce({ code: 'auth/network-request-failed' });
+    await expect(changePassword('atual1', '123456')).rejects.toThrow('Sem ligação à internet.');
   });
 });
 
