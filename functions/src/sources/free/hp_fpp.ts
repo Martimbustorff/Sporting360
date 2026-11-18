@@ -1,8 +1,9 @@
 import { load } from "cheerio";
+import { logger } from "firebase-functions";
 import { competitionLabel } from "../../model/labels";
 import { FREE_SOURCES } from "../../modalities/sourcesConfig";
 import { getText, SourceError, type FetchFn } from "../http";
-import { FREE_HEADERS, FREE_TIMEOUT_MS, intOrNull, isSporting, lisbonDate, slugId, statusWithScore, teamRef, type FetchContext, type MatchSource, type NormalizedMatch } from "./common";
+import { FREE_HEADERS, FREE_TIMEOUT_MS, intOrNull, isSporting, lisbonDate, slugId, statusFromScore, teamRef, type FetchContext, type MatchSource, type NormalizedMatch } from "./common";
 
 const KEY = "hp_fpp";
 
@@ -47,6 +48,8 @@ export function parseHpPhase(html: string, phaseId: number, season: string, now:
 
   const out: NormalizedMatch[] = [];
   let round: string | null = null;
+  let rows = 0;
+  let bad = 0;
   $("table.calendario-hp tr").each((_, tr) => {
     const $tr = $(tr);
     const h6 = $tr.find("h6.titulo-jornada");
@@ -56,20 +59,27 @@ export function parseHpPhase(html: string, phaseId: number, season: string, now:
     }
     const dateCell = $tr.find("td.coluna-data").not(".coluna-numero").find("p.data");
     if (dateCell.length === 0) return; // linha só com a ligação de vídeo
+    rows++;
     const dt = text(dateCell.text()).match(/(\d{4}-\d{2}-\d{2})\s*(\d{1,2}:\d{2})?/);
     const homeName = text($tr.find("p.visitada").text());
     const awayName = text($tr.find("p.visitante").text());
     const numero = text($tr.find("td.coluna-numero p.data").text());
-    if (!dt || homeName === "" || awayName === "" || numero === "") throw new SourceError(KEY, "parse", `fase ${phaseId}: linha sem data, número ou equipas`);
     const sportingHome = isSporting(homeName);
     const sportingAway = isSporting(awayName);
+    if (!dt || homeName === "" || awayName === "" || numero === "") {
+      // Linha mal formada: do Sporting (ou sem equipas legíveis do Sporting à vista) só se ignora se for de outra equipa.
+      if (sportingHome || sportingAway) throw new SourceError(KEY, "parse", `fase ${phaseId}: linha do Sporting sem data, número ou equipas`);
+      bad++;
+      return;
+    }
     if (!sportingHome && !sportingAway) return;
 
+    const exact = dt[2] !== undefined;
     const kickoff = lisbonDate(dt[1], dt[2] ?? "");
     const res = text($tr.find("p.resultado").text()).match(/^(\d+)\s*-\s*(\d+)$/);
     const home = intOrNull(res?.[1]);
     const away = intOrNull(res?.[2]);
-    const status = statusWithScore(kickoff, now, home !== null && away !== null);
+    const status = statusFromScore({ kickoff, exact, now, hasScore: home !== null && away !== null, type: label.type });
     out.push({
       sourceKey: KEY,
       sourceId: `${phaseId}_${numero}`,
@@ -77,7 +87,7 @@ export function parseHpPhase(html: string, phaseId: number, season: string, now:
       season,
       competition: { id: slugId(label.name), name: label.name, round: playoffPhase && round ? `${playoffPhase} - ${round}` : round, type: label.type },
       kickoff,
-      kickoffExact: dt[2] !== undefined,
+      kickoffExact: exact,
       home: teamRef(homeName),
       away: teamRef(awayName),
       sportingSide: sportingAway && !sportingHome ? "away" : "home",
@@ -87,6 +97,8 @@ export function parseHpPhase(html: string, phaseId: number, season: string, now:
       venue: null,
     });
   });
+  if (rows > 0 && bad === rows) throw new SourceError(KEY, "parse", `fase ${phaseId}: nenhuma das ${rows} linhas é legível`);
+  if (bad > 0) logger.warn(`hp_fpp: fase ${phaseId}: ${bad} linhas de outras equipas ignoradas (mal formadas)`);
   return out;
 }
 
@@ -99,9 +111,21 @@ export const hpFpp: MatchSource = {
   async fetchMatches(f: FetchFn, season: string, now: Date, ctx?: FetchContext): Promise<NormalizedMatch[]> {
     const cfg = HP_FPP_SEASONS[season];
     if (!cfg) throw new SourceError(KEY, "parse", `época ${season} sem fases configuradas (HP_FPP_SEASONS)`);
-    const focus = (ctx?.focus ?? []).filter((m) => m.source.provider === KEY).map((m) => Number(m.source.id.split("_")[0]));
+    // Fases dos jogos em janela: pelo id da FPP; um jogo vindo do recurso usa as fases dos jogos FPP da mesma competição.
+    const known = (ctx?.known ?? []).filter((m) => m.source.provider === KEY);
+    const phaseOf = (m: { source: { id: string } }) => Number(m.source.id.split("_")[0]);
+    const focus: number[] = [];
+    let unmapped = false;
+    for (const m of ctx?.focus ?? []) {
+      if (m.source.provider === KEY) focus.push(phaseOf(m));
+      else {
+        const same = known.filter((k) => k.competition.id === m.competition.id).map(phaseOf);
+        if (same.length === 0) unmapped = true;
+        else focus.push(Math.max(...same));
+      }
+    }
     let phases: number[];
-    if (focus.length > 0) {
+    if (focus.length > 0 && !unmapped) {
       phases = focus;
     } else {
       phases = [...cfg.phases];

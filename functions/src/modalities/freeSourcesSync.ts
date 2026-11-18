@@ -5,7 +5,7 @@ import { apiSportsSeason } from "../model/seasons";
 import { FINAL_STATUSES } from "../model/status";
 import type { MatchDoc, Sport } from "../model/types";
 import type { FetchFn } from "../sources/http";
-import { GAME_DURATION_MS, opponentSlug, seasonStartYear, type FetchContext, type MatchSource, type NormalizedMatch } from "../sources/free/common";
+import { gameDurationMs, opponentSlug, seasonStartYear, type FetchContext, type MatchSource, type NormalizedMatch } from "../sources/free/common";
 import { futsalPortugal } from "../sources/free/futsalportugal";
 import { futsalPortugalGamesheet } from "../sources/free/futsalportugal_gamesheet";
 import { hoqueipatins } from "../sources/free/hoqueipatins";
@@ -70,7 +70,7 @@ export function toMatchDoc(m: NormalizedMatch, id: string, now: Date): MatchDoc 
     elapsed: null,
     elapsedExtra: null,
     score: { home: m.score.home, away: m.score.away, halftime: null, extratime: null, penalty: m.penalty ?? null },
-    finishedAt: final ? new Date(m.kickoff.getTime() + GAME_DURATION_MS) : null,
+    finishedAt: final ? new Date(m.kickoff.getTime() + gameDurationMs(m.competition.type)) : null,
     finishedAtSource: final ? "estimated" : null,
     ...(m.venue ? { venue: { id: null, name: m.venue, city: null } } : {}),
     referee: null,
@@ -113,7 +113,32 @@ function findSame<T>(target: Key, items: T[], keyOf: (t: T) => Key): { item: T |
   const sameRound = target.roundLabel === null ? [] : cands.filter((c) => keyOf(c).roundLabel === target.roundLabel).sort(byDistance);
   if (sameRound.length > 0) return { item: sameRound[0], ambiguous: false };
   if (cands.length === 1) return { item: cands[0], ambiguous: false };
-  return { item: null, ambiguous: cands.length > 1 };
+  if (cands.length > 1) return { item: null, ambiguous: true };
+  // Nomes que não se comparam entre fontes ("SCT / UP TOMAR" e "Tomar"): uma ronda tem um só jogo do Sporting,
+  // por isso a mesma competição e a mesma ronda (não nula) a menos de 3 dias, com um único candidato, é o mesmo jogo.
+  if (target.roundLabel === null) return { item: null, ambiguous: false };
+  const byRound = items.filter((i) => {
+    const k = keyOf(i);
+    return k.competitionId === target.competitionId && k.roundLabel === target.roundLabel && Math.abs(k.kickoff - target.kickoff) < SAME_GAME_MS;
+  });
+  if (byRound.length === 1) return { item: byRound[0], ambiguous: false };
+  return { item: null, ambiguous: byRound.length > 1 };
+}
+
+const hasFinal = (d: MatchDoc) => FINAL_STATUSES.has(d.status) && d.score.home !== null && d.score.away !== null;
+
+/**
+ * Um resultado final gravado nunca desce: se a fonte traz o jogo sem estado final ou sem resultado, ficam o estado,
+ * o resultado e `finishedAt` gravados, e sai um alerta.
+ */
+function keepFinal(doc: MatchDoc, ex: MatchDoc | null, alerts: string[]): void {
+  if (!ex || !hasFinal(ex) || hasFinal(doc)) return;
+  doc.status = ex.status;
+  doc.statusRaw = ex.statusRaw;
+  doc.score = { ...ex.score };
+  doc.finishedAt = ex.finishedAt;
+  doc.finishedAtSource = ex.finishedAtSource;
+  alerts.push(`resultado final de ${ex.id} (${ex.score.home}-${ex.score.away}) não confirmado pela fonte (${doc.source.provider}: ${doc.status === ex.status ? "sem resultado" : "outro estado"}); mantido`);
 }
 
 const scoreText = (s: { home: number | null; away: number | null }) => `${s.home ?? "?"}-${s.away ?? "?"}`;
@@ -126,7 +151,7 @@ function fillNulls(doc: MatchDoc, fb: NormalizedMatch): boolean {
     doc.score = { ...doc.score, home: fb.score.home, away: fb.score.away, penalty: fb.penalty ?? null };
     doc.status = fb.status;
     doc.statusRaw = fb.statusRaw;
-    doc.finishedAt = final ? new Date(doc.kickoff.getTime() + GAME_DURATION_MS) : null;
+    doc.finishedAt = final ? new Date(doc.kickoff.getTime() + gameDurationMs(doc.competition.type)) : null;
     doc.finishedAtSource = final ? "estimated" : null;
     filled = true;
   }
@@ -171,12 +196,12 @@ export function reconcile(
   };
 
   // 1. Principal: id do documento existente (mesma fonte e id, ou o mesmo jogo), senão um novo.
-  const fromPrimary: { doc: MatchDoc; m: NormalizedMatch; merged: boolean }[] = [];
+  const fromPrimary: { doc: MatchDoc; m: NormalizedMatch; merged: boolean; ex: MatchDoc | null }[] = [];
   for (const m of pList) {
     const ex = findExisting(m);
     if (ex) usedExisting.add(ex.id);
     const doc = toMatchDoc(m, ex?.id ?? `${prefix}_${m.sourceKey}_${m.sourceId}`, now);
-    fromPrimary.push({ doc, m, merged: false });
+    fromPrimary.push({ doc, m, merged: false, ex });
     out.push(doc);
   }
 
@@ -199,7 +224,10 @@ export function reconcile(
     if (ex) {
       usedExisting.add(ex.id);
       if (ex.source.provider === fb.sourceKey) {
-        out.push({ ...toMatchDoc(fb, ex.id, now), source: { ...toMatchDoc(fb, ex.id, now).source, fallbackUsed: true } });
+        const doc = toMatchDoc(fb, ex.id, now);
+        doc.source = { ...doc.source, fallbackUsed: true };
+        keepFinal(doc, ex, alerts);
+        out.push(doc);
       } else {
         const doc = clone(ex);
         if (fillNulls(doc, fb)) out.push({ ...doc, source: { ...doc.source, fallbackUsed: true } });
@@ -210,6 +238,8 @@ export function reconcile(
     const doc = toMatchDoc(fb, `${prefix}_${fb.sourceKey}_${fb.sourceId}`, now);
     out.push({ ...doc, source: { ...doc.source, fallbackUsed: true } });
   }
+
+  for (const p of fromPrimary) keepFinal(p.doc, p.ex, alerts);
 
   const used = pList.length > 0 && fList.length > 0 ? "merged" : pList.length > 0 ? "primary" : fList.length > 0 ? "fallback" : "none";
   return { matches: out, used, alerts };
@@ -263,7 +293,9 @@ async function knownMatches(db: Firestore, ref: FreeCompetitionRef, season: stri
     .filter((m) => m.id.startsWith(`${ref.prefix}_`) && m.competition?.season === season && (!ref.filter || ref.filter(m)));
 }
 
-const inWindow = (m: MatchDoc, now: Date) => now.getTime() >= m.kickoff.getTime() - BEFORE_MS && now.getTime() <= m.kickoff.getTime() + AFTER_MS;
+/** Janela de jogo só com hora confirmada (uma hora aproximada não abre janela, ex. linha sem hora à meia-noite). */
+const inWindow = (m: MatchDoc, now: Date) =>
+  m.source?.exactKickoff === true && now.getTime() >= m.kickoff.getTime() - BEFORE_MS && now.getTime() <= m.kickoff.getTime() + AFTER_MS;
 
 const stateRef = (db: Firestore, key: string) => db.doc(`ingestState/free_${key}`);
 
@@ -277,7 +309,7 @@ export async function syncFreeCompetition(d: FreeSourcesDeps, ref: FreeCompetiti
   const now = d.now();
   const season = apiSportsSeason("span", now);
   const known = await knownMatches(d.db, ref, season);
-  const ctx: FetchContext = { known, focus: known.filter((m) => inWindow(m, now)) };
+  const ctx: FetchContext = { known, focus: known.filter((m) => inWindow(m, now)), alerts: [] };
   const keep = (ms: NormalizedMatch[]) => (ref.filter ? ms.filter(ref.filter) : ms);
   const run = async (s: MatchSource | null): Promise<NormalizedMatch[] | Error> => {
     if (!s) return [];
@@ -290,6 +322,7 @@ export async function syncFreeCompetition(d: FreeSourcesDeps, ref: FreeCompetiti
   const primary = await run(ref.primary);
   const fallback = await run(ref.fallback);
   const r = reconcile(known, primary, fallback, ref.prefix, now);
+  r.alerts.push(...new Set(ctx.alerts));
 
   let count = 0;
   let failed = 0;
@@ -309,7 +342,9 @@ export async function syncFreeCompetition(d: FreeSourcesDeps, ref: FreeCompetiti
   if (ok) await recordRun(d.db, source, { ok: true, count, failed });
   else await recordRun(d.db, source, { ok: false, error: r.alerts.filter((a) => /falhou/.test(a)).join("; ") });
   for (const reason of r.alerts) logger.error("INGEST_ALERT", { source, reason });
-  await d.db.doc(`ingestHealth/${source}`).set({ lastUsed: r.used, lastAlerts: r.alerts }, { merge: true });
+  // Principal em falha com a recurso a dar jogos: a execução conta, mas a saúde fica "degradada" (não verde).
+  const degraded = ok && primary instanceof Error;
+  await d.db.doc(`ingestHealth/${source}`).set({ lastUsed: r.used, lastAlerts: r.alerts, degraded }, { merge: true });
 
   await stateRef(d.db, ref.key).set(ok ? { lastRunAt: now, lastFailureAt: FieldValue.delete() } : { lastFailureAt: now }, { merge: true });
   return { count, ok, used: r.used, alerts: r.alerts };

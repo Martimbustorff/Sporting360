@@ -124,6 +124,19 @@ describe("syncFreeSources", () => {
     expect(await ids("hq_")).toHaveLength(23);
   });
 
+  it("principal com erro e recurso com jogos: a execução conta mas a saúde fica degradada, com alerta", async () => {
+    const broken: MatchSource = { key: "hp_fpp", sport: "roller_hockey", fetchMatches: async () => { throw new Error("HTTP 503"); } };
+    const r = await syncFreeCompetition({ db, fetch: allRoutes(), now: () => NOW }, { key: "roller_hockey", sport: "roller_hockey", primary: broken, fallback: FREE_MATCH_SOURCES.hoqueipatins, prefix: "hq", filter: (m) => m.competition.type !== "europe" });
+    expect(r).toMatchObject({ ok: true, used: "fallback", count: 17 });
+    const h = (await db.doc("ingestHealth/free_roller_hockey").get()).data()!;
+    expect(h).toMatchObject({ degraded: true, lastUsed: "fallback", consecutiveFailures: 0 });
+    expect(h.lastAlerts.join(" ")).toMatch(/principal falhou: HTTP 503/);
+    await syncFreeCompetition({ db, fetch: allRoutes(), now: () => NOW }, { key: "roller_hockey", sport: "roller_hockey", primary: FREE_MATCH_SOURCES.hp_fpp, fallback: FREE_MATCH_SOURCES.hoqueipatins, prefix: "hq", filter: (m) => m.competition.type !== "europe" });
+    expect((await db.doc("ingestHealth/free_roller_hockey").get()).get("degraded")).toBe(false);
+    // O FPP passa a dar os jogos que vieram do recurso: os ids hq_hoqueipatins_* ficam, sem duplicados.
+    expect(await ids("hq_")).toHaveLength(17);
+  });
+
   it("Review Focus 5: fontes vazias em novembro não apagam os jogos gravados; jogo bloqueado não é tocado", async () => {
     await syncFreeSources({ db, fetch: allRoutes(), now: () => NOW });
     await db.doc("matches/hq_hp_fpp_493_20").set({ locked: true, score: { home: 9, away: 9 } }, { merge: true });

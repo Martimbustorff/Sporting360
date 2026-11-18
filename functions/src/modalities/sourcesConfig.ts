@@ -152,3 +152,12 @@ export const REAL_ROUND_TEXTS = {
     "Jornada 1",
   ],
 } as const;
+
+/**
+ * Nomes de equipa que diferem entre hp.fpp.pt e hoqueipatins.pt (amostras de 2026-11-17), já em forma de
+ * `opponentSlug` (sem co-nome depois de "/", siglas e iniciais): slug da FPP → slug comum.
+ */
+export const TEAM_SLUG_ALIASES: Record<string, string> = {
+  sct: "tomar",
+  "aj viana": "juventude viana",
+};

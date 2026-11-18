@@ -135,11 +135,52 @@ describe("reconcile", () => {
   });
 });
 
+describe("reconcile (correção 1)", () => {
+  const j4 = (key: "hp_fpp" | "hoqueipatins", opponent: string, round: string, kickoff: Date) =>
+    nm({ sourceKey: key, sourceId: key === "hp_fpp" ? "493_30" : "110394", opponent, side: "away", kickoff, competition: { id: "campeonato-placard", name: "Campeonato Placard", round, type: "league" } });
+
+  it("nomes reais diferentes (FPP 'SCT / UP TOMAR', hoqueipatins 'Tomar'): FPP J4 funde com o hq_hoqueipatins J4 existente", () => {
+    const ex = existingDoc(j4("hoqueipatins", "Tomar", "0004-Jornada 4", new Date("2027-01-02T18:00:00Z")), "hq_hoqueipatins_110394");
+    const r = reconcile([ex], [j4("hp_fpp", "SCT / UP TOMAR", "4ª Jornada", new Date("2027-01-02T18:00:00Z"))], [j4("hoqueipatins", "Tomar", "0004-Jornada 4", new Date("2027-01-02T18:00:00Z"))], "hq", NOW);
+    expect(r.matches.map((m) => m.id)).toEqual(["hq_hoqueipatins_110394"]);
+    expect(r.matches[0].source.provider).toBe("hp_fpp");
+    for (const [fpp, hq] of [["AJ Viana", "Juventude de Viana"], ["J. Pacense / Des Compagnons", "Pacense"]]) {
+      const r2 = reconcile([], [j4("hp_fpp", fpp, "4ª Jornada", KICK)], [j4("hoqueipatins", hq, "0004-Jornada 4", KICK)], "hq", NOW);
+      expect(r2.matches).toHaveLength(1);
+    }
+  });
+
+  it("sem alias: mesma competição e mesma ronda a menos de 3 dias, um só candidato → o mesmo jogo", () => {
+    const r = reconcile([], [j4("hp_fpp", "Clube Novo / Patrocínio", "4ª Jornada", KICK)], [j4("hoqueipatins", "Outro Nome", "0004-Jornada 4", new Date(KICK.getTime() - DAY))], "hq", NOW);
+    expect(r.matches.map((m) => m.id)).toEqual(["hq_hp_fpp_493_30"]);
+    // Ronda diferente: não funde.
+    const r2 = reconcile([], [j4("hp_fpp", "Clube Novo", "4ª Jornada", KICK)], [j4("hoqueipatins", "Outro Nome", "0005-Jornada 5", KICK)], "hq", NOW);
+    expect(r2.matches).toHaveLength(2);
+  });
+
+  it("um resultado final gravado nunca desce (principal sem resultado) e sai alerta", () => {
+    const ex = existingDoc(primary({ status: "FT", score: { home: 4, away: 2 } }), "hq_hp_fpp_493_20");
+    const r = reconcile([ex], [primary()], [], "hq", NOW);
+    expect(r.matches[0]).toMatchObject({ id: "hq_hp_fpp_493_20", status: "FT", score: { home: 4, away: 2 } });
+    expect(r.matches[0].finishedAt).toEqual(ex.finishedAt);
+    expect(r.alerts.join(" ")).toMatch(/resultado final de hq_hp_fpp_493_20 \(4-2\) não confirmado/);
+    const r2 = reconcile([ex], [primary({ status: "LIVE", score: { home: 1, away: 0 } })], [], "hq", NOW);
+    expect(r2.matches[0]).toMatchObject({ status: "FT", score: { home: 4, away: 2 } });
+  });
+
+  it("um resultado final gravado nunca desce (jogo da recurso, principal com erro)", () => {
+    const ex = existingDoc(fallback({ status: "FT", score: { home: 3, away: 3 } }), "hq_hoqueipatins_110386");
+    const r = reconcile([ex], new Error("x"), [fallback()], "hq", NOW);
+    expect(r.matches[0]).toMatchObject({ id: "hq_hoqueipatins_110386", status: "FT", score: { home: 3, away: 3 }, source: { fallbackUsed: true } });
+    expect(r.alerts.join(" ")).toMatch(/não confirmado/);
+  });
+});
+
 describe("toMatchDoc", () => {
   it("final: finishedAt estimado, penáltis e emblema do Sporting", () => {
     const m = toMatchDoc(primary({ status: "PEN", score: { home: 4, away: 4 }, penalty: { home: 3, away: 4 } }), "hq_x", NOW);
     expect(m).toMatchObject({ sport: "roller_hockey", status: "PEN", finishedAtSource: "estimated", sportingSide: "home", score: { home: 4, away: 4, penalty: { home: 3, away: 4 }, halftime: null, extratime: null } });
-    expect(m.finishedAt).toEqual(new Date(KICK.getTime() + 110 * 60_000));
+    expect(m.finishedAt).toEqual(new Date(KICK.getTime() + 120 * 60_000));
     expect(m.home.logo).toMatch(/sporting-cp-2026/);
     expect(m).not.toHaveProperty("venue");
   });

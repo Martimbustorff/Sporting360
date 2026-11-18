@@ -1,7 +1,7 @@
 import { competitionLabel } from "../../model/labels";
 import { FREE_SOURCES } from "../../modalities/sourcesConfig";
 import { getJson, SourceError, type FetchFn } from "../http";
-import { decodeEntities, FREE_HEADERS, FREE_TIMEOUT_MS, intOrNull, lisbonDate, slugId, statusWithScore, teamRef, type FetchContext, type MatchSource, type NormalizedMatch } from "./common";
+import { decodeEntities, FREE_HEADERS, FREE_TIMEOUT_MS, intOrNull, lisbonDate, slugId, statusFromScore, teamRef, type FetchContext, type MatchSource, type NormalizedMatch } from "./common";
 
 const KEY = "hoqueipatins";
 export const HOQUEIPATINS_ATTRIBUTION = "hoqueipatins.pt";
@@ -51,8 +51,8 @@ function normalize(e: SpEvent, season: string, now: Date): NormalizedMatch | nul
   const r = e.main_results ?? [];
   const home = intOrNull(r[0]);
   const away = intOrNull(r[1]);
-  const status = e.status === "publish" ? statusWithScore(kickoff, now, home !== null && away !== null) : "NS";
   const label = competitionLabel("roller_hockey", null, HOQUEIPATINS_LEAGUES[league]);
+  const status = e.status === "publish" ? statusFromScore({ kickoff, exact: true, now, hasScore: home !== null && away !== null, type: label.type }) : "NS";
   return {
     sourceKey: KEY,
     sourceId: String(e.id),

@@ -1,7 +1,7 @@
 import { SPORTING_CREST_URL } from "../../src/config/brand";
 import type { MatchDoc } from "../../src/model/types";
 import { SourceError } from "../../src/sources/http";
-import { isSporting, opponentSlug } from "../../src/sources/free/common";
+import { isSporting, opponentSlug, statusFromScore } from "../../src/sources/free/common";
 import { futsalPortugal, parseFutsalSchedule } from "../../src/sources/free/futsalportugal";
 import { futsalPortugalGamesheet, parseGamesheetJsonLd } from "../../src/sources/free/futsalportugal_gamesheet";
 import { hoqueipatins } from "../../src/sources/free/hoqueipatins";
@@ -66,8 +66,16 @@ describe("opponentSlug", () => {
     ["FC Porto ", "porto"],
     ["Candelária SC", "candelaria"],
     ["AD Valongo / Colquímica", "valongo"],
-    ["Riba d&#8217;Ave", "riba d ave"],
-    ["Riba d'Ave HC", "riba d ave"],
+    ["Riba d&#8217;Ave", "riba ave"],
+    ["Riba d&#039; Ave HC / CSJ Group", "riba ave"],
+    // Nomes reais que diferem entre hp.fpp.pt e hoqueipatins.pt (co-nome, iniciais, TEAM_SLUG_ALIASES).
+    ["SCT / UP TOMAR", "tomar"],
+    ["Tomar", "tomar"],
+    ["AJ Viana", "juventude viana"],
+    ["Juventude de Viana", "juventude viana"],
+    ["J. Pacense / Des Compagnons", "pacense"],
+    ["Pacense", "pacense"],
+    ["HC Braga SAD/SPORMEX", "braga"],
     ["OC Barcelos SAD ", "barcelos"],
   ])("%s → %s", (name, slug) => {
     expect(opponentSlug(name)).toBe(slug);
@@ -170,6 +178,43 @@ describe("futsalportugal (lista)", () => {
     expect(rows.find((r) => r.sourceId === "58702")).toMatchObject({ status: "AET", score: { home: 4, away: 7 } });
     expect(rows.find((r) => r.sourceId === "66601")).toMatchObject({ status: "PEN", score: { home: 4, away: 4 }, penalty: { home: 3, away: 4 } });
     expect(rows.find((r) => r.sourceId === "58712")).toMatchObject({ status: "FT", competition: { round: "1ª Eliminatória", type: "cup" } });
+  });
+
+  it.each([
+    ["PT", "2026-09-11T14:15:00.000Z", true, false],
+    ["ES", "2026-09-11T13:15:00.000Z", true, false],
+    ["GB", "2026-09-11T14:15:00.000Z", true, false],
+    ["US", "2026-09-11T14:15:00.000Z", false, true],
+    ["XX", "2026-09-11T14:15:00.000Z", false, true],
+  ])("rótulo 'hora %s': hora da lista %s, confirmada=%s, alerta=%s", (label, iso, exact, alert) => {
+    const htmlText = fixture("futsalportugal/schedule-liga-placard-26.html").replace("hora US", `hora ${label}`);
+    const alerts: string[] = [];
+    const ms = parseFutsalSchedule(htmlText, { page: 26, raw: "Liga Placard" }, SEASON, NOW, { alerts });
+    const m = ms.find((x) => x.sourceId === "31776")!;
+    expect(m.kickoff.toISOString()).toBe(iso);
+    expect(m.kickoffExact).toBe(exact);
+    expect(alerts.length > 0).toBe(alert);
+    if (alert) expect(alerts[0]).toMatch(new RegExp(`hora ${label}.*fuso não reconhecido`));
+  });
+
+  it("hora não confirmada: não se infere o estado da hora (resultado dentro das 12 h de incerteza fica por confirmar)", () => {
+    const htmlText = fixture("futsalportugal/schedule-supertaca-40.html");
+    // Supertaça 5 set, "15:00" em hora US: 6 h depois ainda pode estar a decorrer noutro fuso.
+    const at = new Date("2026-09-05T20:00:00Z");
+    const [m] = parseFutsalSchedule(htmlText, { page: 40, raw: "Supertaça" }, SEASON, at);
+    expect(m).toMatchObject({ kickoffExact: false, status: "NS", score: { home: null, away: null } });
+    const [later] = parseFutsalSchedule(htmlText, { page: 40, raw: "Supertaça" }, SEASON, new Date("2026-09-07T12:00:00Z"));
+    expect(later).toMatchObject({ status: "FT", score: { home: 2, away: 3 } });
+  });
+
+  it("linha mal formada de outra equipa é ignorada; do Sporting, ou todas, falham", () => {
+    const row = (names: string[], id = "1") =>
+      `<div class="sc-item"><span class="sc-time">15:00</span><div class="mcm" onclick="location.href='/pt/gamesheet/${id}'">${names.map((n) => `<span class="mcm-name">${n}</span><span class="mcm-g">1</span>`).join("")}</div></div>`;
+    const page = (rows: string) => `<div class="sc-body"><section class="sc-comp"><header class="sc-comp-head"><h2>X</h2><span>1 rondas · hora PT</span></header><article class="sc-round"><h3>1ª Jornada</h3><div class="sc-day">Sexta-feira, 11 setembro</div>${rows}</article></section></div>`;
+    const p = { page: 26, raw: "Liga Placard" };
+    expect(parseFutsalSchedule(page(row(["SL Benfica"], "2") + row(["Sporting CP", "SC Braga"], "3")), p, SEASON, NOW).map((m) => m.sourceId)).toEqual(["3"]);
+    expect(() => parseFutsalSchedule(page(row(["Sporting CP"], "2")), p, SEASON, NOW)).toThrow(/linha do Sporting/);
+    expect(() => parseFutsalSchedule(page(row(["SL Benfica"], "2") + row(["FC Porto"], "4")), p, SEASON, NOW)).toThrow(/nenhuma das 2 linhas/);
   });
 
   it("página vazia → []", async () => {
@@ -296,6 +341,27 @@ describe("hp_fpp (FPP)", () => {
     expect(e.kind).toBe("parse");
   });
 
+  it("linha mal formada de outra equipa é ignorada; do Sporting falha", () => {
+    const base = fixture("hp_fpp/competicao-496-supertaca.html");
+    const broken = `<tr><td class="coluna-data coluna-numero"><p class="data">2</p></td><td class="coluna-data"><p class="data">2026-11-08<br>12:00</p></td><td class="coluna-equipa"><p class="visitada">FC Porto</p></td><td class="coluna-resultado"><p class="resultado">-</p></td><td class="coluna-equipa"></td></tr>`;
+    const withBroken = base.replace("</table>", `${broken}</table>`);
+    expect(parseHpPhase(withBroken, 496, SEASON, NOW)).toHaveLength(1);
+    expect(() => parseHpPhase(withBroken.replace(">FC Porto<", ">Sporting CP<"), 496, SEASON, NOW)).toThrow(/linha do Sporting/);
+  });
+
+  it("linha sem hora: hora não confirmada", () => {
+    const noTime = fixture("hp_fpp/competicao-496-supertaca.html").replace(/2026-11-07\s*<br>\s*12:00/, "2026-11-07<br>");
+    expect(parseHpPhase(noTime, 496, SEASON, NOW)[0]).toMatchObject({ kickoffExact: false, kickoff: new Date("2026-11-07T00:00:00Z") });
+  });
+
+  it("em janela de jogo com um jogo vindo do recurso: usa a fase dos jogos FPP da mesma competição", async () => {
+    const f = routes();
+    const fromFallback = known({ id: "hq_hoqueipatins_110394", sport: "roller_hockey", competition: { key: "k", id: "campeonato-placard", name: "Campeonato Placard", type: "league", season: SEASON, round: null, roundLabel: "J4" }, source: { provider: "hoqueipatins", id: "110394" } });
+    const fpp = known({ id: "hq_hp_fpp_493_20", sport: "roller_hockey", competition: { key: "k", id: "campeonato-placard", name: "Campeonato Placard", type: "league", season: SEASON, round: null, roundLabel: "J3" }, source: { provider: "hp_fpp", id: "493_20" } });
+    await hpFpp.fetchMatches(f, SEASON, NOW, { known: [fromFallback, fpp], focus: [fromFallback] });
+    expect(f.calls).toEqual(["https://hp.fpp.pt/Competicao/493"]);
+  });
+
   it("em janela de jogo pede só a fase desse jogo", async () => {
     const f = routes();
     const focus = [known({ id: "hq_hp_fpp_493_20", sport: "roller_hockey", source: { provider: "hp_fpp", id: "493_20" } })];
@@ -350,5 +416,26 @@ describe("hoqueipatins", () => {
     expect(e.kind).toBe("parse");
     const e2 = await caught(hoqueipatins.fetchMatches(fakeFetch([[/events/, []]]), "2031-2032", NOW));
     expect(e2).toBeInstanceOf(SourceError);
+  });
+});
+
+describe("statusFromScore (duração e hora não confirmada)", () => {
+  const k = new Date("2026-11-22T19:30:00Z");
+  const at = (min: number) => new Date(k.getTime() + min * 60_000);
+  it.each([
+    ["league", 119, "LIVE"],
+    ["league", 121, "FT"],
+    ["europe", 121, "FT"],
+    ["cup", 149, "LIVE"],
+    ["cup", 151, "FT"],
+    ["supercup", 149, "LIVE"],
+  ] as const)("%s, %d min depois do início → %s", (type, min, st) => {
+    expect(statusFromScore({ kickoff: k, exact: true, now: at(min), hasScore: true, type })).toBe(st);
+  });
+  it("sem resultado ou no futuro → NS; hora não confirmada só é final passadas 12 h + duração", () => {
+    expect(statusFromScore({ kickoff: k, exact: true, now: at(200), hasScore: false, type: "league" })).toBe("NS");
+    expect(statusFromScore({ kickoff: k, exact: true, now: at(-5), hasScore: true, type: "league" })).toBe("NS");
+    expect(statusFromScore({ kickoff: k, exact: false, now: at(180), hasScore: true, type: "league" })).toBe("NS");
+    expect(statusFromScore({ kickoff: k, exact: false, now: at(12 * 60 + 121), hasScore: true, type: "league", finalStatus: "PEN" })).toBe("PEN");
   });
 });

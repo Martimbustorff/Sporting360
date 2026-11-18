@@ -1,4 +1,5 @@
 import { load } from "cheerio";
+import { fromZonedTime } from "date-fns-tz";
 import { logger } from "firebase-functions";
 import type { GameStatus } from "../../game/types";
 import { competitionLabel } from "../../model/labels";
@@ -10,12 +11,11 @@ import {
   FREE_TIMEOUT_MS,
   intOrNull,
   isSporting,
-  lisbonDate,
   lisbonDay,
   opponentSlug,
   seasonStartYear,
   slugId,
-  statusWithScore,
+  statusFromScore,
   teamRef,
   type FetchContext,
   type MatchSource,
@@ -59,12 +59,53 @@ function dayOf(text: string, season: string): string {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
-/** Lista de uma competição. Por omissão só os jogos do Sporting; `all` para testes. Hora da lista tomada como hora de Lisboa. */
-export function parseFutsalSchedule(html: string, page: { page: number; raw: string }, season: string, now: Date, o: { all?: boolean } = {}): NormalizedMatch[] {
+/** Fuso de cada rótulo "hora XX" da lista (o site mostra a hora do país de quem pede). Outros: hora não confirmada. */
+export const FUTSAL_LIST_ZONES: Record<string, string> = {
+  PT: "Europe/Lisbon",
+  ES: "Europe/Paris", FR: "Europe/Paris", BE: "Europe/Paris", NL: "Europe/Paris", LU: "Europe/Paris", DE: "Europe/Paris", IT: "Europe/Paris", CH: "Europe/Paris", AT: "Europe/Paris",
+  GB: "Europe/London", UK: "Europe/London", IE: "Europe/London",
+};
+
+/** Dados da linha para voltar a calcular o estado quando a ficha confirma a hora. */
+interface RowInfo {
+  upcoming: boolean;
+  home: number | null;
+  away: number | null;
+  pen: { home: number; away: number } | null;
+  finalStatus: GameStatus;
+}
+const ROWS = new WeakMap<NormalizedMatch, RowInfo>();
+
+/** Estado, resultado e penáltis a partir da linha e da hora atual do jogo (confirmada ou não). */
+function applyStatus(m: NormalizedMatch, r: RowInfo, now: Date): void {
+  m.status = r.upcoming
+    ? "NS"
+    : statusFromScore({ kickoff: m.kickoff, exact: m.kickoffExact === true, now, hasScore: r.home !== null && r.away !== null, type: m.competition.type, finalStatus: r.finalStatus });
+  const played = m.status !== "NS";
+  m.score = played ? { home: r.home, away: r.away } : { home: null, away: null };
+  m.penalty = played ? r.pen : null;
+}
+
+/**
+ * Lista de uma competição. Por omissão só os jogos do Sporting; `all` para testes. A hora da lista está no fuso do
+ * rótulo "hora XX": PT e países conhecidos dão hora confirmada; outro rótulo (ex. "US") fica como hora de Lisboa não
+ * confirmada e gera um aviso em `o.alerts`. Linhas mal formadas de outras equipas são ignoradas; do Sporting, ou todas, falham.
+ */
+export function parseFutsalSchedule(
+  html: string,
+  page: { page: number; raw: string },
+  season: string,
+  now: Date,
+  o: { all?: boolean; alerts?: string[] } = {},
+): NormalizedMatch[] {
   const $ = load(html);
   if ($(".sc-body").length === 0) throw new SourceError(KEY, "parse", `competição ${page.page}: sem .sc-body`);
   const label = competitionLabel("futsal", null, page.raw);
+  const hora = $(".sc-comp-head span").first().text().match(/hora\s+([A-Za-z]{2,3})\b/)?.[1]?.toUpperCase() ?? null;
+  const zone = hora ? FUTSAL_LIST_ZONES[hora] : undefined;
   const out: NormalizedMatch[] = [];
+  let rows = 0;
+  let bad = 0;
 
   $("article.sc-round").each((_, art) => {
     const h3 = $(art).find("h3").first().clone();
@@ -79,46 +120,59 @@ export function parseFutsalSchedule(html: string, page: { page: number; raw: str
           day = dayOf($el.text(), season);
           return;
         }
+        rows++;
         const names = $el.find(".mcm-name").map((___, n) => $(n).text()).get();
         const goals = $el.find(".mcm-g").map((___, n) => $(n).text()).get();
         const id = ($el.find(".mcm").attr("onclick") ?? "").match(/gamesheet\/(\d+)/)?.[1];
         if (names.length !== 2 || goals.length !== 2 || !id || day === null) {
-          throw new SourceError(KEY, "parse", `competição ${page.page}: linha de jogo sem equipas, id ou dia`);
+          if (names.some((n) => isSporting(n))) throw new SourceError(KEY, "parse", `competição ${page.page}: linha do Sporting sem equipas, id ou dia`);
+          bad++;
+          return;
         }
         const sportingHome = isSporting(names[0]);
         const sportingAway = isSporting(names[1]);
         if (!o.all && !sportingHome && !sportingAway) return;
 
-        const kickoff = lisbonDate(day, $el.find(".sc-time").text().trim());
-        const upcoming = ($el.find(".mcm").attr("class") ?? "").split(/\s+/).includes("is-up");
+        const time = $el.find(".sc-time").text().trim();
+        const hasTime = /^\d{1,2}:\d{2}$/.test(time);
+        const kickoff = fromZonedTime(`${day}T${hasTime ? time.padStart(5, "0") : "00:00"}:00`, zone ?? "Europe/Lisbon");
         const extra = $el.find(".sc-extra").text().trim();
         const note = $el.find(".mcm-note").text().trim();
         const pen = note.match(/pen[aá]ltis\s*(\d+)\s*-\s*(\d+)/i);
-        const home = intOrNull(goals[0]);
-        const away = intOrNull(goals[1]);
-        const finalStatus: GameStatus = /w\.?\s*o/i.test(extra) ? "CANC" : pen ? "PEN" : /a\.?\s*p/i.test(extra) ? "AET" : "FT";
-        const status = upcoming ? "NS" : statusWithScore(kickoff, now, home !== null && away !== null, finalStatus);
-        const played = status !== "NS";
-
-        out.push({
+        const info: RowInfo = {
+          upcoming: ($el.find(".mcm").attr("class") ?? "").split(/\s+/).includes("is-up"),
+          home: intOrNull(goals[0]),
+          away: intOrNull(goals[1]),
+          pen: pen ? { home: Number(pen[1]), away: Number(pen[2]) } : null,
+          finalStatus: /w\.?\s*o/i.test(extra) ? "CANC" : pen ? "PEN" : /a\.?\s*p/i.test(extra) ? "AET" : "FT",
+        };
+        const m: NormalizedMatch = {
           sourceKey: KEY,
           sourceId: id,
           sport: "futsal",
           season,
           competition: { id: slugId(label.name), name: label.name, round, type: label.type },
           kickoff,
-          kickoffExact: false,
+          kickoffExact: zone !== undefined && hasTime,
           home: teamRef(names[0]),
           away: teamRef(names[1]),
           sportingSide: sportingAway && !sportingHome ? "away" : "home",
-          status,
-          statusRaw: [extra, note].filter(Boolean).join(" ") || (upcoming ? "is-up" : ""),
-          score: played ? { home, away } : { home: null, away: null },
-          penalty: played && pen ? { home: Number(pen[1]), away: Number(pen[2]) } : null,
+          status: "NS",
+          statusRaw: [extra, note].filter(Boolean).join(" ") || (info.upcoming ? "is-up" : ""),
+          score: { home: null, away: null },
+          penalty: null,
           venue: null,
-        });
+        };
+        applyStatus(m, info, now);
+        ROWS.set(m, info);
+        out.push(m);
       });
   });
+  if (rows > 0 && bad === rows) throw new SourceError(KEY, "parse", `competição ${page.page}: nenhuma das ${rows} linhas é legível`);
+  if (bad > 0) logger.warn(`futsalportugal: competição ${page.page}: ${bad} linhas de outras equipas ignoradas (mal formadas)`);
+  if (zone === undefined && out.length > 0) {
+    o.alerts?.push(`futsalportugal: lista ${page.page} com "hora ${hora ?? "?"}" (fuso não reconhecido): horas não confirmadas até à ficha do jogo`);
+  }
   return out;
 }
 
@@ -142,7 +196,7 @@ export const futsalPortugal: MatchSource = {
     for (const page of pagesFor(ctx)) {
       const url = FREE_SOURCES.futsal.primary.url.replace("{competicao}", String(page.page));
       const { body } = await getText(f, url, { source: KEY, headers: FREE_HEADERS, timeoutMs: FREE_TIMEOUT_MS });
-      out.push(...parseFutsalSchedule(body, page, season, now));
+      out.push(...parseFutsalSchedule(body, page, season, now, { alerts: ctx?.alerts }));
     }
 
     const known = new Map<string, MatchDoc>();
@@ -156,13 +210,13 @@ export const futsalPortugal: MatchSource = {
     const missing: NormalizedMatch[] = [];
     for (const m of out) {
       const k = knownExact(m, known);
-      if (k) {
+      if (k && !m.kickoffExact) {
         m.kickoff = k.kickoff;
         m.kickoffExact = true;
         m.venue = k.venue?.name ?? null;
       }
       if (near(m)) todo.push(m);
-      else if (!k) missing.push(m);
+      else if (!m.kickoffExact) missing.push(m);
     }
     const future = missing.filter((m) => m.kickoff.getTime() > t).sort((a, b) => a.kickoff.getTime() - b.kickoff.getTime());
     const past = missing.filter((m) => m.kickoff.getTime() <= t).sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime());
@@ -179,14 +233,14 @@ export const futsalPortugal: MatchSource = {
         m.kickoff = g.start;
         m.kickoffExact = true;
         m.venue = g.venue;
-        if (m.kickoff.getTime() > t && m.status !== "NS") {
-          m.status = "NS";
-          m.score = { home: null, away: null };
-          m.penalty = null;
-        }
       } catch (e) {
         logger.warn(`futsalportugal: ficha ${m.sourceId} falhou: ${e instanceof Error ? e.message : String(e)}`);
       }
+    }
+    // Estado com a hora final (confirmada pela ficha ou não).
+    for (const m of out) {
+      const info = ROWS.get(m);
+      if (info) applyStatus(m, info, now);
     }
     return out;
   },

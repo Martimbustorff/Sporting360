@@ -3,6 +3,7 @@ import type { GameStatus } from "../../game/types";
 import { SPORTING_CREST_URL } from "../../config/brand";
 import type { CompetitionType, MatchDoc, Pair, Sport, TeamRef } from "../../model/types";
 import type { FetchFn } from "../http";
+import { TEAM_SLUG_ALIASES } from "../../modalities/sourcesConfig";
 
 /** Jogo lido de uma fonte gratuita, antes da reconciliação. Só parsing, nunca escrita. */
 export interface NormalizedMatch {
@@ -32,6 +33,8 @@ export interface FetchContext {
   known: MatchDoc[];
   /** Jogos em janela de jogo agora: com eles a fonte pode pedir só as páginas que os têm. */
   focus: MatchDoc[];
+  /** Avisos da fonte que não impedem a leitura (ex. fuso da lista não reconhecido); viram alertas. */
+  alerts?: string[];
 }
 
 export interface MatchSource {
@@ -62,19 +65,22 @@ export function decodeEntities(s: string): string {
 }
 
 /**
- * Nome de equipa comparável entre fontes: minúsculas, sem acentos, sem patrocinador depois de "/",
- * sem siglas de clube (SC, CF, FC, SL, CP, ...), "Clube", "de" e pontuação. "SL Benfica" e "Benfica" → "benfica".
+ * Nome de equipa comparável entre fontes: minúsculas, sem acentos, sem co-nome depois de "/", sem siglas de clube
+ * (SC, CF, FC, SL, CP, ...), "Clube", "de", iniciais com ponto ("J. Pacense"), "d'" e pontuação; depois a tabela
+ * `TEAM_SLUG_ALIASES` (ex. "SCT / UP TOMAR" → "tomar"). "SL Benfica" e "Benfica" → "benfica".
  */
 export function opponentSlug(name: string): string {
-  const base = decodeEntities(name).split("/")[0];
-  return base
+  // Iniciais com ponto ("J. Pacense") e o "d'" de "Riba d'Ave" saem; letras soltas sem ponto ficam ("Sporting CP B").
+  const base = decodeEntities(name).split("/")[0].replace(/\b[A-Za-z]\.\s*/g, " ").replace(/\b[dD]['’`]\s*/g, " ");
+  const slug = base
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .split(" ")
     .filter((w) => w !== "" && !DROP.has(w))
     .join(" ");
+  return TEAM_SLUG_ALIASES[slug] ?? slug;
 }
 
 export function isSporting(name: string): boolean {
@@ -108,16 +114,34 @@ export function lisbonDay(at: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Lisbon", year: "numeric", month: "2-digit", day: "2-digit" }).format(at);
 }
 
-/** Duração típica de um jogo de futsal ou hóquei (até ao apito final), para o estado e `finishedAt`. */
-export const GAME_DURATION_MS = 110 * 60_000;
+const MIN = 60_000;
+/**
+ * Tempo até se dar um jogo com resultado como terminado (as listas não têm marca de "final"; a ficha da FPP tem
+ * "provisório" mas não é pedida): 120 min; 150 min em taças e supertaças (prolongamento e penáltis).
+ */
+export function gameDurationMs(type: CompetitionType): number {
+  return type === "cup" || type === "supercup" ? 150 * MIN : 120 * MIN;
+}
+
+/** Incerteza máxima de uma hora não confirmada (fuso da fonte desconhecido). */
+export const UNCONFIRMED_SLACK_MS = 12 * 60 * MIN;
 
 /**
- * Estado de um jogo com resultado publicado: no futuro nunca é final (amostras com resultado em jogos
- * por jogar); até 110 min depois do início é LIVE; depois FT.
+ * Estado de um jogo com resultado publicado. No futuro nunca é final (amostras com resultado em jogos por jogar).
+ * Hora confirmada: LIVE até `gameDurationMs` depois do início, depois final. Hora não confirmada: não se infere o
+ * estado da hora; só é final quando nem a pior hora possível (+12 h) o deixa a decorrer; no meio fica NS sem resultado.
  */
-export function statusWithScore(kickoff: Date, now: Date, hasScore: boolean, finalStatus: GameStatus = "FT"): GameStatus {
-  if (!hasScore || kickoff.getTime() > now.getTime()) return "NS";
-  return now.getTime() - kickoff.getTime() < GAME_DURATION_MS ? "LIVE" : finalStatus;
+export function statusFromScore(
+  o: { kickoff: Date; exact: boolean; now: Date; hasScore: boolean; type: CompetitionType; finalStatus?: GameStatus },
+): GameStatus {
+  const t = o.now.getTime();
+  const k = o.kickoff.getTime();
+  const final = o.finalStatus ?? "FT";
+  if (!o.hasScore) return "NS";
+  const slack = o.exact ? 0 : UNCONFIRMED_SLACK_MS;
+  if (k - slack > t) return "NS";
+  if (t >= k + slack + gameDurationMs(o.type)) return final;
+  return o.exact ? "LIVE" : "NS";
 }
 
 export function intOrNull(s: string | null | undefined): number | null {
