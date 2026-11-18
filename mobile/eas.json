@@ -34,7 +34,8 @@
       "ios": {
         "appleTeamId": "5U6HWPNTZ3",
         "bundleIdentifier": "com.scp360",
-        "language": "pt-PT"
+        "language": "pt-PT",
+        "ascAppId": "6450608023"
       }
     }
   }
