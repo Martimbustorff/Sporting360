@@ -1,10 +1,14 @@
 // Figma: nós 500:28956 (jogo futuro: faixa "Próximo", emblemas 75x87 com nome, badge J16, data, hora 24 display,
 // chip de TV, tabs) e 655:31868 (ao vivo: faixa "Live - 23’", caixas de resultado 40 display sobre branco, raio 4).
 // Emblemas: quando a equipa é o Sporting (id API 228) usa-se sempre o emblema local 2026.
+// SEM FIGMA: estados Intervalo, Adiado e Cancelado (mesma faixa do 500:28956 com outro texto; adiado e
+// cancelado mostram só a data, sem hora, resultado nem TV) e a linha do local (outras modalidades,
+// spec 5.6; texto body a muted por baixo da data, como a data do 500:29057).
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
+import type { UiState } from '@/lib/matchVM';
 import { formatKickoffDate, formatTime } from '@/lib/ptDate';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -24,10 +28,14 @@ export type GameHeaderVM = {
   round: string;
   home: TeamVM;
   away: TeamVM;
-  state: 'scheduled' | 'live' | 'finished';
+  state: UiState;
   kickoff: Date;
   tv?: string | null;
   minute?: number | null;
+  /** Minuto já formatado ("45+2’"); quando existe, a faixa usa-o em vez de `minute`. */
+  minuteText?: string | null;
+  /** Local do jogo; só preenchido fora do futebol (o futebol tem a secção Informação do Jogo). */
+  venue?: string | null;
   score?: { home: number; away: number } | null;
 };
 
@@ -71,14 +79,24 @@ function ScoreBox({ value, testID }: { value: number; testID: string }) {
   );
 }
 
+const STRIP: Record<Exclude<UiState, 'live'>, string> = {
+  scheduled: 'Próximo',
+  halftime: 'Intervalo',
+  finished: 'Terminado',
+  postponed: 'Adiado',
+  cancelled: 'Cancelado',
+};
+
 function stripText(game: GameHeaderVM): string {
-  if (game.state === 'live') return game.minute != null ? `Live - ${game.minute}’` : 'Live';
-  if (game.state === 'finished') return 'Terminado';
-  return 'Próximo';
+  if (game.state !== 'live') return STRIP[game.state];
+  if (game.minuteText) return `Live - ${game.minuteText}`;
+  return game.minute != null ? `Live - ${game.minute}’` : 'Live';
 }
 
 export function GameHeader({ game, tabs, now }: { game: GameHeaderVM; tabs?: ReactNode; now?: Date }) {
   const date = formatKickoffDate(game.kickoff, now);
+  const off = game.state === 'postponed' || game.state === 'cancelled';
+  const score = off ? null : game.score;
   return (
     <View
       accessible={false}
@@ -119,16 +137,26 @@ export function GameHeader({ game, tabs, now }: { game: GameHeaderVM; tabs?: Rea
           <CompetitionBadge label={game.round} size="lg" />
           <View style={{ alignItems: 'center', gap: layout.headerDateGap }}>
             <Body variant="body" style={{ opacity: layout.mutedOpacity }}>{date}</Body>
-            {game.score ? (
+            {score ? (
               <View style={{ flexDirection: 'row', gap: layout.scoreBoxGap }}>
-                <ScoreBox value={game.score.home} testID="score-home" />
-                <ScoreBox value={game.score.away} testID="score-away" />
+                <ScoreBox value={score.home} testID="score-home" />
+                <ScoreBox value={score.away} testID="score-away" />
               </View>
-            ) : (
+            ) : off ? null : (
               <Display variant="sectionScore">{formatTime(game.kickoff)}</Display>
             )}
+            {game.venue ? (
+              <Body
+                variant="body"
+                testID="game-venue"
+                numberOfLines={1}
+                style={{ opacity: layout.mutedOpacity, textAlign: 'center', maxWidth: layout.teamColumnWidth + layout.headerColumnsGap }}
+              >
+                {game.venue}
+              </Body>
+            ) : null}
           </View>
-          {game.tv && !game.score ? (
+          {game.tv && !score && !off ? (
             <View
               style={{
                 backgroundColor: colors.surface20,
