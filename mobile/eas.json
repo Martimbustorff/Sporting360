@@ -1,0 +1,32 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "node": "22.13.0",
+      "env": {
+        "EXPO_PUBLIC_USE_EMULATOR": "0"
+      }
+    },
+    "development-emulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "node": "22.13.0",
+      "env": {
+        "EXPO_PUBLIC_USE_EMULATOR": "1"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "node": "22.13.0"
+    },
+    "production": {
+      "autoIncrement": true,
+      "node": "22.13.0"
+    }
+  }
+}
