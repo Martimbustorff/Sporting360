@@ -34,6 +34,12 @@ export const colors = {
 
   // Interruptor ligado (Figma 306:6426, verde iOS)
   toggleOn: '#34C759',
+
+  // Folha GameBox Digital aberta (Figma 450:5419): blocos Estádio/Pavilhão, etiquetas a 50 %, pontos da paginação
+  sheetCard: '#F1F1F1', // 450:5529
+  sheetLabel: 'rgba(0, 0, 0, 0.5)', // 450:5532 (DIN 14, opacidade 50 %)
+  dotInactive: 'rgba(0, 0, 0, 0.2)', // 450:5562 (Ellipse 11/12)
+  scrim: 'rgba(0, 27, 19, 0.7)', // SEM FIGMA: fundo das mensagens sobre a câmara do leitor
 } as const;
 
 export const fonts = {
@@ -100,6 +106,14 @@ export const type = {
   shareLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
   shareMatch: { fontFamily: fonts.bodyLight, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
   shareDay: { fontFamily: fonts.bodySemiBold, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
+  // Folha GameBox Digital (Figma 450:5419): nome 450:5527, número, etiqueta e valor dos lugares 450:5532 / 450:5533
+  gameboxName: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
+  gameboxNumber: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
+  gameboxSeatLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.sheetLabel, textTransform: 'uppercase' },
+  gameboxSeatValue: { fontFamily: fonts.body, fontSize: 16, color: colors.black },
+  // Folha vazia (Figma 348:39563): texto 13/22 e "insere manualmente" SemiBold primary sublinhado
+  gameboxEmpty: { fontFamily: fonts.body, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
+  gameboxEmptyLink: { fontFamily: fonts.bodySemiBold, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.primary, textDecorationLine: 'underline' },
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
@@ -305,6 +319,20 @@ export const layout = {
   gameboxCardPadTop: 16,
   gameboxCardPadBottom: 24,
   gameboxDeleteTop: 32, // SEM FIGMA exato: cartão ao "Apagar Gamebox" (450:5636, ~32 px abaixo do cartão)
+  // Folha GameBox Digital (Figma 450:5419 com GameBox, 348:39454 vazia, 348:40189 só Estádio)
+  gameboxSheetGap: 24, // título, QR, blocos e paginação (450:5521)
+  gameboxSheetEmptyGap: 32, // título, botão e texto (348:39556)
+  gameboxQr: 189, // 450:5526
+  gameboxQrGap: 8, // QR ao nome (450:5525) e entre blocos Estádio/Pavilhão (450:5528)
+  gameboxSeatPad: 16, // bloco Estádio/Pavilhão (450:5529): padding 16, raio 16
+  gameboxSeatRadius: 16,
+  gameboxSeatVenueWidth: 112, // coluna do nome do recinto (450:5531)
+  gameboxSeatLabelGap: 8,
+  paginationDot: 10, // 450:5562: pontos de 10 px a 18 px de centro a centro
+  paginationGap: 8,
+  scannerPad: 24, // SEM FIGMA: leitor, margens dos painéis sobre a câmara
+  scannerFrame: 240, // SEM FIGMA: moldura de mira do leitor
+  scannerFrameBorder: 2,
   termsTop: 16, // header bottom to text (564:7169)
   termsSectionGap: 12,
 } as const;

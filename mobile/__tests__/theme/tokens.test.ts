@@ -24,6 +24,10 @@ const MAP: Record<string, string> = {
   cardYellowStat: 'yellowStat',
   cardRed: 'red',
   toggleOn: 'toggleOn',
+  sheetCard: 'sheetCard',
+  sheetLabel: 'sheetLabel',
+  dotInactive: 'dotInactive',
+  scrim: 'scrim',
 };
 
 describe('tokens <-> tailwind', () => {

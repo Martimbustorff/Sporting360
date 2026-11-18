@@ -25,6 +25,10 @@ module.exports = {
           yellowStat: '#FFC700',
           red: '#F74C66',
           toggleOn: '#34C759',
+          sheetCard: '#F1F1F1',
+          sheetLabel: 'rgba(0, 0, 0, 0.5)',
+          dotInactive: 'rgba(0, 0, 0, 0.2)',
+          scrim: 'rgba(0, 27, 19, 0.7)',
         },
       },
       fontFamily: {

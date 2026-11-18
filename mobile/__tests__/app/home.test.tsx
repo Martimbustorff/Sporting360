@@ -17,6 +17,8 @@ jest.mock('@/data/hooks', () => ({
   usePublicProfile: jest.fn(() => mockProfile.current),
   useAppConfig: jest.fn(() => mockConfig.current),
 }));
+// Task 24: a folha GameBox lê as GameBox do utilizador (testada em components/HomeGameboxSheet.test.tsx).
+jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => ({ status: 'ready', data: [] })) }));
 jest.mock('@/data/sports', () => ({ useNextFootballMatch: jest.fn(() => mockNext.current) }));
 
 import { router } from 'expo-router';
