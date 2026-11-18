@@ -126,6 +126,26 @@ describe('competition docs', () => {
     if (r.success) expect(r.data.stages[0]!.ties[0]!.legs[0]!.kickoff).toBe('2027-03-10T20:00:00.000Z');
   });
 
+  it('bracket legs: homeId is optional (old docs) and kept when present', () => {
+    const leg = { matchId: '1', kickoff: '2027-03-10T20:00:00.000Z', status: 'FT', score: { home: 2, away: 1, penaltyHome: null, penaltyAway: null } };
+    const doc = (legs: object[]) => ({
+      stages: [{
+        label: 'Final', raw: 'Final',
+        ties: [{
+          id: '1', stage: 'Final',
+          home: { id: '228', name: 'Sporting CP', logo: null }, away: { id: '50', name: 'Man City', logo: null },
+          legs, aggregate: null, winnerTeamId: null, sportingInvolved: true,
+        }],
+      }],
+    });
+    const old = BracketDocSchema.parse(doc([leg]));
+    expect(old.stages[0]!.ties[0]!.legs[0]!.homeId).toBeUndefined();
+    const fresh = BracketDocSchema.parse(doc([{ ...leg, homeId: '50' }]));
+    expect(fresh.stages[0]!.ties[0]!.legs[0]!.homeId).toBe('50');
+    // A malformed homeId does not drop the doc.
+    expect(BracketDocSchema.parse(doc([{ ...leg, homeId: 7 }])).stages[0]!.ties[0]!.legs[0]!.homeId).toBeUndefined();
+  });
+
   it('competition leagueId number becomes a string; view is optional', () => {
     const r = CompetitionSchema.parse({ sport: 'football', leagueId: 94, name: 'Liga Portugal', type: 'league' });
     expect(r.leagueId).toBe('94');

@@ -51,6 +51,8 @@ describe("buildBracket, Liga dos Campeões", () => {
     expect(tie.away.id).toBe("228");
     expect(tie.legs.map((l) => l.matchId)).toEqual(["2500002", "2500004"]);
     expect(tie.legs[1]).toMatchObject({ status: "AET", score: { home: 2, away: 0, penaltyHome: null, penaltyAway: null } });
+    // Cada mão diz quem jogou em casa: a 2.ª mão é em casa do Sporting (`tie.away`).
+    expect(tie.legs.map((l) => l.homeId)).toEqual(["569", "228"]);
     expect(tie.aggregate).toEqual({ home: 2, away: 3 });
     expect(tie.winnerTeamId).toBe("228");
     expect(tie.away.logo).toBe(SPORTING_CREST_URL);
@@ -94,6 +96,7 @@ describe("buildBracket, Taça de Portugal", () => {
     expect(a.winnerTeamId).toBe("228");
     expect(b.aggregate).toEqual({ home: 1, away: 1 });
     expect(b.legs[0].score).toEqual({ home: 1, away: 1, penaltyHome: 4, penaltyAway: 3 });
+    expect(b.legs[0].homeId).toBe(b.home.id);
     expect(b.winnerTeamId).toBe("762");
     expect(c.winnerTeamId).toBe("224");
     expect(bracket.stages[1].ties[0]).toMatchObject({ aggregate: null, winnerTeamId: null, sportingInvolved: true });

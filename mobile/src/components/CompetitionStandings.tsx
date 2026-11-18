@@ -2,10 +2,10 @@
 // SEM FIGMA: o seletor "Tabela"/"Eliminatórias" (só quando há as duas vistas), o quadro (`BracketView`), o esqueleto
 // em branco enquanto carrega, o erro, "Sem classificação para esta competição.", o aviso de cache e a ligação
 // "Ver competição" (Body tab a primary, centrada, alvo de toque de 44 px).
-// A vista abre pela escolha do utilizador nesta sessão, depois por `competitions/{key}.view.primary` (que muda em
-// direto de `table` para `bracket` a meio da época, Review Focus 5); a escolha fica em estado local e repõe-se ao
-// mudar de competição.
-import { useState } from 'react';
+// A vista abre pela escolha do utilizador, depois por `competitions/{key}.view.primary` (que muda em direto de
+// `table` para `bracket` a meio da época, Review Focus 5). A escolha guarda-se por competição até a app reiniciar
+// (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
+import { useReducer } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import { BracketView } from '@/components/BracketView';
@@ -14,7 +14,15 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { StandingsTable } from '@/components/StandingsTable';
 import { Tabs } from '@/components/Tabs';
 import { useCompetition, useCompetitionData } from '@/data/sports';
-import { hasBracketTies, hasTableRows, resolveView, showSelector, type StandingsView } from '@/lib/standings';
+import {
+  getViewChoice,
+  hasBracketTies,
+  hasTableRows,
+  resolveView,
+  setViewChoice,
+  showSelector,
+  type StandingsView,
+} from '@/lib/standings';
 import { SPORTING_API_ID } from '@/lib/teams';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
@@ -38,7 +46,8 @@ export function CompetitionStandings({
   const competition = useCompetition(competitionKey);
   const standings = useCompetitionData(competitionKey, 'standings');
   const bracket = useCompetitionData(competitionKey, 'bracket');
-  const [choice, setChoice] = useState<{ key: string; view: StandingsView } | null>(null);
+  // A escolha vive no módulo (sessão da app); isto só volta a desenhar depois de a gravar.
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   const reads = [competition, standings, bracket];
   if (reads.some((r) => r.status === 'loading')) return <View testID="standings-loading" />;
@@ -51,8 +60,14 @@ export function CompetitionStandings({
   const hasTies = hasBracketTies(knockout);
   if (!hasRows && !hasTies) return <EmptyState icon="info" text={NO_STANDINGS} />;
 
-  const userChoice = choice?.key === competitionKey ? choice.view : null;
+  const selector = showSelector(view, hasRows, hasTies);
+  // Sem seletor não há como desfazer uma escolha antiga: aí manda o servidor.
+  const userChoice = selector ? getViewChoice(competitionKey) : null;
   const shown = resolveView(view, hasRows, hasTies, userChoice);
+  const choose = (v: StandingsView) => {
+    setViewChoice(competitionKey, v);
+    rerender();
+  };
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 
   return (
@@ -61,8 +76,8 @@ export function CompetitionStandings({
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
     >
       <OfflineBanner visible={fromCache} />
-      {showSelector(view, hasRows, hasTies) ? (
-        <Tabs items={VIEWS} value={shown} onChange={(v) => setChoice({ key: competitionKey, view: v })} mode="equal" />
+      {selector ? (
+        <Tabs items={VIEWS} value={shown} onChange={choose} mode="equal" />
       ) : null}
       {shown === 'table' && table ? <StandingsTable groups={table.groups} highlightTeamId={SPORTING} /> : null}
       {shown === 'bracket' && knockout ? <BracketView bracket={knockout} highlightTeamId={SPORTING} /> : null}

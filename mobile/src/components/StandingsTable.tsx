@@ -2,11 +2,15 @@
 // 60 %), divisória de 1 px a 20 % (500:29415), linha de 34 px (500:29416) com o círculo da posição de 26 px
 // (1.º 500:29423 amarelo, 2.º 500:29433 prata, 3.º 500:29443 bronze, restantes sem fundo e número a branco),
 // nome em SemiBold 12 (500:29419, `tableTeam`) e valores DIN 20 (500:29420); golos "8:4" (500:29421).
-// Diferença deliberada: colunas em flex (largura fixa por coluna, nome com flex 1) em vez de posições absolutas.
-// A variante 500:30076 (com emblemas e só PJ/G/P) não se usa: a Task 12 pede as colunas de 500:29367.
+// Variante 500:30076: emblema de cada equipa à esquerda do nome (29x34 no Figma, `TeamCrest` sm de 30x35, 8 px
+// de intervalo, 500:30126/500:30127); o Sporting usa sempre o emblema local 2026 (id 228).
+// Diferenças deliberadas: colunas em flex (largura fixa por coluna, nome com flex 1) em vez de posições absolutas;
+// da 500:30076 só se tira o emblema: as colunas J/V/E/D/G/P, a tipografia e o círculo ficam os de 500:29367 (a
+// variante só tem PJ/G/P, noutra fonte), por isso o nome fica mais curto e corta com reticências.
 // SEM FIGMA: nome do grupo (SectionBar) quando há mais de um; a linha do Sporting com fundo surface10 e raio sm;
 // o rótulo de acessibilidade de cada linha.
 import { View } from 'react-native';
+import { TeamCrest } from '@/components/GameHeader';
 import { SectionBar } from '@/components/SectionBar';
 import type { StandingRow, StandingsDoc } from '@/data/schemas';
 import { goalsText } from '@/lib/standings';
@@ -68,6 +72,11 @@ function Row({ row, highlight }: { row: StandingRow; highlight: boolean }) {
       }}
     >
       <Position rank={row.rank} />
+      <TeamCrest
+        team={{ id: Number(row.teamId) || null, name: row.name, crestUrl: row.logo }}
+        size="sm"
+        testID={`standings-crest-${row.teamId}`}
+      />
       <Body variant="tableTeam" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>
         {row.name}
       </Body>
@@ -97,6 +106,7 @@ function HeadRow() {
       style={{ flexDirection: 'row', alignItems: 'center', gap: layout.tableNameGap, marginBottom: layout.tableHeadGap }}
     >
       <Display variant="tableHead" style={[head, fixed(layout.positionCircle), { textAlign: 'center' }]}>#</Display>
+      {/* "Equipa" começa sobre o emblema, como em 500:30119. */}
       <Display variant="tableHead" style={[head, { flex: 1 }]}>Equipa</Display>
       <View style={{ flexDirection: 'row', flexShrink: 0 }}>
         {COLUMNS.map((c) => (

@@ -6,7 +6,7 @@
 // esqueleto de carregamento, o aviso de cache (OfflineBanner) e a linha "Fonte: ..." no fim da lista.
 // Diferença deliberada: o Figma mostra no cartão o próximo jogo e começa a lista no jogo seguinte;
 // aqui a lista traz todos os jogos, para o primeiro não desaparecer da lista que o utilizador percorre.
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable, View } from 'react-native';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -85,7 +85,8 @@ export default function Agenda() {
   const upcoming = useUpcomingMatches(sport, now);
   const results = useResultMatches(sport, now);
 
-  const lists = agendaLists(listOf(upcoming), listOf(results));
+  // Só se recalcula quando chega um snapshot novo (a identidade do Loadable muda), não a cada render.
+  const lists = useMemo(() => agendaLists(listOf(upcoming), listOf(results)), [upcoming, results]);
   const list = tab === 'upcoming' ? lists.upcoming : lists.results;
   const next = lists.upcoming[0] ?? null;
   const modalidade = sportLabel(sport).toLowerCase();
@@ -112,15 +113,18 @@ export default function Agenda() {
     </View>
   );
 
-  const footer = (
-    <View style={{ paddingVertical: spacing.md, gap: spacing.xs }}>
-      {attributions(list).map((a) => (
-        <Body key={a} variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>
-          {`Fonte: ${a}`}
-        </Body>
-      ))}
-    </View>
-  );
+  const sources = attributions(list);
+  // Rodapé só quando há fontes a atribuir (o futebol não tem): sem ele não fica um bloco vazio no fim.
+  const footer =
+    sources.length > 0 ? (
+      <View style={{ paddingVertical: spacing.md, gap: spacing.xs }}>
+        {sources.map((a) => (
+          <Body key={a} variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>
+            {`Fonte: ${a}`}
+          </Body>
+        ))}
+      </View>
+    ) : undefined;
 
   return (
     <Screen padded="none">

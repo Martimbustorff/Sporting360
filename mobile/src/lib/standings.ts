@@ -34,11 +34,29 @@ export function resolveView(
 }
 
 /**
- * Seletor "Tabela"/"Eliminatórias" só quando há as duas vistas com dados. `view` não entra: os
- * documentos de dados é que dizem o que se pode mostrar (o mesmo critério de `resolveView`).
+ * Seletor "Tabela"/"Eliminatórias" só quando há as duas vistas com dados e o servidor não diz que a
+ * competição não tem quadro (`view.hasBracket === false`). Sem `view`, decidem os documentos de dados.
  */
-export function showSelector(_view: Competition['view'] | undefined, hasRows: boolean, hasBracket: boolean): boolean {
-  return hasRows && hasBracket;
+export function showSelector(view: Competition['view'] | undefined, hasRows: boolean, hasBracket: boolean): boolean {
+  return hasRows && hasBracket && view?.hasBracket !== false;
+}
+
+// Escolha manual "Tabela"/"Eliminatórias" por competição, guardada em memória até a app reiniciar:
+// sobrevive a sair e voltar à tab Classificação ou ao ecrã da competição. Ganha a `view.primary` do
+// servidor enquanto a app estiver aberta (`resolveView` põe a escolha do utilizador primeiro).
+const viewChoices = new Map<string, StandingsView>();
+
+export function getViewChoice(competitionKey: string): StandingsView | null {
+  return viewChoices.get(competitionKey) ?? null;
+}
+
+export function setViewChoice(competitionKey: string, v: StandingsView): void {
+  viewChoices.set(competitionKey, v);
+}
+
+/** Só para testes: começa cada teste sem escolhas. */
+export function resetViewChoices(): void {
+  viewChoices.clear();
 }
 
 /** Golos marcados e sofridos como no Figma 500:29421: "8:4". */
@@ -52,16 +70,16 @@ export function aggregateText(tie: Tie): string | null {
 }
 
 /**
- * Resultado de uma mão do lado das equipas da eliminatória (`tie.home` à esquerda). O servidor grava
- * cada mão do ponto de vista da casa desse jogo, sem guardar quem é a casa; `tie.home` é a casa da
- * 1.ª mão (`buildTie`), e numa eliminatória a duas mãos a 2.ª joga-se com a casa trocada (índice
- * ímpar). Penáltis com `penaltiesText`: "1-1 (4-3 g.p.)".
- * Null se a mão ainda não tem resultado.
+ * Resultado de uma mão do lado das equipas da eliminatória (`tieHomeId` = `tie.home.id`, à esquerda).
+ * O servidor grava cada mão do ponto de vista da casa desse jogo e, nos docs novos, diz quem é essa
+ * casa (`leg.homeId`): troca-se quando a casa não é `tie.home`. Docs antigos não têm `homeId`: aí
+ * `tie.home` é a casa da 1.ª mão (`buildTie`) e a 2.ª joga-se com a casa trocada (índice ímpar).
+ * Penáltis com `penaltiesText`: "1-1 (4-3 g.p.)". Null se a mão ainda não tem resultado.
  */
-export function legScoreText(leg: Tie['legs'][number], index: number): string | null {
+export function legScoreText(leg: Tie['legs'][number], index: number, tieHomeId: string): string | null {
   const { home, away, penaltyHome, penaltyAway } = leg.score;
   if (home == null || away == null) return null;
-  const swap = index % 2 === 1;
+  const swap = leg.homeId != null ? leg.homeId !== tieHomeId : index % 2 === 1;
   const [l, r] = swap ? [away, home] : [home, away];
   const base = `${l}-${r}`;
   if (penaltyHome == null || penaltyAway == null) return base;

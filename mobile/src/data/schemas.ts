@@ -388,6 +388,8 @@ export const TieSchema = z.looseObject({
   legs: z.array(
     z.looseObject({
       matchId: str,
+      /** Casa desse jogo (`buildTie`, campo novo): o `score` da mão é do ponto de vista dela. Docs antigos não o têm. */
+      homeId: lenient(str),
       /** ISO string (the server writes `toISOString()`), not a Timestamp. */
       kickoff: str,
       status: str,

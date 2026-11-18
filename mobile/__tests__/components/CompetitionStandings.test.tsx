@@ -27,6 +27,7 @@ jest.mock('expo-image', () => {
 
 import { BracketView } from '@/components/BracketView';
 import { CompetitionStandings } from '@/components/CompetitionStandings';
+import { resetViewChoices } from '@/lib/standings';
 import { StandingsTable } from '@/components/StandingsTable';
 
 const KEY = 'football_2_2026';
@@ -51,7 +52,7 @@ function row(rank: number, teamId: string, name: string, points: number): Standi
 }
 
 const standings: StandingsDoc = {
-  groups: [{ name: 'Fase de liga', rows: [row(1, '228', 'Sporting CP', 13), row(2, '541', 'Real Madrid', 10)] }],
+  groups: [{ name: 'Fase de liga', rows: [row(1, '228', 'Sporting CP', 13), { ...row(2, '541', 'Real Madrid', 10), logo: 'https://media.api-sports.io/football/teams/541.png' }] }],
 };
 
 const bracket: Bracket = {
@@ -84,6 +85,7 @@ const view = (primary: 'table' | 'bracket', hasTable: boolean, hasBracket: boole
 });
 
 beforeEach(() => {
+  resetViewChoices();
   mockPush.mockClear();
   mockData.competition = { status: 'missing' };
   mockData.standings = { status: 'missing' };
@@ -117,6 +119,40 @@ describe('CompetitionStandings: Review Focus 5 (tabela passa a eliminatórias em
     await rerender(<CompetitionStandings competitionKey={KEY} />);
     expect(screen.getByTestId('standings-table')).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Tabela' }).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('a escolha manual sobrevive a sair e voltar (desmontar e montar de novo), por competição', async () => {
+    mockData.competition = view('bracket', true, true);
+    mockData.standings = { status: 'ready', data: standings };
+    mockData.bracket = { status: 'ready', data: bracket };
+    const first = await render(<CompetitionStandings competitionKey={KEY} />);
+    expect(screen.getByTestId('bracket-view')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Tabela' }));
+    await first.unmount();
+
+    // Volta à tab Classificação (ou ao ecrã da competição): continua na tabela, mesmo com primary `bracket`.
+    await render(<CompetitionStandings competitionKey={KEY} />);
+    expect(screen.getByTestId('standings-table')).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Tabela' }).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('a escolha de uma competição não passa para outra', async () => {
+    mockData.competition = view('bracket', true, true);
+    mockData.standings = { status: 'ready', data: standings };
+    mockData.bracket = { status: 'ready', data: bracket };
+    const { rerender } = await render(<CompetitionStandings competitionKey={KEY} />);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Tabela' }));
+    await rerender(<CompetitionStandings competitionKey="football_3_2026" />);
+    expect(screen.getByTestId('bracket-view')).toBeTruthy();
+  });
+
+  it('hasBracket false no servidor: sem a opção Eliminatórias', async () => {
+    mockData.competition = view('table', true, false);
+    mockData.standings = { status: 'ready', data: standings };
+    mockData.bracket = { status: 'ready', data: bracket };
+    await render(<CompetitionStandings competitionKey={KEY} />);
+    expect(screen.getByTestId('standings-table')).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Eliminatórias' })).toBeNull();
   });
 
   it('sem documento da competição: só quadro abre no quadro, sem seletor', async () => {
@@ -174,6 +210,9 @@ describe('StandingsTable', () => {
     expect(screen.getAllByText('8:4')).toHaveLength(2);
     expect(screen.getByTestId('standings-row-228').props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByTestId('standings-row-541').props.accessibilityState).toEqual({ selected: false });
+    // Emblema por linha (variante 500:30076); o Sporting com o emblema local 2026 (asset, não o URL).
+    expect(screen.getByTestId('standings-crest-541', { includeHiddenElements: true }).props.source).toEqual({ uri: 'https://media.api-sports.io/football/teams/541.png' });
+    expect(screen.getByTestId('standings-crest-228', { includeHiddenElements: true }).props.source).toEqual({ testUri: expect.stringContaining('sporting-cp-2026') });
     // Um só grupo: sem nome de grupo.
     expect(screen.queryByText('Fase de liga')).toBeNull();
   });

@@ -98,6 +98,8 @@ export type Tie = {
   away: TeamRef;
   legs: {
     matchId: string;
+    /** Equipa da casa nesse jogo (o `score` da mão é do ponto de vista dela). Campo novo: docs antigos não o têm. */
+    homeId: string;
     kickoff: string;
     status: string;
     score: { home: number | null; away: number | null; penaltyHome: number | null; penaltyAway: number | null };
@@ -150,6 +152,7 @@ function buildTie(stage: string, legs: FixtureItem[]): Tie {
     away,
     legs: sorted.map((l) => ({
       matchId: l.id,
+      homeId: l.home.id,
       kickoff: l.kickoff.toISOString(),
       status: l.status,
       score: { home: l.score.home, away: l.score.away, penaltyHome: l.score.penaltyHome, penaltyAway: l.score.penaltyAway },

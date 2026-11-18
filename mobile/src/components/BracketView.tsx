@@ -3,8 +3,10 @@
 // ronda não se reconhece). Cada eliminatória é um cartão surface10 (raio md) com as duas equipas (emblema pequeno,
 // nome numa linha com reticências, golos do agregado à direita), por baixo as mãos ("1.ª mão 2-1", penáltis
 // "(4-3 g.p.)" via `penaltiesText`, ou a data e hora em Europe/Lisbon se ainda não se jogou) e o "Agregado 3-2"
-// nas eliminatórias a duas mãos. Vencedor a destaque: nome em SemiBold e o outro a 70 %. A eliminatória da equipa
-// destacada (Sporting) leva contorno primary. Agregado e vencedor vêm do servidor (`Tie`), nunca se recalculam (F11).
+// nas eliminatórias a duas mãos. O resultado de cada mão lê-se do lado de `tie.home`, orientado por `leg.homeId`
+// quando o doc o tem (`legScoreText`). Vencedor a destaque: nome em SemiBold e o outro a 70 %. A eliminatória da
+// equipa destacada (Sporting) leva contorno primary. Agregado e vencedor vêm do servidor (`Tie`), nunca se
+// recalculam (F11).
 import { View } from 'react-native';
 import { TeamCrest } from '@/components/GameHeader';
 import { SectionBar } from '@/components/SectionBar';
@@ -47,8 +49,8 @@ function TeamLine({ tie, team, goals }: { tie: Tie; team: TeamRef; goals: number
 }
 
 /** Resultado da mão ou, por jogar, a data e hora em Europe/Lisbon ("7 Abr 20:00"). */
-function legValue(leg: Tie['legs'][number], i: number): string {
-  const score = legScoreText(leg, i);
+function legValue(tie: Tie, leg: Tie['legs'][number], i: number): string {
+  const score = legScoreText(leg, i, tie.home.id);
   if (score) return score;
   const d = new Date(leg.kickoff);
   return Number.isNaN(d.getTime()) ? '' : `${formatKickoffDate(d)} ${formatTime(d)}`;
@@ -77,7 +79,7 @@ function TieCard({ tie, highlight }: { tie: Tie; highlight: boolean }) {
               <Body variant="badgeSmall" style={{ color: colors.textMuted }}>{`${i + 1}.ª mão`}</Body>
             ) : null}
             <Body testID={`tie-leg-${tie.id}-${i}`} variant="badgeSmall">
-              {legValue(leg, i)}
+              {legValue(tie, leg, i)}
             </Body>
           </View>
         ))}
