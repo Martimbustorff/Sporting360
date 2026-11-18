@@ -1,8 +1,8 @@
 import { Text, type TextProps } from 'react-native';
 import { type } from './tokens';
 
-type DisplayVariant = 'screenTitle' | 'heroTitle' | 'menuItem' | 'minute' | 'sectionScore' | 'scoreBox' | 'rowScore' | 'pitchNumber';
-type BodyVariant = 'body' | 'strip' | 'sectionLabel' | 'tab' | 'badge' | 'badgeSmall' | 'rowTeam' | 'pitchName' | 'pitchRating';
+type DisplayVariant = 'screenTitle' | 'heroTitle' | 'menuItem' | 'minute' | 'sectionScore' | 'scoreBox' | 'rowScore' | 'pitchNumber' | 'tableHead' | 'tableValue' | 'tablePosition';
+type BodyVariant = 'body' | 'strip' | 'sectionLabel' | 'tab' | 'badge' | 'badgeSmall' | 'rowTeam' | 'pitchName' | 'pitchRating' | 'tableTeam';
 
 export function Display({ variant, style, ...rest }: TextProps & { variant: DisplayVariant }) {
   return <Text {...rest} style={[type[variant], { textTransform: 'uppercase' }, style]} />;

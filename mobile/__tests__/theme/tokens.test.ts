@@ -15,6 +15,8 @@ const MAP: Record<string, string> = {
   white: 'white',
   black: 'black',
   positionCircle: 'positionCircle',
+  positionSilver: 'positionSilver',
+  positionBronze: 'positionBronze',
   textMuted: 'muted',
   textDisabled: 'disabled',
   cardYellow: 'yellow',

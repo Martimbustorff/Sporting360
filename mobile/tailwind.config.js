@@ -16,6 +16,8 @@ module.exports = {
           white: '#FFFFFF',
           black: '#000000',
           positionCircle: '#FFF068',
+          positionSilver: '#919191',
+          positionBronze: '#95735A',
           muted: 'rgba(255, 255, 255, 0.7)',
           disabled: 'rgba(255, 255, 255, 0.4)',
           yellow: '#F7CF46',

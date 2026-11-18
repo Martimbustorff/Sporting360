@@ -23,6 +23,8 @@ export const colors = {
 
   // Ranking position circle (Figma 500:29423)
   positionCircle: '#FFF068',
+  positionSilver: '#919191', // 2.º lugar (Figma 500:29433)
+  positionBronze: '#95735A', // 3.º lugar (Figma 500:29443)
 
   // Match events
   cardYellow: '#F7CF46',
@@ -84,6 +86,11 @@ export const type = {
   pitchNumber: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
   pitchName: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.black, textAlign: 'center' },
   pitchRating: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.white }, // SEM FIGMA: nota do jogador
+  // Classificação (Figma 500:29367): cabeçalho 500:29409 (DIN 18 a 60 %), equipa 500:29419, valores 500:29420, posição 500:29424
+  tableHead: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
+  tableTeam: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white },
+  tableValue: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase', textAlign: 'center' },
+  tablePosition: { fontFamily: fonts.display, fontSize: 20, color: colors.black, textTransform: 'uppercase' },
   termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
@@ -198,6 +205,20 @@ export const layout = {
   pitchNameMaxWidth: 76, // SEM FIGMA: a 4 por linha cabem 4 caixas sem se tocarem; o resto leva reticências
   pitchRatingPadX: 4, // SEM FIGMA: etiqueta da nota ao lado da camisola
   subNumberWidth: 28, // SEM FIGMA: coluna do número na lista de suplentes
+  // Classificação (Figma 500:29367): linha de 34 px, 8 px entre divisória e linha, círculo da posição 26 px
+  // (positionCircle), nome a 34 px da esquerda; colunas J/V/E/D a ~31 px, G a ~40, P a ~30 (centros 162/193/224/256/290/331).
+  tableRowHeight: 34,
+  tableRowGap: 8,
+  tableHeadOpacity: 0.6,
+  tableHeadGap: 8, // texto do cabeçalho em 348, primeira divisória em 375 (27 px menos a altura da linha de texto)
+  tableNameGap: 8,
+  tableColWidth: 31,
+  tableGoalsWidth: 44,
+  tablePointsWidth: 30,
+  // SEM FIGMA: quadro das eliminatórias (BracketView), composto com tokens
+  tieTeamGap: 8,
+  tieScoreWidth: 32,
+  tieBorder: 1,
   // Welcome (Figma 564:7178)
   welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
   welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
