@@ -42,12 +42,34 @@ describe("syncNews", () => {
       created_at: "2026-11-22T22:40:00.000Z",
       sport: "football",
     });
-    expect(d.content).toBe(d.summary);
+    expect(d.content).toBe(d.summary); // item curto: iguais
     expect(d.publishedAt.toDate().toISOString()).toBe("2026-11-22T22:40:00.000Z");
     expect(d).toHaveProperty("image");
     expect(d).not.toHaveProperty("updatedAt");
     const mf = (await db.doc("news/maisfutebol-iol-pt-sporting-exemplo-3").get()).data()!;
     expect(mf).toMatchObject({ source: "Maisfutebol", image: "https://cdn.iol.pt/img/exemplo-3.jpg" });
+  });
+
+  it("item longo: content integral, summary truncado", async () => {
+    const long = Array.from({ length: 100 }, () => "palavr").join(" ").slice(0, 600);
+    const xml = `<?xml version="1.0"?><rss version="2.0"><channel><title>x</title><item><title>Sporting longo</title><link>https://maisfutebol.iol.pt/sporting/longo</link><pubDate>Sun, 22 Nov 2026 23:10:00 +0000</pubDate><description><![CDATA[<p>${long}</p>]]></description></item></channel></rss>`;
+    const f = fakeFetch([[/maisfutebol\.iol\.pt\/rss/, { status: 200, body: xml }], [/record\.pt\/rss/, "rss/record.xml"]]);
+    await syncNews(deps(f));
+    const d = (await db.doc("news/maisfutebol-iol-pt-sporting-longo").get()).data()!;
+    expect(d.content).toHaveLength(600);
+    expect(d.summary.length).toBeLessThanOrEqual(401);
+    expect(d.summary.endsWith("…")).toBe(true);
+  });
+
+  it("item sem pubDate é ignorado e a 2.ª execução escreve 0 documentos", async () => {
+    const xml = `<?xml version="1.0"?><rss version="2.0"><channel><title>x</title><item><title>Sporting sem data</title><link>https://maisfutebol.iol.pt/sporting/sem-data</link><description>x</description></item></channel></rss>`;
+    const mk = () => fakeFetch([[/maisfutebol\.iol\.pt\/rss/, { status: 200, body: xml }], [/record\.pt\/rss/, "rss/record.xml"]]);
+    const r = await syncNews(deps(mk()));
+    expect(r.count).toBe(2); // só os 2 do Record
+    expect((await db.doc("news/maisfutebol-iol-pt-sporting-sem-data").get()).exists).toBe(false);
+    const before = (await db.doc("news/www-record-pt-futebol-sporting-exemplo-1").get()).updateTime!.toMillis();
+    await syncNews({ ...deps(mk()), now: () => new Date("2026-11-24T12:00:00Z") });
+    expect((await db.doc("news/www-record-pt-futebol-sporting-exemplo-1").get()).updateTime!.toMillis()).toBe(before);
   });
 
   it("a mesma notícia duas vezes não duplica nem reescreve", async () => {

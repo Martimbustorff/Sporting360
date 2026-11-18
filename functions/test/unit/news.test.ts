@@ -19,6 +19,9 @@ describe("detectSport", () => {
     expect(detectSport(item({ summary: "Vitória no basquete" }))).toBe("basketball");
     expect(detectSport(item({ title: "Sporting no futsal" }))).toBe("futsal");
   });
+  it("/futebol/ no URL ganha ao texto", () => {
+    expect(detectSport(item({ link: "https://www.record.pt/futebol/sporting/x", summary: "Mais um jogo de futsal na agenda" }))).toBe("football");
+  });
   it("futebol por omissão", () => {
     expect(detectSport(item({ title: "Sporting vence o dérbi", link: "https://www.record.pt/futebol/sporting/x" }))).toBe("football");
   });

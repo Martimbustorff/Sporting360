@@ -33,7 +33,7 @@ export async function fetchFeed(f: FetchFn, s: { name: string; url: string }): P
   return (feed.items || []).map((item) => ({
     title: stripCdata(item.title || ""),
     link: item.link || "",
-    pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+    pubDate: item.pubDate || item.isoDate || "",
     summary: stripCdata(item.contentSnippet || item.content || ""),
     image: extractImage(item),
     source: s.name,

@@ -61,6 +61,7 @@ const TEXT_SPORTS: Array<[RegExp, Sport]> = [
 /** Modalidade: URL primeiro, depois palavras no título e resumo; futebol por omissão. */
 export function detectSport(item: Pick<FeedItem, "link" | "title" | "summary">): Sport {
   const url = item.link.toLowerCase();
+  if (url.includes("/futebol/")) return "football";
   for (const [part, sport] of URL_SPORTS) if (url.includes(part)) return sport;
   const text = `${item.title} ${item.summary}`.toLowerCase();
   for (const [re, sport] of TEXT_SPORTS) if (re.test(text)) return sport;
@@ -96,10 +97,12 @@ export async function syncNews(d: NewsDeps): Promise<{ count: number; failed: nu
 
   for (const source of NEWS_SOURCES) {
     try {
-      const items = (await fetchFeed(d.fetch, source)).filter((i) => !!i.link).filter(isSportingCPArticle);
+      // Sem data válida o item é ignorado: uma data inventada mudaria a cada execução (reescrita e notícia antiga no topo).
+      const items = (await fetchFeed(d.fetch, source))
+        .filter((i) => !!i.link && !Number.isNaN(new Date(i.pubDate).getTime()))
+        .filter(isSportingCPArticle);
       const writes: DocWrite[] = items.map((item) => {
-        const published = new Date(item.pubDate);
-        const date = Number.isNaN(published.getTime()) ? d.now() : published;
+        const date = new Date(item.pubDate);
         const summary = summarize(item.summary);
         const id = slugifyUrl(item.link);
         return {
@@ -109,7 +112,7 @@ export async function syncNews(d: NewsDeps): Promise<{ count: number; failed: nu
             title: item.title,
             image: item.image,
             summary,
-            content: summary,
+            content: item.summary, // texto integral do snippet, como o legado: o V2 mostra-o como corpo
             source: item.source,
             url: item.link,
             created_at: date.toISOString(),
