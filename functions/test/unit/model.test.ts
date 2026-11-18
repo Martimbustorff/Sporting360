@@ -74,6 +74,16 @@ describe("roundLabel", () => {
   });
 });
 
+describe("roundLabel (API-Sports, textos das fixtures)", () => {
+  // Textos de ronda das fixtures sintéticas: SUBSTITUIR pelos reais recolhidos na gravação (Task 21).
+  it("rondas das outras modalidades", () => {
+    expect(roundLabel("Regular Season - 7", "league")).toBe("J7");
+    expect(roundLabel("Quarter-finals", "cup")).toBe("Quartos de final");
+    expect(roundLabel("Semi-finals", "cup")).toBe("Meias-finais");
+    expect(roundLabel("Final", "cup")).toBe("Final");
+  });
+});
+
 describe("competitionLabel", () => {
   it("futebol por id", () => {
     expect(competitionLabel("football", 94, "Primeira Liga")).toEqual({ name: "Liga Portugal", type: "league" });

@@ -7,11 +7,13 @@ import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
 import { syncTeamDaily, syncTeamWeekly } from "./football/teamSync";
 import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixturesSync";
+import { syncApiSports } from "./modalities/apiSportsSync";
 import { syncNews } from "./news/newsSync";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleDue } from "./scheduled/settle";
 import { apiFootball } from "./sources/apiFootball";
+import { apiSports } from "./sources/apiSports";
 import { twitter } from "./sources/twitter";
 import { vsports } from "./sources/vsports";
 import { runJob } from "./store/health";
@@ -151,5 +153,22 @@ export const legacyPredictionSettlement = onSchedule(
       const out = await settleLegacyPredictionsIfProduction(getFirestore(), new Date(), LEGACY_COLLECTION_PREFIX.value());
       return { count: out?.predictions ?? 0 };
     });
+  },
+);
+
+// Andebol, voleibol e basquetebol (API-Sports, 100 pedidos/dia por modalidade no plano gratuito). Corre de 10 em 10
+// min mas cada modalidade só pede à API com jogo em [início - 15 min, início + 3 h] ou sem execução há 3 h; as
+// modalidades desligadas (ids por confirmar, ver sourcesConfig) não fazem pedidos. Orçamento: ver Task 16.
+export const apiSportsSync = onSchedule(
+  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [RAPIDAPI_KEY] },
+  async () => {
+    const key = RAPIDAPI_KEY.value();
+    await runJob(getFirestore(), "apisports", () =>
+      syncApiSports({
+        db: getFirestore(),
+        clients: { handball: apiSports({ sport: "handball", key }), volleyball: apiSports({ sport: "volleyball", key }), basketball: apiSports({ sport: "basketball", key }) },
+        now: () => new Date(),
+      }),
+    );
   },
 );
