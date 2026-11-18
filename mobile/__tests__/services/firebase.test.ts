@@ -144,14 +144,52 @@ describe('fns', () => {
 });
 
 describe('setAnalyticsUser', () => {
-  it('sets only the uid, never an email-like property', async () => {
+  // O consentimento vive em services/analytics: carrega-se no mesmo registo de módulos que o firebase.ts.
+  function loadBoth() {
+    let out!: { fb: FirebaseModule; store: typeof import('expo-secure-store') };
+    jest.isolateModules(() => {
+      out = { fb: require('@/services/firebase'), store: require('expo-secure-store') };
+    });
+    return out;
+  }
+
+  it('com consentimento envia só o uid, nunca uma propriedade com email', async () => {
     jest.clearAllMocks();
-    const { setAnalyticsUser } = load();
-    await setAnalyticsUser('abc');
+    const { fb, store } = loadBoth();
+    await store.setItemAsync('s360.analyticsConsent', 'granted');
+    await fb.setAnalyticsUser('abc');
     expect(setUserId).toHaveBeenCalledWith(expect.anything(), 'abc');
     const withAt = (setUserProperty as jest.Mock).mock.calls.filter((c) => String(c[2]).includes('@'));
     expect(withAt).toHaveLength(0);
-    await setAnalyticsUser(null);
+    await fb.setAnalyticsUser(null);
     expect(setUserId).toHaveBeenLastCalledWith(expect.anything(), null);
+  });
+
+  it('sem consentimento não envia o uid, mas limpar com null funciona', async () => {
+    jest.clearAllMocks();
+    const { fb, store } = loadBoth();
+    await store.setItemAsync('s360.analyticsConsent', 'denied');
+    await fb.setAnalyticsUser('abc');
+    expect(setUserId).not.toHaveBeenCalled();
+    await fb.setAnalyticsUser(null);
+    expect(setUserId).toHaveBeenLastCalledWith(expect.anything(), null);
+  });
+});
+
+describe('initFirebase e o consentimento guardado', () => {
+  it('aplica a escolha guardada ao arrancar', async () => {
+    jest.clearAllMocks();
+    let fb!: FirebaseModule;
+    let store!: typeof import('expo-secure-store');
+    let analytics!: typeof import('@react-native-firebase/analytics');
+    jest.isolateModules(() => {
+      fb = require('@/services/firebase');
+      store = require('expo-secure-store');
+      analytics = require('@react-native-firebase/analytics');
+    });
+    await store.setItemAsync('s360.analyticsConsent', 'granted');
+    fb.initFirebase();
+    await new Promise((r) => setImmediate(r));
+    expect(analytics.setAnalyticsCollectionEnabled).toHaveBeenCalledWith(expect.anything(), true);
   });
 });

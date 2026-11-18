@@ -8,11 +8,11 @@ import {
   recordError,
   setCrashlyticsCollectionEnabled,
 } from '@react-native-firebase/crashlytics';
-import { getAnalytics, setUserId } from '@react-native-firebase/analytics';
 import {
   initializeAppCheck,
   ReactNativeFirebaseAppCheckProvider,
 } from '@react-native-firebase/app-check';
+import { applyStoredConsent, setAnalyticsUserId } from '@/services/analytics';
 
 const REGION = 'europe-west1';
 const AUTH_PORT = 9099;
@@ -88,9 +88,10 @@ export function initFirebase(): void {
   setCrashlyticsCollectionEnabled(getCrashlytics(), !__DEV__).catch((e) =>
     reportError(e, 'crashlytics collection toggle failed'),
   );
+  applyStoredConsent().catch((e) => reportError(e, 'analytics consent apply failed'));
 }
 
-/** Only the uid is ever sent to analytics: never email or name. */
+/** Only the uid is ever sent to analytics, and only with consent (see services/analytics): never email or name. */
 export async function setAnalyticsUser(uid: string | null): Promise<void> {
-  await setUserId(getAnalytics(), uid);
+  await setAnalyticsUserId(uid);
 }

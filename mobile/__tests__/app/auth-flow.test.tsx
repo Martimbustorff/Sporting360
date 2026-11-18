@@ -3,6 +3,8 @@ jest.unmock('expo-router');
 // Task 5: a Home (destino depois de entrar) lê dados e tem a folha GameBox; aqui ficam de fora.
 // expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest com a Sheet.
 jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
+// Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.
+jest.mock('@/components/AnalyticsConsentSheet', () => ({ AnalyticsConsentSheet: () => null }));
 jest.mock('@/data/hooks', () => ({
   useMyUser: () => ({ status: 'loading' }),
   usePublicProfile: () => ({ status: 'loading' }),

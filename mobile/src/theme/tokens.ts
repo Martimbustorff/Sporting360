@@ -146,6 +146,8 @@ export const layout = {
   sheetPadYOpen: 32,
   sheetChevron: 24,
   sheetVelocity: 500, // px/s: a flick is enough to toggle
+  consentSheetHeight: 380, // SEM FIGMA: analytics consent sheet (title, 5 lines of text, two buttons) above the home indicator
+  consentGap: 16,
   sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
   // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
   emptyIcon: 122,

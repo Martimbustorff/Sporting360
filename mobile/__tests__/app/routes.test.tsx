@@ -13,6 +13,8 @@ jest.mock('@/data/hooks', () => ({
 }));
 // expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest: a folha (Sheet) fica de fora.
 jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
+// Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.
+jest.mock('@/components/AnalyticsConsentSheet', () => ({ AnalyticsConsentSheet: () => null }));
 jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'ready', data: null }) }));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));
