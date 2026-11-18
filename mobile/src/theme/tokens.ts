@@ -138,6 +138,7 @@ export const layout = {
   matchRowGap: 15, // badge line to the crests line
   separator: 1, // 1px rgba(255,255,255,0.2) line between rows
   skeletonRowHeight: 102, // SEM FIGMA: loading placeholder, the height of a match row
+  skeletonHeaderHeight: 190, // SEM FIGMA: loading placeholder, the height of the game header (500:28956)
   // Event rows (Figma 655:31908 / 655:31916)
   eventRowGap: 16,
   eventRowMinHeight: 40,

@@ -20,6 +20,8 @@ jest.mock('@/data/sports', () => ({
   // Task 7: a Agenda lê as duas listas da modalidade escolhida.
   useUpcomingMatches: () => ({ status: 'ready', data: [] }),
   useResultMatches: () => ({ status: 'ready', data: [] }),
+  // Task 8: o detalhe do jogo lê o documento do jogo (aqui fica no esqueleto).
+  useMatch: () => ({ status: 'loading' }),
 }));
 jest.mock('@/services/firebase', () => ({ authInstance: jest.fn(), fns: jest.fn(), db: jest.fn() }));
 jest.mock('@/services/auth', () => ({ signOut: jest.fn() }));

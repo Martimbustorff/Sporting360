@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
-import type { UiState } from '@/lib/matchVM';
+import { stateLabel, type UiState } from '@/lib/matchVM';
 import { formatKickoffDate, formatTime } from '@/lib/ptDate';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -81,18 +81,12 @@ function ScoreBox({ value, testID }: { value: number; testID: string }) {
   );
 }
 
-const STRIP: Record<Exclude<UiState, 'live'>, string> = {
-  scheduled: 'Próximo',
-  halftime: 'Intervalo',
-  finished: 'Terminado',
-  postponed: 'Adiado',
-  cancelled: 'Cancelado',
-};
-
+// `stateLabel` vive em lib/matchVM (partilhado com a linha da Agenda). É lido dentro da função,
+// e não num `const` de módulo, porque matchVM também importa deste ficheiro.
 function stripText(game: GameHeaderVM): string {
-  if (game.state !== 'live') return STRIP[game.state];
-  if (game.minuteText) return `Live - ${game.minuteText}`;
-  return game.minute != null ? `Live - ${game.minute}’` : 'Live';
+  if (game.state !== 'live') return stateLabel(game.state);
+  if (game.minuteText) return `${stateLabel('live')} - ${game.minuteText}`;
+  return game.minute != null ? `${stateLabel('live')} - ${game.minute}’` : stateLabel('live');
 }
 
 export function GameHeader({ game, tabs, now }: { game: GameHeaderVM; tabs?: ReactNode; now?: Date }) {

@@ -22,6 +22,23 @@ export function uiState(status: GameStatus): UiState {
   return UI_STATE[status];
 }
 
+const STATE_LABEL: Record<UiState, string> = {
+  scheduled: 'Próximo',
+  live: 'Live',
+  halftime: 'Intervalo',
+  finished: 'Terminado',
+  postponed: 'Adiado',
+  cancelled: 'Cancelado',
+};
+
+/**
+ * Palavra do estado, uma só vez para toda a app: faixa do `GameHeader`, linha da Agenda e rótulos
+ * de acessibilidade. Ao vivo o minuto é acrescentado por quem mostra ("Live - 23’").
+ */
+export function stateLabel(state: UiState): string {
+  return STATE_LABEL[state];
+}
+
 /** Nome e jornada/fase em pt-PT. Nunca "JRound of 32": um rótulo assim cai para o texto original. */
 export function competitionText(c: Match['competition']): { name: string; round: string } {
   const round = c.roundLabel ?? formatRound(c.round);

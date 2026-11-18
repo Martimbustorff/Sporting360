@@ -123,6 +123,34 @@ describe('adiado e cancelado (Review Focus 2)', () => {
   });
 });
 
+describe('leitores de ecrã', () => {
+  it('a linha por jogar lê-se de uma vez: equipas, competição e estado', async () => {
+    await render(<MatchRow match={match()} onPress={jest.fn()} />);
+    const row = screen.getByTestId('match-row-1001');
+    expect(row.props.accessible).toBe(true);
+    expect(row.props.accessibilityLabel).toBe('Sporting CP contra SC Braga. Liga Portugal, J16. Próximo');
+  });
+
+  it('com resultado o rótulo traz o resultado em vez de "contra"', async () => {
+    await render(
+      <MatchRow
+        match={match({ status: 'PEN', score: { home: 1, away: 1, halftime: null, extratime: null, penalty: { home: 4, away: 3 } } })}
+        onPress={jest.fn()}
+      />,
+    );
+    expect(screen.getByTestId('match-row-1001').props.accessibilityLabel).toBe(
+      'Sporting CP 1-1 (4-3 g.p.) SC Braga. Liga Portugal, J16. Terminado',
+    );
+  });
+
+  it('adiado entra no rótulo e a linha sem onPress também o tem', async () => {
+    await render(<MatchRow match={match({ status: 'PST' })} />);
+    expect(screen.getByTestId('match-row-1001').props.accessibilityLabel).toBe(
+      'Sporting CP contra SC Braga. Liga Portugal, J16. Adiado',
+    );
+  });
+});
+
 describe('nomes longos (Review Focus 4)', () => {
   const long = match({
     sport: 'futsal',

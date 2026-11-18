@@ -3,8 +3,9 @@
 // (com a hora) a muted e a seta; em baixo nome + emblema da casa, a hora (DIN 24) ou as caixas do
 // resultado, e o emblema + nome de fora.
 // SEM FIGMA: o nome da competição ao lado do badge (requisito da Task 7; muted, numa linha, com
-// reticências); "Adiado"/"Cancelado" no lugar da hora, com as palavras da faixa do GameHeader, e
-// nesses estados a hora sai também da linha de cima; o desempate por penáltis por baixo das caixas
+// reticências); "Adiado"/"Cancelado" no lugar da hora, com as palavras de `stateLabel` (lib/matchVM,
+// as mesmas da faixa do GameHeader), e nesses estados a hora sai também da linha de cima; o rótulo
+// de acessibilidade que resume a linha; o desempate por penáltis por baixo das caixas
 // (`penaltiesText`, Task 4); seta Feather "arrow-right" (como no MenuRow).
 // A linha só é botão quando recebe `onPress`: na Task 13 as jornadas têm jogos sem Sporting, que não
 // têm documento em `matches/{id}` e portanto não abrem o detalhe.
@@ -13,7 +14,7 @@ import { Pressable, View } from 'react-native';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import type { Match } from '@/data/schemas';
-import { penaltiesText, toGameHeaderVM } from '@/lib/matchVM';
+import { penaltiesText, scoreText, stateLabel, toGameHeaderVM } from '@/lib/matchVM';
 import { formatKickoffDate, formatTime } from '@/lib/ptDate';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -54,11 +55,26 @@ function ScoreBox({ value, testID }: { value: number; testID: string }) {
   );
 }
 
+/**
+ * A linha lê-se de uma vez: equipas (com o resultado, quando há), competição com jornada e estado.
+ * Ex.: "Sporting CP 3-0 SC Braga. Liga Portugal, J16. Terminado".
+ */
+function rowLabel(match: Match, vm: ReturnType<typeof toGameHeaderVM>): string {
+  const score = scoreText(match);
+  const teams = score
+    ? `${vm.home.name} ${score} ${vm.away.name}`
+    : `${vm.home.name} contra ${vm.away.name}`;
+  const competition = vm.round ? `${vm.competitionName}, ${vm.round}` : vm.competitionName;
+  return [teams, competition, stateLabel(vm.state)].join('. ');
+}
+
 export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: string) => void }) {
   // O view-model da Task 4 dá a competição em pt-PT, os emblemas (Sporting sempre com o local) e o
   // resultado já filtrado (null antes do jogo, adiado ou cancelado).
   const vm = toGameHeaderVM(match);
-  const offText = vm.state === 'postponed' ? 'Adiado' : vm.state === 'cancelled' ? 'Cancelado' : null;
+  const offText =
+    vm.state === 'postponed' || vm.state === 'cancelled' ? stateLabel(vm.state) : null;
+  const label = rowLabel(match, vm);
   const score = vm.score ?? null;
   const pen = score && match.score.penalty;
   const date = formatKickoffDate(match.kickoff);
@@ -122,11 +138,19 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
     </View>
   );
 
-  if (!onPress) return <View testID={`match-row-${match.id}`}>{content}</View>;
+  if (!onPress) {
+    return (
+      <View testID={`match-row-${match.id}`} accessible accessibilityLabel={label}>
+        {content}
+      </View>
+    );
+  }
   return (
     <Pressable
       testID={`match-row-${match.id}`}
+      accessible
       accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={() => onPress(match.id)}
       style={({ pressed }) => ({ opacity: pressed ? layout.pressedOpacity : 1 })}
     >
