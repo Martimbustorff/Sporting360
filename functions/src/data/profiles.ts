@@ -21,8 +21,8 @@ export function publicName(
 // Primeiro nome + "." + inicial do último apelido que comece por letra e não seja partícula (da, de, do, das, dos, e).
 function derivedName(titled: string): string {
   const words = titled.split(" ").filter(Boolean);
-  // Iniciais à cabeça ("D. Maria Costa") não são o primeiro nome: saltam-se enquanto sobrar outra palavra.
-  while (words.length > 1 && /^\p{L}\.?$/u.test(words[0] ?? "")) words.shift();
+  // Iniciais à cabeça ("D. Maria Costa") não são o primeiro nome: saltam-se enquanto sobrarem mais de duas palavras (nunca deixa um apelido sozinho).
+  while (words.length > 2 && /^\p{L}\.?$/u.test(words[0] ?? "")) words.shift();
   const first = words[0];
   if (first === undefined) return "";
   const particles = ["da", "de", "do", "das", "dos", "e"];

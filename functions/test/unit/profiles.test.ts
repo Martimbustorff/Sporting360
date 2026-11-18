@@ -64,11 +64,11 @@ describe("publicName", () => {
     expect(publicName({ name: "ana évora".normalize("NFD") }, "u1")).toBe("Ana É.");
     expect(publicName({ name: "joão silva".normalize("NFD") }, "u1")).toBe("João S.");
   });
-  it("iniciais à cabeça são ignoradas quando sobra outra palavra", () => {
+  it("iniciais à cabeça são ignoradas só enquanto sobrarem mais de duas palavras", () => {
     expect(publicName({ name: "D. Maria Costa" }, "u1")).toBe("Maria C.");
     expect(publicName({ name: "j. silva costa" }, "u1")).toBe("Silva C.");
-    expect(publicName({ name: "J. Silva" }, "u1")).toBe("Silva");
-    expect(publicName({ name: "A B. Pinto" }, "u1")).toBe("Pinto");
+    expect(publicName({ name: "J. Silva" }, "u1")).toBe("J. S.");
+    expect(publicName({ name: "A B. Pinto" }, "u1")).toBe("B. P.");
   });
   it("displayName inválido também é ignorado", () => {
     expect(publicName({ displayName: "x".repeat(40), name: "ana pinto" }, "u1")).toBe("Ana P.");
