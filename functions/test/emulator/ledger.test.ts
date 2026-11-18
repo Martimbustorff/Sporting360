@@ -32,6 +32,7 @@ describe("awardPoints input validation", () => {
     ["uid com /", { uid: "a/b" }],
     ["gameId vazio", { gameId: "" }],
     ["gameId com /", { gameId: "a/b" }],
+    ["gameId none", { gameId: "none" }],
     ["periods vazio", { periods: [] }],
     ["gameDate inválida", { gameDate: new Date("x") }],
     ["type desconhecido", { type: "bogus" as never }],

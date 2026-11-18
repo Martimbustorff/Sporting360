@@ -206,9 +206,13 @@ describe("settleDue", () => {
   it("settleGame com PEN de golos desiguais conta empate", async () => {
     await seedGame({ status: "PEN", statusRaw: "PEN", scorehome: 3, scoreaway: 2 });
     await seedPlayers();
+    await seedPrediction("a", 2, 2);
+    await seedPrediction("b", 3, 2);
     await settleGame(db, "m1", NOW);
     const st = (await db.doc("settlements/m1").get()).data()!;
     expect([st.finalHome, st.finalAway]).toEqual([2, 2]);
+    expect((await db.doc("pointEvents/a_m1_prediction_exact").get()).data()?.points).toBe(3);
+    expect((await db.doc("pointEvents/b_m1_prediction_exact").get()).exists).toBe(false);
   });
 
   it("settleGame faz warn quando o jogo não é legível", async () => {

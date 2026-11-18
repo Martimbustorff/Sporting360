@@ -24,6 +24,8 @@ describe("seedConfig", () => {
     const d = (await db.doc("config/app").get()).data()!;
     expect(d.minVersion).toEqual({ ios: "0.0.0", android: "0.0.0" });
     expect(d.updatedAt).toBeDefined();
+    expect(d.features).toEqual({ comunidadeLeonina: false });
+    expect(d.comunidadeLeonina.length).toBeGreaterThan(0);
   });
 
   it("não mexe num documento existente", async () => {

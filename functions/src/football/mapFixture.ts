@@ -108,7 +108,8 @@ function finish(f: AfFixture, status: MatchDoc["status"], ctx: MapContext): Pick
 /**
  * Resultado que conta. Em AET/PEN é tempo regulamentar + prolongamento (nunca os penáltis); se a API
  * trouxer `goals` diferente disso, prevalece a soma e fica um aviso. Em PEN um resultado contado não
- * empatado também avisa (a liquidação usa os golos tal como estão).
+ * empatado também avisa. O resultado guardado mantém tempo regulamentar + prolongamento; a liquidação
+ * do Plano 1 (game/result.ts) força empate em PEN.
  */
 function countedScore(f: AfFixture, status: MatchDoc["status"]): { home: number | null; away: number | null } {
   const goals = { home: f.goals.home ?? null, away: f.goals.away ?? null };

@@ -39,7 +39,7 @@ export async function awardPoints(db: Firestore, e: AwardInput): Promise<boolean
   }
   const badId = (v: unknown): boolean => typeof v !== "string" || v.length === 0 || v.includes("/");
   if (badId(e.uid)) throw new Error(`awardPoints: uid inválido (${String(e.uid)})`);
-  if (e.gameId !== null && badId(e.gameId)) throw new Error(`awardPoints: gameId inválido (${String(e.gameId)})`);
+  if (e.gameId !== null && (badId(e.gameId) || e.gameId === "none")) throw new Error(`awardPoints: gameId inválido (${String(e.gameId)})`);
   if (!POINT_TYPES.includes(e.type)) throw new Error(`awardPoints: type desconhecido (${String(e.type)})`);
   if (e.periods !== undefined && e.periods.length === 0) throw new Error("awardPoints: periods não pode ser vazio");
   if (!(e.gameDate instanceof Date) || Number.isNaN(e.gameDate.getTime())) {

@@ -5,6 +5,8 @@ export interface AppConfig {
   storeUrls?: { ios?: string; android?: string };
   texts: { updateRequiredTitle: string; updateRequiredBody: string; updateButton: string };
   comunidadeLeonina: CommunityEntry[];
+  /** Secções escondidas na UI por configuração (não apagadas). */
+  features?: { comunidadeLeonina?: boolean };
 }
 
 export interface CommunityEntry {

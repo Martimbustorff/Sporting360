@@ -5,6 +5,7 @@
     "updateRequiredBody": "Há uma versão nova da S360. Atualiza a app para continuar.",
     "updateButton": "Atualizar"
   },
+  "features": { "comunidadeLeonina": false },
   "comunidadeLeonina": [
     { "name": "Sporting 160", "description": null, "image": null, "links": {} },
     { "name": "Sporting Tactico", "description": null, "image": null, "links": {} },
