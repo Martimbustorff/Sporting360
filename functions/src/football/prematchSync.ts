@@ -136,6 +136,6 @@ export async function syncPrematch(d: FootballDeps): Promise<Out> {
     }
   }
   if (due.length > 0 && failed >= due.length) throw new Error(`syncPrematch: todos os ${failed} jogos falharam`);
-  if (failed > 0) logger.error("INGEST_ALERT", { source: "football_prematch", reason: `${failed} falhas em ${due.length} jogos` });
+  if (failed > 0) logger.warn(`syncPrematch: ${failed} falhas em ${due.length} jogos`);
   return { count, remaining: d.api.remaining, failed };
 }

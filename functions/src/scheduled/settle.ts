@@ -13,6 +13,8 @@ export interface SettleResult {
   votes: number;
   officialMvp: string[];
   settled: boolean;
+  /** Saltado por não ter resultado contado mais de 24 h depois de terminar (vai para alerta no settleRun). */
+  stale?: boolean;
 }
 
 const CHUNK = 100;
@@ -80,7 +82,10 @@ export async function settleGame(
   const stale = game.finishedAt !== null && now.getTime() - game.finishedAt.getTime() > DAY_MS;
   const final = countedScore(game);
   if (!final) {
-    if (stale) logger.warn(`settle: jogo ${gameId} sem resultado contado há mais de 24h`);
+    if (stale) {
+      logger.warn(`settle: jogo ${gameId} sem resultado contado há mais de 24h`);
+      return { ...skipped, stale: true };
+    }
     return skipped;
   }
 
@@ -138,17 +143,30 @@ export async function settleGame(
   return { predictions, votes, officialMvp: official, settled: true };
 }
 
-/** Liquida sequencialmente os jogos devidos. Devolve quantos foram liquidados. */
-export async function settleDue(db: Firestore, now: Date): Promise<number> {
+/**
+ * Liquida sequencialmente os jogos devidos. `count` liquidados, `failed` com exceção; jogos sem resultado há
+ * mais de 24 h vão em `alerts` (o runJob "settle" emite-os como INGEST_ALERT).
+ */
+export async function settleRun(db: Firestore, now: Date): Promise<{ count: number; failed: number; alerts: string[] }> {
   const games = await listFinishedUnsettled(db, now);
-  let n = 0;
+  let count = 0;
+  let failed = 0;
+  const stale: string[] = [];
   for (const g of games) {
     try {
       const r = await settleGame(db, g.gameId, now);
-      if (r.settled) n++;
+      if (r.settled) count++;
+      if (r.stale) stale.push(g.gameId);
     } catch (err) {
-      logger.error(`settleDue: falha ao liquidar o jogo ${g.gameId}`, err);
+      failed++;
+      logger.warn(`settleDue: falha ao liquidar o jogo ${g.gameId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  return n;
+  const alerts = stale.length > 0 ? [`${stale.length} jogo(s) sem resultado contado há mais de 24h: ${stale.join(", ")}`] : [];
+  return { count, failed, alerts };
+}
+
+/** Liquida sequencialmente os jogos devidos. Devolve quantos foram liquidados. */
+export async function settleDue(db: Firestore, now: Date): Promise<number> {
+  return (await settleRun(db, now)).count;
 }

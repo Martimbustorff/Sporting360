@@ -2,6 +2,8 @@ import { deleteApp, getApps } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
 import { syncVideos, type VideosDeps } from "../../src/videos/videosSync";
 import { vsports } from "../../src/sources/vsports";
+import { runJob } from "../../src/store/health";
+import { logger } from "firebase-functions";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 import { fakeFetch } from "../helpers/fakeFetch";
 import { seedFootballMatch } from "../helpers/seedMatch";
@@ -158,6 +160,20 @@ describe("syncVideos", () => {
       [/vdo-pesquisa-sec/, { status: 500, body: "boom" }],
     ]);
     expect(await syncVideos(deps(f))).toEqual({ count: 0, failed: 1 });
+  });
+
+  it("falha parcial: um só INGEST_ALERT, do runJob", async () => {
+    await seed("1500003", 1);
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const f = fakeFetch([
+      [/apism\.vsports\.pt\/pesquisa-sec/, round1([vm("55", "17/11/2026")])],
+      [/vdo-pesquisa-sec/, { status: 500, body: "boom" }],
+    ]);
+    await runJob(db, "videos", () => syncVideos(deps(f)));
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "videos" }));
+    jest.restoreAllMocks();
   });
 
   it("jogo da VSports sem o Sporting ou de outro dia é ignorado", async () => {

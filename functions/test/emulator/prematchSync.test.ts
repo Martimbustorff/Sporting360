@@ -7,7 +7,9 @@ import type { FootballDeps } from "../../src/football/fixturesSync";
 import { mapFixture } from "../../src/football/mapFixture";
 import { syncPrematch } from "../../src/football/prematchSync";
 import { apiFootball } from "../../src/sources/apiFootball";
+import { runJob } from "../../src/store/health";
 import { saveMatch } from "../../src/store/writer";
+import { logger } from "firebase-functions";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 import { fakeFetch } from "../helpers/fakeFetch";
 import { seedFootballMatch } from "../helpers/seedMatch";
@@ -178,6 +180,18 @@ describe("syncPrematch", () => {
     const r = await syncPrematch(deps(f));
     expect(r.failed).toBe(1);
     expect((await db.doc("matches/1500003/details/prematch").get()).exists).toBe(true);
+  });
+
+  it("falha parcial: um só INGEST_ALERT, do runJob", async () => {
+    await seedNs("1500003", 30);
+    await seedNs("1500004", 20);
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const f = fakeFetch([[/predictions\?fixture=1500004/, { status: 500, body: "boom" }], ...routes()]);
+    await runJob(db, "football_prematch", () => syncPrematch(deps(f)));
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "football_prematch" }));
+    jest.restoreAllMocks();
   });
 
   it("quota (429) pára o lote e os restantes contam como falhados", async () => {

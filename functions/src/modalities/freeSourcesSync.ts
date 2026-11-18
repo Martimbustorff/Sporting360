@@ -339,9 +339,14 @@ export async function syncFreeCompetition(d: FreeSourcesDeps, ref: FreeCompetiti
   const source = `free_${ref.key}`;
   // Falha = a principal falhou e a recurso não deu nenhum jogo (erro, inexistente ou vazia).
   const ok = !(primary instanceof Error && (!Array.isArray(fallback) || fallback.length === 0));
-  if (ok) await recordRun(d.db, source, { ok: true, count, failed });
-  else await recordRun(d.db, source, { ok: false, error: r.alerts.filter((a) => /falhou/.test(a)).join("; ") });
-  for (const reason of r.alerts) logger.error("INGEST_ALERT", { source, reason });
+  // recordRun é o único que emite INGEST_ALERT: com sucesso leva os avisos da reconciliação; em falha o erro já
+  // junta as fontes que falharam e os restantes avisos ficam como detalhe.
+  if (ok) await recordRun(d.db, source, { ok: true, count, failed, alerts: r.alerts });
+  else {
+    const failures = r.alerts.filter((a) => /falhou/.test(a));
+    await recordRun(d.db, source, { ok: false, error: failures.join("; ") });
+    for (const a of r.alerts) if (!failures.includes(a)) logger.warn(`freeSourcesSync: ${source}: ${a}`);
+  }
   // Principal em falha com a recurso a dar jogos: a execução conta, mas a saúde fica "degradada" (não verde).
   const degraded = ok && primary instanceof Error;
   await d.db.doc(`ingestHealth/${source}`).set({ lastUsed: r.used, lastAlerts: r.alerts, degraded }, { merge: true });
@@ -379,9 +384,10 @@ function memoFetch(f: FetchFn): FetchFn {
 /**
  * Futsal, hóquei nacional, hóquei europeu (e lacunas da API-Sports, hoje nenhuma). Cada competição só pede às fontes
  * quando é devida (`freeDue`, estado em `ingestState/free_{key}`). Uma competição que falha não trava as outras;
- * só lança se todas as que correram falharem.
+ * só lança se todas as que correram falharem. As falhas por competição já alertam em `ingestHealth/free_{key}`:
+ * vão em `failedCompetitions` (não em `failed`) para a execução agregada `free_sources` não alertar outra vez.
  */
-export async function syncFreeSources(d: FreeSourcesDeps): Promise<{ count: number; failed: number }> {
+export async function syncFreeSources(d: FreeSourcesDeps): Promise<{ count: number; failedCompetitions: number }> {
   const now = d.now();
   const season = apiSportsSeason("span", now);
   const deps: FreeSourcesDeps = { ...d, fetch: memoFetch(d.fetch), now: () => now };
@@ -404,5 +410,5 @@ export async function syncFreeSources(d: FreeSourcesDeps): Promise<{ count: numb
     if (!r.ok) failed++;
   }
   if (attempted > 0 && failed === attempted) throw new Error(`freeSourcesSync: as ${failed} competições falharam`);
-  return { count, failed };
+  return { count, failedCompetitions: failed };
 }

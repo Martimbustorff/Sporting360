@@ -49,6 +49,8 @@ service cloud.firestore {
     match /teams/{id}/{sub=**} { allow read: if true; }
     match /venues/{id} { allow read: if true; }
     // config/app e lido SEM sessao (portao de atualizacao obrigatoria antes do login).
+    // ATENCAO: todos os documentos em config/ sao publicos (leitura sem sessao). Configuracao privada
+    // (chaves, listas internas, flags de operacao) tem de viver noutra colecao, nunca aqui.
     match /config/{id} { allow read: if true; }
 
     // users: public read (phase 1), owner-only writes.

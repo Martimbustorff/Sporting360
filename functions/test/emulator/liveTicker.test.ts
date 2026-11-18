@@ -444,6 +444,28 @@ describe("tick: fim de jogo", () => {
     expect((await tick(deps(f))).calls).toBe(1);
   });
 
+  it("FT na 2.ª iteração (15 s) refresca no tick; na 3.ª (30 s, depois de INLINE_REFRESH_MS) fica adiado", async () => {
+    clock = KO + 112 * MIN;
+    await seedFrom(fx("fixture-live-2h.json", { elapsed: 90 }), clock);
+    const live = envelope([fx("fixture-live-2h.json", { elapsed: 90 })]);
+    const ft = envelope([fx("fixture-ft.json")]);
+    const f = fakeFetch([[byIds, [live, live, ft]], ...competitionRoutes(94)]);
+    const r = await tick(deps(f));
+    expect(r.calls).toBe(3);
+    expect(r.deferred).toEqual([ID]);
+    expect(only(f, /standings/)).toHaveLength(0);
+
+    await db.doc(`matches/${ID}`).delete();
+    await db.doc(`ingestState/match_${ID}`).delete();
+    // minuto que não é múltiplo de 15 (sem a classificação de 15 em 15 min)
+    clock = KO + 121 * MIN;
+    await seedFrom(fx("fixture-live-2h.json", { elapsed: 90 }), clock);
+    const f2 = fakeFetch([[byIds, [live, ft]], ...competitionRoutes(94)]);
+    const r2 = await tick(deps(f2));
+    expect(r2.deferred).toEqual([]);
+    expect(r2.calls).toBe(2 + 7);
+  });
+
   it("refresco pendente de um jogo idle não atrasa a iteração 1 do jogo ao vivo (corre depois, ou fica adiado)", async () => {
     // jogo anterior terminado há 25 min (postRefresh pendente) e o jogo atual a decorrer
     clock = KO + 67 * MIN;

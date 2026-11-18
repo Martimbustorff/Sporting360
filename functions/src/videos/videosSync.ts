@@ -154,6 +154,6 @@ export async function syncVideos(d: VideosDeps): Promise<Out> {
     }
     if (writes.length > 0) await writeDocs(d.db, writes, { stateKey: `videos_${game.id}` });
   }
-  if (failed > 0) logger.error("INGEST_ALERT", { source: "videos", reason: `${failed} chamadas VSports falharam` });
+  if (failed > 0) logger.warn(`syncVideos: ${failed} chamadas VSports falharam`);
   return { count, failed };
 }

@@ -8,29 +8,28 @@ import { saveMatch } from "../store/writer";
 import { refreshCompetition, refreshStandings } from "./competitionSync";
 import { LIVE_OWNERSHIP_MS, listFootballWindow, type FootballDeps } from "./fixturesSync";
 import { mapFixture } from "./mapFixture";
+import { POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, phaseFor, ratingsSlot, type Phase } from "./phase";
 
-export type Phase = "idle" | "prematch" | "live" | "postmatch" | "ratings";
+export { LATE_START_MS, POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, RATINGS_REFRESH_MIN, RATINGS_WINDOW_MS, phaseFor, ratingsSlot } from "./phase";
+export type { Phase } from "./phase";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 
 export const LIVE_INTERVAL_MS = 15_000;
 export const LIVE_ITERATIONS = 4;
-export const PREMATCH_LEAD_MS = 75 * MIN;
-export const POSTMATCH_TAIL_MS = 25 * MIN;
-export const RATINGS_REFRESH_MIN: readonly number[] = [30, 60, 110];
-/** Cada refresco de ratings faz-se uma vez, no primeiro tick em [X, X + 10 min). */
-export const RATINGS_WINDOW_MS = 10 * MIN;
 
 /** Timeout de cada pedido do ticker (o cliente em index.ts usa este valor). */
 export const LIVE_REQUEST_TIMEOUT_MS = 5_000;
 /** Nenhuma iteração começa se, com o timeout de um pedido, puder acabar depois disto (a invocação seguinte). */
 export const TICK_DEADLINE_MS = 60_000;
-/** Refrescos de fim de jogo (≈7 pedidos seguidos) só correm dentro do tick até aqui; depois ficam para o minuto seguinte. */
-export const INLINE_REFRESH_MS = 30_000;
-/** NS depois do kickoff conta como live (atraso no início) durante este tempo. */
-export const LATE_START_MS = 4 * HOUR;
-/** ...mas só a 4 pedidos por minuto nos primeiros 20 min; depois 1 por minuto. */
+/**
+ * Refrescos de fim de jogo (7 pedidos seguidos: standings, rondas, calendário e 4 tops) só começam até aqui; depois
+ * ficam para o minuto seguinte. Derivado para os 7 pedidos, cada um no limite do timeout, acabarem com 5 s de folga
+ * antes do prazo do tick (≈20 s).
+ */
+export const INLINE_REFRESH_MS = TICK_DEADLINE_MS - 7 * LIVE_REQUEST_TIMEOUT_MS - 5_000;
+/** NS atrasado (fase live até `LATE_START_MS`) só a 4 pedidos por minuto nos primeiros 20 min; depois 1 por minuto. */
 export const LATE_START_FAST_MS = 20 * MIN;
 /** LIVE/HT com kickoff há mais disto (interrompido, API presa) desce para 1 pedido por minuto. */
 export const LIVE_FAST_MS = 4 * HOUR;
@@ -55,29 +54,6 @@ export interface TickResult {
   errors: string[];
   /** Jogos cujo refresco de fim de jogo ficou para o minuto seguinte (tick já demasiado adiantado). */
   deferred: string[];
-}
-
-/** Minuto de ratings (30, 60 ou 110) cuja janela de 10 min contém `now`; `null` fora delas. */
-export function ratingsSlot(m: MatchDoc, now: Date): number | null {
-  if (!FINAL_STATUSES.has(m.status) || !m.finishedAt) return null;
-  const since = now.getTime() - m.finishedAt.getTime();
-  return RATINGS_REFRESH_MIN.find((x) => since >= x * MIN && since < x * MIN + RATINGS_WINDOW_MS) ?? null;
-}
-
-export function phaseFor(m: MatchDoc, now: Date): Phase {
-  const t = now.getTime();
-  const k = m.kickoff.getTime();
-  if (LIVE_STATUSES.has(m.status)) return "live";
-  if (m.status === "NS") {
-    if (t >= k - PREMATCH_LEAD_MS && t < k) return "prematch";
-    if (t >= k && t < k + LATE_START_MS) return "live";
-    return "idle";
-  }
-  if (FINAL_STATUSES.has(m.status) && m.finishedAt) {
-    if (t - m.finishedAt.getTime() < POSTMATCH_TAIL_MS) return "postmatch";
-    if (ratingsSlot(m, now) !== null) return "ratings";
-  }
-  return "idle";
 }
 
 /**

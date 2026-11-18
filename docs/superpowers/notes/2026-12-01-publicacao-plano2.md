@@ -373,15 +373,15 @@ Necessário para apagar conta com Apple (a app nova chama `revokeToken(authoriza
 
 | Dado | Pedidos/dia |
 |---|---|
-| Base sem jogo (calendário 3 épocas de 3 em 3 h, pós-jogo 09:00, classificações de 6 em 6 h, rondas e calendários, tops, plantel e estatísticas, semanais, pré-jogo) | ≈75 |
+| Base sem jogo, com 4 competições (2 com tops): calendário de 3 em 3 h, 1 a 3 épocas (8 a 24); classificações de 6 em 6 h (4 × 4 = 16); rondas, calendário e 4 tops de 6 em 6 h (4 × (6 + 6 + 2 + 2) = 64); plantel, treinador, jogadores (2 páginas), estatísticas por competição (4) e lesões, 1×/dia (≈9); semanais (≈6/semana, ≈1/dia); pós-jogo 09:00 e pré-jogo (0 a ≈5) | ≈100 a 120 (≈110 a 150 com uma 5.ª competição, ex. Supertaça, ou mais tops) |
 | Um jogo de 90 min (pré-jogo 75 × 1/min, em jogo ≈112 min × 4/min, classificação de 15 em 15 min, 2 refrescos de fim de jogo, pós-jogo 25 × 1/min, 3 refrescos de notas) | ≈573 |
 | Um jogo com prolongamento e penáltis | ≈768 (≈776 europeu) |
 | Jogo adiado já guardado como `PST` | 0 (pior caso ≈375 se a API só o adiar depois da hora) |
-| **Dia com 1 jogo** | **≈650 a 850** |
-| **Dia com 2 jogos** (raro; teto de planeamento) | **≈1.400** |
+| **Dia com 1 jogo** | **≈670 a 900** |
+| **Dia com 2 jogos** (raro; teto de planeamento) | **≈1.450** (≈1.700 com prolongamento nos dois) |
 | Durante o modo sombra, num dia de jogo, somar o `liveMatchUpdater` antigo | consumo a dobrar |
 
-Linha do plano a atualizar no fim (Task 21, roteiro): "máximo diário < 1.000" passa a "≈1.400 num dia com 2 jogos".
+Linha do plano a atualizar no fim (Task 21, roteiro): "máximo diário < 1.000" passa a "≈1.450 num dia com 2 jogos".
 
 ### API-Sports (RapidAPI, gratuito, 100/dia por modalidade)
 

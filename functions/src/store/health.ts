@@ -1,7 +1,9 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
 
-type RunResult = { ok: true; count: number; remaining?: number | null; failed?: number } | { ok: false; error: string };
+/** `alerts`: avisos da execução (ex.: jogo sem resultado há 24 h) que saem como INGEST_ALERT, um por linha. */
+type RunResult = { ok: true; count: number; remaining?: number | null; failed?: number; alerts?: string[] } | { ok: false; error: string };
+type JobOutput = { count: number; remaining?: number | null; failed?: number; alerts?: string[] };
 export interface RunOptions {
   expectNonZero?: boolean;
   minRemaining?: number;
@@ -10,6 +12,8 @@ export interface RunOptions {
 /**
  * Regista o resultado de uma execução em `ingestHealth/{source}`. Os alertas saem como
  * `logger.error("INGEST_ALERT", ...)`; uma métrica de logs + política de alerta (Task 20) envia o email.
+ * É o único sítio que emite INGEST_ALERT para falhas de execução: os jobs devolvem `failed`/`alerts` e
+ * deixam o detalhe por item em `logger.warn`.
  */
 export async function recordRun(db: Firestore, source: string, r: RunResult, o?: RunOptions): Promise<void> {
   const ref = db.doc(`ingestHealth/${source}`);
@@ -27,6 +31,7 @@ export async function recordRun(db: Firestore, source: string, r: RunResult, o?:
     data.remaining = r.remaining ?? null;
     data.lastFailed = r.failed ?? 0;
     if (r.failed) alerts.push(`${r.failed} itens falharam nesta execução`);
+    for (const a of r.alerts ?? []) alerts.push(a);
     if (o?.expectNonZero && r.count === 0) alerts.push("0 registos numa fonte que devia devolver dados");
     if (o?.minRemaining !== undefined && r.remaining !== null && r.remaining !== undefined && r.remaining < o.minRemaining) {
       alerts.push(`quota baixa: restam ${r.remaining} pedidos (mínimo ${o.minRemaining})`);
@@ -45,12 +50,12 @@ export async function recordRun(db: Firestore, source: string, r: RunResult, o?:
 export async function runJob(
   db: Firestore,
   source: string,
-  fn: () => Promise<{ count: number; remaining?: number | null; failed?: number }>,
+  fn: () => Promise<JobOutput>,
   o?: RunOptions,
 ): Promise<void> {
   try {
     const out = await fn();
-    await recordRun(db, source, { ok: true, count: out.count, remaining: out.remaining, failed: out.failed }, o);
+    await recordRun(db, source, { ok: true, count: out.count, remaining: out.remaining, failed: out.failed, alerts: out.alerts }, o);
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     try {

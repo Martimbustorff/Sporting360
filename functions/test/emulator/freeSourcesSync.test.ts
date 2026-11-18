@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { deleteApp, getApps } from "firebase-admin/app";
 import type { Firestore } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
+import { runJob } from "../../src/store/health";
 import { SPORTING_CREST_URL } from "../../src/config/brand";
 import { FREE_MATCH_SOURCES, syncFreeCompetition, syncFreeSources } from "../../src/modalities/freeSourcesSync";
 import type { MatchSource } from "../../src/sources/free/common";
@@ -28,7 +30,11 @@ const gamesheet = (home: string, away: string, start: string) =>
 
 function allRoutes(o: { fail?: boolean } = {}) {
   if (o.fail) return fakeFetch([[/./, { status: 500, body: "erro" }]]);
-  return fakeFetch([
+  return fakeFetch(allRouteList());
+}
+
+function allRouteList(): Parameters<typeof fakeFetch>[0] {
+  return [
     [/schedule\/3\/26$/, "free/futsalportugal/schedule-liga-placard-26.html"],
     [/schedule\/3\/45$/, "free/futsalportugal/schedule-taca-de-portugal-45.html"],
     [/schedule\/3\/43$/, "free/futsalportugal/schedule-taca-da-liga-43.html"],
@@ -44,7 +50,7 @@ function allRoutes(o: { fail?: boolean } = {}) {
     [/Competicao\/509$/, "free/hp_fpp/competicao-509-elite-cup.html"],
     [/events\?.*page=1$/, { status: 200, body: fixture("hoqueipatins/events-league230-season1122-page1.json"), headers: { "X-WP-TotalPages": "2" } }],
     [/events\?.*page=2$/, { status: 200, body: fixture("hoqueipatins/events-sporting-europe-cups.json"), headers: { "X-WP-TotalPages": "2" } }],
-  ]);
+  ];
 }
 
 const ids = async (prefix: string) => (await db.collection("matches").get()).docs.map((d) => d.id).filter((id) => id.startsWith(prefix)).sort();
@@ -126,8 +132,14 @@ describe("syncFreeSources", () => {
 
   it("principal com erro e recurso com jogos: a execução conta mas a saúde fica degradada, com alerta", async () => {
     const broken: MatchSource = { key: "hp_fpp", sport: "roller_hockey", fetchMatches: async () => { throw new Error("HTTP 503"); } };
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
     const r = await syncFreeCompetition({ db, fetch: allRoutes(), now: () => NOW }, { key: "roller_hockey", sport: "roller_hockey", primary: broken, fallback: FREE_MATCH_SOURCES.hoqueipatins, prefix: "hq", filter: (m) => m.competition.type !== "europe" });
     expect(r).toMatchObject({ ok: true, used: "fallback", count: 17 });
+    // Cada aviso sai uma vez, pelo recordRun.
+    expect(r.alerts.length).toBeGreaterThan(0);
+    expect(alert).toHaveBeenCalledTimes(r.alerts.length);
+    for (const reason of r.alerts) expect(alert).toHaveBeenCalledWith("INGEST_ALERT", { source: "free_roller_hockey", reason });
+    alert.mockRestore();
     const h = (await db.doc("ingestHealth/free_roller_hockey").get()).data()!;
     expect(h).toMatchObject({ degraded: true, lastUsed: "fallback", consecutiveFailures: 0 });
     expect(h.lastAlerts.join(" ")).toMatch(/principal falhou: HTTP 503/);
@@ -135,6 +147,26 @@ describe("syncFreeSources", () => {
     expect((await db.doc("ingestHealth/free_roller_hockey").get()).get("degraded")).toBe(false);
     // O FPP passa a dar os jogos que vieram do recurso: os ids hq_hoqueipatins_* ficam, sem duplicados.
     expect(await ids("hq_")).toHaveLength(17);
+  });
+
+  it("principal e recurso em falha: um alerta da competição e nenhum da execução agregada", async () => {
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const broken: MatchSource = { key: "hp_fpp", sport: "roller_hockey", fetchMatches: async () => { throw new Error("HTTP 503"); } };
+    const r = await syncFreeCompetition({ db, fetch: allRoutes(), now: () => NOW }, { key: "roller_hockey", sport: "roller_hockey", primary: broken, fallback: broken, prefix: "hq" });
+    expect(r.ok).toBe(false);
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "free_roller_hockey" }));
+    alert.mockClear();
+    // Agregado: uma competição falhada já alertou na sua saúde; a execução free_sources não repete.
+    const f = fakeFetch([[/hp\.fpp\.pt|events\?/, { status: 503, body: "" }], ...allRouteList()]);
+    await runJob(db, "free_sources", () => syncFreeSources({ db, fetch: f, now: () => NOW }));
+    const sources = alert.mock.calls.map((c) => (c[1] as { source: string }).source);
+    expect(sources).not.toContain("free_sources");
+    const hockey = sources.filter((x) => x.startsWith("free_roller_hockey"));
+    expect(hockey.length).toBeGreaterThan(0);
+    expect(new Set(hockey).size).toBe(hockey.length);
+    jest.restoreAllMocks();
   });
 
   it("Review Focus 5: fontes vazias em novembro não apagam os jogos gravados; jogo bloqueado não é tocado", async () => {

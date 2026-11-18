@@ -131,6 +131,20 @@ describe("syncCompetitions", () => {
     expect((await db.doc("competitions/football_94_2026/data/rounds").get()).data()).toEqual(before);
     expect((await db.doc("competitions/football_94_2026/data/topscorers").get()).exists).toBe(true);
   });
+
+  it("rondas com calendário vazio: mantém a ronda atual guardada (não a apaga com null)", async () => {
+    await seed94();
+    await syncCompetitions(deps(fakeFetch(routes())));
+    expect((await db.doc("competitions/football_94_2026/data/rounds").get()).get("current")).toBe("Regular Season - 12");
+    const noFixtures = fakeFetch([
+      [/fixtures\/rounds\?league=94/, "api-football/rounds-94.json"],
+      [/./, envelope([])],
+    ]);
+    await syncCompetitions(deps(noFixtures));
+    const rounds = (await db.doc("competitions/football_94_2026/data/rounds").get()).data()!;
+    expect(rounds.current).toBe("Regular Season - 12");
+    expect(rounds.items).toHaveLength(34);
+  });
 });
 
 describe("eliminatórias e vista", () => {
@@ -213,7 +227,9 @@ describe("falhas parciais", () => {
     await runJob(db, "football_competitions", () => syncCompetitions(deps(f)));
     expect((await db.doc("competitions/football_96_2026/data/fixtures").get()).exists).toBe(true);
     expect((await db.doc("competitions/football_94_2026/data/fixtures").get()).exists).toBe(false);
-    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "syncCompetitions" }));
+    // Um só alerta, do runJob (a função só deixa o detalhe em warn).
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "football_competitions" }));
     expect((await db.doc("ingestHealth/football_competitions").get()).data()).toMatchObject({ lastFailed: 1, consecutiveFailures: 0 });
   });
 

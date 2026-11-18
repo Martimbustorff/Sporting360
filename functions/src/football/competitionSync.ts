@@ -85,7 +85,7 @@ export function isQuotaError(e: unknown): boolean {
 }
 
 /**
- * Corre `fn` por competição. Falhas contam-se e saem como INGEST_ALERT; num erro de quota pára e as
+ * Corre `fn` por competição. Falhas contam-se em `failed` (o runJob alerta); num erro de quota pára e as
  * restantes contam como falhadas. Só lança se todas falharem.
  */
 async function eachCompetition(
@@ -117,7 +117,7 @@ async function eachCompetition(
     }
   }
   if (comps.length > 0 && allFailed === comps.length) throw new Error(`${job}: todas as ${allFailed} competições falharam`);
-  if (failed > 0) logger.error("INGEST_ALERT", { source: job, reason: `${failed} falhas em ${comps.length} competições` });
+  if (failed > 0) logger.warn(`${job}: ${failed} falhas em ${comps.length} competições`);
   return { count, remaining: d.api.remaining, failed };
 }
 
@@ -194,9 +194,13 @@ export async function refreshCompetition(d: FootballDeps, leagueId: number, seas
   }
 
   if (rawRounds.length > 0) {
+    // Sem calendário não se sabe a ronda atual: mantém-se a guardada em vez de a apagar com null.
+    const keepCurrent = fixtures.length === 0
+      ? (((await d.db.doc(`competitions/${key}/data/rounds`).get()).get("current") as string | null | undefined) ?? null)
+      : current;
     writes.push({
       path: `competitions/${key}/data/rounds`,
-      data: { items: rawRounds.map((raw) => ({ raw, label: roundLabel(raw, label.type) ?? raw })), current },
+      data: { items: rawRounds.map((raw) => ({ raw, label: roundLabel(raw, label.type) ?? raw })), current: keepCurrent },
     });
   }
   await writeDocs(d.db, writes, { stateKey: `competition_${key}` });

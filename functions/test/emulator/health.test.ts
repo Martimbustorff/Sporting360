@@ -53,6 +53,17 @@ describe("recordRun", () => {
   });
 });
 
+describe("alerts", () => {
+  it("cada aviso devolvido pelo job sai uma vez como INGEST_ALERT", async () => {
+    const spy = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    await runJob(db, "a", async () => ({ count: 1, failed: 2, alerts: ["x", "y"] }));
+    expect(spy).toHaveBeenCalledTimes(3);
+    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", { source: "a", reason: "x" });
+    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", { source: "a", reason: "y" });
+    expect(spy).toHaveBeenCalledWith("INGEST_ALERT", { source: "a", reason: expect.stringContaining("2 itens") });
+  });
+});
+
 describe("runJob", () => {
   it("não relança e regista a mensagem de erro", async () => {
     jest.spyOn(logger, "error").mockImplementation(() => undefined);

@@ -126,13 +126,19 @@ describe("syncTeamDaily", () => {
 
   it("uma falha não descarta as outras; o erro de quota pára os restantes", async () => {
     await seedLeague();
-    const warn = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
     const routes = dailyRoutes().map((x) => (/coachs/.test(String(x[0])) ? ([x[0], { status: 500 }] as [RegExp, object]) : x));
     const r = await syncTeamDaily(deps(fakeFetch(routes)));
     expect(r.failed).toBe(1);
     expect((await get("squad"))!.players).toHaveLength(30);
     expect(await get("coach")).toBeUndefined();
-    expect(warn).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "syncTeamDaily" }));
+    // A função não alerta: o detalhe fica em warn e o alerta sai uma vez, do runJob.
+    expect(alert).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("syncTeamDaily"));
+    await runJob(db, "football_team_daily", () => syncTeamDaily(deps(fakeFetch(routes))));
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "football_team_daily" }));
 
     const f = fakeFetch([[/.*/, { status: 429 }]]);
     await expect(syncTeamDaily(deps(f))).rejects.toThrow(/falharam/);

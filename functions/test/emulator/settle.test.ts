@@ -4,7 +4,8 @@ import type { MatchDoc } from "../../src/model/types";
 import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch, seedPlayers as seedPlayerLines } from "../helpers/seedMatch";
 import { logger } from "firebase-functions";
-import { settleDue, settleGame } from "../../src/scheduled/settle";
+import { settleDue, settleGame, settleRun } from "../../src/scheduled/settle";
+import { runJob } from "../../src/store/health";
 import { awardPoints } from "../../src/points/ledger";
 
 let db: Firestore;
@@ -187,6 +188,28 @@ describe("settleDue", () => {
     expect(await settleDue(db, NOW)).toBe(0);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
+  });
+
+  it("runJob settle: jogo sem resultado há mais de 24h sai como INGEST_ALERT pela saúde", async () => {
+    jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    await seedGame({ scorehome: null, scoreaway: null }, "old", 25 * 60);
+    expect(await settleRun(db, NOW)).toEqual({ count: 0, failed: 0, alerts: [expect.stringContaining("old")] });
+    await runJob(db, "settle", () => settleRun(db, NOW));
+    expect((await db.doc("ingestHealth/settle").get()).data()).toMatchObject({ lastCount: 0, lastFailed: 0, consecutiveFailures: 0 });
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith("INGEST_ALERT", expect.objectContaining({ source: "settle", reason: expect.stringContaining("24h") }));
+    jest.restoreAllMocks();
+  });
+
+  it("runJob settle: liquidação normal regista count e não alerta", async () => {
+    const alert = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    await seedGame();
+    await seedPlayers();
+    await runJob(db, "settle", () => settleRun(db, NOW));
+    expect((await db.doc("ingestHealth/settle").get()).get("lastCount")).toBe(1);
+    expect(alert).not.toHaveBeenCalled();
+    jest.restoreAllMocks();
   });
 
   it("settleGame duas vezes mantém o settledAt da primeira", async () => {

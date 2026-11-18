@@ -47,7 +47,7 @@ async function runSteps(d: FootballDeps, job: string, steps: Step[]): Promise<Ou
     }
   }
   if (steps.length > 0 && allFailed === steps.length) throw new Error(`${job}: todos os ${allFailed} passos falharam`);
-  if (failed > 0) logger.error("INGEST_ALERT", { source: job, reason: `${failed} falhas em ${steps.length} passos` });
+  if (failed > 0) logger.warn(`${job}: ${failed} falhas em ${steps.length} passos`);
   return { count, remaining: d.api.remaining, failed };
 }
 

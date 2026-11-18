@@ -12,7 +12,7 @@ import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
-import { settleDue } from "./scheduled/settle";
+import { settleRun } from "./scheduled/settle";
 import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
 import { twitter } from "./sources/twitter";
@@ -29,7 +29,7 @@ export { voteMvp } from "./callables/voteMvp";
 export const settleScheduler = onSchedule(
   { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 540, memory: "512MiB" },
   async () => {
-    await settleDue(getFirestore(), new Date());
+    await runJob(getFirestore(), "settle", () => settleRun(getFirestore(), new Date()));
   },
 );
 

@@ -9,6 +9,7 @@ import { MAX_IDS, type ApiFootballClient } from "../sources/apiFootball";
 import type { AfFixture, AfFixtureCore } from "../sources/apiFootball.types";
 import { fromFirestore, getMatch, saveMatch } from "../store/writer";
 import { mapFixture } from "./mapFixture";
+import { phaseFor } from "./phase";
 
 export interface FootballDeps {
   db: Firestore;
@@ -36,14 +37,32 @@ function chunk<T>(xs: T[], n: number): T[][] {
   return out;
 }
 
+/** Resultado de uma execução por lotes: `failed` e `alerts` seguem para `recordRun` (o único que emite INGEST_ALERT). */
+export interface SyncResult {
+  count: number;
+  remaining: number | null;
+  failed: number;
+  alerts?: string[];
+}
+
+/**
+ * O calendário não toca num jogo guardado que pertence ao ticker: fora de `idle` (prematch, live, postmatch, ratings)
+ * é ele que o escreve. Exceção: LIVE/HT com kickoff há `LIVE_OWNERSHIP_MS` ou mais está preso e o calendário corrige-o.
+ */
+export function ownedByTicker(previous: MatchDoc, now: Date): boolean {
+  if (LIVE_STATUSES.has(previous.status)) return now.getTime() - previous.kickoff.getTime() < LIVE_OWNERSHIP_MS;
+  return phaseFor(previous, now) !== "idle";
+}
+
 /**
  * Calendário completo do Sporting (todas as competições, sem filtro de liga). Escreve `matches` e só
- * `games` nas coleções antigas. Jogos guardados como LIVE/HT não são tocados enquanto o kickoff tiver
- * menos de `LIVE_OWNERSHIP_MS`: pertencem ao ticker (evita a corrida de hashes e que um FT visto aqui
- * fixe um `finishedAt` estimado). Mais antigos estão presos e são corrigidos aqui.
+ * `games` nas coleções antigas. O calendário é lido uma vez no início e os jogos processam-se em sequência
+ * durante dezenas de segundos: cada jogo relê o guardado e salta os do ticker (`ownedByTicker`), para que
+ * um instantâneo antigo ("2H", "NS") não se escreva por cima do que o ticker já gravou (FT, LIVE).
+ * Um final guardado (FT/AET/PEN) nunca volta a um estado não final por aqui: fica como está e sai um alerta.
  * Um fixture inválido não aborta o lote.
  */
-export async function syncFixtures(d: FootballDeps): Promise<{ count: number; remaining: number | null }> {
+export async function syncFixtures(d: FootballDeps): Promise<SyncResult> {
   const now = d.now();
   const byId = new Map<string, AfFixtureCore>();
   for (const season of seasonsToFetch(now)) {
@@ -52,12 +71,18 @@ export async function syncFixtures(d: FootballDeps): Promise<{ count: number; re
 
   let count = 0;
   let failed = 0;
+  const alerts: string[] = [];
   for (const [id, core] of byId) {
     try {
       const previous = await getMatch(d.db, id);
-      if (previous && LIVE_STATUSES.has(previous.status) && now.getTime() - previous.kickoff.getTime() < LIVE_OWNERSHIP_MS) continue;
+      if (previous && ownedByTicker(previous, now)) continue;
       const full = asFull(core);
       const { match } = mapFixture(full, { now, previous, observedLive: false });
+      if (previous && FINAL_STATUSES.has(previous.status) && !FINAL_STATUSES.has(match.status)) {
+        alerts.push(`jogo ${id}: o calendário traz ${match.statusRaw} sobre o final ${previous.statusRaw}; mantido o final`);
+        logger.warn(`syncFixtures: jogo ${id} guardado como ${previous.status}, calendário com ${match.status}: não escrito`);
+        continue;
+      }
       const legacy = legacyFromFixture(full, match, null);
       await saveMatch(d.db, { match, details: null, legacy: { games: legacy.games } }, { prefix: d.prefix });
       count++;
@@ -67,7 +92,7 @@ export async function syncFixtures(d: FootballDeps): Promise<{ count: number; re
     }
   }
   if (failed > 0 && count === 0) throw new Error(`syncFixtures: todos os ${failed} fixtures falharam`);
-  return { count, remaining: d.api.remaining };
+  return { count, remaining: d.api.remaining, failed, ...(alerts.length > 0 ? { alerts } : {}) };
 }
 
 /** Escreve fixtures completos (modelo novo e, salvo `newModelOnly`, todas as coleções antigas). */
@@ -98,7 +123,7 @@ async function saveFull(
 export async function refreshRecent(
   d: FootballDeps,
   o: { finishedWithinMs: number } = { finishedWithinMs: DEFAULT_WINDOW_MS },
-): Promise<{ count: number; remaining: number | null }> {
+): Promise<SyncResult> {
   const now = d.now();
   const from = new Date(now.getTime() - o.finishedWithinMs);
   const snap = await d.db.collection("matches").where("sport", "==", "football").where("finishedAt", ">=", from).get();
@@ -116,7 +141,7 @@ export async function refreshRecent(
     failed += r.failed;
   }
   if (failed > 0 && count === 0) throw new Error(`refreshRecent: todos os ${failed} jogos falharam`);
-  return { count, remaining: d.api.remaining };
+  return { count, remaining: d.api.remaining, failed };
 }
 
 /**
@@ -127,7 +152,7 @@ export async function backfillFinished(
   d: FootballDeps,
   season: string,
   o: { newModelOnly: boolean },
-): Promise<{ count: number; remaining: number | null }> {
+): Promise<SyncResult> {
   const all = await d.api.fixturesByTeamSeason(SPORTING_TEAM_ID, season);
   const ids = all.filter((f) => FINAL_STATUSES.has(footballStatus(f.fixture.status.short))).map((f) => String(f.fixture.id));
   let count = 0;
@@ -138,7 +163,7 @@ export async function backfillFinished(
     failed += r.failed;
   }
   if (failed > 0 && count === 0) throw new Error(`backfillFinished: todos os ${failed} jogos falharam`);
-  return { count, remaining: d.api.remaining };
+  return { count, remaining: d.api.remaining, failed };
 }
 
 /** Jogos de futebol com `kickoff` entre `from` e `to` (inclusivo), por ordem de início. */

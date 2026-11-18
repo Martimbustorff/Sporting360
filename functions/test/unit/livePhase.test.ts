@@ -1,4 +1,7 @@
 import {
+  INLINE_REFRESH_MS,
+  LIVE_REQUEST_TIMEOUT_MS,
+  TICK_DEADLINE_MS,
   LIVE_INTERVAL_MS,
   LIVE_ITERATIONS,
   POSTMATCH_TAIL_MS,
@@ -46,6 +49,12 @@ describe("constantes", () => {
     expect(PREMATCH_LEAD_MS).toBe(75 * MIN);
     expect(POSTMATCH_TAIL_MS).toBe(25 * MIN);
     expect(RATINGS_REFRESH_MIN).toEqual([30, 60, 110]);
+  });
+
+  it("INLINE_REFRESH_MS deixa 7 pedidos no timeout acabarem com 5 s de folga antes do prazo do tick", () => {
+    expect(INLINE_REFRESH_MS).toBe(TICK_DEADLINE_MS - 7 * LIVE_REQUEST_TIMEOUT_MS - 5_000);
+    expect(INLINE_REFRESH_MS).toBe(20_000);
+    expect(INLINE_REFRESH_MS + 7 * LIVE_REQUEST_TIMEOUT_MS).toBeLessThan(TICK_DEADLINE_MS);
   });
 });
 
