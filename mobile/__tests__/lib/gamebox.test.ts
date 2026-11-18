@@ -5,6 +5,7 @@ import {
   legacyGameboxFromUser,
   normalizeGameboxNumber,
   readStoredGameboxNumber,
+  resolveGameboxList,
   toGameboxDoc,
   type GameboxInput,
 } from '@/lib/gamebox';
@@ -50,9 +51,9 @@ describe('toGameboxDoc', () => {
     expect(d).toMatchObject({ pavilionPort: '1', pavilionSector: 'A1', pavilionLine: '5', pavilionSeat: '5' });
   });
 
-  it('limpa espaços e dá nome "Gamebox N" quando vem vazio', () => {
+  it('limpa espaços e grava nome vazio quando vem vazio (a etiqueta "Gamebox N" é só da interface)', () => {
     const d = toGameboxDoc('u1', { number: ' 2665 7127 6572 ', name: '  ', stadium: { port: ' 5 ', sector: '', line: '', seat: '' }, pavilion: null }, 3);
-    expect(d.gameboxName).toBe('Gamebox 3');
+    expect(d.gameboxName).toBe('');
     expect(d.gameboxPort).toBe('5');
     expect(decryptGameboxNumber(d.gameboxNumber, 'u1')).toBe('266571276572');
   });
@@ -114,6 +115,12 @@ describe('readStoredGameboxNumber', () => {
     expect(readStoredGameboxNumber(undefined, 'u1')).toBe('');
     expect(readStoredGameboxNumber('', 'u1')).toBe('');
   });
+
+  it('número antigo em claro com espaços por dentro: tira os espaços', () => {
+    expect(readStoredGameboxNumber('2665 7127 6572', 'u1')).toBe('266571276572');
+    expect(readStoredGameboxNumber(' 266 571\t276572 ', 'u1')).toBe('266571276572');
+    expect(legacyGameboxFromUser({ gameboxNumber: '2665 7127 6572' }, 'u1')?.number).toBe('266571276572');
+  });
 });
 
 describe('legacyGameboxFromUser', () => {
@@ -138,6 +145,28 @@ describe('legacyGameboxFromUser', () => {
     expect(legacyGameboxFromUser({}, 'u1')).toBeNull();
     expect(legacyGameboxFromUser({ gameboxNumber: '' }, 'u1')).toBeNull();
     expect(legacyGameboxFromUser({ gameboxNumber: encryptGameboxNumber('123456', 'u2') }, 'u1')).toBeNull();
+  });
+});
+
+describe('resolveGameboxList', () => {
+  const doc = { id: 'g1', userid: 'u1', gameboxNumber: V2_VECTOR, gameboxName: '', order: 1 } as GameboxDoc & { id: string };
+  const ready = <T,>(data: T) => ({ status: 'ready' as const, data });
+  it('a carregar, sem uid ou com documentos vazios e perfil a carregar', () => {
+    expect(resolveGameboxList({ status: 'loading' }, ready({}), 'u1').status).toBe('loading');
+    expect(resolveGameboxList(ready([doc]), ready({}), null).status).toBe('loading');
+    expect(resolveGameboxList(ready([]), { status: 'loading' }, 'u1').status).toBe('loading');
+  });
+  it('erro de leitura da lista', () => {
+    expect(resolveGameboxList({ status: 'error', error: new Error('x') }, ready({}), 'u1').status).toBe('error');
+  });
+  it('com documentos ignora o perfil; sem documentos usa o "Principal" do perfil', () => {
+    expect(resolveGameboxList(ready([doc]), ready({ gameboxNumber: V2_VECTOR }), 'u1')).toMatchObject({ status: 'ready', list: [doc], legacy: null });
+    expect(resolveGameboxList(ready([]), ready({ gameboxNumber: V2_VECTOR }), 'u1')).toMatchObject({
+      status: 'ready',
+      list: [],
+      legacy: { name: 'Principal', number: '266571276572' },
+    });
+    expect(resolveGameboxList(ready([]), { status: 'error', error: new Error('x') }, 'u1')).toMatchObject({ status: 'ready', legacy: null });
   });
 });
 

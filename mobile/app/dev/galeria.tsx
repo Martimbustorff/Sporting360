@@ -1,5 +1,7 @@
 // Galeria de componentes: só em desenvolvimento. Fora de __DEV__ redireciona para a home.
 // Os dados de vista (VM) estão aqui, com casos extremos de propósito (nomes longos, sem imagem, data inválida).
+// Os dados do emulador (src/data/fixtures, com a palavra-passe do utilizador de teste) só se carregam com require dentro
+// de `if (__DEV__)`: na build de produção o Metro corta o ramo e o módulo não entra no bundle.
 import Feather from '@expo/vector-icons/Feather';
 import { Redirect, useRouter } from 'expo-router';
 import { useState, type ReactNode } from 'react';
@@ -28,7 +30,6 @@ import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
 import { ToggleRow } from '@/components/ToggleRow';
 import { VideoPlayer } from '@/components/VideoPlayer';
-import { buildFixtures, SPORTING_TEAM_ID } from '@/data/fixtures';
 import { BracketDocSchema, MatchSchema, StandingsDocSchema, VideoSchema } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
 import type { GameboxView } from '@/lib/gamebox';
@@ -82,16 +83,30 @@ const RANKING: RankingVM[] = [
 ];
 
 // Dados reais do emulador (fixtures) passados pelos schemas: a galeria mostra o que a app vai ler.
-const FIXTURES = new Map(buildFixtures(NOW).map((d) => [d.path, d.data]));
-const fixture = (path: string): unknown => FIXTURES.get(path);
-const MATCH_FT = MatchSchema.parse(fixture('matches/9000'));
-const MATCH_LIVE = MatchSchema.parse(fixture('matches/9002'));
-const MATCH_PST = MatchSchema.parse(fixture('matches/9004'));
-const MATCH_FUTSAL = MatchSchema.parse(fixture('matches/9101'));
-const STANDINGS = StandingsDocSchema.parse(fixture('competitions/football_94_2026/data/standings'));
-const BRACKET = BracketDocSchema.parse(fixture('competitions/football_96_2026/data/bracket'));
-const VIDEO = VideoSchema.parse({ ...(fixture('matches/9000/videos/v1') as object) });
-const LINEUPS = (fixture('matches/9002/details/lineups') as { teams: { startXI: Parameters<typeof pitchRows>[0] }[] }).teams;
+// O require fica dentro do bloco `if (__DEV__)` (não depois de um return antecipado): só assim o Metro corta o ramo
+// antes de juntar as dependências.
+function loadFixtureData() {
+  let data = null;
+  if (__DEV__) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { buildFixtures, SPORTING_TEAM_ID } = require('@/data/fixtures') as typeof import('@/data/fixtures');
+    const all = new Map(buildFixtures(NOW).map((d) => [d.path, d.data]));
+    const fixture = (path: string): unknown => all.get(path);
+    data = {
+      SPORTING_TEAM_ID,
+      MATCH_FT: MatchSchema.parse(fixture('matches/9000')),
+      MATCH_LIVE: MatchSchema.parse(fixture('matches/9002')),
+      MATCH_PST: MatchSchema.parse(fixture('matches/9004')),
+      MATCH_FUTSAL: MatchSchema.parse(fixture('matches/9101')),
+      STANDINGS: StandingsDocSchema.parse(fixture('competitions/football_94_2026/data/standings')),
+      BRACKET: BracketDocSchema.parse(fixture('competitions/football_96_2026/data/bracket')),
+      VIDEO: VideoSchema.parse({ ...(fixture('matches/9000/videos/v1') as object) }),
+      LINEUPS: (fixture('matches/9002/details/lineups') as { teams: { startXI: Parameters<typeof pitchRows>[0] }[] }).teams,
+    };
+  }
+  return data;
+}
+
 const GAMEBOX: GameboxView = {
   id: 'g1',
   number: '1234567890123',
@@ -113,12 +128,15 @@ function Section({ title, caption, children }: { title: string; caption?: string
 
 function Gallery() {
   const router = useRouter();
+  const [fx] = useState(loadFixtureData);
   const [name, setName] = useState('');
   const [filled, setFilled] = useState('Maria Albuquerque Co');
   const [equal, setEqual] = useState<'a' | 'b' | 'c'>('a');
   const [scroll, setScroll] = useState('t1');
   const [open, setOpen] = useState(false);
   const [toggle, setToggle] = useState(true);
+  if (!fx) return null;
+  const { SPORTING_TEAM_ID, MATCH_FT, MATCH_LIVE, MATCH_PST, MATCH_FUTSAL, STANDINGS, BRACKET, VIDEO, LINEUPS } = fx;
 
   return (
     <>

@@ -113,6 +113,15 @@ describe('Perfil: identidade', () => {
     expect(screen.getByTestId('perfil-name').props).toMatchObject({ numberOfLines: 1, ellipsizeMode: 'tail' });
   });
 
+  it('jogador favorito e lugar anual numa linha com reticências', async () => {
+    await renderScreen();
+    for (const v of ['Francisco Trincão', 'Porta 7, Setor A, Fila 3, Lugar 12']) {
+      const t = screen.getByText(v);
+      expect(t.props.numberOfLines).toBe(1);
+      expect(t.props.ellipsizeMode).toBe('tail');
+    }
+  });
+
   it('o email (users e sessão) nunca aparece', async () => {
     await renderScreen();
     expect(screen.queryByText(/@/)).toBeNull();

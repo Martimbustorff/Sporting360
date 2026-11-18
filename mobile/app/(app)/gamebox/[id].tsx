@@ -286,14 +286,15 @@ export default function GameboxEditar() {
     const doc = boxes.data[i];
     return doc ? { view: fromGameboxDoc(doc, uid), index: i } : null;
   }, [boxes, routeId, uid]);
-  const nextOrder = boxes.status === 'ready' ? boxes.data.reduce((m, g) => Math.max(m, g.order), 0) + 1 : 1;
+  // Só se calcula com a lista lida: uma GameBox nova nunca recebe uma ordem inventada (podia repetir uma existente).
+  const nextOrder = boxes.status === 'ready' ? boxes.data.reduce((m, g) => Math.max(m, g.order), 0) + 1 : null;
 
   // O formulário parte dos dados lidos uma só vez: as atualizações em direto não apagam o que se está a escrever.
   const [initial, setInitial] = useState<{ form: Form; title: string; existing: { id: string; order: number } | null; newOrder: number } | null>(null);
   useEffect(() => {
     if (initial !== null || !uid) return;
     const prefill = scanned ? normalizeGameboxNumber(scanned) ?? scanned : null;
-    if (isNew && boxes.status !== 'loading') {
+    if (isNew && nextOrder !== null) {
       setInitial({
         form: { number: prefill ?? '', name: '', stadium: EMPTY_SEAT, pavilion: EMPTY_SEAT },
         title: FORM_TEXT.newTitle,
@@ -306,7 +307,7 @@ export default function GameboxEditar() {
         form: { number: prefill ?? v.number, name: v.name, stadium: v.stadium, pavilion: v.pavilion ?? EMPTY_SEAT },
         title: gameboxLabel(v.name, found.index),
         existing: { id: v.id, order: v.order },
-        newOrder: nextOrder,
+        newOrder: nextOrder ?? v.order,
       });
     }
   }, [initial, uid, isNew, boxes.status, found, scanned, nextOrder]);
@@ -325,8 +326,8 @@ export default function GameboxEditar() {
       />
     );
   }
-  // Uma GameBox nova não depende da lista para se escrever; a lista com erro só impede editar.
-  if (!isNew && boxes.status === 'error') {
+  // Com a lista por ler não se cria nem edita: a ordem de uma nova depende das que já existem.
+  if (boxes.status === 'error') {
     return (
       <Shell title={title}>
         <EmptyState icon="info" text={FORM_TEXT.loadError} />

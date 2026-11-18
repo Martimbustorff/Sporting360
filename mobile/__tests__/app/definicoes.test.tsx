@@ -260,6 +260,14 @@ describe('Conta', () => {
     expect(screen.getByText('Maria C.')).toBeTruthy();
   });
 
+  it('sem perfil público e users/{uid} com erro: erro no nome, nunca um nome inventado', async () => {
+    mockProfile.current = { status: 'missing' };
+    mockMyUser.current = { status: 'error', error: new Error('x') };
+    await render(wrap(<Conta />));
+    expect(screen.getByText('Não foi possível carregar o nome.')).toBeTruthy();
+    expect(screen.queryByText(/Sportinguista|Adepto/)).toBeNull();
+  });
+
   it('leitura do perfil falhada mostra erro no nome', async () => {
     mockProfile.current = { status: 'error', error: new Error('x') };
     await render(wrap(<Conta />));

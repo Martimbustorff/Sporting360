@@ -25,6 +25,7 @@ import { Tabs } from '@/components/Tabs';
 import type { Loadable } from '@/data/hooks';
 import type { Competition, Match, TopListDoc, TopListItem } from '@/data/schemas';
 import { useCompetition, useCompetitionData } from '@/data/sports';
+import { formatRound } from '@/lib/formatRound';
 import { fixtureToMatch } from '@/lib/matchVM';
 import { SPORTING_API_ID } from '@/lib/teams';
 import { Body, Display } from '@/theme/typography';
@@ -140,7 +141,7 @@ function RoundsTab({ competition }: { competition: SeasonCompetition }) {
           ellipsizeMode="tail"
           style={{ flex: 1, textAlign: 'center' }}
         >
-          {round.label || round.raw}
+          {round.label || formatRound(round.raw)}
         </Display>
         <Arrow dir="right" disabled={index >= items.length - 1} onPress={() => go(1)} />
       </View>

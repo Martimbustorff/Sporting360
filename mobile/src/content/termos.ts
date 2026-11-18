@@ -87,7 +87,7 @@ export const TERMS: TermsSection[] = [
   },
   {
     title: '6. SUBCONTRATANTES E PARTILHA',
-    body: 'A App usa a Google, através do Firebase (Authentication, Firestore, Cloud Functions, Analytics e Crashlytics), como subcontratante para guardar e tratar os dados. Quando o utilizador escolhe entrar com a Apple ou com a Google, esse serviço trata os dados de início de sessão. Os fornecedores de dados desportivos e de notícias não recebem dados pessoais. Não vendemos dados pessoais nem os partilhamos para publicidade.',
+    body: 'A App usa a Google, através do Firebase (Authentication, Firestore, Cloud Functions, Analytics e Crashlytics), como subcontratante para guardar e tratar os dados. Quando o utilizador escolhe entrar com a Apple ou com a Google, esse serviço trata os dados de início de sessão. Os fornecedores de dados desportivos, de notícias e de vídeo não recebem dados da conta; quando as imagens das notícias e o leitor da VSports carregam, recebem dados técnicos, como o endereço IP, tal como acontece com qualquer site. Não vendemos dados pessoais nem os partilhamos para publicidade.',
   },
   {
     title: '7. ONDE FICAM OS DADOS',

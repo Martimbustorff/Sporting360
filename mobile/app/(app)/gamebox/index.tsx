@@ -17,7 +17,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { useMyUser } from '@/data/hooks';
 import { useMyGameboxes } from '@/data/user';
-import { gameboxLabel, legacyGameboxFromUser, type GameboxInput } from '@/lib/gamebox';
+import { gameboxLabel, resolveGameboxList, type GameboxInput } from '@/lib/gamebox';
 import { useSession } from '@/providers/SessionProvider';
 import { GameboxSaveError, saveGamebox } from '@/services/gamebox';
 import { colors, layout, spacing, type } from '@/theme/tokens';
@@ -85,18 +85,19 @@ export default function Gamebox() {
   const boxes = useMyGameboxes(uid);
   const user = useMyUser(uid);
 
+  const state = resolveGameboxList(boxes, user, uid);
+
   let body;
-  if (boxes.status === 'error') {
+  if (state.status === 'error') {
     body = <EmptyState icon="info" text={GAMEBOX_TEXT.loadError} />;
-  } else if (!uid || boxes.status === 'loading' || (boxes.status === 'ready' && boxes.data.length === 0 && user.status === 'loading')) {
+  } else if (state.status === 'loading' || !uid) {
     // Sem documentos espera-se pelo perfil (pode ter a GameBox antiga) antes de mostrar o vazio.
     body = <View testID="gamebox-loading" style={{ minHeight: layout.skeletonRowHeight }} />;
   } else {
-    const list = boxes.status === 'ready' ? boxes.data : [];
-    const legacy = list.length === 0 && user.status === 'ready' ? legacyGameboxFromUser(user.data, uid) : null;
+    const { list, legacy } = state;
     body = (
       <>
-        <OfflineBanner visible={boxes.status === 'ready' && boxes.fromCache === true} />
+        <OfflineBanner visible={state.fromCache} />
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: spacing.screenXWide,

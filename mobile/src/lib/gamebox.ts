@@ -3,6 +3,7 @@
 // (pavilionPort, pavilionSector, pavilionLine, pavilionSeat, só quando há pavilhão).
 // Também lê a GameBox antiga que a V2 guardava só em users/{uid}.gameboxNumber (cifrada ou em claro,
 // v2src utils/returnDefaultGamebox.ts e home.tsx:157-168): mostra-se como "Principal". Nunca se altera users/{uid}.
+import type { Loadable } from '@/data/hooks';
 import type { GameboxDoc, UserDoc } from '@/data/schemas';
 import { decryptGameboxNumber, encryptGameboxNumber } from '@/lib/gameboxCrypto';
 
@@ -71,7 +72,8 @@ export function toGameboxDoc(uid: string, input: GameboxInput, order: number): G
   const st = trimSeat(input.stadium);
   const d: GameboxWrite = {
     gameboxNumber: encryptGameboxNumber(number, uid),
-    gameboxName: input.name.trim() || `Gamebox ${order}`,
+    // Vazio grava-se vazio (como a V2 faz); "Gamebox N" é só a etiqueta mostrada (gameboxLabel).
+    gameboxName: input.name.trim(),
     gameboxPort: st.port,
     gameboxSector: st.sector,
     gameboxLine: st.line,
@@ -97,7 +99,9 @@ export function readStoredGameboxNumber(stored: string | number | undefined | nu
   if (stored === undefined || stored === null) return '';
   const s = String(stored).trim();
   if (s === '') return '';
-  if (/^\d+$/.test(s)) return s;
+  // Números antigos em claro podem ter espaços por dentro ("2665 7127 6572").
+  const plain = s.replace(/\s+/g, '');
+  if (/^\d+$/.test(plain)) return plain;
   return decryptGameboxNumber(s, uid);
 }
 
@@ -130,4 +134,28 @@ export function legacyGameboxFromUser(user: Partial<UserDoc>, uid: string): Game
     stadium: { port: text(user.gameboxPort), sector: text(user.gameboxSector), line: text(user.gameboxLine), seat: text(user.gameboxSeat) },
     pavilion: null,
   };
+}
+
+type GameboxItem = GameboxDoc & { id: string };
+export type GameboxListState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'ready'; list: GameboxItem[]; legacy: GameboxInput | null; fromCache: boolean };
+
+/**
+ * Regra única da lista e da folha da Home (F26 revisto): sem documentos e com número em users/{uid}.gameboxNumber,
+ * a GameBox antiga aparece como "Principal". Sem documentos espera-se pelo perfil antes de dar o vazio.
+ */
+export function resolveGameboxList(
+  boxes: Loadable<GameboxItem[]>,
+  user: Loadable<UserDoc>,
+  uid: string | null,
+): GameboxListState {
+  if (!uid || boxes.status === 'loading') return { status: 'loading' };
+  if (boxes.status !== 'ready') return { status: 'error' };
+  const fromCache = boxes.fromCache === true;
+  if (boxes.data.length > 0) return { status: 'ready', list: boxes.data, legacy: null, fromCache };
+  if (user.status === 'loading') return { status: 'loading' };
+  const legacy = user.status === 'ready' ? legacyGameboxFromUser(user.data, uid) : null;
+  return { status: 'ready', list: [], legacy, fromCache };
 }

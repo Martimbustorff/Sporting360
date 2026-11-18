@@ -125,6 +125,17 @@ describe('/equipa: Plantel', () => {
     expect(within(screen.getByTestId('squad-row-72')).getByText('72')).toBeTruthy();
   });
 
+  it('nacionalidade do treinador em pt-PT; desconhecida fica escondida, nunca em inglês', async () => {
+    mockTeam.coach = ready({ ...coach, nationality: 'Netherlands' });
+    await render(wrap(<Equipa />));
+    expect(screen.getByText('Países Baixos')).toBeTruthy();
+    expect(screen.queryByText('Netherlands')).toBeNull();
+    mockTeam.coach = ready({ ...coach, nationality: 'Ivory Coast' });
+    await render(wrap(<Equipa />));
+    expect(screen.getByText('Rui Borges')).toBeTruthy();
+    expect(screen.queryByText('Ivory Coast')).toBeNull();
+  });
+
   it('toque num jogador abre /equipa/jogador/{id}; nome longo numa linha com reticências', async () => {
     await render(wrap(<Equipa />));
     const name = screen.getByText(LONG);

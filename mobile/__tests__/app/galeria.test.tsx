@@ -12,6 +12,13 @@ jest.mock('expo-router', () => {
   };
 });
 
+// Conta quantas vezes o módulo dos dados do emulador (com a palavra-passe de teste) é carregado.
+const mockFixturesLoaded = { count: 0 };
+jest.mock('@/data/fixtures', () => {
+  mockFixturesLoaded.count += 1;
+  return jest.requireActual('@/data/fixtures');
+});
+
 import Galeria from '../../app/dev/galeria';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 0 } };
@@ -30,6 +37,20 @@ describe('galeria', () => {
   const original = g.__DEV__;
   afterEach(() => {
     g.__DEV__ = original;
+  });
+
+  // Corre primeiro: importar a galeria não carrega os dados do emulador; fora de __DEV__ nunca se carregam.
+  it('fora de desenvolvimento não carrega os dados do emulador e redireciona', async () => {
+    g.__DEV__ = false;
+    await renderGaleria();
+    expect(mockFixturesLoaded.count).toBe(0);
+    expect(screen.getByTestId('redirect').props.children).toBe('redirect:/');
+  });
+
+  it('em desenvolvimento carrega os dados do emulador só ao abrir', async () => {
+    g.__DEV__ = true;
+    await renderGaleria();
+    expect(mockFixturesLoaded.count).toBe(1);
   });
 
   it('em desenvolvimento mostra uma secção por componente', async () => {

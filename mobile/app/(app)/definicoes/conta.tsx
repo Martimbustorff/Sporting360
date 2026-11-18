@@ -65,9 +65,11 @@ export default function Conta() {
   let name: string = CONTA_TEXT.loading;
   if (profile.status === 'ready') name = profile.data.displayName;
   else if (profile.status === 'error') name = CONTA_TEXT.nameError;
-  else if (profile.status === 'missing' && uid && doc.status !== 'loading') {
-    const u = doc.status === 'ready' ? doc.data : {};
-    name = publicName({ displayName: u.displayName ?? null, name: u.name ?? null }, uid);
+  else if (profile.status === 'missing' && uid && doc.status === 'ready') {
+    name = publicName({ displayName: doc.data.displayName ?? null, name: doc.data.name ?? null }, uid);
+  } else if (profile.status === 'missing' && uid && doc.status !== 'loading') {
+    // users/{uid} por ler (erro ou sem documento): erro da secção, nunca um nome inventado.
+    name = CONTA_TEXT.nameError;
   }
 
   return (

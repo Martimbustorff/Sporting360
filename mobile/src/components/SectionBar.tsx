@@ -26,7 +26,8 @@ export function SectionBar({ label, right }: { label: string; right?: string }) 
   );
 }
 
-export function InfoRow({ label, value }: { label: string; value: string }) {
+/** `singleLine`: o valor fica numa linha com reticências (Perfil: jogador favorito, lugar anual). */
+export function InfoRow({ label, value, singleLine = false }: { label: string; value: string; singleLine?: boolean }) {
   return (
     <View
       style={{
@@ -38,8 +39,15 @@ export function InfoRow({ label, value }: { label: string; value: string }) {
         gap: spacing.md,
       }}
     >
-      <Display variant="minute">{label}</Display>
-      <Body variant="body" style={{ flexShrink: 1, textAlign: 'right' }}>{value}</Body>
+      <Display variant="minute" style={singleLine ? { flexShrink: 0 } : undefined}>{label}</Display>
+      <Body
+        variant="body"
+        numberOfLines={singleLine ? 1 : undefined}
+        ellipsizeMode={singleLine ? 'tail' : undefined}
+        style={{ flexShrink: 1, textAlign: 'right' }}
+      >
+        {value}
+      </Body>
     </View>
   );
 }

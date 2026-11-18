@@ -171,11 +171,11 @@ function MemberRows({ user }: { user: Loadable<UserDoc> }) {
   const u: UserDoc = user.status === 'ready' ? user.data : {};
   return (
     <>
-      <InfoRow label="Número de sócio" value={text(u.memberNumber)} />
-      <InfoRow label="Sócio desde" value={text(u.partnerNumber)} />
-      <InfoRow label="Lugar anual" value={text(u.seasonSeat)} />
-      <InfoRow label="Modalidade favorita" value={u.favoriteSport ? sportLabel(u.favoriteSport) : NOT_SET} />
-      <InfoRow label="Jogador favorito" value={text(u.favoritePlayer?.name)} />
+      <InfoRow singleLine label="Número de sócio" value={text(u.memberNumber)} />
+      <InfoRow singleLine label="Sócio desde" value={text(u.partnerNumber)} />
+      <InfoRow singleLine label="Lugar anual" value={text(u.seasonSeat)} />
+      <InfoRow singleLine label="Modalidade favorita" value={u.favoriteSport ? sportLabel(u.favoriteSport) : NOT_SET} />
+      <InfoRow singleLine label="Jogador favorito" value={text(u.favoritePlayer?.name)} />
     </>
   );
 }

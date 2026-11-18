@@ -10,6 +10,8 @@ const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }) }));
 const mockBoxes: { current: unknown } = { current: { status: 'loading' } };
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
+const mockUser: { current: unknown } = { current: { status: 'ready', data: {} } };
+jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
 
 import QRCode from 'react-native-qrcode-svg';
 import { HomeGameboxSheet, SHEET_TEXT } from '@/components/HomeGameboxSheet';
@@ -40,6 +42,7 @@ const open = async () => fireEvent.press(screen.getByRole('button', { name: SHEE
 beforeEach(() => {
   jest.clearAllMocks();
   mockBoxes.current = { status: 'loading' };
+  mockUser.current = { status: 'ready', data: {} };
 });
 
 describe('HomeGameboxSheet', () => {
@@ -101,6 +104,35 @@ describe('HomeGameboxSheet', () => {
     await render(ui());
     await open();
     expect(screen.getByText(SHEET_TEXT.loadError)).toBeTruthy();
+  });
+
+  it('sem documentos e com número antigo no perfil (V2): mostra a GameBox "Principal" com QR decifrado', async () => {
+    mockBoxes.current = { status: 'ready', data: [] };
+    mockUser.current = { status: 'ready', data: { gameboxNumber: V2_VECTOR, gameboxPort: '5', gameboxSector: 'A27' } };
+    await render(ui());
+    await open();
+    expect(screen.getAllByTestId('gamebox-page')).toHaveLength(1);
+    expect(screen.getByText('Principal')).toBeTruthy();
+    expect(screen.getByTestId('qrcode').props.value).toBe('266571276572');
+    expect(screen.getByText('A27')).toBeTruthy();
+    expect(screen.queryByText(SHEET_TEXT.scan)).toBeNull();
+  });
+
+  it('número antigo em claro com espaços também aparece como "Principal"', async () => {
+    mockBoxes.current = { status: 'ready', data: [] };
+    mockUser.current = { status: 'ready', data: { gameboxNumber: '2665 7127 6572' } };
+    await render(ui());
+    await open();
+    expect(screen.getByTestId('qrcode').props.value).toBe('266571276572');
+  });
+
+  it('sem documentos: espera pelo perfil antes de mostrar o vazio', async () => {
+    mockBoxes.current = { status: 'ready', data: [] };
+    mockUser.current = { status: 'loading' };
+    await render(ui());
+    await open();
+    expect(screen.getByTestId('gamebox-sheet-loading')).toBeTruthy();
+    expect(screen.queryByText(SHEET_TEXT.scan)).toBeNull();
   });
 
   it('a carregar: esqueleto, sem botão de digitalizar', async () => {

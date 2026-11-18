@@ -174,6 +174,16 @@ describe('Jornadas', () => {
     expect(row.props.accessibilityLabel).toBe('Gil Vicente contra Sporting CP. Taça de Portugal, 16 avos de final. Próximo');
   });
 
+  it('ronda com etiqueta vazia: traduz o texto da API, nunca a ronda em inglês', async () => {
+    mockParams.current = { key: 'football_96_2026' };
+    mockCompetition.current = competition('cup', 'Taça de Portugal', '96');
+    mockData.rounds = ready({ items: [{ raw: 'Quarter-finals', label: '' }], current: 'Quarter-finals' });
+    mockData.fixtures = ready({ items: [] });
+    await render(ui());
+    await openTab('Jornadas');
+    expect(roundLabel().props.children).toBe('Quartos de final');
+  });
+
   it('sem `current` abre na última ronda', async () => {
     mockData.rounds = ready({ ...leagueRounds, current: null });
     await render(ui());

@@ -67,6 +67,14 @@ describe('TERMS', () => {
     expect(all).not.toMatch(/cifrad|encriptad/i);
   });
 
+  it('§6: os fornecedores não recebem dados da conta, mas recebem dados técnicos (IP) ao carregar imagens e o leitor', () => {
+    const s6 = TERMS.find((x) => x.title.startsWith('6. SUBCONTRATANTES'))!.body;
+    expect(s6).toContain('não recebem dados da conta');
+    expect(s6).toMatch(/endereço IP/);
+    expect(s6).toMatch(/VSports/);
+    expect(s6).not.toContain('não recebem dados pessoais');
+  });
+
   it('sem travessões', () => {
     expect(all).not.toMatch(/[—–]/);
   });

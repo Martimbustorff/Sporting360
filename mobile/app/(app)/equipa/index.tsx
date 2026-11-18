@@ -26,6 +26,7 @@ import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
 import type { Transfer } from '@/data/schemas';
 import { usePlayerStats, useSeasonFootballCompetitions, useTeamData, useTeamStats } from '@/data/sports';
+import { countryNamePt } from '@/lib/countryName';
 import { footballSeason } from '@/lib/periods';
 import { injuryText, type FormLetter } from '@/lib/prematch';
 import {
@@ -115,7 +116,7 @@ function SquadTab() {
       ) : c ? (
         <>
           <SectionBar label="Treinador" />
-          <PersonRow label={`Treinador: ${c.name}`} photo={c.photo} name={c.name} detail={c.nationality ?? undefined} />
+          <PersonRow label={`Treinador: ${c.name}`} photo={c.photo} name={c.name} detail={countryNamePt(c.nationality) ?? undefined} />
         </>
       ) : null}
       {injuries.status === 'error' ? (

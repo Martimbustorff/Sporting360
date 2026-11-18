@@ -305,6 +305,8 @@ export function MvpTab({ match }: { match: Match }) {
   } else {
     const candidates = mvpCandidates(doc);
     if (players.status === 'loading') parts.push(<View key="players-loading" testID="mvp-players-loading" />);
+    // Leitura falhada: erro, nunca a mensagem de "ainda sem candidatos".
+    else if (players.status === 'error') parts.push(<EmptyState key="players-error" icon="info" text={MVP_TEXT.error} />);
     else if (candidates.length === 0) parts.push(<EmptyState key="empty" icon="info" text={MVP_TEXT.noCandidates} />);
     else parts.push(<VoteForm key="form" match={match} candidates={candidates} onSent={setSent} onClosed={() => setServerClosed(true)} />);
   }

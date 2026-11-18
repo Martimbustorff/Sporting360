@@ -345,6 +345,18 @@ describe('Formulário da Gamebox', () => {
     alert.mockRestore();
   });
 
+  it('nova com a lista por ler: erro da secção, sem formulário (nunca grava com uma ordem inventada)', async () => {
+    mockParams.current = { id: 'nova' };
+    mockBoxes.current = { status: 'error', error: new Error('x') };
+    await render(wrap(<GameboxForm />));
+    expect(screen.getByText('Não foi possível carregar as tuas GameBox.')).toBeTruthy();
+    expect(screen.queryByLabelText('Número da GameBox')).toBeNull();
+    mockBoxes.current = { status: 'loading' };
+    await render(wrap(<GameboxForm />));
+    expect(screen.getByTestId('gamebox-form-loading')).toBeTruthy();
+    expect(screen.queryByLabelText('Número da GameBox')).toBeNull();
+  });
+
   it('GameBox inexistente ou leitura falhada: mensagem, sem formulário', async () => {
     mockParams.current = { id: 'zz' };
     mockBoxes.current = ready([box('g1', 1)]);

@@ -3,7 +3,8 @@
 // Aberta sem GameBox: 348:39454 (botão verde "Digitalizar" com o ícone System/Camera 348:39561, descarregado do nó para
 // assets/icons/camera.svg, e o texto com "insere manualmente" sublinhado).
 // SEM FIGMA: esqueleto de carregamento e erro de leitura.
-// Task 24: lê as GameBox do utilizador (useMyGameboxes) e mostra uma página por GameBox.
+// Task 24: lê as GameBox do utilizador (useMyGameboxes) e mostra uma página por GameBox. Sem documentos e com número
+// antigo em users/{uid}.gameboxNumber mostra-o como "Principal" (mesma regra da lista, resolveGameboxList).
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -11,8 +12,9 @@ import { Pressable, ScrollView, Text, useWindowDimensions, View, type NativeScro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CARD_TEXT, GameboxCard } from '@/components/GameboxCard';
 import { Sheet } from '@/components/Sheet';
+import { useMyUser } from '@/data/hooks';
 import { useMyGameboxes } from '@/data/user';
-import { fromGameboxDoc } from '@/lib/gamebox';
+import { fromGameboxDoc, resolveGameboxList, type GameboxView } from '@/lib/gamebox';
 import { Display } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
@@ -101,19 +103,23 @@ function Pagination({ count, active }: { count: number; active: number }) {
 
 function Content({ uid }: { uid: string }) {
   const boxes = useMyGameboxes(uid);
+  const user = useMyUser(uid);
+  const state = resolveGameboxList(boxes, user, uid);
   const { width } = useWindowDimensions();
   const pageWidth = width - 2 * layout.sheetPadXOpen;
   const [page, setPage] = useState(0);
 
-  if (boxes.status === 'loading') return <View testID="gamebox-sheet-loading" style={{ minHeight: layout.gameboxQr }} />;
-  if (boxes.status !== 'ready') {
+  if (state.status === 'loading') return <View testID="gamebox-sheet-loading" style={{ minHeight: layout.gameboxQr }} />;
+  if (state.status === 'error') {
     return (
       <Text style={[type.gameboxEmpty, { marginTop: spacing.lg }]}>{SHEET_TEXT.loadError}</Text>
     );
   }
-  if (boxes.data.length === 0) return <Empty />;
+  const views: GameboxView[] = state.legacy
+    ? [{ ...state.legacy, id: 'principal', order: 0 }]
+    : state.list.map((d) => fromGameboxDoc(d, uid));
+  if (views.length === 0) return <Empty />;
 
-  const views = boxes.data.map((d) => fromGameboxDoc(d, uid));
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (pageWidth <= 0) return;
     const next = Math.round(e.nativeEvent.contentOffset.x / pageWidth);

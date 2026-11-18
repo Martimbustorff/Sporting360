@@ -160,6 +160,14 @@ describe('Votação aberta', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
+  it('leitura do players falhada com a votação aberta: erro, nunca a mensagem de sem candidatos', async () => {
+    mockData.players = { status: 'error', error: new Error('x') };
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.getByText('Não foi possível carregar os dados.')).toBeTruthy();
+    expect(screen.queryByText('Os candidatos aparecem quando houver dados do jogo.')).toBeNull();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
   it('documento players só com o adversário: a mesma mensagem', async () => {
     mockData.players = { status: 'ready', data: { teams: [{ teamId: '217', players: [p('99', 'Adversário', 90)] }] } };
     await render(<MvpTab match={match()} />, { wrapper });
