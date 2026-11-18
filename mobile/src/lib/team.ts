@@ -1,5 +1,6 @@
 // Equipa e jogador (Task 14): funções puras sobre `teams/football_228/data/*` (functions/src/football/teamSync.ts).
-// Textos da API-Football em pt-PT; um valor desconhecido mostra o texto original.
+// Textos da API-Football em pt-PT. Motivos de ausência (lesões, castigos): `injuryReasonText` em lib/prematch,
+// partilhado com o pré-jogo; posições desconhecidas vão para "Outros".
 import { z } from 'zod';
 import type {
   CompetitionType,
@@ -29,15 +30,15 @@ const SINGULAR: Record<string, string> = {
 };
 const NO_POSITION = 'Outros';
 
-/** Nome do grupo do plantel ("Defesas"). */
+/** Nome do grupo do plantel ("Defesas"); posição desconhecida "Outros". */
 export function positionLabel(p: string): string {
-  return GROUP_LABEL[p] ?? p;
+  return GROUP_LABEL[p] ?? NO_POSITION;
 }
 
-/** Posição de um jogador ("Defesa"); vazio sem posição. */
+/** Posição de um jogador ("Defesa"); vazio sem posição ou com uma desconhecida (nunca o texto inglês). */
 export function playerPositionLabel(p: string | null): string {
   if (!p) return '';
-  return SINGULAR[p] ?? p;
+  return SINGULAR[p] ?? '';
 }
 
 const byNumber = (a: SquadPlayer, b: SquadPlayer): number => {
@@ -48,21 +49,21 @@ const byNumber = (a: SquadPlayer, b: SquadPlayer): number => {
 
 /**
  * Plantel por posição: guarda-redes, defesas, médios e avançados, cada grupo por número (sem número no fim).
- * Grupos vazios não aparecem; posições desconhecidas vêm depois com o texto original, sem posição em "Outros".
+ * Grupos vazios não aparecem; posição desconhecida ou em falta vai para "Outros", no fim.
  */
 export function groupSquad(players: SquadPlayer[]): { label: string; players: SquadPlayer[] }[] {
-  const groups = new Map<string, SquadPlayer[]>();
+  const rank = (p: string | null) => {
+    const i = (POSITIONS as readonly string[]).indexOf(p ?? '');
+    return i >= 0 ? i : POSITIONS.length;
+  };
+  const groups = new Map<number, SquadPlayer[]>();
   for (const pl of players) {
-    const k = pl.position ?? '';
+    const k = rank(pl.position);
     groups.set(k, [...(groups.get(k) ?? []), pl]);
   }
-  const rank = (k: string) => {
-    const i = (POSITIONS as readonly string[]).indexOf(k);
-    return i >= 0 ? i : k === '' ? POSITIONS.length + 1 : POSITIONS.length;
-  };
   return [...groups.entries()]
-    .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
-    .map(([k, ps]) => ({ label: k === '' ? NO_POSITION : positionLabel(k), players: [...ps].sort(byNumber) }));
+    .sort(([a], [b]) => a - b)
+    .map(([k, ps]) => ({ label: positionLabel(POSITIONS[k] ?? ''), players: [...ps].sort(byNumber) }));
 }
 
 const TRANSFER_TYPE: Record<string, string> = {
@@ -103,13 +104,6 @@ type Sidelined = { type: string; start: string; end: string | null };
 export function sidelinedPeriodText(s: Sidelined): string {
   const start = calendarDateText(s.start);
   return s.end === null ? `Desde ${start}, em curso` : `${start} a ${calendarDateText(s.end)}`;
-}
-
-const BAN = new Set(['Suspended', 'Red Card', 'Yellow Cards']);
-
-/** Tipo de paragem: castigos em pt-PT; lesões com o texto da API. */
-export function sidelinedTypeText(type: string): string {
-  return BAN.has(type) ? 'Castigo' : type;
 }
 
 type UnavailableItem = TeamInjuriesDoc['items'][number];

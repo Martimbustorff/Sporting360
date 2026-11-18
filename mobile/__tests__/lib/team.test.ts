@@ -11,7 +11,6 @@ import {
   positionLabel,
   seasonLabel,
   sidelinedPeriodText,
-  sidelinedTypeText,
   teamStatsVM,
   transferTypeLabel,
   trophyPlaceText,
@@ -28,12 +27,12 @@ const p = (id: string, name: string, position: string | null, number: number | n
 });
 
 describe('positionLabel', () => {
-  it('as quatro posições da API em pt-PT; desconhecida fica como vem', () => {
+  it('as quatro posições da API em pt-PT; desconhecida vai para "Outros"', () => {
     expect(positionLabel('Goalkeeper')).toBe('Guarda-redes');
     expect(positionLabel('Defender')).toBe('Defesas');
     expect(positionLabel('Midfielder')).toBe('Médios');
     expect(positionLabel('Attacker')).toBe('Avançados');
-    expect(positionLabel('Coach')).toBe('Coach');
+    expect(positionLabel('Coach')).toBe('Outros');
   });
   it('no singular para o detalhe do jogador', () => {
     expect(playerPositionLabel('Goalkeeper')).toBe('Guarda-redes');
@@ -41,6 +40,8 @@ describe('positionLabel', () => {
     expect(playerPositionLabel('Midfielder')).toBe('Médio');
     expect(playerPositionLabel('Attacker')).toBe('Avançado');
     expect(playerPositionLabel(null)).toBe('');
+    // Desconhecida: não se mostra (nunca o texto inglês).
+    expect(playerPositionLabel('Wingback')).toBe('');
   });
 });
 
@@ -59,9 +60,10 @@ describe('groupSquad', () => {
     expect(groups.map((g) => g.label)).toEqual(['Guarda-redes', 'Defesas', 'Médios', 'Avançados']);
     expect(groups.map((g) => g.players.map((x) => x.id))).toEqual([['1', '41'], ['2', '3'], ['8', '50'], ['9', '17']]);
   });
-  it('grupos vazios não aparecem; posição desconhecida vai no fim com o texto original', () => {
+  it('grupos vazios não aparecem; posição desconhecida ou em falta vai para "Outros", no fim', () => {
     const groups = groupSquad([p('1', 'A', 'Attacker', 9), p('2', 'B', null, 4), p('3', 'C', 'Wingback', 2)]);
-    expect(groups.map((g) => g.label)).toEqual(['Avançados', 'Wingback', 'Outros']);
+    expect(groups.map((g) => g.label)).toEqual(['Avançados', 'Outros']);
+    expect(groups[1]?.players.map((x) => x.id)).toEqual(['3', '2']);
   });
 });
 
@@ -93,11 +95,6 @@ describe('lesões', () => {
   it('período: com fim "a"; sem fim "em curso"', () => {
     expect(sidelinedPeriodText({ type: 'Knee Injury', start: '2026-03-15', end: '2026-04-02' })).toBe('15 Mar 2026 a 2 Abr 2026');
     expect(sidelinedPeriodText({ type: 'Knee Injury', start: '2026-10-20', end: null })).toBe('Desde 20 Out 2026, em curso');
-  });
-  it('tipo: castigos em pt-PT, o resto como vem', () => {
-    expect(sidelinedTypeText('Suspended')).toBe('Castigo');
-    expect(sidelinedTypeText('Red Card')).toBe('Castigo');
-    expect(sidelinedTypeText('Knee Injury')).toBe('Knee Injury');
   });
   it('indisponíveis: um por jogador (o documento repete por jogo), pela ordem de chegada', () => {
     const item = (playerId: string, name: string, fixtureId: string) => ({

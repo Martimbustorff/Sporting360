@@ -14,19 +14,40 @@ export function formLetters(form: string | null): FormLetter[] {
 }
 
 const TYPE_TEXT: Record<string, string> = { 'Missing Fixture': 'Fora', Questionable: 'Dúvida' };
-const BAN_REASONS = new Set(['Suspended', 'Red Card', 'Yellow Cards']);
+const BAN_REASONS = new Set(['suspended', 'red card', 'yellow cards']);
+// Por ordem: o mais específico primeiro ("Hamstring Muscle Injury" é dos isquiotibiais, não "muscular").
+const REASONS: [RegExp, string][] = [
+  [/hamstring/i, 'Lesão nos isquiotibiais'],
+  [/achilles/i, 'Lesão no tendão de Aquiles'],
+  [/knee|acl|cruciate|menisc/i, 'Lesão no joelho'],
+  [/ankle/i, 'Lesão no tornozelo'],
+  [/groin|adductor/i, 'Lesão na virilha'],
+  [/calf/i, 'Lesão na barriga da perna'],
+  [/thigh|quadriceps/i, 'Lesão na coxa'],
+  [/foot|toe/i, 'Lesão no pé'],
+  [/hip/i, 'Lesão na anca'],
+  [/shoulder/i, 'Lesão no ombro'],
+  [/back|lumbar/i, 'Lesão nas costas'],
+  [/head|concussion/i, 'Lesão na cabeça'],
+  [/muscle|strain/i, 'Lesão muscular'],
+  [/illness|virus|covid|flu/i, 'Doença'],
+];
 
-function reasonText(reason: string): string {
-  if (/injury/i.test(reason)) return 'Lesão';
-  if (BAN_REASONS.has(reason)) return 'Castigo';
-  return reason;
+/**
+ * Motivo de uma ausência da API-Football (`injuries.reason`, `sidelined.type`) em pt-PT: castigos "Castigo",
+ * partes do corpo conhecidas ("Lesão no joelho"), doença "Doença"; o resto "Lesão" (nunca o texto inglês).
+ */
+export function injuryReasonText(reason: string): string {
+  const r = reason.trim();
+  if (BAN_REASONS.has(r.toLowerCase())) return 'Castigo';
+  return REASONS.find(([re]) => re.test(r))?.[1] ?? 'Lesão';
 }
 
-/** "Dúvida, Lesão". Um valor desconhecido mostra o texto original; partes vazias não aparecem. */
+/** "Dúvida, Lesão no joelho". Um tipo desconhecido mostra o texto original; partes vazias não aparecem. */
 export function injuryText(type: string, reason: string): string {
   const t = type.trim();
   const r = reason.trim();
-  return [t ? (TYPE_TEXT[t] ?? t) : '', r ? reasonText(r) : ''].filter(Boolean).join(', ');
+  return [t ? (TYPE_TEXT[t] ?? t) : '', r ? injuryReasonText(r) : ''].filter(Boolean).join(', ');
 }
 
 export type PrematchEmpty = Extract<PrematchDoc, { empty: true }>;

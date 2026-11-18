@@ -101,7 +101,7 @@ describe('jogo futuro (NS)', () => {
     expect(screen.getByText('1-2')).toBeTruthy();
     expect(screen.getByText('Lesionados e suspensos')).toBeTruthy();
     expect(screen.getByText('Nuno Santos')).toBeTruthy();
-    expect(screen.getByText('Fora, Lesão')).toBeTruthy();
+    expect(screen.getByText('Fora, Lesão no joelho')).toBeTruthy();
     expect(screen.getByText('Dúvida, Castigo')).toBeTruthy();
     expect(screen.queryByText(/Double chance/)).toBeNull();
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();

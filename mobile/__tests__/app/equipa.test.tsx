@@ -41,6 +41,7 @@ const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top:
 const wrap = (el: React.ReactElement) => <SafeAreaProvider initialMetrics={METRICS}>{el}</SafeAreaProvider>;
 const ready = (data: unknown): L => ({ status: 'ready', data });
 const ERROR = 'Não foi possível carregar os dados.';
+const SECTION_ERROR = 'Não foi possível carregar esta secção.';
 
 const player = (id: string, name: string, position: string, number: number | null): SquadPlayer => ({
   id,
@@ -118,7 +119,7 @@ describe('/equipa: Plantel', () => {
     const labels = screen.getAllByTestId('section-bar').map((b) => within(b).getByRole('header').props.children);
     expect(labels).toEqual(['Treinador', 'Indisponíveis', 'Guarda-redes', 'Defesas', 'Médios', 'Avançados']);
     expect(screen.getByText('Rui Borges')).toBeTruthy();
-    expect(screen.getAllByLabelText(/^Ousmane Diomande, Fora, Lesão/)).toHaveLength(1);
+    expect(screen.getAllByLabelText('Ousmane Diomande, Fora, Lesão no joelho')).toHaveLength(1);
     const rows = screen.getAllByTestId(/^squad-row-/).map((r) => r.props.testID);
     expect(rows).toEqual(['squad-row-1', 'squad-row-26', 'squad-row-72', 'squad-row-5', 'squad-row-9', 'squad-row-17']);
     expect(within(screen.getByTestId('squad-row-72')).getByText('72')).toBeTruthy();
@@ -131,6 +132,16 @@ describe('/equipa: Plantel', () => {
     expect(name.props.ellipsizeMode).toBe('tail');
     await fireEvent.press(screen.getByTestId('squad-row-17'));
     expect(mockPush).toHaveBeenCalledWith('/equipa/jogador/17');
+  });
+
+  it('indisponíveis ou treinador a falhar: só a secção mostra o erro, o plantel fica', async () => {
+    mockTeam.injuries = { status: 'error', error: new Error('x') };
+    mockTeam.coach = { status: 'error', error: new Error('x') };
+    await render(wrap(<Equipa />));
+    expect(screen.getAllByText(SECTION_ERROR)).toHaveLength(2);
+    expect(screen.queryByText(ERROR)).toBeNull();
+    expect(screen.getByTestId('squad-row-9')).toBeTruthy();
+    expect(screen.getByText('Indisponíveis')).toBeTruthy();
   });
 
   it('leitura falhada: erro (nunca o vazio); sem plantel: mensagem', async () => {
@@ -256,6 +267,29 @@ describe('/equipa: Troféus', () => {
     expect(mockPush).toHaveBeenCalledWith('/equipa/jogador/5');
   });
 
+  it('treinador a falhar: os troféus ficam, com o título simples "Treinador"', async () => {
+    const t = { league: 'Primeira Liga', country: 'Portugal', season: '2024/2025', place: 'Winner' };
+    mockTeam.trophies = ready({ coach: [t], byPlayer: { '9': [t] } });
+    mockTeam.coach = { status: 'error', error: new Error('x') };
+    await render(wrap(<Equipa />));
+    await openTab('Troféus');
+    expect(screen.getByText('Treinador')).toBeTruthy();
+    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByTestId('trophy-player-9')).toBeTruthy();
+    expect(screen.queryByText(ERROR)).toBeNull();
+  });
+
+  it('plantel a falhar: os troféus do treinador ficam; a secção Jogadores mostra o erro', async () => {
+    const t = { league: 'Primeira Liga', country: 'Portugal', season: '2024/2025', place: 'Winner' };
+    mockTeam.trophies = ready({ coach: [t], byPlayer: { '9': [t] } });
+    mockTeam.squad = { status: 'error', error: new Error('x') };
+    await render(wrap(<Equipa />));
+    await openTab('Troféus');
+    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByText('Jogadores')).toBeTruthy();
+    expect(screen.getByText(SECTION_ERROR)).toBeTruthy();
+  });
+
   it('sem troféus: mensagem; leitura falhada: erro', async () => {
     const { rerender } = await render(wrap(<Equipa />));
     await openTab('Troféus');
@@ -292,7 +326,7 @@ describe('/equipa/jogador/[id]', () => {
     expect(screen.getByLabelText('Minutos: 1 010')).toBeTruthy();
     expect(screen.getByLabelText('Nota média: 7,0')).toBeTruthy();
     expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
-    expect(screen.getByLabelText('Hamstring Injury: Desde 20 Out 2026, em curso')).toBeTruthy();
+    expect(screen.getByLabelText('Lesão nos isquiotibiais: Desde 20 Out 2026, em curso')).toBeTruthy();
     expect(screen.getByLabelText('Castigo: 1 Mar 2026 a 8 Mar 2026')).toBeTruthy();
   });
 
@@ -314,6 +348,18 @@ describe('/equipa/jogador/[id]', () => {
     mockParams.current = { id: '999' };
     await rerender(wrap(<Jogador />));
     expect(screen.getByText('Jogador não encontrado.')).toBeTruthy();
+  });
+
+  it('lesões ou troféus a falhar: cabeçalho e números da época ficam; só a secção mostra o erro', async () => {
+    mockTeam.sidelined = { status: 'error', error: new Error('x') };
+    mockTeam.trophies = { status: 'error', error: new Error('x') };
+    await render(wrap(<Jogador />));
+    expect(screen.getByText('Viktor Gyökeres')).toBeTruthy();
+    expect(screen.getByText('N.º 9, Avançado, 24 anos')).toBeTruthy();
+    expect(screen.getByLabelText('Golos: 15')).toBeTruthy();
+    expect(screen.getByText('Histórico de lesões')).toBeTruthy();
+    expect(screen.getAllByText(SECTION_ERROR)).toHaveLength(2);
+    expect(screen.queryByText(ERROR)).toBeNull();
   });
 
   it('leitura falhada: erro, nunca "Sem jogos esta época."', async () => {

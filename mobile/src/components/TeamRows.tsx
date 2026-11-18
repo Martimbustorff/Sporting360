@@ -2,6 +2,7 @@
 // da competição (Task 13): coluna fixa opcional (número em DIN 20), foto redonda de 32 px (círculo surface10 sem
 // foto), nome numa linha com reticências (`tableTeam`) e, por baixo, uma linha a muted (`rowTeam`); divisória de
 // 1 px a 20 % entre linhas. `TextRow`: texto à esquerda com reticências e valor à direita que não encolhe.
+// `SectionError`: erro compacto de uma secção secundária (body a muted, centrado), sem esconder o resto do ecrã.
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -117,5 +118,16 @@ export function TextRow({ left, right }: { left: string; right: string }) {
         {right}
       </Body>
     </View>
+  );
+}
+
+export const SECTION_ERROR = 'Não foi possível carregar esta secção.';
+
+/** Erro de uma secção cujo documento falhou; o conteúdo principal do ecrã continua visível. */
+export function SectionError() {
+  return (
+    <Body variant="body" accessibilityRole="alert" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>
+      {SECTION_ERROR}
+    </Body>
   );
 }

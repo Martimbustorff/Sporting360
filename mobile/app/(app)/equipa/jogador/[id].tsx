@@ -3,7 +3,8 @@
 // e "N.º 9, Avançado, 24 anos" a muted; depois `SectionBar` e `InfoRow` (655:31905 / 655:31960) para os números da
 // época, e `TextRow` (TeamRows) para os troféus e o histórico de lesões.
 // O id é o da API-Football (Formações e Plantel abrem `/equipa/jogador/{id}`). O jogador vem do plantel ou, se já
-// saiu, da linha de estatísticas da época. Uma leitura falhada mostra o erro, nunca "Sem jogos esta época.".
+// saiu, da linha de estatísticas da época. Plantel ou estatísticas a falhar: erro no ecrã, nunca "Sem jogos esta
+// época."; troféus ou lesões a falhar: "Não foi possível carregar esta secção." só nessa secção.
 import { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -13,19 +14,18 @@ import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
-import { TextRow } from '@/components/TeamRows';
+import { SectionError, TextRow } from '@/components/TeamRows';
 import { useNow } from '@/data/clock';
 import type { PlayerSeasonStats } from '@/data/schemas';
 import { usePlayerStats, useTeamData } from '@/data/sports';
 import { footballSeason } from '@/lib/periods';
-import { capacityText } from '@/lib/prematch';
+import { capacityText, injuryReasonText } from '@/lib/prematch';
 import {
   playerPositionLabel,
   playerSeasonLine,
   ratingText,
   seasonLabel,
   sidelinedPeriodText,
-  sidelinedTypeText,
   trophyPlaceText,
 } from '@/lib/team';
 import { Body, Display } from '@/theme/typography';
@@ -84,10 +84,13 @@ export default function Jogador() {
   const sidelined = useTeamData('sidelined');
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
+  // Plantel e estatísticas decidem o ecrã (quem é o jogador e os números da época); troféus e lesões são
+  // secundários e falham só na sua secção.
+  const primary = [squad, stats];
   const reads = [squad, stats, trophies, sidelined];
   const body = (() => {
-    if (reads.some((r) => r.status === 'loading')) return <Loading />;
-    if (reads.some((r) => r.status === 'error')) return <EmptyState icon="info" text={ERROR_TEXT} />;
+    if (primary.some((r) => r.status === 'loading')) return <Loading />;
+    if (primary.some((r) => r.status === 'error')) return <EmptyState icon="info" text={ERROR_TEXT} />;
     const member = squad.status === 'ready' ? squad.data.players.find((p) => p.id === id) : undefined;
     const statsDoc = stats.status === 'ready' ? stats.data : null;
     const anyLine = statsDoc?.players.find((p) => p.id === id);
@@ -116,7 +119,9 @@ export default function Jogador() {
         <SectionBar label={`Época ${seasonLabel(season)}`} />
         {line ? <SeasonNumbers line={line} /> : <Muted text={NO_GAMES} />}
         <SectionBar label="Troféus" />
-        {won.length > 0 ? (
+        {trophies.status === 'error' ? (
+          <SectionError />
+        ) : trophies.status === 'loading' ? null : won.length > 0 ? (
           <View>
             {won.map((t, i) => (
               <TextRow key={`${t.league}-${t.season}-${i}`} left={`${t.league} ${t.season}`} right={trophyPlaceText(t.place)} />
@@ -126,10 +131,12 @@ export default function Jogador() {
           <Muted text={NO_TROPHIES} />
         )}
         <SectionBar label="Histórico de lesões" />
-        {injuries.length > 0 ? (
+        {sidelined.status === 'error' ? (
+          <SectionError />
+        ) : sidelined.status === 'loading' ? null : injuries.length > 0 ? (
           <View>
             {injuries.map((s, i) => (
-              <TextRow key={`${s.start}-${i}`} left={sidelinedTypeText(s.type)} right={sidelinedPeriodText(s)} />
+              <TextRow key={`${s.start}-${i}`} left={injuryReasonText(s.type)} right={sidelinedPeriodText(s)} />
             ))}
           </View>
         ) : (

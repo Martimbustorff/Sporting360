@@ -9,7 +9,8 @@
 // - Transferências: etiqueta "Entrada" (primary) ou "Saída" (surface20) como o selo pequeno (500:28830), emblema e
 //   nome do outro clube, data pt-PT e tipo à direita.
 // - Troféus: os do treinador e os jogadores com troféus (com o total), ligados ao detalhe.
-// Cada tab lê só os seus documentos; uma leitura falhada mostra o erro, nunca o vazio.
+// Cada tab lê só os seus documentos e depende só do principal (Plantel: plantel; Troféus: troféus). Uma leitura
+// principal falhada mostra o erro, nunca o vazio; uma secundária (treinador, indisponíveis) só a sua secção.
 import { useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
@@ -20,7 +21,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
-import { PersonRow, RowSeparator, TextRow } from '@/components/TeamRows';
+import { PersonRow, RowSeparator, SectionError, TextRow } from '@/components/TeamRows';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
 import type { Transfer } from '@/data/schemas';
@@ -62,8 +63,6 @@ const NO_TROPHIES = 'Sem troféus registados.';
 const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.cardRed };
 
 type Reads = Loadable<unknown>[];
-const anyLoading = (rs: Reads) => rs.some((r) => r.status === 'loading');
-const anyError = (rs: Reads) => rs.some((r) => r.status === 'error');
 const anyCache = (rs: Reads) => rs.some((r) => r.status === 'ready' && r.fromCache === true);
 const dataOf = <T,>(l: Loadable<T>): T | null => (l.status === 'ready' ? l.data : null);
 const openPlayer = (id: string) => router.push(`/equipa/jogador/${id}`);
@@ -98,23 +97,33 @@ function SquadTab() {
   const squad = useTeamData('squad');
   const coach = useTeamData('coach');
   const injuries = useTeamData('injuries');
-  const reads = [squad, coach, injuries];
-  if (anyLoading(reads)) return <Loading testID="squad-loading" />;
-  if (anyError(reads)) return <EmptyState icon="info" text={ERROR_TEXT} />;
+  // Só o plantel decide o ecrã; treinador e indisponíveis falham cada um na sua secção.
+  if (squad.status === 'loading') return <Loading testID="squad-loading" />;
+  if (squad.status === 'error') return <EmptyState icon="info" text={ERROR_TEXT} />;
   const players = dataOf(squad)?.players ?? [];
   if (players.length === 0) return <EmptyState icon="info" text={NO_SQUAD} />;
   const c = dataOf(coach);
   const out = injuries.status === 'ready' ? unavailablePlayers(injuries.data) : [];
   return (
     <TabScroll>
-      <OfflineBanner visible={anyCache(reads)} />
-      {c ? (
+      <OfflineBanner visible={anyCache([squad, coach, injuries])} />
+      {coach.status === 'error' ? (
+        <>
+          <SectionBar label="Treinador" />
+          <SectionError />
+        </>
+      ) : c ? (
         <>
           <SectionBar label="Treinador" />
           <PersonRow label={`Treinador: ${c.name}`} photo={c.photo} name={c.name} detail={c.nationality ?? undefined} />
         </>
       ) : null}
-      {out.length > 0 ? (
+      {injuries.status === 'error' ? (
+        <>
+          <SectionBar label="Indisponíveis" />
+          <SectionError />
+        </>
+      ) : out.length > 0 ? (
         <>
           <SectionBar label="Indisponíveis" />
           <List
@@ -398,18 +407,24 @@ function TrophiesTab() {
   const trophies = useTeamData('trophies');
   const squad = useTeamData('squad');
   const coach = useTeamData('coach');
-  const reads = [trophies, squad, coach];
-  if (anyLoading(reads)) return <Loading testID="trophies-loading" />;
-  if (anyError(reads)) return <EmptyState icon="info" text={ERROR_TEXT} />;
+  // Só os troféus decidem o ecrã; o plantel (nomes dos jogadores) e o treinador (nome no título) são secundários.
+  if (trophies.status === 'loading') return <Loading testID="trophies-loading" />;
+  if (trophies.status === 'error') return <EmptyState icon="info" text={ERROR_TEXT} />;
   const t = dataOf(trophies);
   const s = dataOf(squad);
   const coachTrophies = t?.coach ?? [];
+  const squadFailed = squad.status === 'error';
   const players = t && s ? playersWithTrophies(s, t) : [];
-  if (coachTrophies.length === 0 && players.length === 0) return <EmptyState icon="info" text={NO_TROPHIES} />;
+  const anyPlayerTrophy = !!t && Object.values(t.byPlayer).some((x) => x.length > 0);
+  // Com o plantel a falhar não se sabe se há jogadores com troféus: mostra-se o erro da secção, não o vazio.
+  const showPlayers = players.length > 0 || (squadFailed && anyPlayerTrophy);
+  if (coachTrophies.length === 0 && !showPlayers) {
+    return squad.status === 'loading' ? <Loading testID="trophies-loading" /> : <EmptyState icon="info" text={NO_TROPHIES} />;
+  }
   const coachName = dataOf(coach)?.name;
   return (
     <TabScroll>
-      <OfflineBanner visible={anyCache(reads)} />
+      <OfflineBanner visible={anyCache([trophies, squad, coach])} />
       {coachTrophies.length > 0 ? (
         <>
           <SectionBar label={coachName ? `Treinador, ${coachName}` : 'Treinador'} />
@@ -420,26 +435,30 @@ function TrophiesTab() {
           </View>
         </>
       ) : null}
-      {players.length > 0 ? (
+      {showPlayers ? (
         <>
           <SectionBar label="Jogadores" />
-          <List
-            items={players}
-            keyOf={(x) => x.player.id}
-            render={({ player, count }) => {
-              const total = count === 1 ? '1 troféu' : `${count} troféus`;
-              return (
-                <PersonRow
-                  testID={`trophy-player-${player.id}`}
-                  label={`${player.name}, ${total}`}
-                  photo={player.photo}
-                  name={player.name}
-                  right={<Display variant="tableValue" style={{ flexShrink: 0 }}>{total}</Display>}
-                  onPress={() => openPlayer(player.id)}
-                />
-              );
-            }}
-          />
+          {squadFailed ? (
+            <SectionError />
+          ) : (
+            <List
+              items={players}
+              keyOf={(x) => x.player.id}
+              render={({ player, count }) => {
+                const total = count === 1 ? '1 troféu' : `${count} troféus`;
+                return (
+                  <PersonRow
+                    testID={`trophy-player-${player.id}`}
+                    label={`${player.name}, ${total}`}
+                    photo={player.photo}
+                    name={player.name}
+                    right={<Display variant="tableValue" style={{ flexShrink: 0 }}>{total}</Display>}
+                    onPress={() => openPlayer(player.id)}
+                  />
+                );
+              }}
+            />
+          )}
         </>
       ) : null}
     </TabScroll>
