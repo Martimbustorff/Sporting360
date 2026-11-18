@@ -81,6 +81,11 @@ describe("mapApiSportsGame", () => {
     expect(mapApiSportsGame("handball", named(g, "Andebol 1", null), SPORTING).competition).toMatchObject({ round: null, roundLabel: null });
   });
 
+  it("ronda: week, senão stage", () => {
+    const [g] = fixture("handball");
+    expect(mapApiSportsGame("handball", { ...named(g, "Andebol 1", null), stage: "Final" }, SPORTING).competition).toMatchObject({ round: "Final", roundLabel: "Final" });
+  });
+
   it("competições europeias com nome pt-PT", () => {
     const [g] = fixture("volleyball");
     expect(mapApiSportsGame("volleyball", named(g, "CEV Champions League"), SPORTING).competition).toMatchObject({ name: "Liga dos Campeões CEV", type: "europe" });

@@ -38,6 +38,7 @@ export interface ApiSportsGame {
   date: string;
   timestamp?: number | null;
   week?: string | null;
+  stage?: string | null;
   status: { long?: string; short: string };
   league: { id: number | null; name: string; type?: string; season?: string | number | null };
   teams: { home: { id: number; name: string; logo?: string | null }; away: { id: number; name: string; logo?: string | null } };
@@ -102,7 +103,7 @@ export function mapApiSportsGame(sport: Sport, g: ApiSportsGame, sportingTeamId:
   const kickoff = kickoffOf(g);
   const label = competitionLabel(sport, g.league.id, g.league.name);
   const season = String(g.league.season ?? "");
-  const round = g.week ?? null;
+  const round = g.week ?? g.stage ?? null;
   const sets = sport === "volleyball" ? setsOf(g.periods) : [];
 
   const finished = FINAL_STATUSES.has(status);
@@ -154,7 +155,7 @@ interface StandingsRow {
   group?: { name?: string } | null;
   stage?: string;
   team: { id: number; name: string; logo?: string | null };
-  games?: { played?: Num; win?: { total?: Num }; draw?: { total?: Num }; lost?: { total?: Num }; lose?: { total?: Num } };
+  games?: { played?: Num; win?: { total?: Num }; draw?: { total?: Num }; drawn?: { total?: Num }; lost?: { total?: Num }; lose?: { total?: Num } };
   goals?: { for?: Num; against?: Num };
   points?: Points | { for?: Num; against?: Num };
   form?: string | null;
@@ -180,7 +181,7 @@ function standingsGroups(response: unknown[], sportingTeamId: number | null) {
           points: pts,
           played: r.games?.played ?? null,
           win: r.games?.win?.total ?? null,
-          draw: r.games?.draw?.total ?? null,
+          draw: (r.games?.draw ?? r.games?.drawn)?.total ?? null,
           lose: (r.games?.lost ?? r.games?.lose)?.total ?? null,
           goalsFor: gf,
           goalsAgainst: ga,
@@ -210,7 +211,8 @@ export interface ApiSportsResult {
 
 interface SportState {
   lastRunAt: Date | null;
-  lastStandingsAt: Date | null;
+  /** Última classificação por id de liga. */
+  standingsAt: Record<string, Date>;
   /** `remaining` no fim da execução anterior (cada execução começa com um cliente novo, sem esse valor). */
   lastRemaining: number | null;
 }
@@ -224,7 +226,10 @@ async function readState(db: Firestore, sport: Sport): Promise<SportState> {
     return v ? fromFirestore(v as Date) : null;
   };
   const rem = snap.get("lastRemaining");
-  return { lastRunAt: get("lastRunAt"), lastStandingsAt: get("lastStandingsAt"), lastRemaining: typeof rem === "number" ? rem : null };
+  const raw = (snap.get("standingsAt") ?? {}) as Record<string, unknown>;
+  const standingsAt: Record<string, Date> = {};
+  for (const [k, v] of Object.entries(raw)) if (v) standingsAt[k] = fromFirestore(v as Date);
+  return { lastRunAt: get("lastRunAt"), standingsAt, lastRemaining: typeof rem === "number" ? rem : null };
 }
 
 async function sportMatchesNear(db: Firestore, sport: Sport, now: Date): Promise<MatchDoc[]> {
@@ -253,10 +258,17 @@ async function syncOne(d: ApiSportsDeps, sport: Sport, cfg: SportConfig, now: Da
   const games = (await client.games({ team: teamId, season })) as ApiSportsGame[];
   let count = 0;
   let failed = 0;
+  const refreshLeagues = new Set<number>();
   for (const g of games) {
     if (g.league.id !== null && skipLeagues.has(g.league.id)) continue;
     try {
-      await saveMatch(d.db, { match: mapApiSportsGame(sport, g, teamId) });
+      const match = mapApiSportsGame(sport, g, teamId);
+      // Passou agora a final (estava noutro estado) e o apito foi há menos de 6 h: classificação da liga.
+      const prev = (await d.db.doc(`matches/${match.id}`).get()).get("status") as MatchDoc["status"] | undefined;
+      if (prev !== undefined && !FINAL_STATUSES.has(prev) && FINAL_STATUSES.has(match.status) && match.finishedAt && now.getTime() - match.finishedAt.getTime() <= STANDINGS_MS && g.league.id !== null) {
+        refreshLeagues.add(g.league.id);
+      }
+      await saveMatch(d.db, { match });
       count++;
     } catch (e) {
       failed++;
@@ -264,24 +276,34 @@ async function syncOne(d: ApiSportsDeps, sport: Sport, cfg: SportConfig, now: Da
     }
   }
 
-  // Classificações de 6 em 6 horas, só das ligas confirmadas como cobertas (id conhecido, covered !== false).
-  const stale = state.lastStandingsAt === null || now.getTime() - state.lastStandingsAt.getTime() >= STANDINGS_MS;
-  if (stale) {
-    for (const league of cfg.leagues) {
-      if (league.id === null || league.covered === false) continue;
-      if (client.remaining !== null && client.remaining < MIN_REMAINING) break;
-      const response = await client.standings({ league: league.id, season });
-      const groups = standingsGroups(response, teamId);
-      if (groups.length === 0) continue;
-      const key = competitionKey(sport, league.id, season);
-      const label = competitionLabel(sport, league.id, league.name);
-      const writes = [
-        { path: `competitions/${key}`, data: { sport, leagueId: league.id, name: label.name, type: label.type } as DocumentData, merge: true },
-        { path: `competitions/${key}/data/standings`, data: { groups } as DocumentData },
-      ];
-      await writeDocs(d.db, writes, { stateKey: `standings_${key}` });
+  // Classificações por liga coberta (id conhecido, covered !== false): de 6 em 6 horas ou quando um jogo da liga acaba de terminar.
+  // Uma liga que falha não trava as outras e fica com data (não repete a cada tick); quota esgotada pára sem datar as restantes.
+  for (const league of cfg.leagues) {
+    if (league.id === null || league.covered === false) continue;
+    const at = state.standingsAt[String(league.id)];
+    const stale = at === undefined || now.getTime() - at.getTime() >= STANDINGS_MS;
+    if (!stale && !refreshLeagues.has(league.id)) continue;
+    if (client.remaining !== null && client.remaining < MIN_REMAINING) break;
+    try {
+      const groups = standingsGroups(await client.standings({ league: league.id, season }), teamId);
+      if (groups.length > 0) {
+        const key = competitionKey(sport, league.id, season);
+        const label = competitionLabel(sport, league.id, league.name);
+        await writeDocs(
+          d.db,
+          [
+            { path: `competitions/${key}`, data: { sport, leagueId: league.id, name: label.name, type: label.type } as DocumentData, merge: true },
+            { path: `competitions/${key}/data/standings`, data: { groups } as DocumentData },
+          ],
+          { stateKey: `standings_${key}` },
+        );
+      }
+    } catch (e) {
+      failed++;
+      logger.warn(`apiSportsSync: classificação ${sport}/${league.id} falhou: ${e instanceof Error ? e.message : String(e)}`);
+      if (isQuotaError(e)) break;
     }
-    await stateRef(d.db, sport).set({ lastStandingsAt: now }, { merge: true });
+    await stateRef(d.db, sport).set({ standingsAt: { [String(league.id)]: now } }, { merge: true });
   }
   return { count, failed };
 }
@@ -311,6 +333,8 @@ export async function syncApiSports(d: ApiSportsDeps): Promise<ApiSportsResult> 
     attempted++;
     const client = d.clients[sport];
     const health = `apisports_${sport}`;
+    let ok = true;
+    let quotaFailure = false;
     const opts = { expectNonZero: inSeason(now), minRemaining: MIN_REMAINING };
     try {
       const r = await syncOne(d, sport, cfg, now, state);
@@ -320,13 +344,19 @@ export async function syncApiSports(d: ApiSportsDeps): Promise<ApiSportsResult> 
       await recordRun(d.db, health, { ok: true, count: r.count, remaining: client.remaining, failed: r.failed }, opts);
     } catch (e) {
       threw++;
+      ok = false;
+      quotaFailure = isQuotaError(e);
       failed++;
       remainingBySport[sport] = client.remaining;
       const error = e instanceof Error ? e.message : String(e);
       logger.warn(`apiSportsSync: ${sport} falhou${isQuotaError(e) ? " (quota)" : ""}: ${error}`);
       await recordRun(d.db, health, { ok: false, error });
     }
-    await stateRef(d.db, sport).set({ lastRunAt: now, lastRemaining: remainingBySport[sport] }, { merge: true });
+    // Falha que não é de quota: não avança `lastRunAt` (volta a tentar no tick seguinte; o travão é a quota).
+    const patch: Record<string, unknown> = {};
+    if (ok || quotaFailure) patch.lastRunAt = now;
+    if (remainingBySport[sport] !== null) patch.lastRemaining = remainingBySport[sport];
+    if (Object.keys(patch).length > 0) await stateRef(d.db, sport).set(patch, { merge: true });
   }
 
   if (attempted > 0 && threw === attempted) throw new Error(`apiSportsSync: as ${threw} modalidades falharam`);
