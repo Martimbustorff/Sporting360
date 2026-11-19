@@ -10,7 +10,7 @@
 // A vista abre pela escolha do utilizador, depois por `competitions/{key}.view.primary` (que muda em direto de
 // `table` para `bracket` a meio da época, Review Focus 5). A escolha guarda-se por competição até a app reiniciar
 // (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
-import { useReducer, useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 import { router } from 'expo-router';
@@ -29,12 +29,14 @@ import { finishedResults, liveStandingsAvailable, projectStandings } from '@/lib
 import {
   getTableView,
   getViewChoice,
+  getViewChoicesVersion,
   hasBracketTies,
   hasTableRows,
   resolveView,
   setTableView,
   setViewChoice,
   showSelector,
+  subscribeViewChoices,
   type StandingsView,
   type TableView,
 } from '@/lib/standings';
@@ -79,8 +81,8 @@ export function CompetitionStandings({
   const liveAvailable = liveDoc.status === 'ready' && liveStandingsAvailable(liveDoc.data, now);
   const fixtures = useCompetitionData(liveAvailable ? competitionKey : null, 'fixtures');
   const [mode, setMode] = useState<Mode>('live');
-  // A escolha vive no módulo (sessão da app); isto só volta a desenhar depois de a gravar.
-  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  // As escolhas vivem no módulo (sessão da app); aqui só se subscreve, para que todos os ecrãs montados se atualizem.
+  useSyncExternalStore(subscribeViewChoices, getViewChoicesVersion);
 
   const reads = [competition, standings, bracket];
   if (reads.some((r) => r.status === 'loading')) return <SkeletonRows padded testID="standings-loading" />;
@@ -101,13 +103,9 @@ export function CompetitionStandings({
   const shown = resolveView(view, hasRows, hasTies, userChoice);
   // Vista da tabela (Resumida, Completa, Forma): uma só para todas as competições, até a app reiniciar.
   const tableView = getTableView();
-  const chooseTableView = (v: TableView) => {
-    setTableView(v);
-    rerender();
-  };
+  const chooseTableView = setTableView;
   const choose = (v: StandingsView) => {
     setViewChoice(competitionKey, v);
-    rerender();
   };
   // Leitura do documento ao vivo nunca bloqueia nem falha a página: sem ele, tabela oficial.
   const liveReady = liveDoc.status === 'ready' ? liveDoc.data : null;

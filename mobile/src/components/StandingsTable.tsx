@@ -29,7 +29,6 @@ const ZONE_ORDER: Zone[] = ['champions', 'europa', 'conference'];
 /** Linha da tabela; `delta` e `liveScore` só vêm da classificação ao vivo (`projectStandings`). */
 export type TableRow = StandingRow & { delta?: number; liveScore?: string | null };
 export type TableGroup = { name: string; rows: TableRow[] };
-export type StandingsView = TableView;
 
 const FORM_WORD = { V: 'vitória', E: 'empate', D: 'derrota' } as const;
 
@@ -99,7 +98,7 @@ function Row({
   row: TableRow;
   highlight: boolean;
   sport: Sport | null;
-  view: StandingsView;
+  view: TableView;
   isLive: boolean;
 }) {
   const results = view === 'form' ? formResults(row.form) : [];
@@ -118,7 +117,7 @@ function Row({
       testID={`standings-row-${row.teamId}`}
       accessible
       accessibilityState={{ selected: highlight }}
-      accessibilityLabel={label}
+      accessibilityLabel={isLive && !row.liveScore ? `${label}, a jogar agora` : label}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -221,7 +220,7 @@ function Row({
   );
 }
 
-function HeadRow({ view }: { view: StandingsView }) {
+function HeadRow({ view }: { view: TableView }) {
   const col = (width: number, label: string, right = true) => (
     <Text71 variant="eyebrow13" color="textSubtle" numberOfLines={1} style={[fixed(width), right ? { textAlign: 'right' } : undefined]}>
       {label}
@@ -278,7 +277,7 @@ export function StandingsTable({
   groups: TableGroup[];
   highlightTeamId: string;
   /** "Resumida" (a de sempre), "Completa" (J, V, E, D, DG, PTS) ou "Forma" (últimos 5 jogos). */
-  view?: StandingsView;
+  view?: TableView;
   /** Equipas em jogo agora (documento de jogos ao vivo recente): levam o ponto ao lado do nome. */
   liveTeamIds?: ReadonlySet<string>;
   /** Modalidade da competição; null quando não se sabe (nunca o emblema local do Sporting). */

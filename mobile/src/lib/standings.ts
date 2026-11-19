@@ -47,12 +47,35 @@ export function showSelector(view: Competition['view'] | undefined, hasRows: boo
 // servidor enquanto a app estiver aberta (`resolveView` põe a escolha do utilizador primeiro).
 const viewChoices = new Map<string, StandingsView>();
 
+// Reatividade: vários ecrãs podem estar montados ao mesmo tempo (separador do jogo e página da competição). Cada gravação
+// sobe a versão e avisa os ouvintes; quem desenha lê com `useSyncExternalStore(subscribeViewChoices, getViewChoicesVersion)`.
+const listeners = new Set<() => void>();
+let version = 0;
+
+export function subscribeViewChoices(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** Muda a cada gravação (e no reset): serve de instantâneo para `useSyncExternalStore`. */
+export function getViewChoicesVersion(): number {
+  return version;
+}
+
+function changed(notify = true): void {
+  version += 1;
+  if (notify) [...listeners].forEach((l) => l());
+}
+
 export function getViewChoice(competitionKey: string): StandingsView | null {
   return viewChoices.get(competitionKey) ?? null;
 }
 
 export function setViewChoice(competitionKey: string, v: StandingsView): void {
   viewChoices.set(competitionKey, v);
+  changed();
 }
 
 /** Vista da tabela: "Resumida", "Completa" ou "Forma" (Task 6 do Plano 9). */
@@ -67,12 +90,14 @@ export function getTableView(): TableView {
 
 export function setTableView(v: TableView): void {
   tableView = v;
+  changed();
 }
 
 /** Só para testes: começa cada teste sem escolhas. */
 export function resetViewChoices(): void {
   viewChoices.clear();
   tableView = 'short';
+  changed(false);
 }
 
 /**

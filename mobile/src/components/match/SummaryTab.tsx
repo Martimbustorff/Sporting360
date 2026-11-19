@@ -26,7 +26,6 @@ import {
   h2hTally,
   isDoubtful,
   isPrematchEmpty,
-  type FormLetter,
   type PrematchFull,
 } from '@/lib/prematch';
 import { Text71 } from '@/theme/typography';
@@ -41,7 +40,6 @@ const CANCELLED = 'Jogo cancelado.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
-const LETTER_BG: Record<FormLetter, string> = formLetterBg;
 
 /** Previsão (sem frame): percentagens de vitória da casa, empate e fora, com o nome da equipa por baixo. */
 function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
@@ -100,7 +98,7 @@ function FormRow({ team, crest, form, side }: { team: Match['home']; crest: Team
               width: layout.formChip,
               height: layout.formChip,
               borderRadius: layout.formChipRadius,
-              backgroundColor: LETTER_BG[l],
+              backgroundColor: formLetterBg[l],
               alignItems: 'center',
               justifyContent: 'center',
             }}

@@ -459,7 +459,7 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     expect(screen.getByTestId('standings-row-211').props.accessibilityLabel).toBe('2.º Benfica, 29 pontos, 6 jogos, desce 1 lugar');
     expect(screen.getByTestId('standings-row-217').props.accessibilityLabel).toBe('4.º SC Braga, 23 pontos, 6 jogos');
     await fireEvent.press(screen.getByRole('tab', { name: 'Oficial' }));
-    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('3.º Sporting, 26 pontos, 6 jogos');
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('3.º Sporting, 26 pontos, 6 jogos, a jogar agora');
   });
 
   it('"Oficial": tabela oficial, sem setas nem resultados em direto, e volta a "Ao vivo"', async () => {
@@ -704,5 +704,48 @@ describe('Classificação com três vistas (Task 6 do Plano 9)', () => {
     for (const k of ['win', 'draw', 'lose', 'points']) expect(StyleSheet.flatten(screen.getByTestId(`standings-${k}-212`).props.style).flexShrink).toBe(0);
     await fireEvent.press(tab('Forma'));
     expect(StyleSheet.flatten(screen.getByTestId('standings-form-212', { includeHiddenElements: true }).props.style).flexShrink).toBe(0);
+  });
+
+  it('dois ecrãs montados: mudar a vista num atualiza o outro (vista da tabela e tabela/eliminatórias)', async () => {
+    mockData.competition = view('table', true, true);
+    mockData.bracket = { status: 'ready', data: bracket };
+    await render(
+      <>
+        <CompetitionStandings competitionKey={LIGA} />
+        <CompetitionStandings competitionKey={LIGA} showCompetitionLink={false} />
+      </>,
+    );
+    const selected = (name: string) => screen.getAllByRole('tab', { name }).map((t) => t.props.accessibilityState.selected);
+    expect(selected('Resumida')).toEqual([true, true]);
+    await fireEvent.press(screen.getAllByRole('tab', { name: 'Forma' })[0]!);
+    expect(selected('Forma')).toEqual([true, true]);
+    expect(selected('Resumida')).toEqual([false, false]);
+    expect(screen.getAllByTestId('standings-table')).toHaveLength(2);
+    await fireEvent.press(screen.getAllByRole('tab', { name: 'Eliminatórias' })[1]!);
+    expect(screen.getAllByTestId('bracket-view')).toHaveLength(2);
+    expect(selected('Eliminatórias')).toEqual([true, true]);
+  });
+
+  it('o ponto a jogar acrescenta "a jogar agora" ao rótulo quando não há resultado em direto', async () => {
+    mockData.liveFixtures = live([fixture('228', '212', 1, 0)]);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Oficial'));
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('1.º Sporting CP, 14 pontos, 6 jogos, a jogar agora');
+    expect(screen.getByTestId('standings-row-217').props.accessibilityLabel).toBe('3.º SC Braga, 9 pontos, 6 jogos');
+    await fireEvent.press(tab('Completa'));
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toMatch(/, a jogar agora$/);
+    await fireEvent.press(tab('Forma'));
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('1.º Sporting. Últimos jogos: vitória, vitória, empate, vitória, vitória, a jogar agora');
+    // Em "Ao vivo" o resultado em direto já diz que joga: sem repetir.
+    await fireEvent.press(tab('Ao vivo'));
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).not.toMatch(/a jogar agora/);
+  });
+
+  it('as opções do seletor têm alvo de toque de 44 pt (alargado pelo Touchable)', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    const t = tab('Forma');
+    await fireEvent(t, 'layout', { nativeEvent: { layout: { width: 110, height: 34 } } });
+    const slop = tab('Forma').props.hitSlop;
+    expect(34 + slop.top + slop.bottom).toBeGreaterThanOrEqual(layout.minTouch);
   });
 });
