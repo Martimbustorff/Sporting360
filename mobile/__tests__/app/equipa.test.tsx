@@ -80,6 +80,7 @@ const line = (id: string, name: string, over: Partial<PlayerSeasonStats> = {}): 
   rating: 7.04,
   yellow: 1,
   red: 0,
+  byLeague: {},
   ...over,
 });
 const split = (home: number, away: number) => ({ home, away, total: home + away });
@@ -185,6 +186,13 @@ describe('/equipa: Estatísticas', () => {
     expect(screen.getByLabelText('Viktor Gyökeres: 12 jogos, 1010 minutos, 15 golos, 3 assistências, nota 7,0')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('stats-row-9'));
     expect(mockPush).toHaveBeenCalledWith('/equipa/jogador/9');
+  });
+
+  it('ligação "Ver marcadores" abre os marcadores', async () => {
+    await render(wrap(<Equipa />));
+    await openTab('Estatísticas');
+    await fireEvent.press(screen.getByRole('link', { name: 'Ver marcadores' }));
+    expect(mockPush).toHaveBeenCalledWith('/equipa/marcadores');
   });
 
   it('outra competição sem estatísticas: mensagem; leitura falhada: erro', async () => {

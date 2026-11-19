@@ -46,6 +46,7 @@ export const colors = {
   bgRaised: '#06261C',
   bgTint: '#003625',
   primaryOnDark: '#19B37E',
+  primaryDeep: '#004A33', // fim do gradiente do cartão do líder dos marcadores (4935:7479)
   textSubtle: 'rgba(255, 255, 255, 0.5)',
   separator: 'rgba(255, 255, 255, 0.25)',
   surface06: 'rgba(255, 255, 255, 0.06)',
@@ -667,4 +668,18 @@ export const layout = {
   scanSheetGap: 14,
   termsTop: 16, // header bottom to text (564:7169)
   termsSectionGap: 12,
+  // V7.1 Marcadores e assistências (4935:7423)
+  leaderChipPadX: 14, // chips de competição (4935:7464)
+  leaderChipPadY: 7,
+  leaderChipRadius: 999,
+  leaderCardPadX: 20, // cartão do líder (4935:7479)
+  leaderCardPadY: 18,
+  leaderPhoto: 56,
+  leaderRowPhoto: 36, // linhas (4935:7488)
+  leaderRowPadY: 10,
+  leaderRankWidth: 16,
+  leaderBarHeight: 4,
+  leaderBarRadius: 2,
+  leaderTextGap: 2,
+  leaderNameGap: 6, // nome / posição e barra (4935:7490)
 } as const;

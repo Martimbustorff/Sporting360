@@ -31,6 +31,7 @@ module.exports = {
           bgRaised: '#06261C',
           bgTint: '#003625',
           primaryOnDark: '#19B37E',
+          primaryDeep: '#004A33',
           textSubtle: 'rgba(255, 255, 255, 0.5)',
           separator: 'rgba(255, 255, 255, 0.25)',
           surface06: 'rgba(255, 255, 255, 0.06)',

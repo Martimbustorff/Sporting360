@@ -467,6 +467,13 @@ export const CoachDocSchema = z.looseObject({
 });
 export type CoachDoc = z.infer<typeof CoachDocSchema>;
 
+/** Totais de um jogador numa liga (soma das linhas dessa liga); `byLeague` é indexado pelo id da liga na API-Football. */
+const LeagueStatsSchema = z.looseObject({
+  appearances: num.catch(0),
+  minutes: num.catch(0),
+  goals: num.catch(0),
+  assists: num.catch(0),
+});
 export const PlayerSeasonStatsSchema = z.looseObject({
   id: str,
   name: str,
@@ -478,6 +485,8 @@ export const PlayerSeasonStatsSchema = z.looseObject({
   rating: nullable(num),
   yellow: num.catch(0),
   red: num.catch(0),
+  /** Documentos antigos não o têm: fica `{}` (os filtros por competição ficam sem dados). */
+  byLeague: z.record(z.string(), LeagueStatsSchema).catch({}),
 });
 export type PlayerSeasonStats = z.infer<typeof PlayerSeasonStatsSchema>;
 export const PlayerStatsDocSchema = z.looseObject({ players: z.array(PlayerSeasonStatsSchema) });

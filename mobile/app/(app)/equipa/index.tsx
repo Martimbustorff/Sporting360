@@ -334,6 +334,9 @@ function StatsTab({ season }: { season: string }) {
       <Tabs mode="scroll" items={list.map((c) => ({ key: c.key, label: c.name }))} value={current.key} onChange={setPicked} />
       <TeamStatsBlock key={current.key} leagueId={current.leagueId} season={season} />
       <SectionBar label={`Jogadores, época ${seasonLabel(season)}`} />
+      <Touchable testID="link-marcadores" accessibilityRole="link" accessibilityLabel="Ver marcadores" onPress={() => router.push('/equipa/marcadores')} style={{ alignSelf: 'flex-start', paddingVertical: spacing.sm }}>
+        <Body variant="tab" style={{ color: colors.primaryOnDark }}>Ver marcadores</Body>
+      </Touchable>
       <PlayerTable season={season} />
     </TabScroll>
   );

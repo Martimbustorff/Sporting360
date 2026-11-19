@@ -137,6 +137,7 @@ const line = (id: string, name: string, over: Partial<PlayerSeasonStats> = {}): 
   rating: 7,
   yellow: 0,
   red: 0,
+  byLeague: {},
   ...over,
 });
 

@@ -30,6 +30,7 @@ const MAP: Record<string, string> = {
   bgRaised: 'bgRaised',
   bgTint: 'bgTint',
   primaryOnDark: 'primaryOnDark',
+  primaryDeep: 'primaryDeep',
   textSubtle: 'textSubtle',
   separator: 'separator',
   surface06: 'surface06',
