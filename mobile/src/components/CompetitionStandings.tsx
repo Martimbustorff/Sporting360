@@ -70,7 +70,7 @@ export function CompetitionStandings({
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   const reads = [competition, standings, bracket];
-  if (reads.some((r) => r.status === 'loading')) return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="standings-loading" /></View>;
+  if (reads.some((r) => r.status === 'loading')) return <SkeletonRows padded testID="standings-loading" />;
   if (reads.some((r) => r.status === 'error')) return <EmptyState icon="info" text={STANDINGS_ERROR} />;
 
   const view = competition.status === 'ready' ? competition.data.view : undefined;

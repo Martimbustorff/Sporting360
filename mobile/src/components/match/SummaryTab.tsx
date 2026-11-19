@@ -8,6 +8,7 @@
 // (EmptyState `info`), as linhas Capacidade e a fotografia do estádio. A barra "TV/Transmissão Online" (655:31954) fica de
 // fora: `matches` não tem canal de TV. O texto `advice` da API (inglês) nunca se mostra.
 import { Image } from 'expo-image';
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { EventRow } from '@/components/EventRow';
@@ -227,7 +228,7 @@ function PreMatch({ match }: { match: Match }) {
   );
 }
 
-/** Jogo a decorrer ou terminado (Figma 08/06): Forma, Confrontos diretos e Ausências por baixo da cronologia, só com dados e sem Previsão nem avisos. */
+/** Jogo terminado (Figma 08; o 06, ao vivo, mostra outro conteúdo): Forma, Confrontos diretos e Ausências por baixo da cronologia, só com dados e sem Previsão nem avisos. */
 function MatchContext({ match }: { match: Match }) {
   const prematch = useMatchDetail(match.id, 'prematch');
   const injuries = useMatchDetail(match.id, 'injuries');
@@ -249,12 +250,13 @@ function MatchContext({ match }: { match: Match }) {
   );
 }
 
-function Events({ match, live }: { match: Match; live: boolean }) {
+/** `after` (o contexto do jogo terminado) só aparece depois de os eventos chegarem, para a página não saltar. */
+function Events({ match, live, after }: { match: Match; live: boolean; after?: ReactNode }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
-  if (events.status === 'error') return <EmptyState icon="info" text={LOAD_ERROR} />;
+  if (events.status === 'error') return <><EmptyState icon="info" text={LOAD_ERROR} />{after}</>;
   const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id, match.sportingSide) : [];
-  if (groups.length === 0) return <EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />;
+  if (groups.length === 0) return <><EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />{after}</>;
   return (
     <>
       {groups.map((g) => (
@@ -265,6 +267,7 @@ function Events({ match, live }: { match: Match; live: boolean }) {
           ))}
         </View>
       ))}
+      {after}
     </>
   );
 }
@@ -310,10 +313,7 @@ export function SummaryTab({ match }: { match: Match }) {
       ) : state === 'cancelled' ? (
         <EmptyState icon="info" text={CANCELLED} />
       ) : (
-        <>
-          <Events match={match} live={state !== 'finished'} />
-          <MatchContext match={match} />
-        </>
+        <Events match={match} live={state !== 'finished'} after={state === 'finished' ? <MatchContext match={match} /> : undefined} />
       )}
       <MatchInfo match={match} />
     </MatchScrollView>

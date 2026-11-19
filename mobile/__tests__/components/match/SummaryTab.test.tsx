@@ -274,6 +274,25 @@ describe('contexto do jogo (Figma 08)', () => {
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
   });
 
+  it('ao vivo: sem contexto (o frame 06 mostra outro conteúdo)', async () => {
+    mockDetails.current = {
+      events: ready({ items: [ev({ minute: 23, playerName: 'Suárez', teamId: '228' })] }),
+      prematch: ready(prematch()),
+      injuries: ready(injuries()),
+    };
+    await render(<SummaryTab match={match({ status: 'LIVE' })} />);
+    expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Confrontos diretos · últimos 5')).toBeNull();
+    expect(screen.queryByText('Ausências')).toBeNull();
+  });
+
+  it('terminado com os eventos a carregar: ainda sem contexto', async () => {
+    mockDetails.current = { events: { status: 'loading' }, prematch: ready(prematch()), injuries: ready(injuries()) };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Ausências')).toBeNull();
+  });
+
   it('terminado sem dados de contexto: só a cronologia, sem avisos', async () => {
     mockDetails.current = { events: ready({ items: [ev({ minute: 23, playerName: 'Suárez', teamId: '228' })] }) };
     await render(<SummaryTab match={match({ status: 'FT' })} />);

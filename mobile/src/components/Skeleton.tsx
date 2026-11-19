@@ -4,11 +4,12 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { colors, layout } from '@/theme/tokens';
+import { colors, layout, spacing } from '@/theme/tokens';
 
 const WIDTHS = ['100%', '76%', '89%'] as const;
 
-export function SkeletonRows({ testID, rows = 3 }: { testID: string; rows?: number }) {
+/** `padded`: com a margem lateral dos separadores (os ecrãs de jogo e a classificação). */
+export function SkeletonRows({ testID, rows = 3, padded = false }: { testID: string; rows?: number; padded?: boolean }) {
   const reduced = useReducedMotion();
   const v = useSharedValue(1);
   useEffect(() => {
@@ -20,7 +21,7 @@ export function SkeletonRows({ testID, rows = 3 }: { testID: string; rows?: numb
   }, [reduced, v]);
   const animated = useAnimatedStyle(() => ({ opacity: v.get() }));
   return (
-    <View testID={testID} accessible accessibilityLabel="A carregar" accessibilityState={{ busy: true }} style={{ gap: layout.skeletonRowsGap }}>
+    <View testID={testID} accessible accessibilityLabel="A carregar" accessibilityState={{ busy: true }} style={{ gap: layout.skeletonRowsGap, paddingHorizontal: padded ? spacing.lg : 0 }}>
       {Array.from({ length: rows }, (_, i) => (
         <Animated.View key={i} style={[{ flexDirection: 'row', alignItems: 'center', gap: layout.skeletonGap }, animated]}>
           <View style={{ width: layout.skeletonCircle, height: layout.skeletonCircle, borderRadius: layout.skeletonCircle / 2, backgroundColor: colors.surface10 }} />

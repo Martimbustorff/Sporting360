@@ -3,7 +3,7 @@
 // (número Label 16 text-subtle, nome Body 14, à direita "entrou aos 90+2'" ou "não jogou" em Caption 12 text-muted).
 // "entrou aos" vem dos lances de substituição (`events`, o mesmo documento do Sumário: quem entra é `assistId`);
 // "não jogou" só com o jogo terminado e o documento `players` com entrada do jogador com 0 minutos; nos outros casos a coluna fica vazia.
-// SEM FIGMA: a linha "Treinador", o texto sobre quando saem os onzes, o esqueleto em branco, o estado de erro,
+// SEM FIGMA: a linha "Treinador", o texto sobre quando saem os onzes, o estado de erro,
 // "Sem formações para este jogo." e o aviso de cache.
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -85,7 +85,7 @@ export function LineupsTab({ match }: { match: Match }) {
   const events = useMatchDetail(match.id, 'events');
   const [selected, setSelected] = useState<'sporting' | 'opponent'>('sporting');
   const state = uiState(match.status);
-  if (lineups.status === 'loading') return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="lineups-loading" /></View>;
+  if (lineups.status === 'loading') return <SkeletonRows padded testID="lineups-loading" />;
   if (lineups.status === 'error') return <EmptyState icon="info" text={LINEUPS_ERROR} />;
 
   const doc = lineups.status === 'ready' ? lineups.data : null;

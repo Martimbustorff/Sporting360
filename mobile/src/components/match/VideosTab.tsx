@@ -2,7 +2,7 @@
 // Eyebrow 13 primary-on-dark; os outros em linhas com miniatura 132x74, rótulo e título. A duração do frame fica
 // pendente de uma decisão futura sobre o servidor (hoje não grava `duration`). O leitor (`VideoPlayer`) mantém o comportamento.
 // Decisão: o destaque é o vídeo do tipo `resumo`; sem resumo, o primeiro da lista. Os restantes seguem por minuto.
-// SEM FIGMA: o esqueleto em branco, o estado de erro, os vazios e o aviso de cache.
+// SEM FIGMA: o estado de erro, os vazios e o aviso de cache.
 import { View } from 'react-native';
 import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
@@ -48,7 +48,7 @@ export function featuredFirst(vs: Video[]): Video[] {
 
 export function VideosTab({ match }: { match: Match }) {
   const videos = useMatchVideos(match.id);
-  if (videos.status === 'loading') return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="videos-loading" /></View>;
+  if (videos.status === 'loading') return <SkeletonRows padded testID="videos-loading" />;
   if (videos.status === 'error') return <EmptyState icon="info" text={VIDEOS_ERROR} />;
 
   const list = videos.status === 'ready' ? featuredFirst(byMinute(videos.data.filter((v) => isAllowedEmbed(v.embedSrc)))) : [];

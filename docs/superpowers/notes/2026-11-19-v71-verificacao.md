@@ -35,7 +35,7 @@ Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = difer
 | 06 Jogo · ao vivo | `GameHeader.tsx`, `MatchTimeline.tsx`, `PredictionSummary.tsx` | Chip do canal e sino não desenhados; caixas brancas lisas em vez de degradé | intencional (sem campo de TV, sem ação do sino, cores lisas) |
 | 06 | `SummaryTab.tsx` | O frame mostra "Números do jogo" (posse, remates, xG) e cartões de lance com comentário no Sumário; a app tem as estatísticas no separador Estatísticas e a cronologia do frame 08 | pendente Martim (os frames 06 e 08 mostram Sumários diferentes) |
 | 06 | `SummaryTab.tsx` | Segundo amarelo a vermelho e ordem cronológica com separadores de parte | intencional |
-| 08 Sumário terminado | `SummaryTab.tsx` | Forma, Confrontos diretos e Ausências só apareciam antes do jogo; no frame aparecem por baixo da cronologia | corrigido (`MatchContext`: só com dados, sem Previsão nem avisos; testes novos) |
+| 08 Sumário terminado | `SummaryTab.tsx` | Forma, Confrontos diretos e Ausências só apareciam antes do jogo; no frame aparecem por baixo da cronologia | corrigido (`MatchContext`: só no estado terminado, depois de os eventos carregarem, só com dados, sem Previsão nem avisos; ao vivo (06) não mostra contexto; testes novos) |
 | 08 | `SummaryTab.tsx` | Cronologia com separadores de parte e resultado, em ordem de jogo | intencional |
 | 09 MVP | `MvpTab.tsx` | Nota com vírgula, posições GR/DEF/MED/AV, lista alfabética, folha de confirmação, botão no fluxo do scroll, selo na segunda linha abaixo de 360 pt | intencional / pendente Martim (ordem alfabética), como decidido |
 | 10 Classificação | `CompetitionStandings.tsx`, `StandingsTable.tsx` | Emblemas reais, setas em Views, colunas J, DG, PTS, legenda só com zonas presentes, Segmented, critério de desempate | intencional / pendente Martim (desempate), como decidido |
@@ -143,7 +143,7 @@ Método: leitura do código contra o frame, sem build nem simulador; a verifica�
 | Grupo C | 12 | 9 | 1 |
 | Total | 56 | 21 | 12 |
 
-Diferenças intencionais registadas: 53 (decididas pelo Martim ou equivalentes nativos, não se mudam).
+Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Quatro dos pendentes (09, 10, 31, 33) estão dentro de linhas marcadas como intencionais: a diferença é intencional hoje, mas a decisão de produto fica por tomar.
 
 Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
 
