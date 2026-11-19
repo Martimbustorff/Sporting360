@@ -17,8 +17,12 @@ import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
+import { CancelLoanSheet, LOAN_TEXT, LoanConfirmSheet, loanWhen } from '@/components/LoanConfirmSheet';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { Touchable } from '@/components/Touchable';
+import { useOwnerLoans, type LoanItem } from '@/data/loans';
 import { useMyGameboxes } from '@/data/user';
+import { formatTime } from '@/lib/ptDate';
 import {
   EMPTY_SEAT,
   fromGameboxDoc,
@@ -70,6 +74,50 @@ const SEAT_FIELDS: { key: keyof Seat; label: string }[] = [
 ];
 const codeOfError = (e: unknown): GameboxSaveCode => (e instanceof GameboxSaveError ? e.saveCode : 'UNKNOWN');
 
+/** 45La / 45Lc / 45Ld: botão de emprestar, ou o cartão do empréstimo ativo com "Cancelar empréstimo". Uma só por GameBox. */
+function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: string; venue: Venue }) {
+  const loans = useOwnerLoans(gameboxId);
+  const [sheet, setSheet] = useState<'lend' | 'cancel' | null>(null);
+  if (loans.status !== 'ready') return null;
+  const active: LoanItem | undefined = loans.data[0];
+  const close = () => setSheet(null);
+  return (
+    <>
+      {active ? (
+        <View style={{ gap: layout.loanBlockGap }}>
+          <View style={{ gap: layout.loanStateGap, padding: space.s16, borderRadius: radii.r16, backgroundColor: colors.surface06, overflow: 'hidden' }}>
+            <Text71 variant="strong14">{`${LOAN_TEXT.lentFor} ${active.match.homeName} - ${active.match.awayName}`}</Text71>
+            <Text71 variant="caption12" color="textMuted">{loanWhen(active.match.kickoff)}</Text71>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.loanStateGap }}>
+              <View
+                style={{
+                  width: layout.loanDot,
+                  height: layout.loanDot,
+                  borderRadius: layout.loanDot / 2,
+                  backgroundColor: active.openedAt ? colors.primaryOnDark : colors.textSubtle,
+                }}
+              />
+              <Text71 variant="captionStrong12" color={active.openedAt ? 'primaryOnDark' : 'textMuted'} style={{ flexShrink: 1 }}>
+                {active.openedAt && active.recipientName
+                  ? `Aberto por ${active.recipientName} às ${formatTime(active.openedAt)}`
+                  : LOAN_TEXT.notOpened}
+              </Text71>
+            </View>
+          </View>
+          <PrimaryButton label={LOAN_TEXT.cancel} variant="outline" onPress={() => setSheet('cancel')} />
+        </View>
+      ) : (
+        <View style={{ gap: space.s8 }}>
+          <PrimaryButton label={LOAN_TEXT.lend} onPress={() => setSheet('lend')} />
+          <Text71 variant="caption12" color="textMuted">{LOAN_TEXT.lendHint}</Text71>
+        </View>
+      )}
+      {sheet === 'lend' && !active ? <LoanConfirmSheet gameboxId={gameboxId} number={number} venue={venue} onClose={close} /> : null}
+      {sheet === 'cancel' && active ? <CancelLoanSheet loanId={active.id} onClose={close} /> : null}
+    </>
+  );
+}
+
 function GameboxFormView({
   uid,
   routeId,
@@ -77,6 +125,7 @@ function GameboxFormView({
   initial,
   existing,
   newOrder,
+  loanNumber,
   scanned,
 }: {
   uid: string;
@@ -85,6 +134,8 @@ function GameboxFormView({
   initial: Form;
   existing: { id: string; order: number } | null;
   newOrder: number;
+  /** Número guardado, decifrado, para o empréstimo (o do formulário pode ter edições por guardar). */
+  loanNumber: string;
   scanned: string | undefined;
 }) {
   const router = useRouter();
@@ -246,6 +297,9 @@ function GameboxFormView({
               ))}
             </View>
           </View>
+          {existing && normalizeGameboxNumber(loanNumber) ? (
+            <LoanSection gameboxId={existing.id} number={normalizeGameboxNumber(loanNumber) as string} venue={venue} />
+          ) : null}
           {message ? <FormMessage text={message} /> : null}
           {existing ? (
             <Touchable
@@ -295,7 +349,7 @@ export default function GameboxEditar() {
   const nextOrder = boxes.status === 'ready' ? boxes.data.reduce((m, g) => Math.max(m, g.order), 0) + 1 : null;
 
   // O formulário parte dos dados lidos uma só vez: as atualizações em direto não apagam o que se está a escrever.
-  const [initial, setInitial] = useState<{ form: Form; title: string; existing: { id: string; order: number } | null; newOrder: number } | null>(null);
+  const [initial, setInitial] = useState<{ form: Form; title: string; existing: { id: string; order: number } | null; newOrder: number; loanNumber: string } | null>(null);
   useEffect(() => {
     if (initial !== null || !uid) return;
     const prefill = scanned ? normalizeGameboxNumber(scanned) ?? scanned : null;
@@ -305,6 +359,7 @@ export default function GameboxEditar() {
         title: FORM_TEXT.newTitle,
         existing: null,
         newOrder: nextOrder,
+        loanNumber: '',
       });
     } else if (!isNew && found) {
       const v = found.view;
@@ -313,6 +368,7 @@ export default function GameboxEditar() {
         title: FORM_TEXT.title,
         existing: { id: v.id, order: v.order },
         newOrder: nextOrder ?? v.order,
+        loanNumber: v.number,
       });
     }
   }, [initial, uid, isNew, boxes.status, found, scanned, nextOrder]);
@@ -327,6 +383,7 @@ export default function GameboxEditar() {
         initial={initial.form}
         existing={initial.existing}
         newOrder={initial.newOrder}
+        loanNumber={initial.loanNumber}
         scanned={scanned}
       />
     );

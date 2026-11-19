@@ -508,6 +508,13 @@ export const layout = {
   gameboxBlockGap: 24, // campos de cima ao cartão Estádio/Pavilhão (327:15140)
   // Folha GameBox Digital (Figma 450:5419 com GameBox, 348:39454 vazia, 348:40189 só Estádio)
   gameboxQr: 189, // 450:5526
+  // V7.1 Empréstimo de GameBox (Figma 4984:11545 folha; 4984:11918 cartão do empréstimo ativo)
+  loanCardGap: 12, // folha: emblemas e texto
+  loanCardPadX: 14,
+  loanCardPadY: 12,
+  loanStateGap: 8, // cartão ativo: ponto e estado; linhas a 8
+  loanDot: 8,
+  loanBlockGap: 12, // cartão ativo e botão Cancelar
   // V7.1 Modo bilhete (Figma 4936:7161)
   ticketRadius: 20, // cartão branco e faixa de cima
   ticketBandPadX: 20,

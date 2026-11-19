@@ -1,5 +1,5 @@
 // Tarefa 5 (Plano 7): modo bilhete. Módulos nativos simulados (__mocks__): brilho, ecrã sempre ligado e orientação.
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Match } from '@/data/schemas';
@@ -20,6 +20,11 @@ jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: 'a@b.pt', providers: ['password'] } }),
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
+const mockLoans: { current: { id: string; gameboxId: string; matchId: string }[] } = { current: [] };
+jest.mock('@/data/loans', () => ({
+  useOwnerLoans: jest.fn((id: string) => ({ status: 'ready', data: mockLoans.current.filter((l) => l.gameboxId === id) })),
+}));
+jest.mock('@/services/loans', () => ({ cancelLoan: jest.fn(() => Promise.resolve()) }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
 // Dados por modalidade: `mockMatches.current` é a lista de jogos; cada hook devolve os da sua modalidade.
 jest.mock('@/data/sports', () => ({
@@ -30,6 +35,7 @@ jest.mock('@/data/sports', () => ({
 }));
 
 import { StyleSheet } from 'react-native';
+import { cancelLoan } from '@/services/loans';
 import { colors } from '@/theme/tokens';
 import * as Brightness from 'expo-brightness';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -83,6 +89,7 @@ beforeEach(() => {
   mockFocused.current = true;
   mockBoxes.current = { status: 'ready', data: [box('g1')] };
   mockMatches.current = { status: 'ready', data: [] };
+  mockLoans.current = [];
   getBrightness.mockResolvedValue(0.4);
   appStateHandler = undefined;
   jest.spyOn(AppState, 'addEventListener').mockImplementation(((_: string, h: (s: string) => void) => {
@@ -372,5 +379,63 @@ describe('/gamebox/bilhete', () => {
       await flush();
       expect(lock).toHaveBeenLastCalledWith(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     });
+  });
+});
+
+describe('/gamebox/bilhete: GameBox emprestada', () => {
+  const lent = (gameboxId: string, matchId = 'm1') => ({ id: `L-${gameboxId}`, gameboxId, matchId });
+
+  it('emprestada para o jogo da faixa: sem QR, com o aviso e o cancelar; o lugar fica', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [lent('g1')];
+    await render(ui());
+    await flush();
+    expect(screen.getByText('Emprestada para este jogo')).toBeTruthy();
+    expect(screen.getByText('Cancela o empréstimo para voltares a usar o código.')).toBeTruthy();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    expect(screen.queryByText('Mostra este código na porta')).toBeNull();
+    expect(screen.getByText('A12')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Cancelar empréstimo' })).toBeTruthy();
+  });
+
+  it('emprestada para outro jogo: mostra o QR como sempre', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [lent('g1', 'outro')];
+    await render(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
+    expect(screen.queryByText('Emprestada para este jogo')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Cancelar empréstimo' })).toBeNull();
+  });
+
+  it('sem jogo na faixa não há estado emprestada', async () => {
+    mockLoans.current = [lent('g1')];
+    await render(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
+  });
+
+  it('cada página é a sua GameBox: só a emprestada perde o QR', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('g1'), box('g2', { order: 2 })] };
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [lent('g2')];
+    await render(ui());
+    await flush();
+    expect(screen.getAllByTestId('qrcode', { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getAllByText('Emprestada para este jogo', { includeHiddenElements: true })).toHaveLength(1);
+  });
+
+  it('cancelar pede confirmação e chama cancelLoan com o empréstimo', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [lent('g1')];
+    await render(ui());
+    await flush();
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar empréstimo' }));
+    expect(screen.getByText('Cancelar empréstimo?')).toBeTruthy();
+    expect(cancelLoan).not.toHaveBeenCalled();
+    const sheet = screen.getByTestId('modal-sheet');
+    await fireEvent.press(within(sheet).getByRole('button', { name: 'Cancelar empréstimo' }));
+    await flush();
+    expect(cancelLoan).toHaveBeenCalledWith('L-g1');
   });
 });

@@ -655,3 +655,30 @@ export const GameboxDocSchema = z.looseObject({
   default: z.boolean().catch(false),
 });
 export type GameboxDoc = z.infer<typeof GameboxDocSchema>;
+
+// Empréstimo de GameBox (loans/{id}, functions/src/loans/model.ts). O número nunca está aqui (loans/{id}/secret/number).
+// ownerUid / ownerName / recipientUid / recipientName são null depois de apagar a conta.
+export const LoanSchema = z.looseObject({
+  ownerUid: nullable(str),
+  ownerName: nullable(str),
+  gameboxId: str,
+  matchId: str,
+  sport: str.catch(''),
+  match: z.looseObject({
+    homeName: str.catch(''),
+    awayName: str.catch(''),
+    homeLogo: nullable(str),
+    awayLogo: nullable(str),
+    competition: str.catch(''),
+    kickoff: ts,
+    venue: z.enum(['stadium', 'pavilion']).catch('stadium'),
+  }),
+  seat: z.looseObject({ gate: nullable(str), sector: nullable(str), row: nullable(str), seat: nullable(str) }),
+  createdAt: ts,
+  expiresAt: ts,
+  recipientUid: nullable(str),
+  recipientName: nullable(str),
+  openedAt: nullable(ts),
+  cancelledAt: nullable(ts),
+});
+export type Loan = z.infer<typeof LoanSchema>;

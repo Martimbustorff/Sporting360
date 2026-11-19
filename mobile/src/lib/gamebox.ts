@@ -4,7 +4,7 @@
 // Também lê a GameBox antiga que a V2 guardava só em users/{uid}.gameboxNumber (cifrada ou em claro,
 // v2src utils/returnDefaultGamebox.ts e home.tsx:157-168): mostra-se como "Principal". Nunca se altera users/{uid}.
 import type { Loadable } from '@/data/hooks';
-import type { GameboxDoc, UserDoc } from '@/data/schemas';
+import { SportSchema, type GameboxDoc, type Match, type Sport, type UserDoc } from '@/data/schemas';
 import { decryptGameboxNumber, encryptGameboxNumber } from '@/lib/gameboxCrypto';
 
 export type Seat = { port: string; sector: string; line: string; seat: string };
@@ -170,3 +170,23 @@ export const ticketSeat = (g: Pick<GameboxInput, 'stadium' | 'pavilion'>, venue:
 
 /** "2665 7127 6572": o número em grupos de quatro, só para mostrar. */
 export const groupGameboxNumber = (n: string): string => n.replace(/(\d{4})(?=\d)/g, '$1 ');
+
+/** Modalidades que se jogam no recinto (futebol: Estádio; as restantes: Pavilhão). Mesma regra do servidor (callables/loans.ts). */
+export const venueSports = (venue: TicketVenue): Sport[] => SportSchema.options.filter((s) => ticketVenue(s) === venue);
+
+const GRACE_MS = 4 * 3_600_000; // um jogo por abrir há mais de 4 h deixa de contar (Home, bilhete e empréstimo)
+
+/** O primeiro jogo EM CASA ainda por jogar (ao vivo, ou NS/PST sem passar a folga); os terminados e os fora saltam. */
+export function upcomingHome(matches: readonly Match[], now: Date): Match | null {
+  return (
+    [...matches]
+      .filter((m) => m.sportingSide === 'home')
+      .sort((x, y) => x.kickoff.getTime() - y.kickoff.getTime())
+      .find((m) => m.status === 'LIVE' || m.status === 'HT' || ((m.status === 'NS' || m.status === 'PST') && m.kickoff.getTime() >= now.getTime() - GRACE_MS)) ??
+    null
+  );
+}
+
+/** O jogo que a GameBox pode emprestar: o próximo em casa do recinto (o que o servidor aceita). */
+export const loanableMatch = (matches: readonly Match[], venue: TicketVenue, now: Date): Match | null =>
+  upcomingHome(matches.filter((m) => ticketVenue(m.sport) === venue), now);

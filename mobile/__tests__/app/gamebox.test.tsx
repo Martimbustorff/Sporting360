@@ -18,6 +18,8 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
+jest.mock('@/data/loans', () => ({ useOwnerLoans: jest.fn(() => ({ status: 'ready', data: [] })) }));
+jest.mock('@/data/sports', () => ({ useUpcomingMatches: jest.fn(() => ({ status: 'ready', data: [] })) }));
 jest.mock('@/services/gamebox', () => {
   class GameboxSaveError extends Error {
     saveCode: string;

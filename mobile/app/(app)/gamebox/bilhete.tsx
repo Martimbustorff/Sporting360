@@ -18,9 +18,12 @@ import QRCode from 'react-native-qrcode-svg';
 import { EmptyState } from '@/components/EmptyState';
 import { CARD_TEXT } from '@/components/GameboxCard';
 import { Header } from '@/components/Header';
+import { CancelLoanSheet, LOAN_TEXT } from '@/components/LoanConfirmSheet';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { useNow } from '@/data/clock';
 import { useMyUser } from '@/data/hooks';
+import { useOwnerLoans } from '@/data/loans';
 import { useUpcomingMatches } from '@/data/sports';
 import { useMyGameboxes } from '@/data/user';
 import { SportSchema, type Match, type Sport } from '@/data/schemas';
@@ -31,6 +34,7 @@ import {
   resolveGameboxList,
   ticketSeat,
   ticketVenue,
+  upcomingHome,
   type GameboxView,
   type Seat,
 } from '@/lib/gamebox';
@@ -63,19 +67,6 @@ const COLUMNS: { key: keyof Seat; label: string }[] = [
 ];
 
 const sentence = (s: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
-
-const GRACE_MS = 4 * 3_600_000; // como a Home: um jogo por abrir há mais de 4 h deixa de contar
-
-/** O primeiro jogo EM CASA ainda por jogar (ao vivo, ou NS/PST sem passar a folga); os terminados e os fora saltam. */
-function upcomingHome(matches: readonly Match[], now: Date): Match | null {
-  return (
-    [...matches]
-      .filter((m) => m.sportingSide === 'home')
-      .sort((x, y) => x.kickoff.getTime() - y.kickoff.getTime())
-      .find((m) => m.status === 'LIVE' || m.status === 'HT' || ((m.status === 'NS' || m.status === 'PST') && m.kickoff.getTime() >= now.getTime() - GRACE_MS)) ??
-    null
-  );
-}
 
 const SPORTS: readonly Sport[] = SportSchema.options;
 
@@ -127,7 +118,7 @@ function Perforation() {
   );
 }
 
-function Ticket({ gamebox, index, match }: { gamebox: GameboxView; index: number; match: Match | null }) {
+function Ticket({ gamebox, index, match, lent }: { gamebox: GameboxView; index: number; match: Match | null; lent: boolean }) {
   const number = normalizeGameboxNumber(gamebox.number);
   const venue = ticketVenue(match?.sport);
   const seat = ticketSeat(gamebox, venue);
@@ -148,7 +139,13 @@ function Ticket({ gamebox, index, match }: { gamebox: GameboxView; index: number
           paddingHorizontal: layout.ticketBandPadX,
         }}
       >
-        {number ? (
+        {lent ? (
+          // 12L (4984:12044): emprestada para este jogo, o código não se mostra.
+          <View style={{ alignItems: 'center', gap: layout.loanStateGap, paddingVertical: space.s8 }}>
+            <Text71 variant="title24" color="ink" style={{ textAlign: 'center' }}>{LOAN_TEXT.lentForThisGame}</Text71>
+            <Text71 variant="caption12" color="inkMuted" style={{ textAlign: 'center' }}>{LOAN_TEXT.lentForThisGameHint}</Text71>
+          </View>
+        ) : number ? (
           <>
             <QRCode value={number} size={layout.ticketQr} color={colors.ink} backgroundColor={colors.white} quietZone={0} />
             <Text71 variant="caption12" color="inkMuted">{TICKET_TEXT.hint}</Text71>
@@ -183,6 +180,10 @@ function Ticket({ gamebox, index, match }: { gamebox: GameboxView; index: number
 }
 
 function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; index: number; match: Match | null; name: string; member: string }) {
+  // Cada página é a sua GameBox: o estado "emprestada" aplica-se quando ela tem um empréstimo ativo para o jogo da faixa.
+  const loans = useOwnerLoans(gamebox.id);
+  const loan = match && loans.status === 'ready' ? loans.data.find((l) => l.matchId === match.id) : undefined;
+  const [cancelling, setCancelling] = useState(false);
   return (
     <ScrollView
       contentContainerStyle={{
@@ -192,7 +193,7 @@ function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; i
         gap: layout.ticketBlockGap,
       }}
     >
-      <Ticket gamebox={gamebox} index={index} match={match} />
+      <Ticket gamebox={gamebox} index={index} match={match} lent={!!loan} />
       {name || member ? (
         <View style={{ alignItems: 'center', gap: layout.gameboxTextGap }}>
           {name ? <Text71 variant="label16" numberOfLines={1} ellipsizeMode="tail">{name}</Text71> : null}
@@ -201,6 +202,9 @@ function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; i
           ) : null}
         </View>
       ) : null}
+      {loan ? (
+        <PrimaryButton label={LOAN_TEXT.cancel} variant="outline" onPress={() => setCancelling(true)} />
+      ) : (
       <View
         style={{
           alignSelf: 'center',
@@ -216,6 +220,8 @@ function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; i
         <Feather name="sun" size={16} color={colors.primaryOnDark} accessibilityElementsHidden importantForAccessibility="no" />
         <Text71 variant="caption12" color="textMuted" style={{ flexShrink: 1 }}>{TICKET_TEXT.brightness}</Text71>
       </View>
+      )}
+      {cancelling && loan ? <CancelLoanSheet loanId={loan.id} onClose={() => setCancelling(false)} /> : null}
     </ScrollView>
   );
 }
