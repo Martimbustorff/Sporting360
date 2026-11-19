@@ -33,7 +33,8 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 
 - Uma fotografia do ecrã com outro telemóvel nunca se consegue impedir.
 - Bloqueio de capturas: expo-screen-capture no SDK 58 bloqueia capturas e gravações em iOS 13+ e no Android. Em iOS mais antigo só a gravação.
-- Hoje a coleção `gamebox` tem leitura pública (regra da V2) e o número está cifrado no cliente com uma chave ligada ao uid. Enquanto essa leitura pública existir, o número de qualquer GameBox continua exposto por essa via. O empréstimo não piora isto, mas a segurança completa precisa de fechar essa leitura quando a V2 sair.
+- Hoje a coleção `gamebox` tem leitura pública (regras da fase 2, por causa da V2). As regras finais (`firestore.final.rules`, passo L5 do lançamento da 7.0.0) já a fecham ao dono. O empréstimo depende dessas regras finais estarem publicadas.
+- `/e/{id}` (links universais e intent filter) e `expo-screen-capture` precisam de um binário nativo novo: não seguem por atualização OTA.
 
 ## Abordagens consideradas
 
@@ -78,6 +79,18 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 - Componente do cartão partilhado com o cartão de prognóstico do frame 30 (extrair o layout comum em vez de copiar).
 - `usePreventScreenCapture` só neste ecrã.
 - Frames novos no Figma: botão e escolha do jogo no detalhe da GameBox, folha de partilha, estado no detalhe, ecrã do empréstimo, estados já aberto noutra conta, expirado e cancelado, página web de instalar.
+
+## Detalhes resolvidos na revisão do desenho (decisões minhas)
+
+- **Validade enquanto o jogo não acaba:** `expiresAt` começa em início marcado + 4 h. Enquanto o jogo não começa, segue a hora marcada se for remarcado. Quando a API dá FT, AET ou PEN, o servidor muda para fim + 2 h. Se o jogo ficar preso num estado não final, vale o início + 4 h. Adiado sem nova data: expira na hora original + 2 h.
+- **Quem atualiza:** o caminho que já trata o fim do jogo no servidor (o mesmo que fecha prognósticos e MVP) atualiza os empréstimos desse jogo. A tarefa agendada só limpa os que ficaram para trás.
+- **Cancelar:** `cancelLoan` apaga logo `secret/number`. As regras verificam também `cancelledAt == null` e `expiresAt > agora` no momento da leitura, por isso a tarefa agendada não é a única barreira.
+- **GameBox apagada ou conta apagada:** os empréstimos dessa GameBox ou desse dono são cancelados e o número apagado (também no `deleteAccount`). O lugar e o número ficam congelados no momento em que o empréstimo é criado.
+- **Lugar no cartão:** escolhe-se pela modalidade do jogo, como o `ticketVenue` do modo bilhete. Se o lugar dessa modalidade estiver vazio, o cartão mostra só o QR e o recinto.
+- **App por instalar ou sem sessão:** sem link diferido. A página web diz "Instala a app S360 e volta a tocar neste link." Sem sessão, a app guarda o link durante a entrada e abre o empréstimo a seguir.
+- **O dono abre o próprio link:** vê o estado do empréstimo (o mesmo do detalhe da GameBox).
+- **Estado do dono:** lê-se dos `loans` com consulta por `ownerUid` (índice composto). Nunca se escreve nada novo nos documentos `gamebox`, para não mexer na V2. Um empréstimo cancelado pode ser substituído por outro para o mesmo jogo.
+- **O que o dono vê:** "Aberto por {nome público} às 18:42". Quem recebe vê "Emprestada por {nome público}". Nunca nome completo nem email.
 
 ## Decisões minhas (para o Martim confirmar ao ler)
 
