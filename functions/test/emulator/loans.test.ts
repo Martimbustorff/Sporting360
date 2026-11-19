@@ -107,10 +107,17 @@ describe("createLoan: validação", () => {
     expect((await code(create(alice, { matchId: "stale" })))?.code).toBe("failed-precondition");
     expect((await db.collection("loans").get()).size).toBe(0);
   });
-  it("jogo ao vivo há 6 h (prolongamento longo, validade já passada): finished", async () => {
+  it("LIVE preso há 6 h e NS amanhã: amanhã aceita, o LIVE é not-next", async () => {
+    await db.doc("matches/m2").delete();
+    await seedNs("stuck", new Date("2026-11-19T06:00:00Z"), { status: "LIVE", statusRaw: "2H", elapsed: 80 });
+    await seedNs("tom", new Date("2026-11-20T20:00:00Z"));
+    expect(await code(create(alice, { matchId: "stuck" }))).toEqual({ code: "failed-precondition", reason: "not-next" });
+    await create(alice, { matchId: "tom" });
+  });
+  it("NS exatamente há 4 h (validade a acabar agora): finished, nunca nasce expirado", async () => {
     await db.doc("matches/m1").delete();
     await db.doc("matches/m2").delete();
-    await seedNs("p", new Date("2026-11-19T06:00:00Z"), { status: "LIVE", statusRaw: "2H", elapsed: 80 });
+    await seedNs("p", new Date("2026-11-19T08:00:00Z"));
     expect(await code(create(alice, { matchId: "p" }))).toEqual({ code: "failed-precondition", reason: "finished" });
   });
   it.each(["", "   ", "12345", "abc123456", "1".repeat(21), 123456789, undefined])("número %p: invalid-argument", async (n) => {

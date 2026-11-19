@@ -13,10 +13,10 @@ export const LOAN_URL_BASE = "https://s360-prognostico-download.web.app/e/";
 const FOOTBALL = "football";
 const FINISHED = ["FT", "AET", "PEN", "CANC"];
 const LOAN_ID_RE = /^[A-Za-z0-9_-]{22}$/;
-// Igual ao modo bilhete da app (mobile/app/(app)/gamebox/bilhete.tsx `upcomingHome`, mobile/src/data/sports.ts):
-// ao vivo (LIVE/HT) conta sempre; NS e PST contam até 4 h depois da hora marcada. Mais antigos por terminar (dados parados) não bloqueiam.
+// Igual ao modo bilhete da app (mobile/src/data/sports.ts `upcomingQuery` e mobile/app/(app)/gamebox/bilhete.tsx `upcomingHome`):
+// só jogos com início nas últimas 4 h ou depois, seja qual for o estado; destes, LIVE/HT, NS e PST. Um jogo preso em LIVE há mais
+// de 4 h não conta, tal como a app não o vê.
 const NEXT_GRACE_MS = 4 * 3600_000;
-const NEXT_QUERY_LOOKBACK_MS = 24 * 3600_000;
 const NEXT_QUERY_LIMIT = 30;
 const SPORTS = ["football", "futsal", "handball", "roller_hockey", "volleyball", "basketball"] as const;
 
@@ -53,7 +53,7 @@ async function publicNameOf(db: Firestore, uid: string): Promise<string> {
 /** Próximo jogo em casa, por terminar, das modalidades do recinto (futebol: Estádio; outras: Pavilhão). */
 async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now: Date): Promise<string | null> {
   const sports = SPORTS.filter((s) => venueOf(s) === venue);
-  const from = Timestamp.fromMillis(now.getTime() - NEXT_QUERY_LOOKBACK_MS);
+  const from = Timestamp.fromMillis(now.getTime() - NEXT_GRACE_MS);
   const snaps = await Promise.all(
     sports.map((s) => db.collection("matches").where("sport", "==", s).where("kickoff", ">=", from).orderBy("kickoff").limit(NEXT_QUERY_LIMIT).get()),
   );
@@ -63,9 +63,7 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
       const m = d.data() as MatchDoc;
       if (m.sportingSide !== "home") continue;
       const at = (m.kickoff as unknown as Timestamp).toMillis();
-      const live = m.status === "LIVE" || m.status === "HT";
-      const upcoming = (m.status === "NS" || m.status === "PST") && at >= now.getTime() - NEXT_GRACE_MS;
-      if (!live && !upcoming) continue;
+      if (!["LIVE", "HT", "NS", "PST"].includes(m.status)) continue;
       if (!best || at < best.at) best = { id: d.id, at };
     }
   }
