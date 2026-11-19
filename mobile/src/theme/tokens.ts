@@ -515,6 +515,10 @@ export const layout = {
   loanStateGap: 8, // cartão ativo: ponto e estado; linhas a 8
   loanDot: 8,
   loanBlockGap: 12, // cartão ativo e botão Cancelar
+  // V7.1 Empréstimo, ecrã de quem recebe (Figma 4984:12396) e linha "emprestada a mim" (4984:11976)
+  loanQr: 165, // QR do cartão do empréstimo (4984:13083), dentro da caixa branca
+  loanQrPad: 16, // zona de silêncio da caixa branca (4984:13082)
+  loanRowPadY: 14, // linha com nome e "Emprestada por": 14 em cima e em baixo (as outras linhas levam gameboxRowPadY)
   // V7.1 Modo bilhete (Figma 4936:7161)
   ticketRadius: 20, // cartão branco e faixa de cima
   ticketBandPadX: 20,

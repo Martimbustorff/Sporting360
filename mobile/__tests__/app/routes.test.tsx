@@ -16,6 +16,8 @@ jest.mock('@/data/hooks', () => ({
   usePublicProfile: () => ({ status: 'loading' }),
   useAppConfig: () => ({ status: 'loading' }),
 }));
+// Plano 8: a lista de GameBox lê os empréstimos recebidos (aqui sem nenhum).
+jest.mock('@/data/loans', () => ({ useRecipientLoans: () => ({ status: 'ready', data: [] }) }));
 // expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest: a folha (Sheet) fica de fora.
 jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
 // Plano 7 T6: o expo-router/testing-library troca o Reanimated por {}; o scroll/colapso do cabeçalho do jogo

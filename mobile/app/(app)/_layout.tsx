@@ -1,6 +1,7 @@
-import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
+import { Redirect, Stack, useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AnalyticsConsentSheet } from '@/components/AnalyticsConsentSheet';
+import { setPendingLink } from '@/lib/pendingLink';
 import { peekSignOutNotice } from '@/lib/signOutNotice';
 import { BiometricGate } from '@/providers/BiometricGate';
 import { PushSetup } from '@/providers/PushSetup';
@@ -44,11 +45,24 @@ function AnalyticsConsentGate({ onSettled }: { onSettled: () => void }) {
 // Guarda: só sessões signedIn entram em (app). `loading` não desenha nada (o splash continua no root).
 // O BiometricGate envolve só (app): os ecrãs de (auth) nunca ficam bloqueados.
 // R17: um aviso pendente (ex.: conta apagada) segue no redirect para o Welcome, que o mostra e limpa.
+// Plano 8, Task 6: sem sessão, o caminho tentado (/e/{id} ou /j, nada mais) fica guardado (lib/pendingLink) e o guarda de
+// (auth) abre-o depois de entrar. No /j leva também a query (game, src), que o caminho não traz.
 export default function AppLayout() {
   const { status, user } = useSession();
   const [consentSettled, setConsentSettled] = useState(false);
+  const pathname = usePathname();
+  const query = useGlobalSearchParams<{ game?: string | string[]; src?: string | string[] }>();
   if (status === 'loading') return null;
   if (status === 'signedOut') {
+    const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+    const search = new URLSearchParams();
+    if (pathname === '/j') {
+      const game = first(query.game);
+      const src = first(query.src);
+      if (src) search.set('src', src);
+      if (game) search.set('game', game);
+    }
+    setPendingLink(search.size ? `${pathname}?${search.toString()}` : pathname);
     const aviso = peekSignOutNotice();
     return <Redirect href={aviso ? { pathname: '/welcome', params: { aviso } } : '/welcome'} />;
   }

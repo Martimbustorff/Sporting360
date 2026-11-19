@@ -2,6 +2,8 @@
 // separador de 1 pt; "+" branco de 60 a 24 pt da direita e de baixo. Lista por ordem, com arrastar: a pega à esquerda
 // move a linha (PanResponder) e as ações de acessibilidade "Mover para cima/baixo" fazem o mesmo; só o campo `order` se grava.
 // "Principal" é a GameBox antiga da V2 (users/{uid}.gameboxNumber): etiqueta e número, com opção de a copiar para a lista.
+// Empréstimos recebidos (Figma V7.1 44L 4984:11926): depois das GameBox, linha "Sporting CP - FC Porto" com "Emprestada por {nome}",
+// sem pega de arrastar, que abre /emprestimo/{id}; só os ativos (useRecipientLoans) e saem da lista no instante em que deixam de o ser.
 // SEM FIGMA: esqueleto, erro, vazio, aviso de cache e o bloco "Principal" (botão PrimaryButton).
 // Task 23: lista as GameBox do utilizador (gamebox, por `order`). Sem documentos e com número no perfil da V2,
 // mostra-o como "Principal" e oferece copiá-lo para a coleção no formato da V2. users/{uid} nunca se altera.
@@ -18,6 +20,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
+import { useRecipientLoans, type LoanItem } from '@/data/loans';
 import { useMyGameboxes } from '@/data/user';
 import { gameboxLabel, resolveGameboxList, type GameboxInput } from '@/lib/gamebox';
 import { useSession } from '@/providers/SessionProvider';
@@ -80,6 +83,34 @@ function LegacyPrincipal({ uid, legacy }: { uid: string; legacy: GameboxInput })
       {message ? <FormMessage text={message} /> : null}
       <PrimaryButton label={GAMEBOX_TEXT.legacySave} onPress={() => void copy()} loading={loading} />
     </View>
+  );
+}
+
+const lentBy = (name: string | null) => (name ? `Emprestada por ${name}` : 'Emprestada');
+
+function LentRow({ loan, onOpen }: { loan: LoanItem; onOpen: () => void }) {
+  const title = `${loan.match.homeName} - ${loan.match.awayName}`;
+  const sub = lentBy(loan.ownerName);
+  return (
+    <Touchable
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${sub}`}
+      onPress={onOpen}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: layout.gameboxRowGap,
+        paddingVertical: layout.loanRowPadY,
+        borderBottomWidth: layout.separator,
+        borderBottomColor: colors.separator,
+      }}
+    >
+      <View style={{ flex: 1, minWidth: 0, gap: layout.gameboxTextGap }}>
+        <Text71 variant="titleS20" numberOfLines={1} ellipsizeMode="tail">{title}</Text71>
+        <Text71 variant="captionStrong12" color="primaryOnDark" numberOfLines={1} ellipsizeMode="tail">{sub}</Text71>
+      </View>
+      <Feather name="chevron-right" size={layout.gameboxRowArrow} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
+    </Touchable>
   );
 }
 
@@ -237,6 +268,8 @@ export default function Gamebox() {
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const boxes = useMyGameboxes(uid);
   const user = useMyUser(uid);
+  const lentLoans = useRecipientLoans();
+  const lent = lentLoans.status === 'ready' ? [...lentLoans.data].sort((a, b) => a.match.kickoff.getTime() - b.match.kickoff.getTime()) : [];
 
   const state = resolveGameboxList(boxes, user, uid);
   const [dragging, setDragging] = useState(false);
@@ -263,9 +296,12 @@ export default function Gamebox() {
         >
           <View>
             <ReorderableList list={list} onOpen={(id) => router.push(`/gamebox/${id}`)} onDragging={setDragging} />
+            {lent.map((l) => (
+              <LentRow key={l.id} loan={l} onOpen={() => router.push(`/emprestimo/${l.id}`)} />
+            ))}
           </View>
           {legacy ? <LegacyPrincipal uid={uid} legacy={legacy} /> : null}
-          {list.length === 0 && !legacy ? <EmptyState icon="info" text={GAMEBOX_TEXT.empty} /> : null}
+          {list.length === 0 && !legacy && lent.length === 0 ? <EmptyState icon="info" text={GAMEBOX_TEXT.empty} /> : null}
         </ScrollView>
       </>
     );

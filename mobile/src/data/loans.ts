@@ -1,11 +1,12 @@
 // Plano 8, Task 5: empréstimos de GameBox, só leitura (o servidor escreve). O dono lê os seus (ownerUid == eu) e quem recebeu
 // lê os que tem preso (recipientUid == eu), como pedem as regras. O número nunca está nestes documentos.
 import { useMemo } from 'react';
+import { z } from 'zod';
 import { collection, query, where } from '@react-native-firebase/firestore';
 import { useSession } from '@/providers/SessionProvider';
 import { db } from '@/services/firebase';
 import { useNow } from './clock';
-import { useCollection, type Loadable } from './hooks';
+import { useCollection, useDocument, type Loadable } from './hooks';
 import { LoanSchema, type Loan } from './schemas';
 
 export type LoanItem = Loan & { id: string };
@@ -39,4 +40,23 @@ export function useOwnerLoans(gameboxId: string): Loadable<LoanItem[]> {
 /** Empréstimos ativos que o utilizador recebeu. */
 export function useRecipientLoans(): Loadable<LoanItem[]> {
   return useActiveLoans('recipientUid', null);
+}
+
+const SecretSchema = z.object({ number: z.string().min(1) });
+export type LoanSecret = z.infer<typeof SecretSchema>;
+
+/**
+ * Um empréstimo (loans/{id}). `id` null não subscreve: o destinatário só lê depois do claim (antes, só o dono lê).
+ * Quando as regras deixam de o permitir, o listener falha e o estado passa a `error`.
+ */
+export function useLoan(id: string | null): Loadable<Loan> {
+  return useDocument(id ? `loans/${id}` : null, LoanSchema);
+}
+
+/**
+ * O número da GameBox emprestada (loans/{id}/secret/number). Só o destinatário preso o lê, enquanto o empréstimo está
+ * ativo: cancelado ou expirado, o listener falha com permissão negada (`error`). O número nunca vai a texto nem a logs.
+ */
+export function useLoanSecret(id: string | null): Loadable<LoanSecret> {
+  return useDocument(id ? `loans/${id}/secret/number` : null, SecretSchema);
 }

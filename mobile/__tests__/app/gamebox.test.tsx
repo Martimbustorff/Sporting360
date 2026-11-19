@@ -18,7 +18,11 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
-jest.mock('@/data/loans', () => ({ useOwnerLoans: jest.fn(() => ({ status: 'ready', data: [] })) }));
+const mockRecipientLoans: { current: unknown } = { current: { status: 'ready', data: [] } };
+jest.mock('@/data/loans', () => ({
+  useOwnerLoans: jest.fn(() => ({ status: 'ready', data: [] })),
+  useRecipientLoans: jest.fn(() => mockRecipientLoans.current),
+}));
 jest.mock('@/data/sports', () => ({ useUpcomingMatches: jest.fn(() => ({ status: 'ready', data: [] })) }));
 jest.mock('@/services/gamebox', () => {
   class GameboxSaveError extends Error {
@@ -65,6 +69,7 @@ beforeEach(() => {
   mockParams.current = {};
   mockBoxes.current = ready([]);
   mockUser.current = ready({ name: 'Maria' });
+  mockRecipientLoans.current = ready([]);
 });
 
 describe('Gestão de GameBox', () => {
@@ -115,6 +120,37 @@ describe('Gestão de GameBox', () => {
       await act1('Ana', 'moveUp');
       expect(await screen.findByText('Não foi possível guardar a nova ordem. Tenta outra vez.')).toBeTruthy();
       expect(labels()).toEqual(['João', 'Ana', 'GameBox X']);
+    });
+  });
+
+  describe('emprestadas a mim (frame 44L)', () => {
+    const lent = (id: string, ownerName: string | null, away = 'FC Porto') => ({
+      id,
+      ownerName,
+      match: { homeName: 'Sporting CP', awayName: away, kickoff: new Date(Date.now() + 86_400_000) },
+    });
+
+    it('mostra "Sporting CP - FC Porto" e "Emprestada por {nome}", sem pega, e abre o empréstimo', async () => {
+      mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' })]);
+      mockRecipientLoans.current = ready([lent('L1', 'leao_1906')]);
+      await render(wrap(<GameboxList />));
+      expect(screen.getByText('Sporting CP - FC Porto')).toBeTruthy();
+      expect(screen.getByText('Emprestada por leao_1906')).toBeTruthy();
+      expect(screen.getAllByTestId('gamebox-drag-handle', { includeHiddenElements: true })).toHaveLength(1);
+      await fireEvent.press(screen.getByRole('button', { name: 'Sporting CP - FC Porto, Emprestada por leao_1906' }));
+      expect(mockRouter.push).toHaveBeenCalledWith('/emprestimo/L1');
+    });
+
+    it('sem nome do dono mostra só "Emprestada"', async () => {
+      mockRecipientLoans.current = ready([lent('L1', null)]);
+      await render(wrap(<GameboxList />));
+      expect(screen.getByText('Emprestada')).toBeTruthy();
+    });
+
+    it('com empréstimos mas sem GameBox próprias não mostra o vazio', async () => {
+      mockRecipientLoans.current = ready([lent('L1', 'ana')]);
+      await render(wrap(<GameboxList />));
+      expect(screen.queryByText('Ainda não tens nenhuma GameBox. Toca em + para adicionar.')).toBeNull();
     });
   });
 
