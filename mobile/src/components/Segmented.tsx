@@ -1,6 +1,7 @@
 // Figma V7.1: alternador "Parte" 4947:8240 (Jogo / 1.ª parte / 2.ª parte) e "Equipa" 4947:8526 (Sporting · 3-4-3 /
 // adversário). Fundo surface-06 raio 10 com 4 de folga; item Label 16, ativo branco sobre primary raio 8, inativo
 // text-muted. O alvo de toque de 44 pt vem do Touchable.
+import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
@@ -12,7 +13,7 @@ export function Segmented<K extends string>({
   onChange,
   testID,
 }: {
-  items: { key: K; label: string }[];
+  items: { key: K; label: string; content?: ReactNode }[];
   value: K;
   onChange: (k: K) => void;
   testID?: string;
@@ -50,7 +51,7 @@ export function Segmented<K extends string>({
               backgroundColor: active ? colors.primary : undefined,
             }}
           >
-            <Text71 variant="label16" color={active ? 'white' : 'textMuted'} numberOfLines={1}>{it.label}</Text71>
+            {it.content ?? <Text71 variant="label16" color={active ? 'white' : 'textMuted'} numberOfLines={1}>{it.label}</Text71>}
           </Touchable>
         );
       })}

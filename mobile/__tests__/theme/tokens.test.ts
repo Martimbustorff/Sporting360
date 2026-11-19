@@ -21,7 +21,6 @@ const MAP: Record<string, string> = {
   textDisabled: 'disabled',
   cardYellow: 'yellow',
   cardYellowAlt: 'yellowAlt',
-  cardYellowStat: 'yellowStat',
   cardRed: 'red',
   toggleOn: 'toggleOn',
   sheetCard: 'sheetCard',

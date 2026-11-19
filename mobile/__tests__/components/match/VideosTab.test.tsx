@@ -116,12 +116,6 @@ describe('Vídeos', () => {
     expect(rows()).toEqual(['video-row-g3', 'video-row-g9']);
   });
 
-  it('duração só aparece quando o vídeo a tem', async () => {
-    mockVideos.current = ready([v('resumo', { type: 'resumo', duration: 252 }), v('g1', { minute: '5' })]);
-    await render(<VideosTab match={match()} />);
-    expect(screen.getAllByTestId('video-duration')).toHaveLength(1);
-    expect(within(screen.getByTestId('video-row-resumo')).getByText('4:12')).toBeTruthy();
-  });
 
   it('rótulos por tipo em pt-PT', async () => {
     mockVideos.current = ready([

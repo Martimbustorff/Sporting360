@@ -31,7 +31,6 @@ export const colors = {
   // Match events
   cardYellow: '#F7CF46',
   cardYellowAlt: '#FFB648',
-  cardYellowStat: '#FFC700', // Figma 498:28525 (cartão amarelo nas Estatísticas)
   cardRed: '#F74C66',
 
   // Interruptor ligado (Figma 306:6426, verde iOS)
@@ -147,9 +146,6 @@ export const type = {
   authIntro: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
   termsBody: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
   // Formações (Figma 498:28140): número na camisola 498:28147 e apelido 498:28149
-  pitchNumber: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
-  pitchName: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.black, textAlign: 'center' },
-  pitchRating: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.white }, // SEM FIGMA: nota do jogador
   // Classificação (Figma 500:29367): cabeçalho 500:29409 (DIN 18 a 60 %), equipa 500:29419, valores 500:29420, posição 500:29424
   tableHead: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
   tableTeam: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.white },
@@ -224,8 +220,6 @@ export const layout = {
   videoRowThumb: { width: 132, height: 74 }, // 4947:8624, miniatura das linhas
   videoPlayCircle: 44, // botão de play 16:9 (a miniatura grande tem o círculo a 44)
   videoPlayCircleSmall: 32,
-  videoDurationInset: 8,
-  videoDurationRadius: 4,
   videoRowRadius: 8, // miniatura das linhas (4947:8624)
   videoLabelGap: 4, // rótulo do tipo ao título
   headerHeight: 96,
@@ -282,10 +276,6 @@ export const layout = {
   // Event rows (Figma 655:31908 / 655:31916)
   eventRowGap: 16,
   eventRowMinHeight: 40,
-  cardWidth: 13, // yellow / red card glyph inside the 32px icon
-  cardHeight: 19,
-  cardRadius: 2,
-  cardRotation: '9.07deg',
   subIcon: { width: 16, height: 18 }, // substitution arrows (Figma 655:31919)
   menuRowIcon: 24, // Figma 564:7096 (icon and arrow)
   menuRowGap: 16,
@@ -355,23 +345,9 @@ export const layout = {
   formChipRadius: 6, // 4933:7347
   formRowGap: 6,
   venuePhotoAspect: 16 / 9, // stadium photo under "Informação do Jogo"
-  // Estatísticas (Figma 500:28650): linha de 23 px, 20 px entre linhas e divisória; valores a 30 % antes do jogo (500:29279)
-  statRowGap: 20,
-  statRowHeight: 23,
+  // Estatísticas: valores a 30 % antes do jogo (500:29279)
   statValueWidth: 64,
-  statCardGap: 9,
   statMutedOpacity: 0.3,
-  // Formações (Figma 498:28129 campo 347x533.14; jogador 498:28140: camisola 30.028x28, número a 7 px do topo,
-  // caixa do apelido branca com padding 5/4 e raio 4). Guarda-redes da casa sobe 7 px sobre a linha de fundo (498:28345).
-  pitch: { width: 347, height: 533.14 },
-  shirt: { width: 30.028, height: 28 },
-  shirtNumberTop: 7,
-  pitchNamePadX: 5,
-  pitchNamePadY: 4,
-  pitchGkOverlap: 7,
-  pitchMidGap: 16, // SEM FIGMA: folga entre a última linha e o meio-campo (a maqueta tem 14 a 21 px)
-  pitchNameMaxWidth: 76, // SEM FIGMA: a 4 por linha cabem 4 caixas sem se tocarem; o resto leva reticências
-  pitchRatingPadX: 4, // SEM FIGMA: etiqueta da nota ao lado da camisola
   subNumberWidth: 28, // SEM FIGMA: coluna do número na lista de suplentes
   // Classificação (Figma 500:29367): linha de 34 px, 8 px entre divisória e linha, círculo da posição 26 px
   // (positionCircle), nome a 34 px da esquerda; colunas J/V/E/D a ~31 px, G a ~40, P a ~30 (centros 162/193/224/256/290/331).

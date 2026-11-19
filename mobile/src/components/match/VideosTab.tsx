@@ -1,6 +1,6 @@
-// Figma V7.1: 4947:8624 (33 Jogo · Vídeos): o primeiro vídeo (o resumo) em destaque 16:9 com a duração e o rótulo do tipo
-// em Eyebrow 13 primary-on-dark; os outros em linhas com miniatura 132x74, rótulo e título. A duração só aparece se o
-// vídeo a tiver (`duration`, ainda não gravada pelo servidor). O leitor (`VideoPlayer`) mantém o comportamento.
+// Figma V7.1: 4947:8624 (33 Jogo · Vídeos): o primeiro vídeo (o resumo) em destaque 16:9 com o rótulo do tipo em
+// Eyebrow 13 primary-on-dark; os outros em linhas com miniatura 132x74, rótulo e título. A duração do frame fica
+// pendente de uma decisão futura sobre o servidor (hoje não grava `duration`). O leitor (`VideoPlayer`) mantém o comportamento.
 // Decisão: o destaque é o vídeo do tipo `resumo`; sem resumo, o primeiro da lista. Os restantes seguem por minuto.
 // SEM FIGMA: o esqueleto em branco, o estado de erro, os vazios e o aviso de cache.
 import { View } from 'react-native';

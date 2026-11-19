@@ -85,8 +85,8 @@ describe('Formações', () => {
   it('Sporting primeiro: tática no alternador, 11 jogadores no campo, treinador, suplentes e notas', async () => {
     mockDetails.current = { lineups: lineups(), players };
     await render(<LineupsTab match={match('LIVE')} />);
-    expect(screen.getByText('Sporting CP · 4-3-3')).toBeTruthy();
-    expect(screen.getByText('SC Braga · 4-4-2')).toBeTruthy();
+    expect(screen.getByLabelText('Sporting CP · 4-3-3')).toBeTruthy();
+    expect(screen.getByLabelText('SC Braga · 4-4-2')).toBeTruthy();
     expect(screen.getByText('Rui Borges')).toBeTruthy();
     expect(screen.queryByText('Carlos Vicens')).toBeNull();
     expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
@@ -98,7 +98,7 @@ describe('Formações', () => {
   it('alternador: o adversário mostra o seu onze, treinador e suplentes', async () => {
     mockDetails.current = { lineups: lineups(), players };
     await render(<LineupsTab match={match('LIVE')} />);
-    await fireEvent.press(screen.getByText('SC Braga · 4-4-2'));
+    await fireEvent.press(screen.getByLabelText('SC Braga · 4-4-2'));
     expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
     expect(screen.getByText('Carlos Vicens')).toBeTruthy();
     expect(screen.getByText('B. Suplente200')).toBeTruthy();
@@ -169,11 +169,32 @@ describe('Formações', () => {
         { minute: 90, extra: 2, teamId: '228', playerId: '2', assistId: '151', type: 'subst', detail: '' },
       ] },
     };
-    mockDetails.current = { lineups: lineups([t, team('217', 200, '4-4-2', 'X')]), events: ev };
+    const ps = { status: 'ready' as const, data: { teams: [{ teamId: '228', players: [
+      { playerId: '150', minutes: 20 }, { playerId: '151', minutes: 3 }, { playerId: '152', minutes: 0 },
+    ] }] } };
+    mockDetails.current = { lineups: lineups([t, team('217', 200, '4-4-2', 'X')]), events: ev, players: ps };
     await render(<LineupsTab match={match('FT')} />);
     expect(screen.getByText("entrou aos 67'")).toBeTruthy();
     expect(screen.getByText("entrou aos 90+2'")).toBeTruthy();
     expect(screen.getByText('não jogou')).toBeTruthy();
+  });
+
+  it('FT sem documento players: sem "não jogou"', async () => {
+    mockDetails.current = { lineups: lineups() };
+    await render(<LineupsTab match={match('FT')} />);
+    expect(screen.queryByText('não jogou')).toBeNull();
+    mockDetails.current = { lineups: lineups(), players: { status: 'error', error: new Error('x') } };
+    await render(<LineupsTab match={match('FT')} />);
+    expect(screen.queryByText('não jogou')).toBeNull();
+  });
+
+  it('nome longo na etiqueta do alternador encurta; a tática fica sempre inteira', async () => {
+    mockDetails.current = { lineups: lineups(), players };
+    await render(<LineupsTab match={match('LIVE')} />);
+    expect(screen.getByText('Sporting CP').props.numberOfLines).toBe(1);
+    expect(screen.getByText('Sporting CP').props.style).toEqual(expect.arrayContaining([expect.objectContaining({ flexShrink: 1 })]));
+    const f = StyleSheet.flatten(screen.getByText(' · 4-3-3').props.style as object) as { flexShrink: number };
+    expect(f.flexShrink).toBe(0);
   });
 
   it('jogo em curso: sem "não jogou"', async () => {
@@ -189,7 +210,7 @@ describe('Formações', () => {
     expect(mockPush).toHaveBeenCalledWith('/equipa/jogador/100');
     await fireEvent.press(screen.getByLabelText('Suplente B. Suplente100'));
     expect(mockPush).toHaveBeenLastCalledWith('/equipa/jogador/150');
-    await fireEvent.press(screen.getByText('SC Braga · 4-4-2'));
+    await fireEvent.press(screen.getByLabelText('SC Braga · 4-4-2'));
     expect(screen.getByLabelText('1 A. Jogador200').props.accessibilityRole).not.toBe('button');
     await fireEvent.press(screen.getByLabelText('1 A. Jogador200'));
     expect(mockPush).toHaveBeenCalledTimes(2);
@@ -223,7 +244,7 @@ describe('Formações', () => {
   it('só uma equipa (Review Focus 1): mostra essa e "Onze ainda não disponível." na outra', async () => {
     mockDetails.current = { lineups: lineups([team('228', 100, '4-3-3', 'Rui Borges')]), players };
     await render(<LineupsTab match={match('LIVE')} />);
-    expect(screen.getByText('Sporting CP · 4-3-3')).toBeTruthy();
+    expect(screen.getByLabelText('Sporting CP · 4-3-3')).toBeTruthy();
     expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
     expect(screen.queryByText('Onze ainda não disponível.')).toBeNull();
     await fireEvent.press(screen.getByText('SC Braga'));

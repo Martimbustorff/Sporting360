@@ -1,5 +1,5 @@
 // Task 10: tab Estatísticas. Hooks de dados mockados (sem rede).
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { colors } from '@/theme/tokens';
 import type { GameStatus, Match } from '@/data/schemas';
@@ -102,35 +102,6 @@ describe('Estatísticas', () => {
     const bg = (n: { props: Record<string, any> }) => (StyleSheet.flatten(n.props.style as object) as { backgroundColor: string }).backgroundColor;
     expect(bg(screen.getAllByTestId('stat-bar-home')[2]!)).toBe(colors.surface20);
     expect(bg(screen.getAllByTestId('stat-bar-away')[2]!)).toBe(colors.primaryOnDark);
-  });
-
-  it('sem as partes no documento: sem alternador Jogo / 1.ª parte / 2.ª parte', async () => {
-    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
-    await render(<StatsTab match={match('FT')} />);
-    expect(screen.queryByTestId('period-selector')).toBeNull();
-    expect(screen.queryByText('1.ª parte')).toBeNull();
-  });
-
-  it('com as partes: alternador e valores da parte escolhida', async () => {
-    const first = { teams: [{ teamId: '228', items: { 'Total Shots': 5 } }, { teamId: '217', items: { 'Total Shots': 1 } }], xg: null };
-    const second = { teams: [{ teamId: '228', items: { 'Total Shots': 7 } }, { teamId: '217', items: { 'Total Shots': 3 } }], xg: null };
-    mockDetails.current = { statistics: { status: 'ready', data: { ...statsDoc(), periods: { first, second } } } };
-    await render(<StatsTab match={match('FT')} />);
-    expect(screen.getByTestId('period-selector')).toBeTruthy();
-    expect(texts('stat-home')[2]).toBe('12');
-    await fireEvent.press(screen.getByText('1.ª parte'));
-    expect(texts('stat-home')[2]).toBe('5');
-    await fireEvent.press(screen.getByText('2.ª parte'));
-    expect(texts('stat-home')[2]).toBe('7');
-    await fireEvent.press(screen.getByText('Jogo'));
-    expect(texts('stat-home')[2]).toBe('12');
-  });
-
-  it('só uma parte no documento: sem alternador', async () => {
-    const first = { teams: [], xg: null };
-    mockDetails.current = { statistics: { status: 'ready', data: { ...statsDoc(), periods: { first, second: null } } } };
-    await render(<StatsTab match={match('FT')} />);
-    expect(screen.queryByTestId('period-selector')).toBeNull();
   });
 
   it('casa e fora pelo teamId mesmo com teams[0] a ser a de fora', async () => {

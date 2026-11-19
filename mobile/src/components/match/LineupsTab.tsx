@@ -2,7 +2,7 @@
 // uma equipa de cada vez (`Pitch`, jogador 4947:8538), "SUPLENTES" em Eyebrow 13 text-subtle e linhas de suplente
 // (número Label 16 text-subtle, nome Body 14, à direita "entrou aos 90+2'" ou "não jogou" em Caption 12 text-muted).
 // "entrou aos" vem dos lances de substituição (`events`, o mesmo documento do Sumário: quem entra é `assistId`);
-// "não jogou" só com o jogo terminado e sem entrada nem minutos; nos outros casos a coluna fica vazia.
+// "não jogou" só com o jogo terminado e o documento `players` com entrada do jogador com 0 minutos; nos outros casos a coluna fica vazia.
 // SEM FIGMA: a linha "Treinador", o texto sobre quando saem os onzes, o esqueleto em branco, o estado de erro,
 // "Sem formações para este jogo." e o aviso de cache.
 import { router } from 'expo-router';
@@ -41,12 +41,13 @@ function entryTexts(events: EventsDoc | null, teamId: string): Record<string, st
   return out;
 }
 
-function playedMinutes(players: PlayersDoc | null, playerId: string): number {
+/** Minutos do jogador no documento `players`; null se não há documento ou entrada para ele. */
+function playedMinutes(players: PlayersDoc | null, playerId: string): number | null {
   for (const t of players?.teams ?? []) {
     const line = t.players.find((p) => p.playerId === playerId);
     if (line) return line.minutes ?? 0;
   }
-  return 0;
+  return null;
 }
 
 function SubRow({ p, note, onPress }: { p: LineupPlayer; note: string | null; onPress?: () => void }) {
@@ -112,12 +113,29 @@ export function LineupsTab({ match }: { match: Match }) {
     const s = sides[k];
     return [s.info.name, s.team?.formation].filter(Boolean).join(' · ');
   };
+  const toggleItem = (k: 'sporting' | 'opponent') => ({
+    key: k,
+    label: toggleLabel(k),
+    // O nome encurta com reticências; a tática nunca.
+    content: (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minWidth: 0, maxWidth: '100%' }}>
+        <Text71 variant="label16" color={selected === k ? 'white' : 'textMuted'} numberOfLines={1} style={{ flexShrink: 1 }}>
+          {sides[k].info.name}
+        </Text71>
+        {sides[k].team?.formation ? (
+          <Text71 variant="label16" color={selected === k ? 'white' : 'textMuted'} numberOfLines={1} style={{ flexShrink: 0 }}>
+            {` · ${sides[k].team?.formation}`}
+          </Text71>
+        ) : null}
+      </View>
+    ),
+  });
   const entries = entryTexts(eventsDoc, current.info.id);
   const finished = state === 'finished';
   const subNote = (p: LineupPlayer): string | null => {
     const entered = entries[p.playerId];
     if (entered) return entered;
-    if (finished && playedMinutes(playersDoc, p.playerId) === 0) return DID_NOT_PLAY;
+    if (finished && playedMinutes(playersDoc, p.playerId) === 0) return DID_NOT_PLAY; // sem documento ou entrada: sem nota
     return null;
   };
 
@@ -132,10 +150,7 @@ export function LineupsTab({ match }: { match: Match }) {
       ) : (
         <Segmented
           testID="team-selector"
-          items={[
-            { key: 'sporting', label: toggleLabel('sporting') },
-            { key: 'opponent', label: toggleLabel('opponent') },
-          ]}
+          items={[toggleItem('sporting'), toggleItem('opponent')]}
           value={selected}
           onChange={setSelected}
         />

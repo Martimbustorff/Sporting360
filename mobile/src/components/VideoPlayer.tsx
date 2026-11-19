@@ -47,15 +47,6 @@ export function shouldLoad(req: { url: string; isTopFrame?: boolean }): boolean 
   return isAllowedEmbed(req.url);
 }
 
-/** Duração em segundos para "4:12"; sem valor válido não há duração. */
-export function formatDuration(seconds: number | null | undefined): string | null {
-  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return null;
-  const total = Math.round(seconds);
-  const m = Math.floor(total / 60);
-  const sec = String(total % 60).padStart(2, '0');
-  return `${m}:${sec}`;
-}
-
 function lock(o: ScreenOrientation.OrientationLock) {
   ScreenOrientation.lockAsync(o).catch(() => {});
 }
@@ -81,8 +72,8 @@ function Frame({ children, row }: { children?: React.ReactNode; row?: boolean })
 
 /**
  * `variant`: 'default' (miniatura a toda a largura, minuto e título) ou, no Figma V7.1 4947:8624, 'featured' (16:9 com
- * duração, rótulo do tipo em Eyebrow 13 e título em Body 14 por baixo) e 'row' (miniatura 132x74 à esquerda, rótulo e
- * título à direita). `kind` é o rótulo do tipo; a duração só aparece se `video.duration` existir.
+ * rótulo do tipo em Eyebrow 13 e título em Body 14 por baixo) e 'row' (miniatura 132x74 à esquerda, rótulo e
+ * título à direita). `kind` é o rótulo do tipo. A duração do frame 4947:8624 fica pendente de o servidor a gravar.
  */
 export function VideoPlayer({ video, variant = 'default', kind }: { video: Video; variant?: 'default' | 'featured' | 'row'; kind?: string }) {
   const [open, setOpen] = useState(false);
@@ -112,7 +103,6 @@ export function VideoPlayer({ video, variant = 'default', kind }: { video: Video
     </View>
   );
 
-  const duration = formatDuration(video.duration);
   const v71 = variant !== 'default';
   const row = variant === 'row';
   const label = v71 ? (
@@ -121,22 +111,6 @@ export function VideoPlayer({ video, variant = 'default', kind }: { video: Video
         <Text71 testID="video-type" variant="eyebrow13" color="primaryOnDark" numberOfLines={1}>{kind}</Text71>
       ) : null}
       <Text71 variant="body14" numberOfLines={row ? 2 : 3}>{video.title}</Text71>
-    </View>
-  ) : null;
-  const durationChip = duration ? (
-    <View
-      testID="video-duration"
-      style={{
-        position: 'absolute',
-        right: layout.videoDurationInset,
-        bottom: layout.videoDurationInset,
-        paddingHorizontal: spacing.xs,
-        paddingVertical: 1,
-        borderRadius: layout.videoDurationRadius,
-        backgroundColor: colors.bg,
-      }}
-    >
-      <Text71 variant="badge11">{duration}</Text71>
     </View>
   ) : null;
   const playSize = row ? layout.videoPlayCircleSmall : layout.videoPlayCircle;
@@ -199,7 +173,6 @@ export function VideoPlayer({ video, variant = 'default', kind }: { video: Video
           {v71 ? playBadge : (
             <Feather testID="video-play-icon" name="play-circle" size={layout.videoPlayIcon} color={colors.white} />
           )}
-          {v71 ? durationChip : null}
         </Frame>
         {v71 ? label : caption}
       </Touchable>

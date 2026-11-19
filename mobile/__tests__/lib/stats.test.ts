@@ -1,5 +1,5 @@
 import type { StatisticsDoc } from '@/data/schemas';
-import { STAT_ORDER, statBars, statNumber, statPeriods, statRows } from '@/lib/stats';
+import { STAT_ORDER, statBars, statNumber, statRows } from '@/lib/stats';
 
 const doc = (over: Partial<StatisticsDoc> = {}): StatisticsDoc =>
   ({
@@ -59,36 +59,29 @@ describe('statRows', () => {
 
 describe('statBars', () => {
   it('lidera quem tem o valor maior; a barra cresce pelo valor', () => {
-    expect(statBars('58%', '42%')).toEqual({ home: { grow: 58, leader: true }, away: { grow: 42, leader: false } });
-    expect(statBars('9', '13')).toEqual({ home: { grow: 9, leader: false }, away: { grow: 13, leader: true } });
+    expect(statBars('58%', '42%')).toEqual({ home: { grow: 0.58, leader: true }, away: { grow: 0.42, leader: false } });
+    expect(statBars('9', '13').away.leader).toBe(true);
+    expect(statBars('9', '13').home.grow).toBeCloseTo(9 / 22);
   });
 
   it('xG com vírgula e valores a zero', () => {
     expect(statBars('1,4', '0,6').home.leader).toBe(true);
-    expect(statBars('0', '4')).toEqual({ home: { grow: 0, leader: false }, away: { grow: 4, leader: true } });
+    expect(statBars('0', '4')).toEqual({ home: { grow: 0, leader: false }, away: { grow: 1, leader: true } });
   });
 
   it('empate (também 0 contra 0): sem líder, barras iguais', () => {
-    expect(statBars('3', '3')).toEqual({ home: { grow: 3, leader: false }, away: { grow: 3, leader: false } });
+    expect(statBars('3', '3')).toEqual({ home: { grow: 0.5, leader: false }, away: { grow: 0.5, leader: false } });
     expect(statBars('0', '0')).toEqual({ home: { grow: 1, leader: false }, away: { grow: 1, leader: false } });
+  });
+
+  it('normaliza: xG 0,3 contra 0,2 enche a linha (soma 1)', () => {
+    const b = statBars('0,3', '0,2');
+    expect(b.home.grow + b.away.grow).toBeCloseTo(1);
+    expect(b.home.grow).toBeCloseTo(0.6);
   });
 
   it('texto ilegível vale 0', () => {
     expect(statNumber('abc')).toBe(0);
     expect(statNumber('42%')).toBe(42);
-  });
-});
-
-describe('statPeriods', () => {
-  const part = { teams: [{ teamId: '228', items: { Fouls: 3 } }], xg: null };
-  it('sem documento ou sem partes: null', () => {
-    expect(statPeriods(null)).toBeNull();
-    expect(statPeriods(doc())).toBeNull();
-    expect(statPeriods(doc({ periods: { first: part, second: null } }))).toBeNull();
-  });
-  it('com as duas partes: Jogo, 1.ª parte e 2.ª parte', () => {
-    const p = statPeriods(doc({ periods: { first: part, second: part } }));
-    expect(p?.map((x) => x.label)).toEqual(['Jogo', '1.ª parte', '2.ª parte']);
-    expect(p?.[1]?.doc.teams).toBe(part.teams);
   });
 });

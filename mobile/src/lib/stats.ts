@@ -46,24 +46,6 @@ export function statRows(doc: StatisticsDoc | null, homeId: string, awayId: stri
   );
 }
 
-export type StatPeriodKey = 'game' | 'first' | 'second';
-export type StatPeriodOption = { key: StatPeriodKey; label: string; doc: StatisticsDoc };
-
-/**
- * Jogo / 1.ª parte / 2.ª parte (Figma 4947:8240). Só há alternador se o documento tiver as duas partes em `periods`;
- * sem elas devolve null e o ecrã mostra apenas o jogo.
- */
-export function statPeriods(doc: StatisticsDoc | null): StatPeriodOption[] | null {
-  const first = doc?.periods?.first;
-  const second = doc?.periods?.second;
-  if (!doc || !first || !second) return null;
-  return [
-    { key: 'game', label: 'Jogo', doc },
-    { key: 'first', label: '1.ª parte', doc: { teams: first.teams, xg: first.xg } },
-    { key: 'second', label: '2.ª parte', doc: { teams: second.teams, xg: second.xg } },
-  ];
-}
-
 /** "58%" e "1,4" para número; ilegível vale 0. */
 export function statNumber(text: string): number {
   const n = Number(text.replace('%', '').replace(',', '.').trim());
@@ -80,5 +62,7 @@ export function statBars(home: string, away: string): { home: StatBar; away: Sta
   const h = Math.max(0, statNumber(home));
   const a = Math.max(0, statNumber(away));
   if (h === 0 && a === 0) return { home: { grow: 1, leader: false }, away: { grow: 1, leader: false } };
-  return { home: { grow: h, leader: h > a }, away: { grow: a, leader: a > h } };
+  // Normalizado (valor / soma) para que pares fracionários (xG 0,3 contra 0,2) também enchem a linha.
+  const total = h + a;
+  return { home: { grow: h / total, leader: h > a }, away: { grow: a / total, leader: a > h } };
 }

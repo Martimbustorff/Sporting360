@@ -22,7 +22,6 @@ module.exports = {
           disabled: 'rgba(255, 255, 255, 0.4)',
           yellow: '#F7CF46',
           yellowAlt: '#FFB648',
-          yellowStat: '#FFC700',
           red: '#F74C66',
           toggleOn: '#34C759',
           sheetCard: '#F1F1F1',
