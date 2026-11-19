@@ -1,5 +1,5 @@
 // Task 10: tab Estatísticas. Hooks de dados mockados (sem rede).
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { colors } from '@/theme/tokens';
 import type { GameStatus, Match } from '@/data/schemas';
@@ -182,5 +182,81 @@ describe('Sumário: erro de leitura e chaves (regra da Task 9)', () => {
     expect(screen.getAllByText('Nuno Santos')).toHaveLength(2);
     expect(spy.mock.calls.filter((c) => String(c[0]).includes('same key'))).toHaveLength(0);
     spy.mockRestore();
+  });
+});
+
+describe('Estatísticas por parte', () => {
+  const withHalves = () => ({
+    ...statsDoc(),
+    firstHalf: {
+      teams: [
+        { teamId: '228', items: { 'Ball Possession': '60%', 'Total Shots': 5, 'Yellow Cards': 1 } },
+        { teamId: '217', items: { 'Ball Possession': '40%', 'Total Shots': 3 } },
+      ],
+      xg: { home: 0.9, away: 0.2 },
+    },
+  });
+
+  it('documento antigo (sem partes): sem seletor', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.queryByTestId('stats-part-selector')).toBeNull();
+  });
+
+  it('com partes: seletor Total / 1.ª parte / 2.ª parte, a abrir em Total', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.getByTestId('stats-part-selector')).toBeTruthy();
+    expect(screen.getByLabelText('Total')).toBeTruthy();
+    expect(screen.getByLabelText('1.ª parte')).toBeTruthy();
+    expect(screen.getByLabelText('2.ª parte')).toBeTruthy();
+    expect(texts('stat-home').slice(0, 3)).toEqual(['55%', '1,4', '12']);
+  });
+
+  it('1.ª parte mostra os valores do intervalo, com posse', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    await render(<StatsTab match={match('FT')} />);
+    await fireEvent.press(screen.getByLabelText('1.ª parte'));
+    expect(texts('stat-home').slice(0, 3)).toEqual(['60%', '0,9', '5']);
+    expect(texts('stat-away').slice(0, 3)).toEqual(['40%', '0,2', '3']);
+  });
+
+  it('2.ª parte: total menos 1.ª parte e sem a linha da posse', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    await render(<StatsTab match={match('FT')} />);
+    await fireEvent.press(screen.getByLabelText('2.ª parte'));
+    expect(screen.queryByText('Posse de bola (%)')).toBeNull();
+    expect(screen.getAllByTestId('stat-row')).toHaveLength(7);
+    expect(texts('stat-home').slice(0, 2)).toEqual(['0,5', '7']);
+    expect(texts('stat-away').slice(0, 2)).toEqual(['0,4', '1']);
+    expect(screen.getByTestId('cards-home-yellow').props.children).toBe('0');
+  });
+
+  it('as barras seguem a parte escolhida', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    await render(<StatsTab match={match('FT')} />);
+    await fireEvent.press(screen.getByLabelText('2.ª parte'));
+    const bg = (n: { props: Record<string, any> }) => (StyleSheet.flatten(n.props.style as object) as { backgroundColor: string }).backgroundColor;
+    // 2.ª parte, remates 7 contra 1.
+    expect(bg(screen.getAllByTestId('stat-bar-home')[1]!)).toBe(colors.primaryOnDark);
+    expect(bg(screen.getAllByTestId('stat-bar-away')[1]!)).toBe(colors.surface20);
+  });
+
+  it('antes do jogo (sem documento) não há seletor', async () => {
+    await render(<StatsTab match={match('NS')} />);
+    expect(screen.queryByTestId('stats-part-selector')).toBeNull();
+  });
+
+  it('ao vivo na 1.ª parte (ainda sem firstHalf): só Total, sem seletor', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
+    await render(<StatsTab match={match('LIVE')} />);
+    expect(screen.queryByTestId('stats-part-selector')).toBeNull();
+  });
+
+  it('firstHalf malformado não rebenta: sem seletor', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: { ...statsDoc(), firstHalf: { teams: 'x' } } } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.queryByTestId('stats-part-selector')).toBeNull();
+    expect(screen.getAllByTestId('stat-row')).toHaveLength(8);
   });
 });

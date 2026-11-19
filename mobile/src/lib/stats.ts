@@ -66,3 +66,52 @@ export function statBars(home: string, away: string): { home: StatBar; away: Sta
   const total = h + a;
   return { home: { grow: h / total, leader: h > a }, away: { grow: a / total, leader: a > h } };
 }
+
+// Partes do jogo. A 1.ª parte é o instantâneo do intervalo (`firstHalf`); a 2.ª é total menos 1.ª, só nas contagens.
+export type StatPart = 'total' | 'first' | 'second';
+export type PartRow = StatRowData & { key: string };
+
+/** O documento tem as estatísticas do intervalo (senão o seletor de partes esconde-se). */
+export const hasHalves = (doc: StatisticsDoc | null | undefined): boolean => Array.isArray(doc?.firstHalf?.teams);
+
+/** Percentagens e rácios (posse, precisão de passes): não se obtêm por subtração. */
+export const isRatioStat = (key: string): boolean => key === POSSESSION_KEY || key.includes('%') || /accuracy/i.test(key);
+
+/** Valor numérico de um item; nulo ou ausente conta 0 (a API dá `null` a um zero); texto ilegível dá null (ignora-se). */
+function count(v: string | number | null | undefined): number | null {
+  if (v == null || v === '') return 0;
+  const n = typeof v === 'number' ? v : Number(v.replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+/** 2.ª parte: total menos 1.ª parte, por equipa e por contagem (nunca negativo); sem as percentagens. */
+function secondHalfDoc(doc: StatisticsDoc): StatisticsDoc {
+  const first = doc.firstHalf;
+  const teams = doc.teams.map((t) => {
+    const f = first?.teams.find((x) => x.teamId === t.teamId)?.items ?? {};
+    const items: Record<string, number> = {};
+    for (const [k, v] of Object.entries(t.items)) {
+      if (isRatioStat(k)) continue;
+      const total = count(v);
+      const before = count(f[k]);
+      if (total === null || before === null) continue;
+      items[k] = Math.max(0, total - before);
+    }
+    return { teamId: t.teamId, items };
+  });
+  const sub = (a: number | null | undefined, b: number | null | undefined): number | null =>
+    a == null ? null : Math.max(0, Math.round((a - (b ?? 0)) * 100) / 100);
+  const xg = doc.xg ? { home: sub(doc.xg.home, first?.xg?.home), away: sub(doc.xg.away, first?.xg?.away) } : null;
+  return { teams, xg } as StatisticsDoc;
+}
+
+/**
+ * Linhas (com a chave) da parte escolhida. Sem `firstHalf` a parte não existe: usa-se o total. Na 2.ª parte as linhas de
+ * percentagem (posse) ficam de fora; na 1.ª aparecem, porque no intervalo são valores exatos da 1.ª parte.
+ */
+export function partRows(doc: StatisticsDoc | null, part: StatPart, homeId: string, awayId: string): PartRow[] {
+  const usable = part !== 'total' && doc && hasHalves(doc);
+  const source: StatisticsDoc | null = !usable ? doc : part === 'first' ? (doc!.firstHalf as StatisticsDoc) : secondHalfDoc(doc!);
+  const rows = statRows(source, homeId, awayId).map((r, i) => ({ ...r, key: STAT_ORDER[i]!.key as string }));
+  return usable && part === 'second' ? rows.filter((r) => !isRatioStat(r.key)) : rows;
+}

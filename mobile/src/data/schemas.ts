@@ -191,11 +191,18 @@ export type EventItem = z.infer<typeof EventItemSchema>;
 export const EventsDocSchema = z.looseObject({ items: z.array(EventItemSchema) });
 export type EventsDoc = z.infer<typeof EventsDocSchema>;
 
+const StatsTeamsSchema = z.array(
+  z.looseObject({ teamId: str, items: z.record(z.string(), z.union([z.string(), z.number(), z.null()])) }),
+);
+/**
+ * `firstHalf`: instantâneo das estatísticas no intervalo (functions/src/store/writer.ts), só existe se o ticker viu o HT.
+ * Documentos antigos não o têm; um valor malformado é ignorado (`.catch`), nunca parte o documento.
+ */
+const StatsPartSchema = z.looseObject({ teams: StatsTeamsSchema, xg: nullable(PairSchema).catch(null) });
 export const StatisticsDocSchema = z.looseObject({
-  teams: z.array(
-    z.looseObject({ teamId: str, items: z.record(z.string(), z.union([z.string(), z.number(), z.null()])) }),
-  ),
+  teams: StatsTeamsSchema,
   xg: nullable(PairSchema),
+  firstHalf: StatsPartSchema.optional().catch(undefined),
 });
 export type StatisticsDoc = z.infer<typeof StatisticsDocSchema>;
 

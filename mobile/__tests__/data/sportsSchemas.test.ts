@@ -190,3 +190,17 @@ describe('fixtures follow the sports schemas', () => {
     }
   });
 });
+
+describe('StatisticsDocSchema: firstHalf (instantâneo do intervalo)', () => {
+  const base = { teams: [{ teamId: '228', items: { 'Total Shots': 5 } }], xg: null };
+  it('lê firstHalf; documento antigo sem ele continua a ler', () => {
+    const withHalf = StatisticsDocSchema.parse({ ...base, firstHalf: { teams: [{ teamId: '228', items: { 'Total Shots': 2, Fouls: null } }], xg: { home: 0.4, away: null } } });
+    expect(withHalf.firstHalf?.teams[0]?.items['Total Shots']).toBe(2);
+    expect(StatisticsDocSchema.parse(base).firstHalf).toBeUndefined();
+  });
+  it('firstHalf malformado é ignorado, não parte o documento', () => {
+    const r = StatisticsDocSchema.safeParse({ ...base, firstHalf: { teams: 'x' } });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data.firstHalf).toBeUndefined();
+  });
+});

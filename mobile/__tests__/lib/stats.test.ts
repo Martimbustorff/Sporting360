@@ -1,5 +1,5 @@
 import type { StatisticsDoc } from '@/data/schemas';
-import { STAT_ORDER, statBars, statNumber, statRows } from '@/lib/stats';
+import { STAT_ORDER, hasHalves, isRatioStat, partRows, statBars, statNumber, statRows } from '@/lib/stats';
 
 const doc = (over: Partial<StatisticsDoc> = {}): StatisticsDoc =>
   ({
@@ -83,5 +83,64 @@ describe('statBars', () => {
   it('texto ilegível vale 0', () => {
     expect(statNumber('abc')).toBe(0);
     expect(statNumber('42%')).toBe(42);
+  });
+});
+
+describe('partes (firstHalf gravado no intervalo)', () => {
+  const half = () =>
+    doc({
+      xg: { home: 1.43, away: 0.6 },
+      firstHalf: {
+        teams: [
+          { teamId: '228', items: { 'Ball Possession': '60%', 'Total Shots': 5, Fouls: null, 'Yellow Cards': 1 } },
+          { teamId: '217', items: { 'Ball Possession': '40%', 'Total Shots': 3 } },
+        ],
+        xg: { home: 0.9, away: null },
+      },
+    } as never);
+  const find = (rows: ReturnType<typeof partRows>, key: string) => rows.find((r) => r.key === key);
+
+  it('hasHalves só com firstHalf; documento antigo sem partes não tem', () => {
+    expect(hasHalves(half())).toBe(true);
+    expect(hasHalves(doc())).toBe(false);
+    expect(hasHalves(null)).toBe(false);
+  });
+
+  it('isRatioStat: posse e percentagens ou precisão', () => {
+    expect(isRatioStat('Ball Possession')).toBe(true);
+    expect(isRatioStat('Passes %')).toBe(true);
+    expect(isRatioStat('Pass accuracy')).toBe(true);
+    expect(isRatioStat('Total Shots')).toBe(false);
+  });
+
+  it('total é igual a statRows; 1.ª parte usa firstHalf (posse incluída)', () => {
+    expect(partRows(half(), 'total', '228', '217').map(({ key: _k, ...r }) => r)).toEqual(statRows(half(), '228', '217'));
+    const first = partRows(half(), 'first', '228', '217');
+    expect(find(first, 'Ball Possession')).toMatchObject({ home: '60%', away: '40%' });
+    expect(find(first, 'Total Shots')).toMatchObject({ home: '5', away: '3' });
+    expect(find(first, 'xg')).toMatchObject({ home: '0,9', away: '0' });
+  });
+
+  it('2.ª parte = total menos 1.ª parte nas contagens; nulos contam 0; nunca negativo', () => {
+    const second = partRows(half(), 'second', '228', '217');
+    expect(find(second, 'Total Shots')).toMatchObject({ home: '7', away: '1' });
+    expect(find(second, 'Fouls')).toMatchObject({ home: '7', away: '0' });
+    expect(find(second, 'Yellow Cards')).toMatchObject({ home: '0', away: '0' });
+    expect(find(second, 'xg')).toMatchObject({ home: '0,5', away: '0,6' });
+    const odd = half() as { firstHalf: { teams: { items: Record<string, unknown> }[] } };
+    odd.firstHalf.teams[0]!.items['Total Shots'] = 99;
+    expect(find(partRows(odd as never, 'second', '228', '217'), 'Total Shots')).toMatchObject({ home: '0' });
+  });
+
+  it('2.ª parte esconde as percentagens (posse); 1.ª parte e total mantêm-nas', () => {
+    expect(find(partRows(half(), 'second', '228', '217'), 'Ball Possession')).toBeUndefined();
+    expect(partRows(half(), 'second', '228', '217')).toHaveLength(9);
+    expect(find(partRows(half(), 'first', '228', '217'), 'Ball Possession')).toBeDefined();
+    expect(find(partRows(half(), 'total', '228', '217'), 'Ball Possession')).toBeDefined();
+  });
+
+  it('sem partes: 1.ª e 2.ª parte caem no total', () => {
+    expect(partRows(doc(), 'first', '228', '217')).toHaveLength(10);
+    expect(find(partRows(doc(), 'second', '228', '217'), 'Total Shots')).toMatchObject({ home: '12' });
   });
 });
