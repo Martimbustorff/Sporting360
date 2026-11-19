@@ -1,6 +1,5 @@
-// Figma V7.1: 03 Sites 4922:5959. Fundo liso (sem leão), intro Body Light 14, linhas L externas (a última sem separador) e
-// nota com seta externa "Abre no navegador, fora da app.". Diferença ao frame: o frame traz uma 5.ª linha "Gameback";
-// fica de fora (a V2 excluiu-a de propósito, clubLinks.ts) e não se inventa URL. Texto da intro e nota mantidos.
+// Figma V7.1: 03 Sites 4922:5959. Fundo liso (sem leão), intro Body Light 14, 5 linhas L externas (a última, "Gameback",
+// sem separador) e nota com seta externa "Abre no navegador, fora da app.". Texto da intro e nota mantidos.
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -19,6 +18,7 @@ const ICONS: Record<ClubSite['id'], number> = {
   minuto: require('../../assets/icons/user-card.svg'), // 7:2933 User / User_Card_ID
   loja: require('../../assets/icons/cart.svg'), // 7:2921 Interface / Shopping_Cart_02
   bilheteira: require('../../assets/icons/ticket.svg'), // 7:2917 Interface / Ticket_Voucher
+  gameback: require('../../assets/icons/share.svg'), // 4922:6027 Ícone (partilha)
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
 

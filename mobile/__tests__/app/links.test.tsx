@@ -39,13 +39,19 @@ beforeEach(() => {
 });
 
 describe('Sites do clube', () => {
-  it('mostra as 4 ligações do Figma pela ordem e abre a Loja Verde no browser da app', async () => {
+  it('mostra as 5 ligações do Figma pela ordem e abre a Loja Verde no browser da app', async () => {
     await render(wrap(<Sites />));
-    expect(CLUB_SITES.map((s) => s.label)).toEqual(['Site do Sporting', 'Sporting num Minuto', 'Loja Verde', 'Bilheteira Online']);
+    expect(CLUB_SITES.map((s) => s.label)).toEqual(['Site do Sporting', 'Sporting num Minuto', 'Loja Verde', 'Bilheteira Online', 'Gameback']);
     expect(screen.getByText('Aqui podes encontrar ligações diretas para os sites oficiais do clube.')).toBeTruthy();
     expect(screen.getByText(SITES_NOTE)).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Loja Verde'));
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://lojaverde.sporting.pt/pt');
+  });
+
+  it('a linha Gameback abre gamebox.sporting.pt/estadio/gameback', async () => {
+    await render(wrap(<Sites />));
+    await fireEvent.press(screen.getByLabelText('Gameback'));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://gamebox.sporting.pt/estadio/gameback');
   });
 
   it('a última linha não tem separador', async () => {

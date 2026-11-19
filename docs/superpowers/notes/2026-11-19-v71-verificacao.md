@@ -38,14 +38,14 @@ Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = difer
 | 08 Sumário terminado | `SummaryTab.tsx` | Forma, Confrontos diretos e Ausências só apareciam antes do jogo; no frame aparecem por baixo da cronologia | corrigido (`MatchContext`: só no estado terminado, depois de os eventos carregarem, só com dados, sem Previsão nem avisos; ao vivo (06) não mostra contexto; testes novos) |
 | 08 | `SummaryTab.tsx` | Cronologia com separadores de parte e resultado, em ordem de jogo | intencional |
 | 09 MVP | `MvpTab.tsx` | Nota com vírgula, posições GR/DEF/MED/AV, lista alfabética, folha de confirmação, botão no fluxo do scroll, selo na segunda linha abaixo de 360 pt | intencional / pendente Martim (ordem alfabética), como decidido |
-| 10 Classificação | `CompetitionStandings.tsx`, `StandingsTable.tsx` | Emblemas reais, setas em Views, colunas J, DG, PTS, legenda só com zonas presentes, Segmented, critério de desempate | intencional / pendente Martim (desempate), como decidido |
+| 10 Classificação | `CompetitionStandings.tsx`, `StandingsTable.tsx` | Emblemas reais, setas em Views, colunas J, DG, PTS, legenda só com zonas presentes, Segmented, critério de desempate | intencional; desempate corrigido com confronto direto (regulamento da Liga Portugal, Martim 19/11) |
 | 12 GameBox · modo bilhete | `app/(app)/gamebox/bilhete.tsx` | Ícone do brilho Feather "sun" em vez do desenho do Figma; QR gerado do número da GameBox | intencional: equivalente nativo; QR real |
 | 29 Prognóstico | `PredictionTab.tsx`, `Stepper.tsx` | Chip do canal de TV não aparece; emblema escondido abaixo de 360 pt | intencional |
 | 30 Partilha | `ShareCard.tsx`, `ModalSheet.tsx` | Folha escura em Modal sem título e grabber ao centro; QR escuro sobre branco com margem branca (bloco de 60 pt) | intencional |
 | 31 Estatísticas | `StatsTab.tsx`, `StatRow.tsx` | Alternador Jogo / 1.ª parte / 2.ª parte escondido; conjunto de 10 estatísticas (xG e Faltas) em vez de "Passes certos" | intencional: o servidor não grava as partes (pendente Martim); a regra de negócio das estatísticas ganha |
 | 32 Formações | `LineupsTab.tsx`, `Pitch.tsx` | Linha "Treinador" e textos de estado extra; resto igual | intencional (sem Figma) |
 | 33 Vídeos | `VideosTab.tsx`, `VideoPlayer.tsx` | Rótulo do vídeo de golo era "Golo"; o frame diz "LANCE" | corrigido (teste atualizado) |
-| 33 | `VideoPlayer.tsx` | Duração do vídeo escondida | intencional: o servidor não grava `duration` (pendente Martim) |
+| 33 | `VideoPlayer.tsx` | Duração do vídeo escondida | intencional: o servidor não grava `duration`; decidido fora (Martim, 19/11) |
 | 34 Outra modalidade | `GameHeader.tsx`, `app/(app)/jogo/[id].tsx` | Chip do canal de TV não aparece; sem separadores, como no frame | intencional |
 | (todos do jogo) | `GameHeader.tsx` | `headerScoreRing` #1AB27D | intencional: é o valor do Figma |
 
@@ -58,9 +58,9 @@ Frames: 02, 03, 04, 05, 13 a 27 (com 21b), 48 e 49. Método e legenda como no Gr
 | 02 Definições | `app/(app)/definicoes/index.tsx` | Rodapé da versão com espaço de 4 (frame 2) | corrigido em 393141c (token `settingsFooterGap`) |
 | 02 | `definicoes/index.tsx` | Linha "Ligar conta Apple" só em iOS sem conta Apple ligada; o frame mostra-a sempre | intencional: sem conta por ligar ou fora do iOS a linha não tem função |
 | 02 | `definicoes/index.tsx` | "Apagar conta" com texto e ícone danger, sem destaque extra | intencional: encarnado fica fora do botão Branco do ecrã de apagar; frases de ajuda mantêm-se |
-| 02 | `definicoes/index.tsx` | "Termos e privacidade" com seta externa mas abre `/definicoes/termos` dentro da app | pendente Martim (URL externo ou página interna) |
+| 02 | `definicoes/index.tsx` | "Termos e privacidade" com seta externa mas abre `/definicoes/termos` dentro da app | intencional: Martim decidiu manter como no design (seta externa) |
 | 02 | `definicoes/index.tsx` | Ícones Feather (link, bar-chart-2, file-text, log-out, trash-2) em vez dos vetores do frame | intencional: equivalentes nativos |
-| 03 Sites do clube | `app/(app)/sites.tsx` | Linha "Gameback" do frame não existe | pendente Martim (sem URL, não se inventa) |
+| 03 Sites do clube | `app/(app)/sites.tsx` | Linha "Gameback" do frame não existia | corrigido (5.ª linha, https://gamebox.sporting.pt/estadio/gameback, ícone de partilha do frame) |
 | 03 | `sites.tsx` | Resto igual (intro Body Light, linhas L externas, nota com seta 14) | sem diferenças |
 | 04 Estádio | `app/(app)/estadio.tsx` | Legenda "Portas 1 a 12": círculo branco vazio; o frame tem círculo primary 20 com "1" em Badge 11 | corrigido em a8f339b |
 | 04 | `estadio.tsx` | Marcador do Museu desenhado no PNG do mapa e entrada "Museu" na legenda, sem ligação; zoom mantém o mapa inteiro | intencional (decisão do Martim) |
@@ -92,7 +92,7 @@ Frames: 02, 03, 04, 05, 13 a 27 (com 21b), 48 e 49. Método e legenda como no Gr
 | 48 Bloqueio | `BiometricGate.tsx`, `LionBackdrop.tsx` | Sem diferenças (logótipo, "A S360 está bloqueada.", Branco e Contorno); estado de falha reutiliza a mesma frase | sem diferenças (estado de falha sem Figma) |
 | 49 Terminar sessão (alerta) | `definicoes/index.tsx` | Alerta nativo, título, frase, Cancelar e Terminar sessão destrutivo iguais | sem diferenças |
 
-Resumo do Grupo B: 5 correções (a8f339b, 393141c, 2b92dba, cd72fef, 186a308), 3 pendentes Martim (Gameback, "Termos e privacidade" externo ou interno, título do histórico com equipas). Verificação visual em dispositivo continua pendente.
+Resumo do Grupo B: 6 correções (a8f339b, 393141c, 2b92dba, cd72fef, 186a308 e a linha Gameback), 1 pendente Martim (título do histórico com equipas); "Termos e privacidade" decidido: mantém-se. Verificação visual em dispositivo continua pendente.
 
 ## Grupo C
 
@@ -138,12 +138,12 @@ Método: leitura do código contra o frame, sem build nem simulador; a verifica�
 
 | | Frames verificados | Correções | Pendentes Martim |
 |---|---|---|---|
-| Grupo A | 22 | 7 | 8 |
-| Grupo B | 22 | 5 | 3 |
+| Grupo A | 22 | 8 | 6 |
+| Grupo B | 22 | 6 | 1 |
 | Grupo C | 12 | 9 | 1 |
-| Total | 56 | 21 | 12 |
+| Total | 56 | 23 | 8 |
 
-Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Quatro dos pendentes (09, 10, 31, 33) estão dentro de linhas marcadas como intencionais: a diferença é intencional hoje, mas a decisão de produto fica por tomar.
+Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Dois dos pendentes (09, 31) estão dentro de linhas marcadas como intencionais: a diferença é intencional hoje, mas a decisão de produto fica por tomar. Decididos a 19/11: 03 Gameback (corrigido), 02 "Termos e privacidade" (mantém-se como no design), 10 desempate (corrigido com confronto direto), 33 duração do vídeo (fora).
 
 Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
 
@@ -154,10 +154,6 @@ Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
 3. Estados de carregamento (47): generalizar o `SkeletonRows` aos restantes ecrãs (Agenda, competição, perfil, etc.).
 4. Sumário do jogo (06 e 08): os dois frames mostram Sumários diferentes ("Números do jogo" e lances com comentário contra a cronologia).
 5. MVP (09): ordem alfabética da lista de jogadores.
-6. Classificação (10): critério de desempate.
-7. Estatísticas do jogo (31): o servidor não grava as partes (alternador Jogo / 1.ª parte / 2.ª parte).
-8. Vídeos (33): o servidor não grava `duration` (duração do vídeo escondida).
-9. Sites do clube (03): linha "Gameback" sem URL.
-10. Definições (02): "Termos e privacidade" abre a página interna; o frame mostra seta externa.
-11. Perfil (22): título do histórico com as equipas ("Sporting 2-1 FC Porto"); o prognóstico não guarda as equipas.
-12. Calendário (35): mostrar "Fonte: API-Football" por baixo da lista de futebol, como no frame.
+6. Estatísticas do jogo (31): o servidor não grava as partes (alternador Jogo / 1.ª parte / 2.ª parte).
+7. Perfil (22): título do histórico com as equipas ("Sporting 2-1 FC Porto"); o prognóstico não guarda as equipas.
+8. Calendário (35): mostrar "Fonte: API-Football" por baixo da lista de futebol, como no frame.
