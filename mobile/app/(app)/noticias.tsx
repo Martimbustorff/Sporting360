@@ -1,7 +1,6 @@
-// SEM FIGMA: o Figma não tem frame das Notícias (Mapa do Figma do Plano 4: "Notícias, Ranking, Perfil"; referência
-// raster: nenhuma específica, só o `NewsCard` aprovado na galeria, Plano 3). Compõe `Header`, `Tabs` 'scroll'
-// (500:28976, "Todas" + modalidades), `NewsCard` e `OfflineBanner`; o resto com tokens.
-// - Só título, imagem, resumo, fonte e data; o `content` do artigo nunca é lido (NewsSchema retira-o).
+// Figma V7.1 27 Notícias (4943:7869): Header, `Tabs` scroll sem linha ("Todas" + modalidades) a 8 do Header, `NewsCard` a 24 dos
+// lados e `OfflineBanner`.
+// - Só título, imagem, fonte e data (o resumo não está no frame); o `content` do artigo nunca é lido (NewsSchema retira-o).
 // - O toque abre a página original com `openLink` (browser interno, só https, falha reportada).
 // - "há X tempo" em Europe/Lisbon, com o relógio a avançar de minuto a minuto.
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
@@ -20,7 +19,7 @@ import type { News, Sport } from '@/data/schemas';
 import { useNews } from '@/data/user';
 import { openLink } from '@/lib/openLink';
 import { SPORTS, sportLabel } from '@/lib/sports';
-import { spacing } from '@/theme/tokens';
+import { space } from '@/theme/tokens';
 
 type Filter = 'all' | Sport;
 
@@ -69,7 +68,7 @@ export default function Noticias() {
         style={{ flex: 1 }}
         data={news.data}
         keyExtractor={(n) => n.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s16 }}
         ListHeaderComponent={<OfflineBanner visible={news.fromCache === true} />}
         ListEmptyComponent={<EmptyState icon="info" text={NOTICIAS_TEXT.empty(filter)} />}
         renderItem={({ item }) => (
@@ -94,8 +93,8 @@ export default function Noticias() {
   return (
     <Screen padded="none">
       <Header title="Notícias" onBack={back} />
-      <View style={{ flex: 1, paddingTop: spacing.md, gap: spacing.md }}>
-        <Tabs mode="scroll" items={FILTERS} value={filter} onChange={setFilter} />
+      <View style={{ flex: 1, paddingTop: space.s8, gap: space.s8 }}>
+        <Tabs mode="scroll" plain items={FILTERS} value={filter} onChange={setFilter} />
         {body}
       </View>
     </Screen>

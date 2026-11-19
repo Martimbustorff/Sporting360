@@ -8,7 +8,15 @@ describe('RankingRow', () => {
     await render(<RankingRow row={row} highlighted={false} />);
     expect(screen.getByText('Sportinguista #1234')).toBeTruthy();
     expect(screen.getByText('3')).toBeTruthy();
-    expect(screen.getByText('87')).toBeTruthy();
+    expect(screen.getByText('87 pts')).toBeTruthy();
+  });
+  it('destacada: o nome leva "(tu)" e a etiqueta de acessibilidade "Tu"', async () => {
+    await render(<RankingRow row={row} highlighted />);
+    expect(screen.getByText('Sportinguista #1234 (tu)')).toBeTruthy();
+  });
+  it('só mostra o nome público: sem avatar nem outro nome', async () => {
+    await render(<RankingRow row={row} highlighted={false} />);
+    expect(screen.queryByTestId('ranking-avatar')).toBeNull();
   });
   it('destacada: etiqueta de acessibilidade com "Tu"', async () => {
     await render(<RankingRow row={row} highlighted />);

@@ -1,6 +1,7 @@
 // Figma V7.1: tabs 4935:7125 (com scroll: espaço 24, topo 15, etiqueta a 11 do indicador) e 4942:7676 (iguais: topo 10, linha separator por baixo).
 // Etiqueta Label 16: ativa branca, inativas text-subtle. Indicador de 3 pt, raio 2, primary-on-dark na ativa.
 // Diferença deliberada: altura mínima 44 (alvo de toque).
+// `plain` (modo scroll): variante das Notícias (4943:7909): começa a 24, sem linha por baixo, topo 10 e espaço 10.
 import { useCallback, useEffect, useRef, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
@@ -12,11 +13,13 @@ export function Tabs<K extends string>({
   value,
   onChange,
   mode,
+  plain = false,
 }: {
   items: { key: K; label: string }[];
   value: K;
   onChange: (k: K) => void;
   mode: 'equal' | 'scroll';
+  plain?: boolean;
 }) {
   // Modo scroll: o separador ativo faz scroll para ficar à vista (também quando muda por `?tab=` ou por toque).
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
@@ -37,6 +40,7 @@ export function Tabs<K extends string>({
   const tabs = items.map((it) => {
     const active = it.key === value;
     const equal = mode === 'equal';
+    const compact = equal || plain;
     return (
       <Touchable
         key={it.key}
@@ -51,8 +55,8 @@ export function Tabs<K extends string>({
         style={{
           flex: equal ? 1 : undefined,
           minHeight: layout.minTouch,
-          paddingTop: equal ? layout.tabTopEqual : layout.tabTopScroll,
-          gap: equal ? layout.tabGapEqual : layout.tabGapScroll,
+          paddingTop: compact ? layout.tabTopEqual : layout.tabTopScroll,
+          gap: compact ? layout.tabGapEqual : layout.tabGapScroll,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
@@ -72,7 +76,9 @@ export function Tabs<K extends string>({
       </Touchable>
     );
   });
-  const line = { borderBottomWidth: layout.separator, borderBottomColor: mode === 'equal' ? colors.separator : colors.surface10 } as const;
+  const line = plain
+    ? {}
+    : ({ borderBottomWidth: layout.separator, borderBottomColor: mode === 'equal' ? colors.separator : colors.surface10 } as const);
   if (mode === 'scroll') {
     return (
       <View style={line}>
@@ -89,7 +95,7 @@ export function Tabs<K extends string>({
           onScroll={(e) => {
             view.current.x = e.nativeEvent.contentOffset.x;
           }}
-          contentContainerStyle={{ paddingHorizontal: space.s16, gap: space.s24 }}
+          contentContainerStyle={{ paddingHorizontal: plain ? space.s24 : space.s16, gap: space.s24 }}
         >
           {tabs}
         </ScrollView>

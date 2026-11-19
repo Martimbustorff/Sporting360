@@ -1,8 +1,7 @@
-// SEM FIGMA: o Figma não tem frame do Ranking (Mapa do Figma do Plano 4: "Notícias, Ranking, Perfil"; referência
-// raster: nenhuma específica, só o `RankingRow` aprovado na galeria, Plano 3). Compõe `Header`, `Tabs` 'equal'
-// (500:28814, Semana, Mês, Época), `RankingRow` (círculo da posição 500:29423) e `OfflineBanner`; o resto com tokens.
+// Figma V7.1 26 Ranking (4943:7761): Header, `Tabs` 'equal' a 8 do Header, linhas `RankingRow` (círculo primary nos três
+// primeiros, separadores) e a tua posição fixa em baixo em bg-raised (raio 20). Tudo a 24 dos lados.
 // - Top 100 do período em ordem do servidor, empates com a mesma posição (lib/ranking: 1, 2, 2, 4).
-// - A linha do próprio fica destacada; se não está nos 100, linha fixa em baixo com a posição de `fetchMyPosition`.
+// - A linha do próprio fica com " (tu)"; se não está nos 100, linha fixa em baixo com a posição de `fetchMyPosition`.
 // - Só nomes públicos (`leaderboards/.../entries`); o ecrã não lê `users` nem `publicProfiles` (nunca email nem "@").
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
 import { useState } from 'react';
@@ -21,8 +20,8 @@ import { useLeaderboard, useMyLeaderboardEntry } from '@/data/user';
 import { periodKeys } from '@/lib/periods';
 import { rankPositions } from '@/lib/ranking';
 import { useSession } from '@/providers/SessionProvider';
-import { Body } from '@/theme/typography';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 type Kind = 'week' | 'month' | 'season';
 
@@ -43,9 +42,9 @@ export const RANKING_TEXT = {
 
 function Note({ text }: { text: string }) {
   return (
-    <Body variant="body" style={{ textAlign: 'center', color: colors.textMuted }}>
+    <Text71 variant="caption12" color="textSubtle" style={{ textAlign: 'center' }}>
       {text}
-    </Body>
+    </Text71>
   );
 }
 
@@ -86,13 +85,17 @@ export default function Ranking() {
       <>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.md, gap: spacing.sm }}
+          contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s16, gap: space.s8 }}
         >
           <OfflineBanner visible={offline} />
           {rows.length === 0 ? (
             <EmptyState icon="info" text={RANKING_TEXT.empty(kind)} />
           ) : (
-            rows.map((r) => <RankingRow key={r.uid} row={r} highlighted={r.uid === uid} />)
+            <View>
+              {rows.map((r) => (
+                <RankingRow key={r.uid} row={r} highlighted={r.uid === uid} />
+              ))}
+            </View>
           )}
           {notes}
           <Note text={RANKING_TEXT.note} />
@@ -101,14 +104,16 @@ export default function Ranking() {
           <View
             testID="ranking-pinned"
             style={{
-              paddingHorizontal: spacing.screenX,
-              paddingTop: spacing.sm,
-              borderTopWidth: layout.separator,
-              borderTopColor: colors.divider,
-              backgroundColor: colors.bg,
+              paddingHorizontal: space.s24,
+              paddingTop: layout.rankPinnedPadTop,
+              paddingBottom: layout.rankPinnedPadBottom,
+              borderTopLeftRadius: layout.rankPinnedRadius,
+              borderTopRightRadius: layout.rankPinnedRadius,
+              backgroundColor: colors.bgRaised,
             }}
           >
             <RankingRow
+              last
               row={{ position: pinned, uid: mineEntry.uid, displayName: mineEntry.displayName, points: mineEntry.points }}
               highlighted
             />
@@ -121,8 +126,8 @@ export default function Ranking() {
   return (
     <Screen padded="none">
       <Header title="Ranking" onBack={back} />
-      <View style={{ flex: 1, paddingTop: spacing.md, gap: spacing.md }}>
-        <View style={{ paddingHorizontal: spacing.screenX }}>
+      <View style={{ flex: 1, paddingTop: space.s8, gap: space.s8 }}>
+        <View style={{ paddingHorizontal: space.s24 }}>
           <Tabs mode="equal" items={TABS} value={kind} onChange={setKind} />
         </View>
         {body}

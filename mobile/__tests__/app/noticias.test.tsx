@@ -73,10 +73,10 @@ describe('Notícias: filtro', () => {
 });
 
 describe('Notícias: lista', () => {
-  it('mostra título, resumo, fonte e há X tempo, sem repetir chaves', async () => {
+  it('mostra título, fonte e há X tempo, sem repetir chaves', async () => {
     await renderScreen();
     expect(screen.getByText('Título a')).toBeTruthy();
-    expect(screen.getByText('Resumo a')).toBeTruthy();
+    expect(screen.queryByText('Resumo a')).toBeNull();
     expect(screen.getAllByText(/Record · há 3 horas/)).toHaveLength(2);
     expect(screen.getAllByTestId('news-image')).toHaveLength(2);
   });

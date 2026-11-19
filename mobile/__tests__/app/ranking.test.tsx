@@ -136,7 +136,7 @@ describe('Ranking: lista', () => {
     await waitFor(() => expect(screen.getByTestId('ranking-pinned')).toBeTruthy());
     expect(mockPosition).toHaveBeenCalledWith('week', '2026-W47', 3);
     expect(screen.getByText('245')).toBeTruthy();
-    expect(screen.getByText('Martim')).toBeTruthy();
+    expect(screen.getByText('Martim (tu)')).toBeTruthy();
     expect(screen.getAllByTestId('ranking-row')).toHaveLength(5);
   });
 
@@ -224,8 +224,8 @@ describe('Ranking: nomes longos (Review Focus 4)', () => {
     const name = screen.getByText(LONG);
     expect(name.props.numberOfLines).toBe(1);
     expect(name.props.ellipsizeMode ?? 'tail').toBe('tail');
-    expect(screen.getByText('1234')).toBeTruthy();
-    const pts = screen.getByText('1234');
+    expect(screen.getByText('1234 pts')).toBeTruthy();
+    const pts = screen.getByText('1234 pts');
     // Os pontos nunca encolhem (o nome é que cede).
     expect(JSON.stringify(pts.props.style)).toContain('"flexShrink":0');
   });
@@ -234,17 +234,20 @@ describe('Ranking: nomes longos (Review Focus 4)', () => {
     mockMine.current = ready(entry('me', 7, LONG));
     await renderScreen();
     await waitFor(() => expect(screen.getByTestId('ranking-pinned')).toBeTruthy());
-    expect(screen.getByText(LONG).props.numberOfLines).toBe(1);
+    expect(screen.getByText(`${LONG} (tu)`).props.numberOfLines).toBe(1);
     expect(screen.getByText('245')).toBeTruthy();
-    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('7 pts')).toBeTruthy();
   });
 });
 
-describe('Ranking: avatar com a inicial', () => {
-  it('círculo com a inicial maiúscula do nome público', async () => {
+describe('Ranking: privacidade (frame 26)', () => {
+  it('mostra só o nome público: sem avatar e sem inicial solta', async () => {
     mockBoard.current = ready([entry('a', 5, 'ana lopes')]);
     await renderScreen();
-    expect(screen.getByTestId('ranking-avatar')).toBeTruthy();
-    expect(screen.getByText('A')).toBeTruthy();
+    expect(screen.getByText('ana lopes')).toBeTruthy();
+    expect(screen.queryByTestId('ranking-avatar')).toBeNull();
+    expect(screen.queryByText('A')).toBeNull();
+    expect(useMyUser).not.toHaveBeenCalled();
+    expect(usePublicProfile).not.toHaveBeenCalled();
   });
 });

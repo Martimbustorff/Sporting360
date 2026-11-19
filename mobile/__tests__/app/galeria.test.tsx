@@ -94,7 +94,7 @@ describe('galeria', () => {
     await renderGaleria();
     expect(screen.getAllByText('Sporting Clube de Portugal B').length).toBeGreaterThan(0);
     expect(screen.getAllByText('16 avos de final').length).toBeGreaterThan(0);
-    expect(screen.getByText('Maria Albuquerque Co')).toBeTruthy();
+    expect(screen.getByText('Maria Albuquerque Co (tu)')).toBeTruthy();
   });
 
   it('fora de desenvolvimento redireciona para /', async () => {

@@ -28,9 +28,9 @@ describe('NewsCard', () => {
     fireEvent.press(screen.getByRole('link'));
     expect(onPress).toHaveBeenCalledWith('n1');
   });
-  it('mostra o resumo quando existe e limita o título a duas linhas', async () => {
+  it('limita o título a duas linhas e não mostra o resumo (frame 27)', async () => {
     await render(<NewsCard news={{ ...news, summary: 'Resumo da notícia' }} now={now} onPress={() => {}} />);
-    expect(screen.getByText('Resumo da notícia')).toBeTruthy();
+    expect(screen.queryByText('Resumo da notícia')).toBeNull();
     expect(screen.getByText('Sporting vence em Alvalade').props.numberOfLines).toBe(2);
   });
 });
