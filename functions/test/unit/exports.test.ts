@@ -48,7 +48,7 @@ describe("listas de publicação", () => {
   it("tamanhos e nomes sem repetições", () => {
     expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
-    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail"]);
+    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan"]);
     expect(DEPLOY_PUSH_FUNCTIONS).toEqual(["predictionReminderPush"]);
     expect(LEGACY_FUNCTIONS).toHaveLength(13);
     expect(new Set(DEPLOYED).size).toBe(DEPLOYED.length);
@@ -80,7 +80,7 @@ describe("configuração de cada function exportada", () => {
 
   it("as callables do motor são onCall e as restantes são agendadas", () => {
     const callables = exported.filter((n) => endpoint(n).callableTrigger);
-    expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PLAN3_CALLABLES].includes(n)).sort());
+    expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PLAN3_CALLABLES, "createLoan", "claimLoan", "cancelLoan"].includes(n)).sort());
     expect(scheduled.length + callables.length).toBe(exported.length);
   });
 
@@ -106,6 +106,9 @@ describe("configuração de cada function exportada", () => {
     updateProfile: [],
     deleteAccount: [],
     linkProviderByEmail: [],
+    createLoan: [],
+    claimLoan: [],
+    cancelLoan: [],
     predictionReminderPush: [],
   };
   it("todas as functions publicadas têm a lista de segredos verificada", () => {

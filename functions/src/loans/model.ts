@@ -39,13 +39,17 @@ export type LoanDoc = {
 const HORA = 3600 * 1000;
 
 /**
- * Fim da validade: início + 4 h; FT, AET e PEN: fim do jogo + 2 h; adiado ou cancelado sem nova data:
- * hora original + 2 h. CANC (inclui ABD/AWD/WO) dá sempre kickoff + 2 h. Com nova data, `kickoff` já é a hora remarcada.
+ * Fim da validade: CANC (inclui ABD/AWD/WO) dá sempre kickoff + 2 h; PST sem nova data dá kickoff + 2 h;
+ * FT, AET e PEN: fim do jogo + 2 h; nos restantes casos, início + 4 h. Com nova data, `kickoff` já é a hora remarcada.
  */
 export function computeExpiresAt(m: {
   kickoff: Date;
   status: string;
   finishedAt: Date | null;
+  /**
+   * Quem chama põe true só para PST com o jogo ainda por começar (kickoff no futuro). SUSP e INTR chegam como PST a meio
+   * do jogo e não podem encurtar o empréstimo: nesses casos fica false.
+   */
   postponedWithoutDate: boolean;
 }): Date {
   if ((m.status === "FT" || m.status === "AET" || m.status === "PEN") && m.finishedAt) {

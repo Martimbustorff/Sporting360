@@ -118,3 +118,19 @@ describe('mobile/server parity (LEAGUE_IDS)', () => {
     expect(sorted(LEAGUE_IDS.champions)).toEqual(sorted(byType.europe));
   });
 });
+
+// Plano 8: o formato do número da GameBox no servidor (createLoan) é o mesmo que a app valida antes de cifrar.
+describe('mobile/server parity (normalizeGameboxNumber)', () => {
+  const app = readFileSync(join(__dirname, '..', '..', 'src', 'lib', 'gamebox.ts'), 'utf8');
+  const server = read('functions/src/loans/number.ts');
+  it('normalizeGameboxNumber e os limites são iguais nos dois lados', () => {
+    const a = body(app, 'normalizeGameboxNumber');
+    expect(a.length).toBeGreaterThan(40);
+    expect(a).toBe(body(server, 'normalizeGameboxNumber'));
+    for (const c of ['GAMEBOX_NUMBER_MIN', 'GAMEBOX_NUMBER_MAX']) {
+      const re = new RegExp(`const ${c} = (\\d+);`);
+      expect(app.match(re)?.[1]).toBeDefined();
+      expect(server.match(re)?.[1]).toBe(app.match(re)?.[1]);
+    }
+  });
+});
