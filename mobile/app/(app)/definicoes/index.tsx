@@ -226,7 +226,7 @@ export default function Definicoes() {
           <MenuRow size="M" label="Apagar conta" tone="danger" icon={feather('trash-2', 'danger')} trailing="none" separator={false} onPress={() => router.push('/apagar-conta')} />
         </Section>
         {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
-        <View style={{ marginTop: 'auto', alignItems: 'center', gap: space.s4 }}>
+        <View style={{ marginTop: 'auto', alignItems: 'center', gap: layout.settingsFooterGap }}>
           <Text71 variant="eyebrow13" color="textSubtle">{version ? `S360 · Versão ${version}${build ? ` (${build})` : ''}` : 'S360'}</Text71>
           <Text71 variant="caption12" color="textSubtle">App de adeptos, não oficial.</Text71>
         </View>

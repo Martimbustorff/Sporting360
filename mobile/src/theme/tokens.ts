@@ -719,6 +719,7 @@ export const layout = {
   settingsCardPadRight: 12,
   settingsCardAvatar: 48,
   settingsCardGap: 2,
+  settingsFooterGap: 2, // 02: rodapé com a versão (4922:5956)
   stadiumLuz: 520, // 04: luz do relvado (4923:5984)
   stadiumLuzLeft: -59,
   stadiumLuzTop: 68,
