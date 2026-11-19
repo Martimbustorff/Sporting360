@@ -57,3 +57,10 @@ export function formatCardDate(d: Date): string {
   const weekday = (WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()] ?? '').slice(0, 3);
   return `${weekday} ${p.day} ${MONTHS_SHORT[p.month - 1]}`.toUpperCase();
 }
+
+/** Data da linha de jogo (Figma 4948:8279): "SÁB 21" em cima e "DEZ" por baixo, dia civil em Lisboa. */
+export function formatRowDate(d: Date): { day: string; month: string } {
+  const p = lisbonParts(d);
+  const weekday = (WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()] ?? '').slice(0, 3);
+  return { day: `${weekday} ${p.day}`.toUpperCase(), month: (MONTHS_SHORT[p.month - 1] ?? '').toUpperCase() };
+}

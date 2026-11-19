@@ -70,6 +70,8 @@ export const colors = {
   shareCardRule: 'rgba(255, 255, 255, 0.15)',
   // Estádio V7.1 (4923:6136): faixa "Sectores A e B" da legenda
   stadiumSector: '#339E80',
+  // Equipa V7.1 (4949:8375): selo "Lesão" na lista de indisponíveis (vermelho da derrota a 25 %)
+  injuryBg: 'rgba(229, 56, 54, 0.25)',
 } as const;
 
 export const fonts = {
@@ -726,4 +728,61 @@ export const layout = {
   consentItemGap: 8,
   linkNoteIcon: 14, // 03: nota "Abre no navegador" (4922:6039)
   linkNoteGap: 6,
+  chipPadX: 12, // pílulas de filtro (4948:8262)
+  chipPadY: 6,
+  pillRadius: 999,
+  // V7.1 Calendário e jornadas (35 a 37): linha de jogo (4948:8278), seletor de ronda (4948:8390), quadro (4948:8517)
+  crestRow: { width: 22, height: 25.52 }, // 4948:8283
+  matchRowDate: 56, // coluna da data
+  matchRowCenter: 58, // caixa da hora ou do resultado (4948:8286)
+  matchRowCenterRadius: 6,
+  matchRowCenterPadX: 8,
+  matchRowCenterPadY: 4,
+  matchRowSideGap: 6, // nome ao emblema
+  matchRowDateGap: 2,
+  tieCardPadX: 14, // eliminatória (4948:8517)
+  tieCardPadY: 10,
+  tieCardGap: 8,
+  tieCardRadius: 12,
+  roundArrow: 44, // setas da jornada (4948:8391)
+  // V7.1 Equipa (38 a 41): pessoa, estatísticas, transferências e troféus
+  personPhoto: 36, // 4949:8366
+  personRowPadY: 9,
+  personRowGap: 12,
+  personArrow: 18, // seta à direita
+  tagPadX: 6, // selo Lesão / Dúvida / Entrada / Saída / total de troféus (4949:8375)
+  tagPadY: 2,
+  tagRadius: 4,
+  trophyIcon: 18, // 4949:8708
+  trophyGap: 10,
+  formBox: 28, // forma V / E / D (4949:8491)
+  formBoxGap: 6,
+  splitCardPadX: 14, // Casa / Fora / Total (4949:8502)
+  splitCardPadY: 10,
+  splitCardGap: 8,
+  splitCol: 56,
+  periodBarMax: 63, // barra do período com mais golos (4949:8559); as outras em proporção
+  periodBarMin: 4,
+  periodBarRadius: 4,
+  periodBarGap: 6,
+  periodColGap: 4,
+  ptColGames: 30, // tabela de jogadores (4950:8409)
+  ptColMinutes: 44,
+  ptColGoals: 26,
+  ptColAssists: 26,
+  ptColRating: 40,
+  ptRowPadY: 8,
+  ptPhoto: 24,
+  ptPhotoGap: 8,
+  transferRowPadY: 10, // 4949:8618
+  transferRowGap: 10,
+  blockGap: 8, // espaço entre blocos das listas da equipa (4949:8351)
+  statsBlockGap: 14, // Estatísticas (4949:8468)
+  // V7.1 Jogador (42)
+  playerHeaderPhoto: 84, // 4950:8502
+  playerHeaderGap: 16,
+  playerNameGap: 8, // número e nome
+  playerTileGap: 8,
+  playerTilePadY: 12, // mosaicos da época (4950:8510)
+  playerRowPadY: 10, // Mais números (4950:8523)
 } as const;

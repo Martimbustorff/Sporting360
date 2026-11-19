@@ -1,19 +1,17 @@
-// Figma: nós 500:28787 (Agenda, separador Próximos), 489:7003 (separador Resultados), 500:28814
-// (tabs iguais), 500:28822 (linha de jogo), 500:28839 (separador entre linhas) e 348:26437 (variante
-// antiga, com os meses); o cartão do topo é o 500:28796 (GameHeader da Task 4).
-// SEM FIGMA: o filtro de modalidade (`Tabs mode="scroll"` com as modalidades do `SPORTS`), o botão
-// "Plantel" no Header (Feather "users", o Figma só tem o título "Calendário" e a seta de voltar), o
-// esqueleto de carregamento, o aviso de cache (OfflineBanner) e a linha "Fonte: ..." no fim da lista.
-// Diferença deliberada: o Figma mostra no cartão o próximo jogo e começa a lista no jogo seguinte;
-// aqui a lista traz todos os jogos, para o primeiro não desaparecer da lista que o utilizador percorre.
+// Figma V7.1: frame 35 "Calendário" (4948:8199); linha de jogo 4948:8278 (MatchRow), pílulas de modalidade 4948:8261.
+// Ordem do frame: cartão do próximo jogo (o mesmo da Home), pílulas de modalidade, Próximos/Resultados e a lista com
+// todos os jogos (também o do cartão), "Fonte" no fim.
+// SEM FIGMA: o esqueleto de carregamento, o aviso de cache (OfflineBanner), o estado vazio e de erro, e a atribuição
+// "Fonte: ..." só quando há fontes gratuitas. O cartão só aparece quando há próximo jogo (os estados "sem jogo" são da Home).
 import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useIsFocused, type Href } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { Chips } from '@/components/Chips';
 import { EmptyState } from '@/components/EmptyState';
-import { GameHeader } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
 import { MatchRow } from '@/components/MatchRow';
+import { NextMatchCard } from '@/components/NextMatchCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
@@ -23,10 +21,11 @@ import type { Loadable } from '@/data/hooks';
 import type { Match, Sport } from '@/data/schemas';
 import { useResultMatches, useUpcomingMatches } from '@/data/sports';
 import { agendaLists } from '@/lib/agenda';
-import { toGameHeaderVM } from '@/lib/matchVM';
+import { predictionOpen } from '@/lib/gameWindows';
+import { homeMatchMoment } from '@/lib/homeMatchMoment';
 import { SPORTS, sportLabel } from '@/lib/sports';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 type Tab = 'upcoming' | 'results';
 
@@ -38,28 +37,16 @@ const SPORT_TABS = SPORTS.map((s) => ({ key: s.key, label: s.label }));
 
 const ERROR_TEXT = 'Não foi possível carregar a agenda.';
 
-function Separator() {
-  return (
-    <View
-      style={{
-        height: layout.separator,
-        backgroundColor: colors.surface20,
-        marginHorizontal: spacing.screenX,
-      }}
-    />
-  );
-}
-
 /** SEM FIGMA: enquanto os dados não chegam, três blocos com a altura da linha de jogo. */
 function Skeleton() {
   return (
-    <View testID="agenda-skeleton" style={{ paddingHorizontal: spacing.screenX, gap: spacing.md, paddingTop: spacing.md }}>
+    <View testID="agenda-skeleton" style={{ paddingHorizontal: space.s24, gap: space.s12, paddingTop: space.s12 }}>
       {[0, 1, 2].map((i) => (
         <View
           key={i}
           style={{
             height: layout.skeletonRowHeight,
-            borderRadius: radius.md,
+            borderRadius: layout.tieCardRadius,
             backgroundColor: colors.surface10,
           }}
         />
@@ -83,6 +70,7 @@ export default function Agenda() {
   const [tab, setTab] = useState<Tab>('upcoming');
   // A Agenda fica montada: o relógio anda em blocos de 10 min e as queries acompanham.
   const now = useNow();
+  const focused = useIsFocused();
   const upcoming = useUpcomingMatches(sport, now);
   const results = useResultMatches(sport, now);
 
@@ -96,20 +84,30 @@ export default function Agenda() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
+  const moment = homeMatchMoment({
+    match: next,
+    now,
+    predictionOpen: next ? predictionOpen(next, now) : false,
+    mvpOpen: false,
+    votedMvp: false,
+    loading: false,
+  });
+
   const header = (
-    <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
+    <View style={{ gap: space.s12, paddingBottom: space.s12 }}>
       {next ? (
-        <Touchable
-          accessibilityRole="button"
-          accessibilityLabel="Próximo jogo"
-          onPress={() => router.push(`/jogo/${next.id}`)}
-        >
-          <GameHeader game={toGameHeaderVM(next)} />
-        </Touchable>
+        <NextMatchCard
+          moment={moment}
+          match={next}
+          now={now}
+          ticking={focused}
+          onOpenMatch={(id) => router.push(`/jogo/${id}`)}
+          onAction={(href) => router.push(href as Href)}
+          onOpenAgenda={() => undefined}
+        />
       ) : null}
-      <View style={{ paddingHorizontal: spacing.screenX }}>
-        <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
-      </View>
+      <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />
+      <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
     </View>
   );
 
@@ -117,11 +115,11 @@ export default function Agenda() {
   // Rodapé só quando há fontes a atribuir (o futebol não tem): sem ele não fica um bloco vazio no fim.
   const footer =
     sources.length > 0 ? (
-      <View style={{ paddingVertical: spacing.md, gap: spacing.xs }}>
+      <View style={{ paddingVertical: space.s12, gap: space.s4 }}>
         {sources.map((a) => (
-          <Body key={a} variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>
+          <Text71 key={a} variant="caption12" color="textSubtle">
             {`Fonte: ${a}`}
-          </Body>
+          </Text71>
         ))}
       </View>
     ) : undefined;
@@ -129,13 +127,12 @@ export default function Agenda() {
   return (
     <Screen padded="none">
       <Header
-        title="AGENDA"
+        title="CALENDÁRIO"
         onBack={back}
         right={
           <Touchable
             accessibilityRole="button"
             accessibilityLabel="Plantel"
-            hitSlop={(layout.minTouch - layout.headerIcon) / 2}
             onPress={() => router.push('/equipa')}
           >
             <Feather name="users" size={layout.headerIcon} color={colors.white} />
@@ -143,9 +140,6 @@ export default function Agenda() {
         }
       />
       <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
-      <View style={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.md }}>
-        <Tabs mode="scroll" items={SPORT_TABS} value={sport} onChange={setSport} />
-      </View>
       {isError(upcoming) || isError(results) ? (
         <EmptyState icon="info" text={ERROR_TEXT} />
       ) : isLoading(upcoming) || isLoading(results) ? (
@@ -155,11 +149,10 @@ export default function Agenda() {
           data={list}
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => <MatchRow match={item} onPress={(id) => router.push(`/jogo/${id}`)} />}
-          ItemSeparatorComponent={Separator}
           ListHeaderComponent={header}
           ListEmptyComponent={<EmptyState text={empty} />}
           ListFooterComponent={footer}
-          contentContainerStyle={{ paddingTop: spacing.md }}
+          contentContainerStyle={{ paddingTop: space.s12, paddingHorizontal: space.s24 }}
         />
       )}
     </Screen>

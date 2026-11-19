@@ -8,8 +8,10 @@ import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { Chips } from '@/components/Chips';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
+import { LeaderPlayerRow } from '@/components/LeaderRows';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Loading } from '@/components/TeamRows';
@@ -47,34 +49,6 @@ function secondary(r: LeaderRow, metric: LeaderMetric): string {
   if (metric === 'goals') return `${r.assists} assist.`;
   if (metric === 'assists') return goalsText(r.goals);
   return `${goalsText(r.goals)} · ${r.assists} assist.`;
-}
-
-function Chips({ filters, value, onChange }: { filters: LeaderFilter[]; value: LeaderFilter; onChange: (f: LeaderFilter) => void }) {
-  return (
-    <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.s8 }}>
-      {filters.map((f) => {
-        const active = f === value;
-        return (
-          <Touchable
-            key={f}
-            testID={`chip-${f}`}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={FILTER_LABEL[f]}
-            onPress={() => onChange(f)}
-            style={{
-              paddingHorizontal: layout.leaderChipPadX,
-              paddingVertical: layout.leaderChipPadY,
-              borderRadius: layout.leaderChipRadius,
-              backgroundColor: active ? colors.white : colors.surface10,
-            }}
-          >
-            <Text71 variant="label16" color={active ? 'ink' : 'white'} numberOfLines={1}>{FILTER_LABEL[f]}</Text71>
-          </Touchable>
-        );
-      })}
-    </View>
-  );
 }
 
 function Switcher({ value, onChange }: { value: LeaderMetric; onChange: (m: LeaderMetric) => void }) {
@@ -158,37 +132,21 @@ function LeaderCard({ r, metric, position }: { r: LeaderRow; metric: LeaderMetri
 }
 
 function PlayerRow({ r, rank, top, metric, position }: { r: LeaderRow; rank: number; top: number; metric: LeaderMetric; position?: string | null }) {
-  const ratio = top > 0 ? Math.min(1, r.value / top) : 0;
   const pos = POSITION_ABBR[position ?? ''];
   const sub = pos ? `${pos} · ${secondary(r, metric)}` : secondary(r, metric);
   return (
-    <Touchable
+    <LeaderPlayerRow
       testID={`leader-row-${r.player.id}`}
-      accessibilityRole="button"
-      accessibilityLabel={`${rank}.º ${r.player.name}, ${r.value} ${UNIT[metric]}, ${sub}`}
+      barTestID={`leader-bar-${r.player.id}`}
+      label={`${rank}.º ${r.player.name}, ${r.value} ${UNIT[metric]}, ${sub}`}
+      rank={rank}
+      photo={r.player.photo}
+      name={r.player.name}
+      sub={sub}
+      value={r.value}
+      top={top}
       onPress={() => openPlayer(r.player.id)}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: space.s12,
-        paddingVertical: layout.leaderRowPadY,
-        borderBottomWidth: layout.separator,
-        borderBottomColor: colors.separator,
-      }}
-    >
-      <Text71 variant="label16" color="textSubtle" style={{ width: layout.leaderRankWidth }}>{rank}</Text71>
-      <PlayerPhoto photo={r.player.photo} size={layout.leaderRowPhoto} />
-      <View style={{ flex: 1, minWidth: 0, gap: layout.leaderNameGap }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.leaderNameGap }}>
-          <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1 }}>{r.player.name}</Text71>
-          <Text71 variant="caption12" color="textSubtle" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 0 }}>{sub}</Text71>
-        </View>
-        <View style={{ height: layout.leaderBarHeight, borderRadius: layout.leaderBarRadius, backgroundColor: colors.surface10, overflow: 'hidden' }}>
-          <View testID={`leader-bar-${r.player.id}`} style={{ width: `${ratio * 100}%`, height: layout.leaderBarHeight, borderRadius: layout.leaderBarRadius, backgroundColor: colors.primaryOnDark }} />
-        </View>
-      </View>
-      <Text71 variant="titleS20" style={{ flexShrink: 0 }}>{r.value}</Text71>
-    </Touchable>
+    />
   );
 }
 
@@ -214,7 +172,16 @@ export default function Marcadores() {
     body = (
       <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s24, gap: space.s16 }}>
         <OfflineBanner visible={stats.status === 'ready' && stats.fromCache === true} />
-        {filters.length > 1 ? <Chips filters={filters} value={active} onChange={setFilter} /> : null}
+        {filters.length > 1 ? (
+          <Chips
+            wrap
+            items={filters.map((f) => ({ key: f, label: FILTER_LABEL[f] }))}
+            value={active}
+            onChange={setFilter}
+            padX={layout.leaderChipPadX}
+            padY={layout.leaderChipPadY}
+          />
+        ) : null}
         <Switcher value={metric} onChange={setMetric} />
         {leader ? (
           <>

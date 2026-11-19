@@ -1,57 +1,48 @@
-// Figma: nós 500:28822 (linha de jogo por jogar, ecrã 500:28787) e 489:7003 (a mesma linha com
-// resultado, nó 489:7038). Linha de 102 px: em cima o badge pequeno da jornada ou fase, a data
-// (com a hora) a muted e a seta; em baixo nome + emblema da casa, a hora (DIN 24) ou as caixas do
-// resultado, e o emblema + nome de fora.
-// SEM FIGMA: o nome da competição ao lado do badge (requisito da Task 7; muted, numa linha, com
-// reticências); "Adiado"/"Cancelado" no lugar da hora, com as palavras de `stateLabel` (lib/matchVM,
-// as mesmas da faixa do GameHeader), e nesses estados a hora sai também da linha de cima; o rótulo
-// de acessibilidade que resume a linha; o desempate por penáltis por baixo das caixas
-// (`penaltiesText`, Task 4); seta Feather "arrow-right" (como no MenuRow).
-// A linha só é botão quando recebe `onPress`: na Task 13 as jornadas têm jogos sem Sporting, que não
-// têm documento em `matches/{id}` e portanto não abrem o detalhe.
-import Feather from '@expo/vector-icons/Feather';
+// Figma V7.1: linha de jogo do Calendário e das jornadas (4948:8278, resultado 4948:8397): data em duas linhas (dia da semana
+// e número em Badge 11 a text-subtle, mês em Caption Strong a muted), nome + emblema da casa alinhados à direita, caixa
+// central surface-10 de 58 pt com a hora ou o resultado (Label 16) e emblema + nome de fora; separador de 1 pt por baixo
+// (`separator`, no fim da linha).
+// SEM FIGMA: "Adiado"/"Cancelado" na caixa central no lugar da hora (palavras de `stateLabel`, as mesmas do GameHeader); o
+// desempate por penáltis por baixo da caixa (`penaltiesText`); o rótulo de acessibilidade que resume a linha, com a
+// competição e a jornada (o frame já não as mostra). Os nomes levam reticências numa linha: a 320 pt a caixa e a data
+// ficam fixas e os nomes cedem.
+// A linha só é botão quando recebe `onPress`: as jornadas têm jogos sem Sporting, que não têm documento em
+// `matches/{id}` e portanto não abrem o detalhe.
 import { View } from 'react-native';
-import { CompetitionBadge } from '@/components/CompetitionBadge';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
 import type { Match } from '@/data/schemas';
 import { penaltiesText, scoreText, stateLabel, toGameHeaderVM } from '@/lib/matchVM';
-import { formatKickoffDate, formatTime } from '@/lib/ptDate';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { formatRowDate, formatTime } from '@/lib/ptDate';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 function TeamSide({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
-  const crest = <TeamCrest team={team} size="sm" testID={`row-crest-${side}`} />;
+  const crest = <TeamCrest team={team} size="row" testID={`row-crest-${side}`} />;
   const name = (
-    <Body
-      variant="rowTeam"
+    <Text71
+      variant="body14"
       numberOfLines={1}
       ellipsizeMode="tail"
-      style={{ flex: 1, textAlign: side === 'home' ? 'right' : 'left' }}
+      style={{ flexShrink: 1, minWidth: 0, textAlign: side === 'home' ? 'right' : 'left' }}
     >
       {team.name}
-    </Body>
+    </Text71>
   );
-  return (
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-      {side === 'home' ? name : crest}
-      {side === 'home' ? crest : name}
-    </View>
-  );
-}
-
-function ScoreBox({ value, testID }: { value: number; testID: string }) {
   return (
     <View
       style={{
-        backgroundColor: colors.white,
-        borderRadius: radius.sm,
-        padding: spacing.sm,
+        flex: 1,
+        flexBasis: 0,
+        minWidth: 0,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: side === 'home' ? 'flex-end' : 'flex-start',
+        gap: layout.matchRowSideGap,
       }}
     >
-      <Display variant="rowScore" testID={testID}>{value}</Display>
+      {side === 'home' ? name : crest}
+      {side === 'home' ? crest : name}
     </View>
   );
 }
@@ -78,64 +69,49 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
   const label = rowLabel(match, vm);
   const score = vm.score ?? null;
   const pen = score && match.score.penalty;
-  const date = formatKickoffDate(match.kickoff);
+  const date = formatRowDate(match.kickoff);
   const time = formatTime(match.kickoff);
 
   const content = (
     <View
       style={{
-        paddingHorizontal: spacing.screenX,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.s8,
         paddingVertical: layout.matchRowPadY,
-        gap: layout.matchRowGap,
+        borderBottomWidth: layout.separator,
+        borderBottomColor: colors.separator,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <CompetitionBadge label={vm.round} size="sm" />
-        <Body
-          variant="body"
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={{ flex: 1, opacity: layout.mutedOpacity }}
-        >
-          {vm.competitionName}
-        </Body>
-        <Body variant="body" numberOfLines={1} style={{ opacity: layout.mutedOpacity }}>
-          {offText ? date : `${date}, ${time}`}
-        </Body>
-        {onPress ? (
-          <Feather
-            testID="row-arrow"
-            name="arrow-right"
-            size={layout.menuRowIcon}
-            color={colors.white}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          />
-        ) : null}
+      <View testID="row-date" style={{ width: layout.matchRowDate, flexShrink: 0, gap: layout.matchRowDateGap }}>
+        <Text71 variant="badge11" color="textSubtle" numberOfLines={1}>{date.day}</Text71>
+        <Text71 variant="captionStrong12" color="textMuted" numberOfLines={1}>{date.month}</Text71>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TeamSide team={vm.home} side="home" />
-        <View style={{ flexShrink: 0, alignItems: 'center', gap: layout.headerDateGap, paddingHorizontal: spacing.sm }}>
+      <TeamSide team={vm.home} side="home" />
+      <View testID="row-center" style={{ width: layout.matchRowCenter, flexShrink: 0, alignItems: 'center', gap: space.s4 }}>
+        <View
+          style={{
+            alignSelf: 'stretch',
+            alignItems: 'center',
+            paddingHorizontal: layout.matchRowCenterPadX,
+            paddingVertical: layout.matchRowCenterPadY,
+            borderRadius: layout.matchRowCenterRadius,
+            backgroundColor: colors.surface10,
+          }}
+        >
           {offText ? (
-            <Body variant="strip" testID="row-state">{offText}</Body>
+            <Text71 variant="badge11" testID="row-state" numberOfLines={1}>{offText}</Text71>
           ) : score ? (
-            <>
-              <View testID="row-score" style={{ flexDirection: 'row', gap: layout.scoreBoxGap, flexShrink: 0 }}>
-                <ScoreBox value={score.home} testID="row-score-home" />
-                <ScoreBox value={score.away} testID="row-score-away" />
-              </View>
-              {pen && pen.home != null && pen.away != null ? (
-                <Body variant="badgeSmall" style={{ opacity: layout.mutedOpacity }}>
-                  {penaltiesText(pen.home, pen.away)}
-                </Body>
-              ) : null}
-            </>
+            <Text71 variant="label16" testID="row-score" numberOfLines={1}>{`${score.home}-${score.away}`}</Text71>
           ) : (
-            <Display variant="sectionScore" testID="row-time">{time}</Display>
+            <Text71 variant="label16" testID="row-time" numberOfLines={1}>{time}</Text71>
           )}
         </View>
-        <TeamSide team={vm.away} side="away" />
+        {pen && pen.home != null && pen.away != null ? (
+          <Text71 variant="badge11" color="textMuted" numberOfLines={1}>{penaltiesText(pen.home, pen.away)}</Text71>
+        ) : null}
       </View>
+      <TeamSide team={vm.away} side="away" />
     </View>
   );
 

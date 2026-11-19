@@ -70,9 +70,9 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('cabeçalho e filtro', () => {
-  it('mostra o título AGENDA e o botão Plantel, que abre /equipa', async () => {
+  it('mostra o título CALENDÁRIO e o botão Plantel, que abre /equipa', async () => {
     await render(ui());
-    expect(screen.getByRole('header', { name: 'AGENDA' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'CALENDÁRIO' })).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Plantel' }));
     expect(router.push).toHaveBeenCalledWith('/equipa');
   });
@@ -122,7 +122,7 @@ describe('listas', () => {
   it('mostra o cartão do próximo jogo da modalidade', async () => {
     mockUpcoming.current = ready([ns]);
     await render(ui());
-    expect(screen.getByRole('button', { name: 'Próximo jogo' })).toBeTruthy();
+    expect(screen.getByTestId('next-match-card')).toBeTruthy();
   });
 
   it('fontes gratuitas com atribuição aparecem no fim da lista', async () => {

@@ -2,6 +2,7 @@
 // Review Focus 2 (adiado e cancelado) e Review Focus 4 (nomes longos numa linha).
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { layout } from '@/theme/tokens';
 import { MatchRow } from '@/components/MatchRow';
 import type { GameStatus, Match } from '@/data/schemas';
 
@@ -50,13 +51,14 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('jogo por jogar', () => {
-  it('mostra jornada, competição, data com hora e a hora no meio', async () => {
+  it('mostra a data em duas linhas e a hora na caixa do meio (sem competição nem seta)', async () => {
     await render(<MatchRow match={match()} onPress={jest.fn()} />);
-    expect(screen.getByText('J16')).toBeTruthy();
-    expect(screen.getByText('Liga Portugal')).toBeTruthy();
-    expect(screen.getByText('14 Set, 20:30')).toBeTruthy();
+    expect(screen.getByText('SEG 14')).toBeTruthy();
+    expect(screen.getByText('SET')).toBeTruthy();
     expect(screen.getByTestId('row-time').props.children).toBe('20:30');
-    expect(screen.queryByTestId('row-score-home')).toBeNull();
+    expect(screen.queryByTestId('row-score')).toBeNull();
+    expect(screen.queryByText('Liga Portugal')).toBeNull();
+    expect(screen.queryByTestId('row-arrow')).toBeNull();
   });
 
   it('carregar na linha devolve o id do jogo', async () => {
@@ -66,24 +68,22 @@ describe('jogo por jogar', () => {
     expect(onPress).toHaveBeenCalledWith('1001');
   });
 
-  it('sem onPress a linha não é botão nem tem seta (F9)', async () => {
+  it('sem onPress a linha não é botão (F9)', async () => {
     await render(<MatchRow match={match()} />);
     expect(screen.queryByRole('button')).toBeNull();
-    expect(screen.queryByTestId('row-arrow')).toBeNull();
-    expect(screen.getByText('Liga Portugal')).toBeTruthy();
+    expect(screen.getByTestId('match-row-1001').props.accessible).toBe(true);
   });
 });
 
 describe('resultado', () => {
-  it('FT 3-0 mostra as caixas 3 e 0 e não a hora', async () => {
+  it('FT 3-0 mostra "3-0" na caixa e não a hora', async () => {
     await render(
       <MatchRow
         match={match({ status: 'FT', score: { home: 3, away: 0, halftime: null, extratime: null, penalty: null } })}
         onPress={jest.fn()}
       />,
     );
-    expect(String(screen.getByTestId('row-score-home').props.children)).toBe('3');
-    expect(String(screen.getByTestId('row-score-away').props.children)).toBe('0');
+    expect(screen.getByTestId('row-score').props.children).toBe('3-0');
     expect(screen.queryByTestId('row-time')).toBeNull();
   });
 
@@ -106,8 +106,8 @@ describe('adiado e cancelado (Review Focus 2)', () => {
     await render(<MatchRow match={match({ status: 'PST' })} onPress={jest.fn()} />);
     expect(screen.getByText('Adiado')).toBeTruthy();
     expect(screen.queryByText('20:30')).toBeNull();
-    expect(screen.getByText('14 Set')).toBeTruthy();
-    expect(screen.queryByTestId('row-score-home')).toBeNull();
+    expect(screen.getByText('SEG 14')).toBeTruthy();
+    expect(screen.queryByTestId('row-score')).toBeNull();
   });
 
   it('CANC mostra "Cancelado" e não mostra resultado', async () => {
@@ -118,7 +118,7 @@ describe('adiado e cancelado (Review Focus 2)', () => {
       />,
     );
     expect(screen.getByText('Cancelado')).toBeTruthy();
-    expect(screen.queryByTestId('row-score-home')).toBeNull();
+    expect(screen.queryByTestId('row-score')).toBeNull();
     expect(screen.queryByText('20:30')).toBeNull();
   });
 });
@@ -164,29 +164,34 @@ describe('nomes longos (Review Focus 4)', () => {
       roundLabel: null,
     },
     home: { id: '228', name: 'Sporting Clube de Portugal B', logo: null },
-    away: { id: '9', name: 'Palma Futsal', logo: null },
+    away: { id: '9', name: 'Gil Vicente Futebol Clube de Barcelos', logo: null },
     status: 'FT',
     score: { home: 3, away: 0, halftime: null, extratime: null, penalty: null },
   } as Partial<Match>);
 
-  it('nomes e competição ficam numa linha com reticências', async () => {
+  it('nomes ficam numa linha com reticências', async () => {
     await render(<MatchRow match={long} onPress={jest.fn()} />);
-    for (const text of ['Sporting Clube de Portugal B', 'Palma Futsal', 'Liga dos Campeões UEFA de Futsal']) {
+    for (const text of ['Sporting Clube de Portugal B', 'Gil Vicente Futebol Clube de Barcelos']) {
       const node = screen.getByText(text);
       expect(node.props.numberOfLines).toBe(1);
       expect(node.props.ellipsizeMode).toBe('tail');
     }
   });
 
-  it('o resultado não é empurrado para fora: as caixas não encolhem', async () => {
+  it('o resultado e a data não são empurrados para fora: as colunas fixas não encolhem', async () => {
     await render(<MatchRow match={long} onPress={jest.fn()} />);
-    const score = screen.getByTestId('row-score');
-    expect(StyleSheet.flatten(score.props.style)).toEqual(expect.objectContaining({ flexShrink: 0 }));
-    expect(String(screen.getByTestId('row-score-home').props.children)).toBe('3');
+    expect(StyleSheet.flatten(screen.getByTestId('row-center').props.style)).toEqual(
+      expect.objectContaining({ flexShrink: 0, width: layout.matchRowCenter }),
+    );
+    expect(StyleSheet.flatten(screen.getByTestId('row-date').props.style)).toEqual(
+      expect.objectContaining({ flexShrink: 0, width: layout.matchRowDate }),
+    );
+    expect(screen.getByTestId('row-score').props.children).toBe('3-0');
   });
 
-  it('"Round of 32" sem roundLabel mostra-se em português', async () => {
+  it('emblema da casa e de fora presentes com nomes longos', async () => {
     await render(<MatchRow match={long} onPress={jest.fn()} />);
-    expect(screen.getByText('16 avos de final')).toBeTruthy();
+    expect(screen.getByTestId('row-crest-home', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('row-crest-away')).toBeTruthy();
   });
 });
