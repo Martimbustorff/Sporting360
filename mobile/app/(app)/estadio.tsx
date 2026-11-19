@@ -35,7 +35,18 @@ function Legend() {
   return (
     <View testID="estadio-legenda" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.s16, rowGap: space.s8 }}>
       <View style={item}>
-        <View style={{ width: layout.stadiumLegendDoor, height: layout.stadiumLegendDoor, borderRadius: layout.stadiumLegendDoor / 2, backgroundColor: colors.white }} />
+        <View
+          style={{
+            width: layout.stadiumLegendDoor,
+            height: layout.stadiumLegendDoor,
+            borderRadius: layout.stadiumLegendDoor / 2,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text71 variant="badge11">1</Text71>
+        </View>
         <Text71 variant="caption12" color="textMuted">Portas 1 a 12</Text71>
       </View>
       <View style={item}>
