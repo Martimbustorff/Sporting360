@@ -1,7 +1,9 @@
-// Figma: nós 323:11630 / 323:11790 (linha "Notificações" com interruptor, via ToggleRow). SEM FIGMA: a lista de cinco
+// Figma: nós 323:11630 / 323:11790 (linha "Notificações" com interruptor, via ToggleRow). SEM FIGMA: a lista de dois
 // interruptores e o aviso por baixo não estão desenhados; compõe Header, ToggleRow e Body, só com tokens.
 // Task 22: guarda as preferências em users/{uid}.notificationPrefs. Cada interruptor grava o objeto completo. Sem
 // preferências guardadas, tudo ligado. Leitura falhada: erro, nunca valores por omissão.
+// Push só para ações na app (2026-11-19): lembrete de prognóstico e abertura do MVP. As chaves antigas
+// (matchStart, goals, news) ficam no documento, sem interruptor e sem efeito.
 // Plano 6: o PushSetup segue o documento e acerta os tópicos; este ecrã não chama o push. Com a permissão do
 // telemóvel recusada, um aviso e o botão para as definições (SEM FIGMA: PrimaryButton secundário, só tokens).
 import Feather from '@expo/vector-icons/Feather';
@@ -33,11 +35,8 @@ export const NOTIFICACOES_TEXT = {
 } as const;
 
 const ROWS: { key: keyof NotificationPrefs; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'matchStart', label: 'Início dos jogos', icon: 'play-circle' },
-  { key: 'goals', label: 'Golos', icon: 'target' },
   { key: 'predictionReminder', label: 'Lembrete de prognóstico', icon: 'edit-3' },
   { key: 'mvpOpen', label: 'Abertura do MVP', icon: 'award' },
-  { key: 'news', label: 'Notícias', icon: 'file-text' },
 ];
 
 export default function Notificacoes() {

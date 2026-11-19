@@ -78,19 +78,21 @@ Anotar o resultado do smoke no fim do Plano 3. Se algo falhar, corrigir antes da
 
 O envio fica desligado (`PUSH_ENABLED=false` nos dois `.env` das functions) até ao lançamento da V7.1. Nada disto foi corrido pelo agente.
 
+Só há dois tipos de push, ambos para ações na app: **lembrete de prognóstico** (2 h antes, só sem prognóstico feito) e **abertura do MVP**. Início do jogo, golos e notícias saíram (decisão de 2026-11-19); a `newsSync` já não envia push e o telemóvel tira sempre os tópicos antigos.
+
 - [ ] **Chave APNs:** criar a chave `.p8` na Apple Developer (Keys, "Apple Push Notifications service") e carregá-la no Firebase Console, projeto `scp360-37a74`, Definições do projeto, Cloud Messaging, app iOS `com.scp360`. Sem ela o iOS não recebe nada; o Android funciona sem ela.
 - [ ] **Build:** o módulo `@react-native-firebase/messaging` e o entitlement `aps-environment` pedem um build nativo novo. É o mesmo build do redesign V7.1 e só corre com o OK explícito do Martim (não há build só para o push).
 - [ ] **Smoke em dispositivo (iOS e Android):**
   - [ ] a permissão só é pedida depois do login (e depois da folha de Analytics), nunca no primeiro arranque nem no Welcome;
-  - [ ] os 5 tipos chegam: início do jogo, golo do Sporting, abertura do MVP, lembrete de prognóstico (2 h antes, só sem prognóstico feito) e notícia;
-  - [ ] tocar em cada um abre o ecrã certo (jogo, tab MVP, tab Prognóstico, notícia), com a app fechada e em segundo plano;
-  - [ ] desligar um interruptor no ecrã Notificações deixa de receber esse tipo;
+  - [ ] os 2 tipos chegam: abertura do MVP e lembrete de prognóstico (2 h antes, só sem prognóstico feito); início do jogo, golos e notícias não chegam;
+  - [ ] tocar em cada um abre o ecrã certo (tab MVP, tab Prognóstico), com a app fechada e em segundo plano;
+  - [ ] o ecrã Notificações mostra só dois interruptores (Lembrete de prognóstico e Abertura do MVP); desligar um deixa de receber esse tipo;
   - [ ] com a app aberta: no iOS aparece a notificação do sistema; no Android aparece o aviso dentro da app (uma só vez) e tocar abre o ecrã certo;
   - [ ] recusar a permissão, ligá-la nas definições e voltar à app: o lembrete de prognóstico passa a chegar sem fechar a app;
   - [ ] com a permissão recusada nas definições do telemóvel, o ecrã Notificações mostra o aviso e o botão "Abrir definições";
   - [ ] sair da conta deixa de receber; entrar com outra conta no mesmo telemóvel segue as preferências da conta nova.
 - [ ] **Publicação, só com OK do Martim, por esta ordem:**
   1. regras: o `firestore.rules` da fase em vigor (ou o `firestore.final.rules` depois do lançamento), com a regra nova de `users/{uid}/devices`;
-  2. functions: `functions:v2027:footballLiveTicker,functions:v2027:newsSync,functions:v2027:predictionReminderPush,functions:v2027:deleteAccount` (ainda com `PUSH_ENABLED=false`);
-  3. só depois: `PUSH_ENABLED=true` no `.env` de produção e nova publicação das três de envio (`footballLiveTicker`, `newsSync`, `predictionReminderPush`).
+  2. functions: `functions:v2027:footballLiveTicker,functions:v2027:newsSync,functions:v2027:predictionReminderPush,functions:v2027:deleteAccount` (ainda com `PUSH_ENABLED=false`; a `newsSync` entra porque deixou de chamar a push de notícias);
+  3. só depois: `PUSH_ENABLED=true` no `.env` de produção e nova publicação das duas de envio (`footballLiveTicker`, `predictionReminderPush`).
 - [ ] **Ícone pequeno no Android:** gerado de `assets/images/android-icon-monochrome.png` com a cor `#00835B` (`plugins/withNotificationIcon.js`). Confirmar no smoke que aparece na barra de estado (e não um quadrado branco).

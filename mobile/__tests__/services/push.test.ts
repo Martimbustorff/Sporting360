@@ -117,12 +117,12 @@ describe('dispositivo', () => {
 describe('tópicos', () => {
   it('syncTopics aplica o plano e uma falha não impede as outras nem lança', async () => {
     m.subscribeToTopic.mockRejectedValueOnce(new Error('offline'));
-    await expect(syncTopics({ ...DEFAULT_NOTIFICATION_PREFS, news: false })).resolves.toBeUndefined();
-    expect(m.subscribeToTopic.mock.calls.map((c) => c[1])).toEqual(['push_matchStart', 'push_goals', 'push_mvpOpen']);
-    expect(m.unsubscribeFromTopic.mock.calls.map((c) => c[1])).toEqual(['push_news']);
+    await expect(syncTopics(DEFAULT_NOTIFICATION_PREFS)).resolves.toBeUndefined();
+    expect(m.subscribeToTopic.mock.calls.map((c) => c[1])).toEqual(['push_mvpOpen']);
+    expect(m.unsubscribeFromTopic.mock.calls.map((c) => c[1])).toEqual(['push_matchStart', 'push_goals', 'push_news']);
   });
 
-  it('syncTopics(null) tira os 4 tópicos', async () => {
+  it('syncTopics(null) tira os 4 tópicos (MVP e os três antigos)', async () => {
     await syncTopics(null);
     expect(m.unsubscribeFromTopic).toHaveBeenCalledTimes(4);
     expect(m.subscribeToTopic).not.toHaveBeenCalled();
@@ -167,14 +167,16 @@ describe('toque na notificação', () => {
     await flush();
     expect(handler).toHaveBeenCalledWith('/jogo/9002?tab=mvp');
     const listener = m.onNotificationOpenedApp.mock.calls[0]![1];
+    listener({ data: { route: '/jogo/9002?tab=prognostico' } });
     listener({ data: { route: '/noticias?id=abc' } });
+    listener({ data: { route: '/jogo/9002' } });
     listener({ data: { route: 'https://evil.pt' } });
     listener({});
-    expect(handler.mock.calls).toEqual([['/jogo/9002?tab=mvp'], ['/noticias?id=abc']]);
+    expect(handler.mock.calls).toEqual([['/jogo/9002?tab=mvp'], ['/jogo/9002?tab=prognostico']]);
   });
 
   it('getInitialNotification só é tratado uma vez', async () => {
-    m.getInitialNotification.mockResolvedValue({ data: { route: '/jogo/1' } });
+    m.getInitialNotification.mockResolvedValue({ data: { route: '/jogo/1?tab=mvp' } });
     const handler = jest.fn();
     const unsub = onPushOpen(handler);
     await flush();
@@ -221,12 +223,12 @@ describe('notificação com a app aberta', () => {
     const handler = jest.fn();
     const stop = onPushForeground(handler);
     const listener = m.onMessage.mock.calls[0]![1];
-    listener({ notification: { title: 'Golo do Sporting!', body: 'Pote (30\').' }, data: { route: '/jogo/9002' } });
+    listener({ notification: { title: 'Ainda não fizeste o teu prognóstico', body: 'Sporting CP vs Benfica começa às 20:30.' }, data: { route: '/jogo/9002?tab=prognostico' } });
     listener({ notification: { title: 'Notícia', body: 'x' }, data: { route: 'https://evil.pt' } });
     listener({ notification: { title: '  ' }, data: { route: '/jogo/1' } });
     listener({ data: { route: '/jogo/1' } });
     expect(handler.mock.calls).toEqual([
-      [{ title: 'Golo do Sporting!', body: "Pote (30').", route: '/jogo/9002' }],
+      [{ title: 'Ainda não fizeste o teu prognóstico', body: 'Sporting CP vs Benfica começa às 20:30.', route: '/jogo/9002?tab=prognostico' }],
       [{ title: 'Notícia', body: 'x', route: null }],
     ]);
     expect(typeof stop).toBe('function');

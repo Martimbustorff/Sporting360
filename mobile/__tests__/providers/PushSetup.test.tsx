@@ -70,7 +70,7 @@ describe('PushSetup', () => {
     expect(p.syncTopics).toHaveBeenCalledTimes(1);
   });
 
-  it('sem notificationPrefs: subscreve os 4 tópicos', async () => {
+  it('sem notificationPrefs: sincroniza com as preferências por omissão', async () => {
     await render(<PushSetup uid="alice" ready />);
     await flush();
     expect(p.syncTopics).toHaveBeenCalledWith(DEFAULT_NOTIFICATION_PREFS);
@@ -83,10 +83,10 @@ describe('PushSetup', () => {
     expect(p.syncTopics).toHaveBeenCalledWith(DEFAULT_NOTIFICATION_PREFS);
   });
 
-  it('o documento muda goals para false: unsubscribe push_goals', async () => {
+  it('o documento muda mvpOpen para false: sincroniza as novas preferências', async () => {
     const view = await render(<PushSetup uid="alice" ready />);
     await flush();
-    const off = { ...DEFAULT_NOTIFICATION_PREFS, goals: false };
+    const off = { ...DEFAULT_NOTIFICATION_PREFS, mvpOpen: false };
     mockUser.mockReturnValue(ready({ notificationPrefs: off }));
     await view.rerender(<PushSetup uid="alice" ready />);
     await flush();
@@ -210,14 +210,14 @@ describe('PushSetup: aviso com a app aberta (Android)', () => {
     await render(tree());
     await flush();
     expect(p.onPushForeground).toHaveBeenCalledTimes(1);
-    await arrive({ title: 'Golo do Sporting!', body: "Pote (30'). Sporting CP 2-0 Benfica", route: '/jogo/9002' });
-    expect(screen.getByText('Golo do Sporting!')).toBeTruthy();
-    expect(screen.getByText("Pote (30'). Sporting CP 2-0 Benfica")).toBeTruthy();
-    const banner = screen.getByRole('button', { name: "Golo do Sporting!. Pote (30'). Sporting CP 2-0 Benfica" });
+    await arrive({ title: 'A votação do MVP está aberta', body: 'Escolhe o melhor do Sporting em Sporting CP vs Benfica.', route: '/jogo/9002?tab=mvp' });
+    expect(screen.getByText('A votação do MVP está aberta')).toBeTruthy();
+    expect(screen.getByText('Escolhe o melhor do Sporting em Sporting CP vs Benfica.')).toBeTruthy();
+    const banner = screen.getByRole('button', { name: 'A votação do MVP está aberta. Escolhe o melhor do Sporting em Sporting CP vs Benfica.' });
     expect(banner.props.accessibilityHint).toBe(PUSH_BANNER_TEXT.openHint);
     await fireEvent.press(banner);
-    expect(router.push).toHaveBeenCalledWith('/jogo/9002');
-    expect(screen.queryByText('Golo do Sporting!')).toBeNull();
+    expect(router.push).toHaveBeenCalledWith('/jogo/9002?tab=mvp');
+    expect(screen.queryByText('A votação do MVP está aberta')).toBeNull();
   });
 
   it('sem rota válida: tocar só fecha o aviso', async () => {

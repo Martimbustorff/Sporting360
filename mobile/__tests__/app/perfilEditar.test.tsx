@@ -121,12 +121,14 @@ describe('Editar perfil', () => {
 });
 
 describe('Notificações', () => {
-  it('sem preferências guardadas mostra os cinco interruptores ligados e o aviso', async () => {
+  it('sem preferências guardadas mostra só dois interruptores, ligados, e o aviso', async () => {
     mockUser.current = { status: 'ready', data: {} };
     await render(wrap(<Notificacoes />));
-    for (const l of ['Início dos jogos', 'Golos', 'Lembrete de prognóstico', 'Abertura do MVP', 'Notícias']) {
+    for (const l of ['Lembrete de prognóstico', 'Abertura do MVP']) {
       expect(screen.getByRole('switch', { name: l }).props.accessibilityState.checked).toBe(true);
     }
+    expect(screen.getAllByRole('switch')).toHaveLength(2);
+    for (const l of ['Início dos jogos', 'Golos', 'Notícias']) expect(screen.queryByRole('switch', { name: l })).toBeNull();
     expect(screen.getByText('Escolhe o que queres receber neste telemóvel enquanto tiveres sessão iniciada.')).toBeTruthy();
   });
 
@@ -174,23 +176,32 @@ describe('Notificações', () => {
     AppState.addEventListener = original;
   });
 
-  it('mudar "Golos" grava o objeto completo com goals false', async () => {
+  it('mudar "Abertura do MVP" grava o objeto completo com mvpOpen false', async () => {
     mockUser.current = { status: 'ready', data: {} };
     await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
     expect(updateMyProfileFields).toHaveBeenCalledWith('u1', {
-      notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: true },
+      notificationPrefs: { matchStart: true, goals: true, predictionReminder: true, mvpOpen: false, news: true },
     });
-    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByRole('switch', { name: 'Abertura do MVP' }).props.accessibilityState.checked).toBe(false);
+  });
+
+  it('as chaves antigas guardadas mantêm o valor que tinham ao gravar', async () => {
+    mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: false, goals: true, predictionReminder: true, mvpOpen: true, news: false } } };
+    await render(wrap(<Notificacoes />));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }));
+    expect(updateMyProfileFields).toHaveBeenCalledWith('u1', {
+      notificationPrefs: { matchStart: false, goals: true, predictionReminder: false, mvpOpen: true, news: false },
+    });
   });
 
   it('dois toques seguidos acumulam as duas escolhas', async () => {
     mockUser.current = { status: 'ready', data: {} };
     await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }));
     expect((updateMyProfileFields as jest.Mock).mock.calls[1][1]).toEqual({
-      notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: false },
+      notificationPrefs: { matchStart: true, goals: true, predictionReminder: false, mvpOpen: false, news: true },
     });
   });
 
@@ -198,8 +209,8 @@ describe('Notificações', () => {
     mockUser.current = { status: 'ready', data: {} };
     (updateMyProfileFields as jest.Mock).mockRejectedValueOnce(new ProfileSaveError('UNKNOWN'));
     await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
-    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
+    expect(screen.getByRole('switch', { name: 'Abertura do MVP' }).props.accessibilityState.checked).toBe(true);
     expect(screen.getByText('Não foi possível guardar a escolha. Tenta outra vez.')).toBeTruthy();
   });
 
@@ -207,8 +218,8 @@ describe('Notificações', () => {
     mockUser.current = { status: 'ready', data: {} };
     (updateMyProfileFields as jest.Mock).mockRejectedValueOnce(new ProfileSaveError('OFFLINE'));
     await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
-    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
+    expect(screen.getByRole('switch', { name: 'Abertura do MVP' }).props.accessibilityState.checked).toBe(false);
     expect(
       screen.getByText('Sem ligação. A tua escolha fica guardada e é enviada quando houver ligação.'),
     ).toBeTruthy();
@@ -222,15 +233,15 @@ describe('Notificações', () => {
       .mockImplementationOnce(() => Promise.resolve())
       .mockImplementationOnce(() => new Promise<void>((r) => (finishSecond = r)));
     const view = await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
-    // Chega o documento só com a 1.ª escrita (goals false); a 2.ª (news false) ainda não foi confirmada.
-    mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: true, goals: false, predictionReminder: true, mvpOpen: true, news: true } } };
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }));
+    // Chega o documento só com a 1.ª escrita (mvpOpen false); a 2.ª (predictionReminder false) ainda não foi confirmada.
+    mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: true, goals: true, predictionReminder: true, mvpOpen: false, news: true } } };
     await view.rerender(wrap(<Notificacoes />));
-    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
-    await fireEvent.press(screen.getByRole('switch', { name: 'Início dos jogos' }));
+    expect(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }).props.accessibilityState.checked).toBe(false);
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
     expect((updateMyProfileFields as jest.Mock).mock.calls[2][1]).toEqual({
-      notificationPrefs: { matchStart: false, goals: false, predictionReminder: true, mvpOpen: true, news: false },
+      notificationPrefs: { matchStart: true, goals: true, predictionReminder: false, mvpOpen: true, news: true },
     });
     await act(async () => finishSecond());
   });
@@ -242,24 +253,24 @@ describe('Notificações', () => {
       .mockImplementationOnce(() => new Promise<void>((_r, j) => (failFirst = j)))
       .mockImplementationOnce(() => Promise.resolve());
     await render(wrap(<Notificacoes />));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
-    await fireEvent.press(screen.getByRole('switch', { name: 'Notícias' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Abertura do MVP' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }));
     await act(async () => failFirst(new ProfileSaveError('UNKNOWN')));
-    expect(screen.getByRole('switch', { name: 'Golos' }).props.accessibilityState.checked).toBe(true);
-    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByRole('switch', { name: 'Abertura do MVP' }).props.accessibilityState.checked).toBe(true);
+    expect(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }).props.accessibilityState.checked).toBe(false);
   });
 
   it('chaves em falta nas preferências guardadas contam como desligadas', async () => {
     mockUser.current = { status: 'ready', data: { notificationPrefs: { matchStart: true, goals: false, predictionReminder: false, mvpOpen: false, news: false } } };
     await render(wrap(<Notificacoes />));
-    expect(screen.getByRole('switch', { name: 'Início dos jogos' }).props.accessibilityState.checked).toBe(true);
-    expect(screen.getByRole('switch', { name: 'Notícias' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByRole('switch', { name: 'Abertura do MVP' }).props.accessibilityState.checked).toBe(false);
+    expect(screen.getByRole('switch', { name: 'Lembrete de prognóstico' }).props.accessibilityState.checked).toBe(false);
   });
 
   it('leitura falhada mostra erro, não valores por omissão', async () => {
     mockUser.current = { status: 'error', error: new Error('x') };
     await render(wrap(<Notificacoes />));
     expect(screen.getByText('Não foi possível carregar as tuas preferências.')).toBeTruthy();
-    expect(screen.queryByRole('switch', { name: 'Golos' })).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Abertura do MVP' })).toBeNull();
   });
 });

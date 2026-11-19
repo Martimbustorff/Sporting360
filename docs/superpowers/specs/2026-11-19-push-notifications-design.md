@@ -43,3 +43,11 @@ O ecrã Notificações já existe e guarda `users/{uid}.notificationPrefs` (matc
 ## Deixado ao implementador
 - Textos exatos das mensagens (PT-PT, curtos, sem travessões).
 - Throttling interno e testes no emulador com o Admin SDK mockado.
+
+## Alteração 2026-11-19
+Decisão do Martim: as push passam a existir só para ações na app.
+- Ficam: lembrete de prognóstico (por dispositivo) e abertura do MVP (tópico `push_mvpOpen`).
+- Saem: início do jogo (`push_matchStart`), golos (`push_goals`) e notícias (`push_news`). Servidor: `matchPush` só envia o MVP, `newsPush` foi apagado e a `newsSync` já não envia push.
+- App: o ecrã Notificações mostra só dois interruptores; o plano de tópicos subscreve `push_mvpOpen` se `mvpOpen` estiver ligado e tira sempre os três tópicos antigos (limpa telemóveis de builds de teste); `routeFromData` aceita só `/jogo/<id>?tab=mvp` e `/jogo/<id>?tab=prognostico`.
+- Dados: `notificationPrefs` mantém as cinco chaves, o schema e as regras do Firestore ficam como estão; as chaves antigas deixam de aparecer e de ter efeito.
+
