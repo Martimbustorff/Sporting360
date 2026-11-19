@@ -346,6 +346,33 @@ describe("syncFixtures: canal de TV", () => {
   });
 });
 
+describe("syncFixtures: leitura de config/tvChannels falha com exceções já gravadas", () => {
+  it("o jogo existente mantém o tv (outro canal e vazio), o novo recebe a regra, e tudo se escreve", async () => {
+    await db.doc("config/tvChannels").set({ overrides: { "1500003": "Canal 11", "1500001": "" } });
+    await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    expect((await db.doc("matches/1500003").get()).get("tv")).toBe("Canal 11");
+    expect((await db.doc("matches/1500001").get()).get("tv")).toBeNull();
+    const ruleId = (await db.collection("matches").get()).docs.find((d) => d.id !== "1500003" && d.id !== "1500001" && d.get("tv") !== null)!.id;
+    await db.doc(`matches/${ruleId}`).delete();
+    await db.doc(`ingestState/match_${ruleId}`).delete(); // sem hash guardado, o jogo volta a escrever-se como novo
+
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const orig = db.doc.bind(db);
+    const spy = jest.spyOn(db, "doc").mockImplementation((p: string) => {
+      if (p === "config/tvChannels") throw new Error("boom");
+      return orig(p);
+    });
+    const r = await syncFixtures(deps(fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]])));
+    spy.mockRestore();
+    warn.mockRestore();
+    expect(r.count).toBe(4);
+    expect((await db.doc("matches/1500003").get()).get("tv")).toBe("Canal 11");
+    expect((await db.doc("matches/1500001").get()).get("tv")).toBeNull();
+    expect((await db.doc(`matches/${ruleId}`).get()).get("tv")).toBe("SPORT TV");
+    expect((await db.collection("matches").get()).size).toBe(4);
+  });
+});
+
 describe("syncFixtures: leitura de config/tvChannels falha", () => {
   it("os jogos escrevem-se na mesma, com tv pela regra e um aviso sem ids nem caminhos", async () => {
     const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);

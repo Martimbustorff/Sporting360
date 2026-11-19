@@ -118,6 +118,26 @@ describe("tick: config/tvChannels indisponível", () => {
   });
 });
 
+describe("tick: config/tvChannels indisponível com exceção já gravada", () => {
+  it.each([["Canal 11"], [null]])("o jogo ao vivo mantém o tv %p e o resultado escreve-se", async (tv) => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    await db.doc(`matches/${ID}`).update({ tv });
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const orig = db.doc.bind(db);
+    const spy = jest.spyOn(db, "doc").mockImplementation((p: string) => {
+      if (p === "config/tvChannels") throw new Error("boom");
+      return orig(p);
+    });
+    const f = fakeFetch([[byIds, (_u, n) => envelope([fx("fixture-live-2h.json", { elapsed: 67 + n })])]]);
+    await tick(deps(f));
+    spy.mockRestore();
+    warn.mockRestore();
+    expect((await db.doc(`matches/${ID}`).get()).get("elapsed")).toBe(70);
+    expect((await db.doc(`matches/${ID}`).get()).get("tv")).toBe(tv);
+  });
+});
+
 describe("tick: sem nada a fazer", () => {
   it("sem jogos na janela → calls 0 e nenhum pedido", async () => {
     const f = fakeFetch([]);

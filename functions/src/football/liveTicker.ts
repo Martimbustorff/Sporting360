@@ -140,7 +140,7 @@ export async function tick(d: TickDeps): Promise<TickResult> {
   };
   const standingsDone = new Set<string>();
   // Exceções de canal de TV: lidas uma vez por execução, só quando há jogo a gravar.
-  let tvOverrides: Record<string, string> | undefined;
+  let tvOverrides: Record<string, string> | null | undefined; // null: leitura falhou; undefined: ainda por ler
 
   /** Refresco de fim de jogo (standings + competição), uma vez por marca; a marca só fica com sucesso. */
   const endRefresh = async (m: MatchDoc) => {
@@ -227,8 +227,8 @@ export async function tick(d: TickDeps): Promise<TickResult> {
         try {
           const previous = state.get(id) ?? null;
           const observedLive = previous !== null && phaseNow(previous) === "live";
-          tvOverrides ??= await loadTvOverridesSafe(d.db);
-          const { match, details } = mapFixture(f, { now, previous, observedLive, tvOverrides });
+          if (tvOverrides === undefined) tvOverrides = await loadTvOverridesSafe(d.db);
+          const { match, details } = mapFixture(f, { now, previous, observedLive, tvOverrides: tvOverrides ?? {}, tvOverridesUnavailable: tvOverrides === null });
           const legacy = legacyFromFixture(f, match, null);
           const r = await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix, halftimeSnapshot: true });
           written += r.written;

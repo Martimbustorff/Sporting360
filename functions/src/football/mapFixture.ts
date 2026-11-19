@@ -63,11 +63,16 @@ export interface FootballDetails {
 
 export interface MapContext {
   now: Date;
-  previous: Pick<MatchDoc, "status" | "finishedAt" | "finishedAtSource"> | null;
+  previous: Pick<MatchDoc, "status" | "finishedAt" | "finishedAtSource" | "tv"> | null;
   /** O ticker viu o jogo a decorrer (estado LIVE/HT) antes deste fim. */
   observedLive: boolean;
   /** Exceções de canal de TV (`config/tvChannels`), lidas uma vez por execução por quem chama. Omitido: nenhuma. */
   tvOverrides?: Record<string, string>;
+  /**
+   * A leitura de `config/tvChannels` falhou: não se sabe se o jogo tem exceção, por isso mantém-se o `tv` do documento
+   * anterior (sem documento anterior, vale a regra).
+   */
+  tvOverridesUnavailable?: boolean;
 }
 
 const MIN = 60_000;
@@ -277,7 +282,7 @@ export function mapFixture(f: AfFixture, ctx: MapContext): { match: MatchDoc; de
     home: teamRef(f.teams.home),
     away: teamRef(f.teams.away),
     sportingSide: f.teams.home.id === SPORTING_TEAM_ID ? "home" : "away",
-    tv: tvForFixture(f, ctx.tvOverrides ?? {}),
+    tv: ctx.tvOverridesUnavailable && ctx.previous && ctx.previous.tv !== undefined ? ctx.previous.tv : tvForFixture(f, ctx.tvOverrides ?? {}),
     kickoff: kickoffOf(f),
     status,
     statusRaw: f.fixture.status.short,

@@ -70,7 +70,8 @@ export async function syncFixtures(d: FootballDeps): Promise<SyncResult> {
     for (const f of await d.api.fixturesByTeamSeason(SPORTING_TEAM_ID, season)) byId.set(String(f.fixture.id), f);
   }
 
-  const tvOverrides = await loadTvOverridesSafe(d.db);
+  const tvRead = await loadTvOverridesSafe(d.db);
+  const tv = { tvOverrides: tvRead ?? {}, tvOverridesUnavailable: tvRead === null };
   let count = 0;
   let failed = 0;
   const alerts: string[] = [];
@@ -79,7 +80,7 @@ export async function syncFixtures(d: FootballDeps): Promise<SyncResult> {
       const previous = await getMatch(d.db, id);
       if (previous && ownedByTicker(previous, now)) continue;
       const full = asFull(core);
-      const { match } = mapFixture(full, { now, previous, observedLive: false, tvOverrides });
+      const { match } = mapFixture(full, { now, previous, observedLive: false, ...tv });
       if (previous && FINAL_STATUSES.has(previous.status) && !FINAL_STATUSES.has(match.status)) {
         alerts.push(`jogo ${id}: o calendário traz ${match.statusRaw} sobre o final ${previous.statusRaw}; mantido o final`);
         logger.warn(`syncFixtures: jogo ${id} guardado como ${previous.status}, calendário com ${match.status}: não escrito`);
@@ -104,13 +105,14 @@ async function saveFull(
   o: { newModelOnly: boolean; force: boolean },
 ): Promise<{ count: number; failed: number }> {
   const now = d.now();
-  const tvOverrides = await loadTvOverridesSafe(d.db);
+  const tvRead = await loadTvOverridesSafe(d.db);
+  const tv = { tvOverrides: tvRead ?? {}, tvOverridesUnavailable: tvRead === null };
   let count = 0;
   let failed = 0;
   for (const f of fixtures) {
     try {
       const previous = await getMatch(d.db, String(f.fixture.id));
-      const { match, details } = mapFixture(f, { now, previous, observedLive: false, tvOverrides });
+      const { match, details } = mapFixture(f, { now, previous, observedLive: false, ...tv });
       const legacy = o.newModelOnly ? null : legacyFromFixture(f, match, null);
       await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix, force: o.force });
       count++;

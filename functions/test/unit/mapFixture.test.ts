@@ -363,6 +363,26 @@ describe("mapFixture: jogo por começar", () => {
   });
 });
 
+describe("mapFixture: exceções de TV indisponíveis", () => {
+  const prev = (tv: string | null | undefined) => ({ status: "NS" as const, finishedAt: null, finishedAtSource: null, tv });
+  it("com documento anterior mantém o tv guardado (exceção com outro canal ou texto vazio) em vez da regra", () => {
+    const f = load("fixture-live-2h");
+    const ctx = { now: NOW, observedLive: false, tvOverridesUnavailable: true };
+    expect(mapFixture(f, { ...ctx, previous: prev("Canal 11") }).match.tv).toBe("Canal 11");
+    expect(mapFixture(f, { ...ctx, previous: prev(null) }).match.tv).toBeNull();
+  });
+  it("sem documento anterior, ou anterior sem o campo tv, vale a regra", () => {
+    const f = load("fixture-live-2h");
+    const ctx = { now: NOW, observedLive: false, tvOverridesUnavailable: true };
+    expect(mapFixture(f, { ...ctx, previous: null }).match.tv).toBe("SPORT TV");
+    expect(mapFixture(f, { ...ctx, previous: prev(undefined) }).match.tv).toBe("SPORT TV");
+  });
+  it("com as exceções lidas, o tv anterior não pesa", () => {
+    const f = load("fixture-live-2h");
+    expect(mapFixture(f, { now: NOW, observedLive: false, previous: prev("Canal 11") }).match.tv).toBe("SPORT TV");
+  });
+});
+
 describe("mapFixture: canal de TV", () => {
   it("grava tv com a regra e com as exceções, sem pedidos novos", () => {
     const f = load("fixture-live-2h");

@@ -54,12 +54,15 @@ export async function loadTvOverrides(db: Firestore): Promise<Record<string, str
   return Object.fromEntries(Object.entries(raw as Record<string, unknown>).filter(([, v]) => typeof v === "string")) as Record<string, string>;
 }
 
-/** Como loadTvOverrides, mas nunca bloqueia os resultados: se a leitura falhar, um aviso sem ids nem caminhos e segue sem exceções. */
-export async function loadTvOverridesSafe(db: Firestore): Promise<Record<string, string>> {
+/**
+ * Como loadTvOverrides, mas nunca bloqueia os resultados: se a leitura falhar, um aviso sem ids nem caminhos e devolve
+ * `null` ("exceções indisponíveis"), para quem escreve manter o `tv` já guardado em vez de o recalcular sem exceções.
+ */
+export async function loadTvOverridesSafe(db: Firestore): Promise<Record<string, string> | null> {
   try {
     return await loadTvOverrides(db);
   } catch {
     logger.warn("TV_OVERRIDES_UNAVAILABLE");
-    return {};
+    return null;
   }
 }
