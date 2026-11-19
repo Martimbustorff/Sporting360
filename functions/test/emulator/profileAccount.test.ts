@@ -1,5 +1,5 @@
 import { initializeApp, getApps, deleteApp } from "firebase-admin/app";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getFirestore, Firestore, Timestamp } from "firebase-admin/firestore";
 import { getAuth, Auth } from "firebase-admin/auth";
 import { handleUpdateProfile } from "../../src/callables/updateProfile";
 import { handleDeleteAccount, REAUTH_MAX_AGE_S } from "../../src/callables/deleteAccount";
@@ -228,6 +228,23 @@ describe("deleteAccount", () => {
     expect((await db.doc("settlements/m1").get()).exists).toBe(true);
     expect(await code(authAdmin.getUser("alice"))).toMatchObject({ code: "auth/user-not-found" });
     await expect(authAdmin.getUser("bob")).resolves.toBeDefined();
+  });
+
+  it("cancela os empréstimos do utilizador (dono ou destinatário) e apaga os números; os de outros ficam", async () => {
+    const future = Timestamp.fromMillis(Date.now() + 24 * 3600_000);
+    const loan = (owner: string, recipient: string | null) => ({ ownerUid: owner, recipientUid: recipient, gameboxId: `g_${owner}`, expiresAt: future, cancelledAt: null });
+    await db.doc("loans/own").set(loan("alice", null));
+    await db.doc("loans/rcv").set(loan("bob", "alice"));
+    await db.doc("loans/other").set(loan("bob", null));
+    for (const id of ["own", "rcv", "other"]) await db.doc(`loans/${id}/secret/number`).set({ number: "123456" });
+    await handleDeleteAccount(db, authAdmin, authFor("alice", 10), NOW_S);
+    for (const id of ["own", "rcv"]) {
+      expect((await db.doc(`loans/${id}`).get()).get("cancelledAt")).not.toBeNull();
+      expect((await db.doc(`loans/${id}/secret/number`).get()).exists).toBe(false);
+    }
+    expect((await db.doc("loans/other").get()).get("cancelledAt")).toBeNull();
+    expect((await db.doc("loans/other/secret/number").get()).exists).toBe(true);
+    for (const id of ["own", "rcv", "other"]) await db.recursiveDelete(db.doc(`loans/${id}`));
   });
 
   it("repeating the call is safe: ok with deleted 0", async () => {

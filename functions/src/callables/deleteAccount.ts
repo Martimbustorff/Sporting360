@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, type Firestore, type DocumentReference } from "firebase-admin/firestore";
 import { getAuth, type Auth } from "firebase-admin/auth";
+import { cancelLoansForUser } from "../loans/lifecycle";
 
 /** Idade máxima (s) do último login para permitir apagar a conta. */
 export const REAUTH_MAX_AGE_S = 300;
@@ -29,6 +30,13 @@ export async function handleDeleteAccount(
     await authAdmin.revokeRefreshTokens(uid);
   } catch (e) {
     if ((e as { code?: string }).code !== "auth/user-not-found") throw new HttpsError("internal", "AUTH_REVOKE_FAILED");
+  }
+
+  // Empréstimos de GameBox: cancela (dono ou destinatário) e apaga os números antes de remover os dados do utilizador.
+  try {
+    await cancelLoansForUser(db, uid);
+  } catch {
+    throw new HttpsError("internal", "DELETE_FAILED");
   }
 
   // Janela de corrida conhecida: um settlement a correr em paralelo pode recriar pointEvents/entries; repetir a chamada limpa-os.

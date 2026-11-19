@@ -2,6 +2,7 @@ import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
@@ -21,6 +22,7 @@ import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
 import { twitter } from "./sources/twitter";
 import { vsports } from "./sources/vsports";
+import { cancelLoansForGamebox, maintainLoans } from "./loans/lifecycle";
 import { runJob } from "./store/health";
 import { syncVideos } from "./videos/videosSync";
 
@@ -33,6 +35,19 @@ export { updateProfile } from "./callables/updateProfile";
 export { deleteAccount } from "./callables/deleteAccount";
 export { linkProviderByEmail } from "./callables/linkProviderByEmail";
 export { createLoan, claimLoan, cancelLoan } from "./callables/loans";
+
+// Empréstimos de GameBox (Plano 8): validade recalculada e números apagados de 10 em 10 minutos.
+export const loansMaintenance = onSchedule(
+  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 300, maxInstances: 1, retryCount: 0 },
+  async () => {
+    await runJob(getFirestore(), "loans_maintenance", () => maintainLoans(getFirestore(), new Date()));
+  },
+);
+
+// GameBox apagada (V2: campo `userid`): cancela os empréstimos ativos e apaga os números.
+export const onGameboxDeleted = onDocumentDeleted({ document: "gamebox/{id}", region: "europe-west1" }, async (event) => {
+  await cancelLoansForGamebox(getFirestore(), event.params.id, new Date());
+});
 
 export const settleScheduler = onSchedule(
   { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 540, memory: "512MiB" },

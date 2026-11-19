@@ -70,6 +70,20 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
   return best?.id ?? null;
 }
 
+/**
+ * Validade de um empréstimo a partir do jogo (datas já convertidas). Partilhada com a manutenção (loans/lifecycle.ts).
+ * Só PST com o jogo por começar encurta; SUSP e INTR chegam como PST a meio do jogo e não encurtam o empréstimo.
+ */
+export function loanExpiryOf(m: Pick<MatchDoc, "kickoff" | "status" | "finishedAt">, now: Date): Date {
+  const kickoff = m.kickoff as unknown as Date;
+  return computeExpiresAt({
+    kickoff,
+    status: m.status,
+    finishedAt: (m.finishedAt as unknown as Date | null) ?? null,
+    postponedWithoutDate: m.status === "PST" && kickoff.getTime() > now.getTime(),
+  });
+}
+
 /** Erros que não são HttpsError (Firestore: caminhos com o loanId) nunca chegam ao cliente nem ao log do onCall. */
 export async function safely<T>(run: () => Promise<T>): Promise<T> {
   try {
@@ -105,13 +119,7 @@ export async function handleCreateLoan(
   if ((await nextHomeMatchId(db, venue, now)) !== matchId) throw denied("not-next", "Só se empresta para o próximo jogo em casa.");
 
   const ownerName = await publicNameOf(db, uid);
-  const expiresAt = computeExpiresAt({
-    kickoff: m.kickoff,
-    status: m.status,
-    finishedAt: m.finishedAt,
-    // Só PST com o jogo por começar; SUSP e INTR chegam como PST a meio do jogo e não encurtam o empréstimo.
-    postponedWithoutDate: m.status === "PST" && m.kickoff.getTime() > now.getTime(),
-  });
+  const expiresAt = loanExpiryOf(m, now);
   // Nunca nasce expirado (por exemplo, jogo por começar há mais de 4 h que já passou da validade).
   if (expiresAt.getTime() <= now.getTime()) throw denied("finished", "O jogo já terminou.");
   const loanId = newLoanId();
