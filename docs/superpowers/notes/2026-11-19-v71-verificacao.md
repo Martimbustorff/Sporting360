@@ -6,7 +6,7 @@ Estado: verificação visual em dispositivo pendente.
 
 ## Grupo A
 
-Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = diferença não intencional resolvida nesta tarefa; "pendente Martim" = precisa de decisão de produto.
+Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = diferença não intencional resolvida nesta tarefa; "pendente Martim" = precisa de decisão de produto (nenhum em aberto).
 
 | Frame | Ecrã/componente (ficheiro) | Diferença | Decisão |
 |---|---|---|---|
@@ -173,7 +173,7 @@ Resumo do Empréstimo: 17 frames verificados (11 do Task 1 e 6 novos), 1 correç
 
 ## Resumo
 
-Método: leitura do código contra o frame, sem build nem simulador; a verificação visual em dispositivo continua pendente.
+Método: leitura do código contra o frame, sem build nem simulador; a verificação visual em dispositivo continua pendente. Contagem: uma linha é um frame; uma linha com duas decisões conta na primeira, por isso os totais são aproximados.
 
 | | Frames verificados | Correções | Pendentes Martim |
 |---|---|---|---|
@@ -220,5 +220,6 @@ Verificação a 19/11 com `get_screenshot` de cada frame contra o código. Frame
 | 10 4935:7111, 10b 4997:12493, 10c 4997:12673 | `StandingsTable.tsx`, `CompetitionStandings.tsx` | Vistas Resumida, Completa e Forma; nota "Com os resultados dos jogos a decorrer."; pílula D do Figma com color/danger (#F74C66), o código usa `formLetterBg` com `colors.formLoss` (#E53836) | corrigido no Figma: variante D de "Classificação / Pill forma" (4997:12490) passou a #E53836, sem variável (não existe uma com este valor); as instâncias herdam. V (color/primary) e E (color/surface-20, 20 %) já coincidiam |
 | 45Lb 4984:11545, 45Le 4985:11932 | `LoanConfirmSheet.tsx`, `ModalSheet.tsx` | Espaço 14 e título a 28 | sem diferenças (`gap="tight"`) |
 | 50b 4984:13376, 50c 4984:13411 | `emprestimo/[id].tsx`, `EmptyState.tsx` | Ícone a 8 do topo, sem folga por baixo | sem diferenças (`compact`) |
+| 10 4935:7111 (ponto ao vivo), 45L (ecrã do empréstimo), 12s 4994:12254 (Ticket) | `CompetitionStandings.tsx`, `StandingsTable.tsx`, `emprestimo/[id].tsx`, `gamebox/bilhete.tsx` | Revisão final: ponto "a jogar agora" só em jogos a decorrer (não nos terminados ainda no documento ao vivo) e rótulo da Forma com "a jogar agora" antes dos resultados; brilho do cartão do empréstimo só com o QR desenhado; Ticket com espaço de carregamento até as listas e os empréstimos responderem (um erro conta como resposta e o QR aparece); canal de TV mantém o valor guardado quando `config/tvChannels` não se lê | corrigido no código, sem alterações nos frames |
 
 Pendentes Martim neste plano: nenhum.
