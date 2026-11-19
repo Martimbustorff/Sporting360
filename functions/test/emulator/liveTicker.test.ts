@@ -689,8 +689,9 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     clock = KO + 67 * MIN;
     await seedFrom(fx("fixture-live-2h.json"), clock);
     // o Porto-Benfica estava no documento e já não vem em direto (liveResponse só tem o jogo do Sporting)
+    const seenAt = clock - MIN;
     await db.doc(LIVE_DOC).set({
-      updatedAt: new Date(clock - MIN),
+      updatedAt: new Date(seenAt),
       fixtures: [
         { homeId: "228", awayId: "211", homeGoals: 2, awayGoals: 1, elapsed: 66, status: "2H" },
         { homeId: "212", awayId: "217", homeGoals: 1, awayGoals: 0, elapsed: 89, status: "2H" },
@@ -706,7 +707,8 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     expect(fixtures[0]).not.toHaveProperty("finishedAt");
     expect(fixtures[1]).toMatchObject({ homeId: "212", awayId: "217", homeGoals: 1, awayGoals: 0, status: "FT", elapsed: null });
     const fin = (fixtures[1]!.finishedAt as { toMillis: () => number }).toMillis();
-    expect(fin).toBe(clock);
+    // finishedAt = última vez visto em direto (`updatedAt` do documento anterior), não o minuto em que se reparou
+    expect(fin).toBe(seenAt);
 
     // minuto seguinte: continua, com o mesmo finishedAt
     clock += MIN;

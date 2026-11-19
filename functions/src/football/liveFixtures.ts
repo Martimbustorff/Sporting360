@@ -64,6 +64,9 @@ export function liveFixtureItems(fixtures: AfFixtureCore[]): LiveFixtureItem[] {
 /** Rede de segurança: um FT mantido há mais disto sem a oficial o apanhar é largado (documento nunca fica preso). */
 export const KEEP_FINISHED_MAX_MS = 3 * 60 * 60_000;
 
+/** Um documento anterior com `updatedAt` mais velho do que isto nunca é de confiança: os jogos em curso dele não se aproveitam. */
+export const PREVIOUS_STALE_MS = 5 * 60_000;
+
 const keyOf = (f: Pick<LiveFixtureItem, "homeId" | "awayId">) => `${f.homeId}-${f.awayId}`;
 
 /** Jogos guardados no documento (com `finishedAt` já como Date). */
@@ -89,8 +92,9 @@ function storedItems(raw: unknown): LiveFixtureItem[] {
 
 /**
  * Jogos que já estavam no documento e deixaram de vir em direto: ficam como FT com o último resultado e `finishedAt`
- * (o do documento anterior, ou `now` na primeira vez), para a classificação projetada não perder os pontos entre o apito
- * final e o refresco da classificação oficial. Deixam de ser mantidos quando `standingsUpdatedAt` é posterior ao
+ * (o do documento anterior, ou, para um jogo que ainda constava em curso, o `updatedAt` desse documento: a última vez
+ * que foi visto em direto), para a classificação projetada não perder os pontos entre o apito final e o refresco da
+ * classificação oficial. Um documento anterior velho (`PREVIOUS_STALE_MS`) ou sem data não ressuscita jogos em curso. Deixam de ser mantidos quando `standingsUpdatedAt` é posterior ao
  * `finishedAt` (a oficial já os conta). Sem pedidos à API.
  */
 export function keepFinished(
@@ -98,19 +102,28 @@ export function keepFinished(
   current: LiveFixtureItem[],
   now: Date,
   standingsUpdatedAt: Date | null,
+  previousUpdatedAt: Date | null,
 ): LiveFixtureItem[] {
+  const previousFresh = previousUpdatedAt !== null && now.getTime() - previousUpdatedAt.getTime() < PREVIOUS_STALE_MS;
   const live = new Set(current.map(keyOf));
   const kept: LiveFixtureItem[] = [];
   for (const p of previous) {
     if (live.has(keyOf(p))) continue;
-    // Um jogo que nunca chegou a FT e não vem em direto (documento velho, sem pulsação) já não se sabe como acabou.
-    const finishedAt = p.finishedAt ?? now;
+    // Um jogo que nunca chegou a FT e não vem em direto: se o documento é velho ou sem data já não se sabe como acabou.
+    if (p.finishedAt === undefined && !previousFresh) continue;
+    const finishedAt = p.finishedAt ?? previousUpdatedAt!;
     if (standingsUpdatedAt !== null && standingsUpdatedAt.getTime() > finishedAt.getTime()) continue;
     if (now.getTime() - finishedAt.getTime() > KEEP_FINISHED_MAX_MS) continue;
     kept.push({ ...p, status: "FT", elapsed: null, finishedAt });
   }
   return kept;
 }
+
+/** `updatedAt` do documento `liveFixtures` anterior (null se não existir ou ainda sem data). */
+const updatedAtOf = (snap: { get(f: string): unknown }): Date | null => {
+  const t = snap.get("updatedAt") as { toDate?: () => Date } | undefined;
+  return typeof t?.toDate === "function" ? t.toDate() : null;
+};
 
 async function standingsUpdatedAtOf(d: FootballDeps, key: string): Promise<Date | null> {
   const t = (await d.db.doc(`competitions/${key}/data/standings`).get()).get("updatedAt") as { toDate?: () => Date } | undefined;
@@ -125,8 +138,9 @@ async function standingsUpdatedAtOf(d: FootballDeps, key: string): Promise<Date 
 export async function refreshLiveFixtures(d: FootballDeps, leagueId: number, key: string): Promise<{ count: number }> {
   const current = liveFixtureItems(await d.api.liveFixtures(leagueId));
   const ref = d.db.doc(`competitions/${key}/data/liveFixtures`);
-  const previous = storedItems((await ref.get()).get("fixtures"));
-  const kept = previous.length > 0 ? keepFinished(previous, current, d.now(), await standingsUpdatedAtOf(d, key)) : [];
+  const snap = await ref.get();
+  const previous = storedItems(snap.get("fixtures"));
+  const kept = previous.length > 0 ? keepFinished(previous, current, d.now(), await standingsUpdatedAtOf(d, key), updatedAtOf(snap)) : [];
   const fixtures = [...current, ...kept];
   await ref.set({ updatedAt: FieldValue.serverTimestamp(), fixtures });
   return { count: fixtures.length };
@@ -140,9 +154,10 @@ export async function refreshLiveFixtures(d: FootballDeps, leagueId: number, key
  */
 export async function pruneLiveFixtures(d: FootballDeps, key: string): Promise<boolean> {
   const ref = d.db.doc(`competitions/${key}/data/liveFixtures`);
-  const previous = storedItems((await ref.get()).get("fixtures"));
+  const snap = await ref.get();
+  const previous = storedItems(snap.get("fixtures"));
   if (previous.length === 0) return false;
-  const kept = keepFinished(previous.filter((p) => p.status === "FT"), [], d.now(), await standingsUpdatedAtOf(d, key));
+  const kept = keepFinished(previous.filter((p) => p.status === "FT"), [], d.now(), await standingsUpdatedAtOf(d, key), updatedAtOf(snap));
   await ref.set({ updatedAt: FieldValue.serverTimestamp(), fixtures: kept });
   return true;
 }
