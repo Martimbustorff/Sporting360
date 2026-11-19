@@ -153,6 +153,19 @@ describe('jogo futuro (NS)', () => {
     expect(StyleSheet.flatten(screen.getByTestId('h2h-draws').props.style).flexGrow).toBe(1);
   });
 
+  it('a etiqueta do confronto direto não é cortada (320 pt): sem numberOfLines', async () => {
+    const p = prematch() as Exclude<PrematchDoc, { empty: true }>;
+    const g = (id: string, h: string, a: string, sh: number, sa: number, d: number) => ({
+      id, kickoff: new Date(Date.UTC(2026, 0, d)), status: 'FT' as const,
+      home: { id: h, name: h === '228' ? 'Sporting CP' : 'SC Braga', logo: null },
+      away: { id: a, name: a === '228' ? 'Sporting CP' : 'SC Braga', logo: null },
+      score: { home: sh, away: sa },
+    });
+    mockDetails.current = { prematch: ready({ ...p, h2h: [g('a', '228', '217', 2, 0, 1)] }), injuries: { status: 'missing' } };
+    await render(<SummaryTab match={match()} />);
+    expect(screen.getByText('1 vitória Sporting').props.numberOfLines).toBeUndefined();
+  });
+
   it('sem confrontos com resultado, sem forma e sem lesões: os blocos escondem-se, sem marcadores de posição', async () => {
     const p = prematch() as Exclude<PrematchDoc, { empty: true }>;
     mockDetails.current = {
@@ -194,7 +207,7 @@ describe('ao vivo e terminado', () => {
     mockDetails.current = {
       events: ready({ items: [ev({ minute: 40, type: 'card', detail: 'Red Card', teamId: '217', playerName: 'Zalazar' })] }),
     };
-    await render(<SummaryTab match={match({ status: 'LIVE', elapsed: 41, score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
+    await render(<SummaryTab match={match({ status: 'FT', score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
     expect(screen.getByText('1ª Parte')).toBeTruthy();
     expect(screen.getByText('0-0')).toBeTruthy();
     expect(screen.getByLabelText('Cartão vermelho')).toBeTruthy();
@@ -205,7 +218,7 @@ describe('ao vivo e terminado', () => {
     mockDetails.current = {
       events: ready({ items: [ev({ minute: 30, detail: 'Missed Penalty', playerName: 'Gyökeres' })] }),
     };
-    await render(<SummaryTab match={match({ status: 'HT', score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
+    await render(<SummaryTab match={match({ status: 'FT', score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
     expect(screen.getByLabelText('Penálti falhado')).toBeTruthy();
     expect(screen.queryByLabelText('Golo')).toBeNull();
     expect(screen.getByText('0-0')).toBeTruthy();
@@ -263,7 +276,7 @@ describe('cronologia em duas colunas', () => {
     expect(names).toEqual(['SegundoDaApi', 'PrimeiroDaApi']);
   });
 
-  it.each([['FT'], ['LIVE']] as const)('mais recente primeiro (%s): partes com a última no topo e tempo extra ordenado', async (status) => {
+  it('mais recente primeiro (terminado): partes com a última no topo e tempo extra ordenado', async () => {
     mockDetails.current = {
       events: ready({
         items: [
@@ -276,7 +289,7 @@ describe('cronologia em duas colunas', () => {
         ],
       }),
     };
-    await render(<SummaryTab match={match({ status, elapsed: 93 })} />);
+    await render(<SummaryTab match={match({ status: 'FT', elapsed: 93 })} />);
     const names = screen
       .getAllByTestId('event-row')
       .map((r) => within(r).getAllByText(/^(Primeiro|DescontoI|Quarenta5|Segunda|DescontoII|Noventa1)$/)[0]!.props.children);
@@ -294,6 +307,110 @@ describe('cronologia em duas colunas', () => {
       <SummaryTab match={match({ status: 'FT', home: { id: '217', name: 'SC Braga', logo: null }, away: { id: '228', name: 'Sporting CP', logo: null }, sportingSide: 'away' })} />,
     );
     expect(within(screen.getByTestId('event-left')).getByText('Trincão')).toBeTruthy();
+  });
+});
+
+const stats = (over: object = {}) => ({
+  teams: [
+    { teamId: '228', items: { 'Ball Possession': '58%', 'Total Shots': 14 } },
+    { teamId: '217', items: { 'Ball Possession': '42%', 'Total Shots': 6 } },
+  ],
+  xg: { home: 1.84, away: 0.71 },
+  ...over,
+});
+const LIVE = () => match({ status: 'LIVE', elapsed: 67, score: { home: 2, away: 1, halftime: null, extratime: null, penalty: null } });
+
+describe('Sumário ao vivo (Figma 06)', () => {
+  it('"Números do jogo" no topo: Posse de bola, Remates e Golos esperados (xG), antes dos lances', async () => {
+    mockDetails.current = { statistics: ready(stats()), events: ready({ items: [ev({ minute: 54, teamId: '228' })] }) };
+    await render(<SummaryTab match={LIVE()} />);
+    expect(screen.getByText('Números do jogo')).toBeTruthy();
+    const block = within(screen.getByTestId('live-numbers'));
+    expect(block.getAllByTestId('stat-row')).toHaveLength(3);
+    expect(block.getByText('Posse de bola')).toBeTruthy();
+    expect(block.getByText('58%')).toBeTruthy();
+    expect(block.getByText('Remates')).toBeTruthy();
+    expect(block.getByText('Golos esperados (xG)')).toBeTruthy();
+    expect(block.getByText('0,7')).toBeTruthy();
+    const json = JSON.stringify(screen.toJSON());
+    expect(json.indexOf('live-numbers')).toBeLessThan(json.indexOf('live-events'));
+  });
+
+  it('só as linhas com dados dos dois lados; sem nenhuma, o bloco nem aparece', async () => {
+    mockDetails.current = {
+      statistics: ready(stats({ teams: [{ teamId: '228', items: { 'Ball Possession': '58%' } }, { teamId: '217', items: { 'Ball Possession': '42%' } }], xg: null })),
+    };
+    await render(<SummaryTab match={LIVE()} />);
+    expect(within(screen.getByTestId('live-numbers')).getAllByTestId('stat-row')).toHaveLength(1);
+    expect(screen.queryByText('Remates')).toBeNull();
+    expect(screen.queryByText('Golos esperados (xG)')).toBeNull();
+  });
+
+  it.each([
+    ['sem documento', { status: 'missing' } as L],
+    ['a carregar', { status: 'loading' } as L],
+    ['documento vazio', ready({ teams: [], xg: null })],
+  ])('estatísticas %s: sem bloco nem título', async (_n, l) => {
+    mockDetails.current = { statistics: l };
+    await render(<SummaryTab match={LIVE()} />);
+    expect(screen.queryByTestId('live-numbers')).toBeNull();
+    expect(screen.queryByText('Números do jogo')).toBeNull();
+  });
+
+  it('só enquanto o jogo está ao vivo: o terminado não mostra o bloco', async () => {
+    mockDetails.current = { statistics: ready(stats()), events: ready({ items: [ev({ minute: 54 })] }) };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.queryByText('Números do jogo')).toBeNull();
+  });
+
+  it('lances: o mais recente primeiro, com o título pela equipa e a segunda linha só com o que os dados dão', async () => {
+    mockDetails.current = {
+      events: ready({
+        items: [
+          ev({ minute: 23, playerName: 'Suárez', detail: 'Penalty', teamId: '228' }),
+          ev({ minute: 38, playerName: 'Samu', teamId: '217' }),
+          ev({ minute: 54, playerName: 'Trincão', assistName: 'Pedro Gonçalves', teamId: '228' }),
+          ev({ minute: 60, type: 'subst', playerName: 'Gyökeres', assistName: 'Giroud', detail: 'Substitution 1', teamId: '228' }),
+          ev({ minute: 62, type: 'card', detail: 'Yellow Card', playerName: 'Varela', teamId: '217' }),
+          ev({ minute: 66, playerName: 'Debast', detail: 'Own Goal', teamId: '217' }),
+        ],
+      }),
+    };
+    await render(<SummaryTab match={LIVE()} />);
+    const rows = screen.getAllByTestId('live-event');
+    expect(rows).toHaveLength(6);
+    expect(within(rows[0]!).getByText('66’')).toBeTruthy();
+    expect(within(rows[0]!).getByText('Golo do Sporting')).toBeTruthy();
+    expect(within(rows[0]!).getByText('Autogolo')).toBeTruthy();
+    expect(within(rows[1]!).getByText('Cartão amarelo do SC Braga')).toBeTruthy();
+    expect(within(rows[1]!).queryByTestId('live-event-line')).toBeNull();
+    expect(within(rows[2]!).getByText('Entra Giroud, sai Gyökeres')).toBeTruthy();
+    expect(within(rows[3]!).getByText('Assistência de Pedro Gonçalves')).toBeTruthy();
+    expect(within(rows[4]!).getByText('Golo do SC Braga')).toBeTruthy();
+    expect(within(rows[4]!).queryByTestId('live-event-line')).toBeNull();
+    expect(within(rows[5]!).getByText('De penálti')).toBeTruthy();
+  });
+
+  it('o golo do Sporting vem a primary-on-dark e o do adversário a branco', async () => {
+    mockDetails.current = { events: ready({ items: [ev({ minute: 10, teamId: '228' }), ev({ minute: 20, teamId: '217' })]  }) };
+    await render(<SummaryTab match={LIVE()} />);
+    const [theirs, ours] = screen.getAllByTestId('live-event');
+    expect(StyleSheet.flatten(within(ours!).getByText('Golo do Sporting').props.style).color).toBe(colors.primaryOnDark);
+    expect(StyleSheet.flatten(within(theirs!).getByText('Golo do SC Braga').props.style).color).toBe(colors.white);
+  });
+
+  it('ao intervalo é o mesmo conteúdo; sem lances, a mensagem e os números mantêm-se', async () => {
+    mockDetails.current = { statistics: ready(stats()), events: ready({ items: [] }) };
+    await render(<SummaryTab match={match({ status: 'HT', elapsed: 45 })} />);
+    expect(screen.getByText('Números do jogo')).toBeTruthy();
+    expect(screen.getByText('Os lances aparecem aqui durante o jogo.')).toBeTruthy();
+  });
+
+  it('lances com erro de leitura: aviso de erro, sem lances', async () => {
+    mockDetails.current = { events: { status: 'error' } as unknown as L };
+    await render(<SummaryTab match={LIVE()} />);
+    expect(screen.getByText('Não foi possível carregar os dados.')).toBeTruthy();
+    expect(screen.queryByTestId('live-event')).toBeNull();
   });
 });
 
@@ -328,6 +445,15 @@ describe('contexto do jogo (Figma 08)', () => {
     mockDetails.current = { events: { status: 'loading' }, prematch: ready(prematch()), injuries: ready(injuries()) };
     await render(<SummaryTab match={match({ status: 'FT' })} />);
     expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Ausências')).toBeNull();
+  });
+
+  it('terminado com erro nos lances: só o aviso de erro, sem o contexto do jogo por baixo', async () => {
+    mockDetails.current = { events: { status: 'error' } as unknown as L, prematch: ready(prematch()), injuries: ready(injuries()) };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.getByText('Não foi possível carregar os dados.')).toBeTruthy();
+    expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Confrontos diretos · últimos 5')).toBeNull();
     expect(screen.queryByText('Ausências')).toBeNull();
   });
 

@@ -2,15 +2,16 @@
 // por ligação com ícone 24 + gap 16 + corpo leve 14 + seta diagonal); ícones sociais 406:11998 (Twitter, Patreon, Youtube).
 // ESCONDIDA: só abre com config/app features.comunidadeLeonina === true (a mesma flag da entrada do menu da Home); com a
 // flag a false, em erro de leitura ou sem ela, vai para a Home. Enquanto a config carrega: Header com voltar e o estado a
-// carregar (SEM FIGMA), sem redirecionar. Não apagar.
+// carregar (esqueleto, como nos outros ecrãs: sem frame próprio), sem redirecionar. Não apagar.
 // Uma ligação ausente ou que não seja https não gera linha. `description` e `image` da entrada não existem no frame.
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { Touchable } from '@/components/Touchable';
 import { isHttps } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
@@ -70,14 +71,7 @@ export default function Comunidade() {
       <Screen padded="none">
         <LionBackdrop blurred />
         <Header title="Comunidade Leonina" onBack={back} />
-        <View
-          testID="comunidade-loading"
-          accessible
-          accessibilityLabel="A carregar"
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <ActivityIndicator color={colors.white} />
-        </View>
+        <ScreenSkeleton testID="comunidade-loading" />
       </Screen>
     );
   }

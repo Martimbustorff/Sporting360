@@ -202,6 +202,30 @@ describe('largura 320 pt e acessibilidade do cartão', () => {
       jest.useRealTimers();
     }
   });
+  it('o trinco da contagem repõe-se quando o alvo muda (jogo adiado ou outro jogo)', async () => {
+    jest.useFakeTimers({ now: new Date('2026-12-21T17:59:58Z') });
+    try {
+      const m = match('NS');
+      const now = new Date('2026-12-21T17:59:58Z');
+      const view = (mm: Match, n: Date) => (
+        <NextMatchCard moment={moment(mm, {}, n)} match={mm} now={n} ticking {...handlers} />
+      );
+      await render(view(m, now));
+      await act(async () => {
+        jest.advanceTimersByTime(5000);
+      });
+      expect(screen.getByTestId('next-countdown').props.children).toBe('00:00:00');
+      const later = { ...m, kickoff: new Date('2026-12-21T19:00:00Z') } as Match;
+      const n2 = new Date(Date.now());
+      await screen.rerender(view(later, n2));
+      await act(async () => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(screen.getByTestId('next-countdown').props.children).not.toBe('00:00:00');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
   it('a etiqueta do cartão inclui equipas e hora, resultado ou estado', async () => {
     const m = match('NS', {}, '2026-12-26T18:00:00Z');
     const r = await view(m, moment(m));

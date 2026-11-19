@@ -18,6 +18,7 @@ import { LeaderPlayerRow } from '@/components/LeaderRows';
 import { MatchRow } from '@/components/MatchRow';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
 import type { Loadable } from '@/data/hooks';
@@ -63,8 +64,8 @@ const isSportingGame = (m: Match) => m.home.id === SPORTING || m.away.id === SPO
 /** Tops só existem em ligas e europeias (competitionSync). */
 const hasTops = (c: Competition) => c.type === 'league' || c.type === 'europe';
 
-/** SEM FIGMA: enquanto os dados não chegam, um espaço em branco (como na Classificação). */
-const Loading = ({ testID }: { testID: string }) => <View testID={testID} />;
+/** Enquanto os dados não chegam: o esqueleto de 36c (4994:12713). */
+const Loading = ({ testID }: { testID: string }) => <ScreenSkeleton testID={testID} />;
 
 function Arrow({ dir, disabled, onPress }: { dir: 'left' | 'right'; disabled: boolean; onPress: () => void }) {
   return (

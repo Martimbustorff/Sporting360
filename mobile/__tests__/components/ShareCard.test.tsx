@@ -65,7 +65,7 @@ describe('ShareCard', () => {
     expect(qr.props.size).toBe(48);
     expect(qr.props.ecl).toBe('L');
     expect(qr.props.quietZone).toBe(0);
-    expect(JSON.stringify(screen.getByTestId('share-qr-box').props.style)).toContain('"padding":6');
+    expect(JSON.stringify(screen.getByTestId('share-qr-box').props.style)).toContain('"padding":8');
   });
 
   it('QR com o link do jogo e o link curto em texto', async () => {

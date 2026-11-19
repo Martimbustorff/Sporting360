@@ -266,6 +266,7 @@ export const layout = {
   bannerIcon: 18,
   emptyInfoIcon: 64, // V7.1 47 Vazio (4952:9060): ícone Info a 64 (opacidade já no SVG), espaço 12 ao texto
   emptyInfoGap: 12,
+  emptyCompactTop: 8, // 50b e 50c: ícone a 8 do topo do EmptyState, sem folga por baixo (o botão fica a 24, do ecrã)
   pushBannerCrestW: 26, // V7.1 47 PushBanner (4952:9052): emblema 26x30, padding 14/12, espaço 12, texto a 2
   pushBannerCrestH: 30,
   pushBannerPadY: 12,
@@ -452,7 +453,6 @@ export const layout = {
   authLinksRowGap: 12,
   authLinkGap: 6, // V7.1 14 (4940:7374): texto e ação a 6
   authBottom: 20, // V7.1 16, 21: último botão a 20 do indicador de início
-  // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
   mvpRowHeight: 48, // SEM FIGMA: linha de candidato da tab MVP (referência raster 818:21193)
   // V7.1 MVP com notas (4934:7087): linha do jogador, caixa da nota, escolha (radio) e selo "Melhor nota"
   mvpStackGap: 10, // banner, texto e lista
@@ -474,10 +474,10 @@ export const layout = {
   mvpStar: 10,
   mvpBannerPadY: 12, // banner "Votação aberta" 4934:7256
   mvpBannerGap: 2,
-  shareCardWidth: 347,
+  shareCardWidth: 347, // V7.1 4946:8197: cartão "S360 MATCHDAY" a 347
   shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
   shareQr: 48, // V7.1 4946:8227
-  shareQrPad: 6, // caixa branca à volta do QR: 4 módulos de zona de silêncio (~1,5 pt cada), o degradê nunca toca o código
+  shareQrPad: 8, // caixa branca à volta do QR: zona de silêncio de 8 (4 módulos de ~2 pt), o degradê nunca toca o código
   shareCaptureScale: 3, // o cartão exportado sai sempre a 3x (1041 px de largura)
   stepCompactBelow: 360, // abaixo desta largura de janela o seletor esconde o emblema (nomes longos a 320 pt)
   predictionTabTop: 20, // 4945:8053: do fim dos separadores (348) ao conteúdo (368)
@@ -582,6 +582,8 @@ export const layout = {
   settingsFieldGap: 24, // 19 Conta S360: campos a 24
   modalSheetGap: 16, // 48b: elementos da folha a 16
   modalSheetGapLoose: 20, // 21b: elementos da folha a 20
+  modalSheetGapTight: 14, // 45Lb e 45Le (emprestar, cancelar empréstimo): elementos a 14
+  modalSheetTitleTop: 28, // 45Lb e 45Le: título a 28 do topo da folha (grabber 12 + 5 + 11)
   modalSheetBottomExtra: 6, // folha: 40 em baixo = indicador de início (34) + 6
   modalSheetIcon: 40, // 48b: ícone Face ID
   lockLogoOffset: 48, // 48 Bloqueio: logo a 48 pt do fim da barra de estado (62 > 110)

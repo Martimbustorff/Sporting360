@@ -45,6 +45,7 @@ import { colors } from '@/theme/tokens';
 import * as Brightness from 'expo-brightness';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { GateCoverContext } from '@/providers/gateCover';
 import GameboxBilhete from '../../app/(app)/gamebox/bilhete';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
@@ -119,7 +120,8 @@ describe('/gamebox/bilhete', () => {
     mockMatches.current = { status: 'ready', data: [match('football')] };
     await render(ui());
     await flush();
-    expect(screen.getByText('Sporting CP - FC Porto')).toBeTruthy();
+    expect(screen.getByText('Sporting - FC Porto')).toBeTruthy();
+    expect(screen.queryByText('Sporting CP - FC Porto')).toBeNull();
     expect(screen.getByText(/20:30/)).toBeTruthy();
   });
 
@@ -179,8 +181,8 @@ describe('/gamebox/bilhete', () => {
     mockMatches.current = { status: 'ready', data: [done, next] };
     await render(ui());
     await flush();
-    expect(screen.getByText('Sporting CP - FC Porto')).toBeTruthy();
-    expect(screen.queryByText('Sporting CP - Gil Vicente')).toBeNull();
+    expect(screen.getByText('Sporting - FC Porto')).toBeTruthy();
+    expect(screen.queryByText('Sporting - Gil Vicente')).toBeNull();
   });
 
   it('jogo terminado não conta como jogo seguinte', async () => {
@@ -385,6 +387,120 @@ describe('/gamebox/bilhete', () => {
       await flush();
       expect(lock).toHaveBeenLastCalledWith(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     });
+  });
+});
+
+describe('/gamebox/bilhete: brilho e ecrã ligado só com o QR à vista', () => {
+  const gated = (covered: boolean) => (
+    <GateCoverContext.Provider value={covered}>
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <GameboxBilhete />
+      </SafeAreaProvider>
+    </GateCoverContext.Provider>
+  );
+  const untouched = () => {
+    expect(getBrightness).not.toHaveBeenCalled();
+    expect(setBrightness).not.toHaveBeenCalled();
+    expect(activateKeepAwakeAsync).not.toHaveBeenCalled();
+  };
+
+  it('com o QR no ecrã: brilho no máximo e ecrã ligado', async () => {
+    await render(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('enquanto o estado do empréstimo não é conhecido (sem QR): nada, e liga quando o QR aparece', async () => {
+    mockLoansStatus.current = 'loading';
+    const view = await render(ui());
+    await flush();
+    untouched();
+    mockLoansStatus.current = 'ready';
+    await view.rerender(ui());
+    await flush();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('GameBox emprestada para o jogo da faixa (sem QR): nada', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [{ id: 'L1', gameboxId: 'g1', matchId: 'm1' }];
+    await render(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    untouched();
+  });
+
+  it('número ilegível (sem QR): nada', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('g1', { gameboxNumber: 'lixo' })] };
+    await render(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    untouched();
+  });
+
+  it('GameBox que não existe, erro de leitura e a carregar: nada', async () => {
+    mockParams.current = { id: 'xx' };
+    await render(ui());
+    await flush();
+    untouched();
+  });
+
+  it('com o BiometricGate por cima nunca sobe o brilho; ao abrir, sobe; ao voltar a bloquear, repõe', async () => {
+    const view = await render(gated(true));
+    await flush();
+    expect(screen.getByTestId('qrcode', { includeHiddenElements: true })).toBeTruthy();
+    untouched();
+    await view.rerender(gated(false));
+    await flush();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalledTimes(1);
+    await view.rerender(gated(true));
+    await flush();
+    expect(setBrightness).toHaveBeenLastCalledWith(0.4);
+    expect(deactivateKeepAwake).toHaveBeenCalled();
+  });
+
+  it('várias GameBox: só conta o QR da página à vista (a da frente emprestada não sobe o brilho)', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('g1'), box('g2', { order: 2 })] };
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoans.current = [{ id: 'L1', gameboxId: 'g1', matchId: 'm1' }];
+    await render(ui());
+    await flush();
+    untouched();
+    await fireEvent(screen.getByTestId('ticket-pager'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 750, y: 0 }, contentSize: { width: 1500, height: 100 }, layoutMeasurement: { width: 750, height: 100 } },
+    });
+    await flush();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('/gamebox/bilhete: a faixa não pisca', () => {
+  it('uma lista que volta a carregar mantém o último jogo na faixa em vez de voltar ao nome da GameBox', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    const view = await render(ui());
+    await flush();
+    expect(screen.getByText('Sporting - FC Porto')).toBeTruthy();
+    mockMatches.current = { status: 'loading' };
+    await view.rerender(ui());
+    await flush();
+    expect(screen.getByText('Sporting - FC Porto')).toBeTruthy();
+    expect(screen.queryByText('Lugar anual')).toBeNull();
+  });
+
+  it('sem jogo em casa a faixa é sempre só o nome da GameBox, antes e depois de carregar', async () => {
+    mockMatches.current = { status: 'loading' };
+    const view = await render(ui());
+    await flush();
+    expect(screen.getByText('Lugar anual')).toBeTruthy();
+    mockMatches.current = { status: 'ready', data: [] };
+    await view.rerender(ui());
+    await flush();
+    expect(screen.getByText('Lugar anual')).toBeTruthy();
   });
 });
 

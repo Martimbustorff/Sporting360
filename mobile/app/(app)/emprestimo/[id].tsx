@@ -79,7 +79,7 @@ const team = (name: string, logo: string | null): TeamVM => ({ name, crestUrl: l
 function Notice({ text, onClose, onRetry }: { text: string; onClose: () => void; onRetry?: () => void }) {
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: space.s8, gap: space.s24 }}>
-      <EmptyState icon="info" text={text} />
+      <EmptyState icon="info" compact text={text} />
       <View style={{ gap: space.s12 }}>
         {onRetry ? <PrimaryButton label={LOAN_SCREEN_TEXT.retry} variant="primary" onPress={onRetry} /> : null}
         <PrimaryButton label={LOAN_SCREEN_TEXT.close} variant="outline" onPress={onClose} />

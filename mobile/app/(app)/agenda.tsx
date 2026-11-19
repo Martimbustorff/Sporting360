@@ -1,7 +1,9 @@
 // Figma V7.1: frame 35 "Calendário" (4948:8199); linha de jogo 4948:8278 (MatchRow), pílulas de modalidade 4948:8261.
 // Ordem do frame: cartão do próximo jogo (o mesmo da Home), pílulas de modalidade, Próximos/Resultados e a lista com
 // todos os jogos (também o do cartão), "Fonte" no fim.
-// SEM FIGMA: o esqueleto de carregamento, o aviso de cache (OfflineBanner), o estado vazio e de erro, e a atribuição
+// 35c (4994:12606): a carregar é o esqueleto do Esqueleto do 47 (3 linhas). As pílulas de modalidade ficam à vista (decisão
+// testada: mudar de modalidade a meio do carregamento); o frame 35c não as desenha.
+// SEM FIGMA: o aviso de cache (OfflineBanner), o estado vazio e de erro, e a atribuição
 // "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas). O cartão só aparece quando há próximo jogo (os estados "sem jogo" são da Home).
 import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
@@ -14,6 +16,7 @@ import { MatchRow } from '@/components/MatchRow';
 import { NextMatchCard } from '@/components/NextMatchCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
@@ -36,24 +39,6 @@ const TABS: { key: Tab; label: string }[] = [
 const SPORT_TABS = SPORTS.map((s) => ({ key: s.key, label: s.label }));
 
 const ERROR_TEXT = 'Não foi possível carregar a agenda.';
-
-/** SEM FIGMA: enquanto os dados não chegam, três blocos com a altura da linha de jogo. */
-function Skeleton() {
-  return (
-    <View testID="agenda-skeleton" style={{ paddingHorizontal: space.s24, gap: space.s12, paddingTop: space.s12 }}>
-      {[0, 1, 2].map((i) => (
-        <View
-          key={i}
-          style={{
-            height: layout.skeletonRowHeight,
-            borderRadius: layout.tieCardRadius,
-            backgroundColor: colors.surface10,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
 
 const isLoading = (l: Loadable<unknown>) => l.status === 'loading';
 const isError = (l: Loadable<unknown>) => l.status === 'error';
@@ -153,7 +138,7 @@ export default function Agenda() {
       ) : isLoading(upcoming) || isLoading(results) ? (
         <>
           <View style={{ paddingHorizontal: space.s24, paddingTop: space.s12 }}>{sportChips}</View>
-          <Skeleton />
+          <ScreenSkeleton testID="agenda-skeleton" />
         </>
       ) : (
         <FlatList

@@ -14,6 +14,7 @@ import { LionBackdrop } from '@/components/LionBackdrop';
 import { ModalSheet } from '@/components/ModalSheet';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { shouldLock } from '@/lib/biometricPolicy';
+import { GateCoverContext } from '@/providers/gateCover';
 import { consumeColdStart } from '@/lib/lockSession';
 import { useSession } from '@/providers/SessionProvider';
 import { signOut } from '@/services/auth';
@@ -284,31 +285,33 @@ export function BiometricGate({ children }: { children: ReactNode }) {
   const covered = phase !== 'open' || privacy;
   return (
     <BiometricControlContext.Provider value={control}>
-      <View style={styles.fill}>
-        {everOpen ? (
-          <View
-            style={styles.fill}
-            accessibilityElementsHidden={covered}
-            importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
-          >
-            {children}
-          </View>
-        ) : null}
-        {phase === 'checking' ? <Blank testID="lock-checking" /> : null}
-        {phase === 'locked' ? (
-          <LockScreen
-            label={label}
-            failed={failed}
-            busy={leaving}
-            onUnlock={() => void attempt()}
-            onOtherAccount={() => void otherAccount()}
-          />
-        ) : null}
-        {phase === 'open' && privacy ? <Blank testID="privacy-cover" /> : null}
-        {askEnable && phase === 'open' ? (
-          <EnablePrompt label={label} onEnable={() => void answerPrompt(true)} onLater={() => void answerPrompt(false)} />
-        ) : null}
-      </View>
+      <GateCoverContext.Provider value={covered}>
+        <View style={styles.fill}>
+          {everOpen ? (
+            <View
+              style={styles.fill}
+              accessibilityElementsHidden={covered}
+              importantForAccessibility={covered ? 'no-hide-descendants' : 'auto'}
+            >
+              {children}
+            </View>
+          ) : null}
+          {phase === 'checking' ? <Blank testID="lock-checking" /> : null}
+          {phase === 'locked' ? (
+            <LockScreen
+              label={label}
+              failed={failed}
+              busy={leaving}
+              onUnlock={() => void attempt()}
+              onOtherAccount={() => void otherAccount()}
+            />
+          ) : null}
+          {phase === 'open' && privacy ? <Blank testID="privacy-cover" /> : null}
+          {askEnable && phase === 'open' ? (
+            <EnablePrompt label={label} onEnable={() => void answerPrompt(true)} onLater={() => void answerPrompt(false)} />
+          ) : null}
+        </View>
+      </GateCoverContext.Provider>
     </BiometricControlContext.Provider>
   );
 }

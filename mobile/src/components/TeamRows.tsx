@@ -2,13 +2,14 @@
 // Strong 14, linha de apoio em Caption 12 text-subtle, etiqueta opcional (LESÃO, DÚVIDA, nº de troféus) e seta de 18 quando a linha
 // abre; 9 pt em cima e em baixo, separador de 1 pt por baixo. Troféu do treinador: ícone 18 e texto Body 14 (4949:8668).
 // SEM FIGMA: `TextRow` ainda com o valor à direita (troféus sem ícone), `SectionError` (erro compacto de uma secção, sem esconder
-// o resto do ecrã) e `Loading` (espaço em branco enquanto os dados chegam).
+// o resto do ecrã) e `Loading` (esqueleto, 38c e 11c).
 // Linhas só são botão com `onPress`; nomes numa linha com reticências, a etiqueta e a seta nunca encolhem.
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
@@ -148,6 +149,6 @@ export function SectionError() {
   );
 }
 
-/** SEM FIGMA: enquanto os dados chegam, um espaço em branco (como na competição). */
-export const Loading = ({ testID }: { testID: string }) => <View testID={testID} />;
+/** Enquanto os dados chegam: o esqueleto do ecrã a carregar (38c 4994:12960, 11c 4994:13150). */
+export const Loading = ({ testID }: { testID: string }) => <ScreenSkeleton testID={testID} />;
 

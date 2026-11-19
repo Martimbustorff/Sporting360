@@ -18,6 +18,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
+import { ScreenSkeleton } from '@/components/Skeleton';
 import { SectionError, TextRow } from '@/components/TeamRows';
 import { useNow } from '@/data/clock';
 import type { PlayerSeasonStats } from '@/data/schemas';
@@ -42,8 +43,8 @@ const NO_INJURIES = 'Sem lesões registadas.';
 
 const param = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v);
 
-/** SEM FIGMA: enquanto os dados não chegam, um espaço em branco (como na competição). */
-const Loading = () => <View testID="player-loading" />;
+/** Enquanto os dados não chegam: o esqueleto de 42c (4994:13069). */
+const Loading = () => <ScreenSkeleton testID="player-loading" />;
 
 function Muted({ text }: { text: string }) {
   return <Text71 variant="caption12" color="textMuted">{text}</Text71>;

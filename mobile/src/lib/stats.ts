@@ -115,3 +115,30 @@ export function partRows(doc: StatisticsDoc | null, part: StatPart, homeId: stri
   const rows = statRows(source, homeId, awayId).map((r, i) => ({ ...r, key: STAT_ORDER[i]!.key as string }));
   return usable && part === 'second' ? rows.filter((r) => !isRatioStat(r.key)) : rows;
 }
+
+/** "Números do jogo" do Sumário ao vivo (Figma 4924:6440): rótulos do frame, pela ordem do frame. */
+const LIVE_NUMBERS: { key: string; label: string }[] = [
+  { key: POSSESSION_KEY, label: 'Posse de bola' },
+  { key: 'Total Shots', label: 'Remates' },
+  { key: XG_KEY, label: 'Golos esperados (xG)' },
+];
+
+const hasValue = (v: string | number | null | undefined): boolean => v != null && v !== '';
+
+/**
+ * Só as linhas com dado dos DOIS lados (um zero real conta; ausente ou nulo não), com os valores e a formatação das
+ * linhas da tab Estatísticas (`partRows`, total do jogo). Sem nenhuma linha, lista vazia: o bloco não aparece.
+ */
+export function liveNumbers(doc: StatisticsDoc | null, homeId: string, awayId: string): StatRowData[] {
+  if (!doc) return [];
+  const has = (key: string): boolean => {
+    if (key === XG_KEY) return doc.xg != null && Number.isFinite(doc.xg.home) && Number.isFinite(doc.xg.away);
+    const items = (id: string) => doc.teams.find((t) => t.teamId === id)?.items ?? {};
+    return hasValue(items(homeId)[key]) && hasValue(items(awayId)[key]);
+  };
+  const rows = partRows(doc, 'total', homeId, awayId);
+  return LIVE_NUMBERS.filter((n) => has(n.key)).map((n) => {
+    const r = rows.find((x) => x.key === n.key)!;
+    return { label: n.label, home: r.home, away: r.away };
+  });
+}

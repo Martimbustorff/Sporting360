@@ -1,5 +1,5 @@
 import type { StatisticsDoc } from '@/data/schemas';
-import { STAT_ORDER, hasHalves, isRatioStat, partRows, statBars, statNumber, statRows } from '@/lib/stats';
+import { STAT_ORDER, hasHalves, isRatioStat, liveNumbers, partRows, statBars, statNumber, statRows } from '@/lib/stats';
 
 const doc = (over: Partial<StatisticsDoc> = {}): StatisticsDoc =>
   ({
@@ -142,5 +142,46 @@ describe('partes (firstHalf gravado no intervalo)', () => {
   it('sem partes: 1.ª e 2.ª parte caem no total', () => {
     expect(partRows(doc(), 'first', '228', '217')).toHaveLength(10);
     expect(find(partRows(doc(), 'second', '228', '217'), 'Total Shots')).toMatchObject({ home: '12' });
+  });
+});
+
+describe('liveNumbers (Números do jogo, Figma 06)', () => {
+  it('posse, remates e xG pela ordem do frame, com os rótulos do frame e os valores das linhas da tab Estatísticas', () => {
+    const rows = liveNumbers(doc(), '228', '217');
+    expect(rows).toEqual([
+      { label: 'Posse de bola', home: '55%', away: '45%' },
+      { label: 'Remates', home: '12', away: '4' },
+      { label: 'Golos esperados (xG)', home: '1,4', away: '0,6' },
+    ]);
+  });
+
+  it('só as linhas com dados dos dois lados: um lado em falta ou nulo esconde a linha', () => {
+    const d = doc({
+      teams: [
+        { teamId: '228', items: { 'Ball Possession': '55%', 'Total Shots': 12 } },
+        { teamId: '217', items: { 'Ball Possession': '45%', 'Total Shots': null } },
+      ],
+      xg: { home: 1.2, away: null },
+    } as Partial<StatisticsDoc>);
+    expect(liveNumbers(d, '228', '217').map((r) => r.label)).toEqual(['Posse de bola']);
+  });
+
+  it('um zero real (0 remates, xG 0) conta como dado', () => {
+    const d = doc({
+      teams: [
+        { teamId: '228', items: { 'Total Shots': 0 } },
+        { teamId: '217', items: { 'Total Shots': 3 } },
+      ],
+      xg: { home: 0, away: 0.2 },
+    } as Partial<StatisticsDoc>);
+    expect(liveNumbers(d, '228', '217')).toEqual([
+      { label: 'Remates', home: '0', away: '3' },
+      { label: 'Golos esperados (xG)', home: '0', away: '0,2' },
+    ]);
+  });
+
+  it('sem documento ou sem nenhuma linha: lista vazia', () => {
+    expect(liveNumbers(null, '228', '217')).toEqual([]);
+    expect(liveNumbers({ teams: [], xg: null } as unknown as StatisticsDoc, '228', '217')).toEqual([]);
   });
 });

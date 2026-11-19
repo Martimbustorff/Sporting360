@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { colors, layout, space, spacing } from '@/theme/tokens';
 
 const WIDTHS = ['100%', '76%', '89%'] as const;
 
@@ -30,6 +30,15 @@ export function SkeletonRows({ testID, rows = 3, padded = false }: { testID: str
           </View>
         </Animated.View>
       ))}
+    </View>
+  );
+}
+
+/** Ecrã inteiro a carregar (35c, 36c, 22c, 38c, 42c, 11c): o esqueleto a 24 dos lados e a 8 do cabeçalho. */
+export function ScreenSkeleton({ testID }: { testID: string }) {
+  return (
+    <View style={{ paddingTop: space.s8 }}>
+      <SkeletonRows padded testID={testID} />
     </View>
   );
 }

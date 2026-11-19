@@ -251,6 +251,50 @@ export function toEventVM(e: ShownEvent, homeTeamId: string, sportingSide: 'home
   }
 }
 
+export type LiveEventVM = {
+  minute: string;
+  /** Coluna do lance: o Sporting ou o adversário (um autogolo conta para quem beneficiou). */
+  side: 'sporting' | 'opponent';
+  kind: EventVM['kind'];
+  /** Segunda linha, só com o que os dados do lance dão (Figma 4924:6466). */
+  line?: string;
+};
+
+/** Segunda linha de um lance ao vivo. Só vem de dados que o lance já tem; sem eles, nada. */
+function liveLine(e: ShownEvent, vm: EventVM): string | undefined {
+  switch (e.type) {
+    case 'goal': {
+      if (vm.kind === 'missedPenalty') return undefined;
+      const detail = e.detail.toLowerCase();
+      if (detail === 'own goal') return 'Autogolo';
+      if (detail === 'penalty') return 'De penálti';
+      return e.assistName ? `Assistência de ${e.assistName}` : undefined;
+    }
+    case 'subst':
+      // Contrato `summaries` do Plano 2: assist = quem entra, player = quem sai.
+      if (e.assistName && e.playerName) return `Entra ${e.assistName}, sai ${e.playerName}`;
+      if (e.assistName) return `Entra ${e.assistName}`;
+      return e.playerName ? `Sai ${e.playerName}` : undefined;
+    case 'var':
+      return VAR_TEXT.some(([re]) => re.test(e.detail)) && vm.primary ? vm.primary : undefined;
+    case 'card':
+      return undefined;
+  }
+}
+
+/** Lances do Sumário ao vivo, o mais recente primeiro (no mesmo minuto, a ordem inversa da API). */
+export function liveFeed(items: EventItem[], homeTeamId: string, sportingSide: 'home' | 'away' = 'home'): LiveEventVM[] {
+  return items
+    .filter(isShownEvent)
+    .sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0))
+    .reverse()
+    .map((e) => {
+      const vm = toEventVM(e, homeTeamId, sportingSide);
+      const line = liveLine(e, vm);
+      return { minute: vm.minute, side: vm.side, kind: vm.kind, ...(line ? { line } : {}) };
+    });
+}
+
 type Part = '1ª Parte' | '2ª Parte' | 'Prolongamento' | 'Penáltis';
 const PARTS: readonly Part[] = ['1ª Parte', '2ª Parte', 'Prolongamento', 'Penáltis'];
 

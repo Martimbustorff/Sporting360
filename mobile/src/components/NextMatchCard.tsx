@@ -146,12 +146,15 @@ function Chip({ label, tone, onPress }: { label: string; tone: 'primary' | 'subt
 
 /** Contagem ao segundo isolada: só esta folha volta a desenhar-se a cada segundo, não a Home. */
 function Countdown({ to, base, ticking }: { to: Date; base: Date; ticking: boolean }) {
-  const [running, setRunning] = useState(true);
+  // O trinco de "a correr" é por alvo: ao mudar `to` (adiado, outro jogo) a contagem volta a correr sem mais um render.
+  const target = to.getTime();
+  const [stoppedAt, setStoppedAt] = useState<number | null>(null);
+  const running = stoppedAt !== target;
   const now = useSecondNow(ticking && running, base);
-  const left = to.getTime() - now.getTime();
+  const left = target - now.getTime();
   useEffect(() => {
-    if (left <= 0) setRunning(false);
-  }, [left]);
+    if (left <= 0) setStoppedAt(target);
+  }, [left, target]);
   return (
     <Text71
       variant="countdown32"

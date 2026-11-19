@@ -12,11 +12,12 @@ export const TICKET_KEEP_AWAKE_TAG = 'gamebox-ticket';
 
 const ignore = () => {};
 
-export function useTicketMode(): void {
+/** `active` falso (ex.: o QR ainda não está no ecrã, ou o BiometricGate está por cima) não liga nada. */
+export function useTicketMode(active = true): void {
   const focused = useIsFocused();
 
   useEffect(() => {
-    if (!focused) return;
+    if (!focused || !active) return;
     let held = false; // o ecrã quer o brilho no máximo
     let applied = false; // o máximo foi posto e há valor a repor
     let saved: number | null = null;
@@ -70,5 +71,5 @@ export function useTicketMode(): void {
       // A app inteira está bloqueada em vertical (app/_layout): "desbloquear" abriria a rotação, por isso repõe-se o bloqueio.
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(ignore);
     };
-  }, [focused]);
+  }, [focused, active]);
 }

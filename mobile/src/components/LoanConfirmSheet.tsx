@@ -135,7 +135,7 @@ export function LoanConfirmSheet({
   };
 
   return (
-    <ModalSheet grabber="center" onClose={onClose}>
+    <ModalSheet grabber="center" gap="tight" onClose={onClose}>
       <Text71 variant="titleS20" accessibilityRole="header">{LOAN_TEXT.lend}</Text71>
       {match ? (
         <>
@@ -179,7 +179,7 @@ export function CancelLoanSheet({ loanId, onClose }: { loanId: string; onClose: 
     }
   };
   return (
-    <ModalSheet grabber="center" onClose={onClose}>
+    <ModalSheet grabber="center" gap="tight" onClose={onClose}>
       <Text71 variant="titleS20" accessibilityRole="header">{LOAN_TEXT.cancelTitle}</Text71>
       <Text71 variant="body14" color="textMuted">{LOAN_TEXT.cancelBody}</Text71>
       {message ? <FormMessage text={message} /> : null}

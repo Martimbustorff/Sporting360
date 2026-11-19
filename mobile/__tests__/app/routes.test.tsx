@@ -31,6 +31,12 @@ jest.mock('@/components/match/CollapsingHeader', () => ({
   MatchDetailLayout: ({ header, tabs, children }: { header: React.ReactNode; tabs: React.ReactNode; children: React.ReactNode }) => [header, tabs, children],
   CrossfadeCenter: ({ title }: { title: React.ReactNode }) => title,
 }));
+// O esqueleto pulsa com Reanimated, trocado por {} pelo expo-router/testing-library; testado em Skeleton.test.
+jest.mock('@/components/Skeleton', () => {
+  const { View } = jest.requireActual('react-native');
+  const Fake = ({ testID }: { testID: string }) => <View testID={testID} />;
+  return { SkeletonRows: Fake, ScreenSkeleton: Fake };
+});
 // Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.
 jest.mock('@/components/AnalyticsConsentSheet', () => ({ AnalyticsConsentSheet: () => null }));
 jest.mock('@/data/sports', () => ({

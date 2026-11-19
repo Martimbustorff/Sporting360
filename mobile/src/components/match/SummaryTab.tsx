@@ -1,5 +1,5 @@
 // Figma V7.1: 4933:7057 (08 Sumário terminado: cronologia em duas colunas, "Forma · últimos 5", "Confrontos diretos ·
-// últimos 5" em barra V/E/D e "Ausências" com o selo "Dúvida") e 4924:6268 (06, ao vivo, mesmos lances). Anteriores:
+// últimos 5" em barra V/E/D e "Ausências" com o selo "Dúvida") e 4924:6268 (06, ao vivo, em `LiveSummary`). Anteriores:
 // 655:31958 ("Informação do Jogo"), 500:28950 (jogo futuro sem dados: EmptyState do Plano 3).
 // Decisões: a cronologia mostra o mais recente primeiro (pedido do Martim, como nos frames 06/08), com os separadores
 // por parte e o resultado a seguir essa ordem (a última parte no topo; o resultado de cada parte calcula-se em ordem
@@ -31,19 +31,19 @@ import {
 } from '@/lib/prematch';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radius, space, spacing } from '@/theme/tokens';
+import { LiveEvents, LiveNumbers } from '@/components/match/LiveSummary';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
 const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
 const POSTPONED = 'Jogo adiado. A nova data aparece aqui quando for conhecida.';
 const CANCELLED = 'Jogo cancelado.';
-const NO_EVENTS_LIVE = 'Os lances aparecem aqui durante o jogo.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
 const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.formLoss };
 
-/** Uma linha de texto: nome à esquerda, valor à direita (só usada na Previsão em falta de Figma). */
+/** Previsão (sem frame): percentagens de vitória da casa, empate e fora, com o nome da equipa por baixo. */
 function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
   const cols = [
     { label: match.home.name, value: p.percent.home },
@@ -152,7 +152,7 @@ function HeadToHead({ p, match }: { p: PrematchFull; match: Match }) {
         {segments.map((x) => (
           <View key={x.key} testID={`h2h-${x.key}`} style={{ flexGrow: x.n, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: layout.h2hLabelGap }}>
             <View style={{ height: layout.h2hBarHeight, borderRadius: layout.h2hBarRadius, backgroundColor: x.color }} />
-            <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{x.label}</Text71>
+            <Text71 variant="caption12" color="textMuted">{x.label}</Text71>
           </View>
         ))}
       </View>
@@ -251,13 +251,13 @@ function MatchContext({ match }: { match: Match }) {
   );
 }
 
-/** `after` (o contexto do jogo terminado) só aparece depois de os eventos chegarem, para a página não saltar. */
-function Events({ match, live, after }: { match: Match; live: boolean; after?: ReactNode }) {
+/** Jogo terminado (frame 08). `after` (o contexto do jogo) só aparece depois de os eventos chegarem, para a página não saltar, e nunca por baixo do erro. */
+function Events({ match, after }: { match: Match; after?: ReactNode }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
-  if (events.status === 'error') return <><EmptyState icon="info" text={LOAD_ERROR} />{after}</>;
+  if (events.status === 'error') return <EmptyState icon="info" text={LOAD_ERROR} />;
   const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id, match.sportingSide) : [];
-  if (groups.length === 0) return <><EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />{after}</>;
+  if (groups.length === 0) return <><EmptyState icon="info" text={NO_EVENTS_DONE} />{after}</>;
   return (
     <>
       {[...groups].reverse().map((g) => (
@@ -313,8 +313,13 @@ export function SummaryTab({ match }: { match: Match }) {
         <EmptyState icon="info" text={POSTPONED} />
       ) : state === 'cancelled' ? (
         <EmptyState icon="info" text={CANCELLED} />
+      ) : state === 'finished' ? (
+        <Events match={match} after={<MatchContext match={match} />} />
       ) : (
-        <Events match={match} live={state !== 'finished'} after={state === 'finished' ? <MatchContext match={match} /> : undefined} />
+        <>
+          <LiveNumbers match={match} />
+          <LiveEvents match={match} />
+        </>
       )}
       <MatchInfo match={match} />
     </MatchScrollView>

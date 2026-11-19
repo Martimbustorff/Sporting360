@@ -19,6 +19,7 @@ import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { initialOf } from '@/lib/initialOf';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
+import { ScreenSkeleton, SkeletonRows } from '@/components/Skeleton';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
@@ -233,7 +234,7 @@ function FavoritePlayerRow({ player }: { player: { id: string; name: string } | 
 
 /** Linhas da secção Sócio. "Não indicado" só com o documento lido (ou inexistente) e o campo vazio. */
 function MemberRows({ user }: { user: Loadable<UserDoc> }) {
-  if (user.status === 'loading') return <View testID="socio-loading" style={{ minHeight: layout.skeletonRowHeight }} />;
+  if (user.status === 'loading') return <SkeletonRows testID="socio-loading" rows={2} />;
   if (user.status === 'error') return <Note text={PERFIL_TEXT.sectionError} />;
   const u: UserDoc = user.status === 'ready' ? user.data : {};
   return (
@@ -254,7 +255,7 @@ function PeriodBlock({ kind, uid }: { kind: PeriodKind; uid: string | null }) {
   const points = entry.status === 'ready' ? entry.data.points : entry.status === 'missing' ? 0 : null;
   const position = useMyPosition(kind, key, entry.status === 'ready' ? entry.data.points : null);
 
-  if (entry.status === 'loading') return <View testID="period-loading" style={{ minHeight: layout.rankingRowMinHeight }} />;
+  if (entry.status === 'loading') return <SkeletonRows testID="period-loading" rows={1} />;
   return (
     <View style={{ gap: space.s8 }}>
       <View style={{ flexDirection: 'row', gap: space.s12 }}>
@@ -325,6 +326,16 @@ export default function Perfil() {
   const name = shownName(uid, profile, user);
   const avatarId = profile.status === 'ready' ? profile.data.avatarId : null;
 
+  // 22c (4994:12835): sem o nome nem os dados de sócio ainda, o ecrã é só o esqueleto por baixo do cabeçalho.
+  if (uid && user.status === 'loading' && profile.status === 'loading') {
+    return (
+      <Screen padded="none">
+        <Header title="Perfil" onBack={back} />
+        <ScreenSkeleton testID="perfil-loading" />
+      </Screen>
+    );
+  }
+
   return (
     <Screen padded="none">
       <Header title="Perfil" onBack={back} />
@@ -357,7 +368,7 @@ export default function Perfil() {
           {failed ? (
             <Note text={PERFIL_TEXT.gameError} />
           ) : stats === null ? (
-            <View testID="game-loading" style={{ minHeight: layout.skeletonRowHeight }} />
+            <SkeletonRows testID="game-loading" rows={2} />
           ) : (
             <GameStats stats={stats} />
           )}

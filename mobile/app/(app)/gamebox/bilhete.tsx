@@ -1,15 +1,15 @@
 // Figma V7.1: 12 GameBox · Modo bilhete (4936:7161). Cartão branco (raio 20): faixa primary com emblema, jogo e data,
 // QR de 220 com "Mostra este código na porta", picotado e Porta/Sector/Fila/Lugar; por baixo nome e número de sócio e o
 // aviso do brilho. O QR do Figma é ilustrativo: aqui é o número da GameBox (react-native-qrcode-svg), nunca em logs.
-// Enquanto o ecrã tem o foco: brilho no máximo (valor anterior reposto ao sair e em segundo plano), ecrã sempre ligado e
-// vertical (lib/ticketMode). Lugar: Estádio no futebol, Pavilhão nas outras modalidades (lib/gamebox.ticketVenue).
+// Enquanto o ecrã tem o foco E o QR está desenhado E o BiometricGate não está por cima: brilho no máximo (valor anterior
+// reposto ao sair e em segundo plano), ecrã sempre ligado e vertical (lib/ticketMode). Faixa com o nome curto do clube (4936:7207). Lugar: Estádio no futebol, Pavilhão nas outras modalidades (lib/gamebox.ticketVenue).
 // Jogo seguinte: o primeiro jogo EM CASA do Sporting por abrir, em todas as modalidades (useUpcomingMatches por
 // modalidade); fora de casa não conta. SEM FIGMA: sem jogo a faixa mostra só o nome da GameBox; "Esta GameBox já não existe." e o erro de leitura reusam os textos do formulário.
 // Várias GameBox (ex.: um pai com três filhos a passar o torniquete com o mesmo telemóvel): deslizar na horizontal entre
 // bilhetes, pela ordem guardada, a abrir na do `id`; pontos de página por baixo (acrescentado a pedido do Martim, o frame 12
 // não os tem). Uma só GameBox: sem pontos nem paginação.
 // Rota `/gamebox/bilhete?id={id}`: `principal` é a GameBox antiga do perfil da V2 (mesma regra da folha da Home).
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -40,6 +40,8 @@ import {
 } from '@/lib/gamebox';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
 import { useTicketMode } from '@/lib/ticketMode';
+import { shortClubName } from '@/lib/teams';
+import { useGateCovered } from '@/providers/gateCover';
 import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
@@ -123,7 +125,7 @@ function Ticket({ gamebox, index, match, lent, loading }: { gamebox: GameboxView
   const venue = ticketVenue(match?.sport);
   const seat = ticketSeat(gamebox, venue);
   const venueName = TICKET_TEXT.venueShort[venue];
-  const title = match ? `${match.home.name} - ${match.away.name}` : gameboxLabel(gamebox.name, index);
+  const title = match ? `${shortClubName(match.home.name)} - ${shortClubName(match.away.name)}` : gameboxLabel(gamebox.name, index);
   const subtitle = match
     ? `${sentence(formatCardDate(match.kickoff))} · ${formatTime(match.kickoff)} · ${venueName}`
     : null;
@@ -182,11 +184,32 @@ function Ticket({ gamebox, index, match, lent, loading }: { gamebox: GameboxView
   );
 }
 
-function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; index: number; match: Match | null; name: string; member: string }) {
+function Page({
+  gamebox,
+  index,
+  match,
+  name,
+  member,
+  onQrShown,
+}: {
+  gamebox: GameboxView;
+  index: number;
+  match: Match | null;
+  name: string;
+  member: string;
+  /** Diz ao ecrã se o QR desta página está a ser desenhado (nem a carregar o empréstimo, nem emprestada, nem sem número). */
+  onQrShown: (id: string, shown: boolean) => void;
+}) {
   // Cada página é a sua GameBox: o estado "emprestada" aplica-se quando ela tem um empréstimo ativo para o jogo da faixa.
   const loans = useOwnerLoans(gamebox.id);
   const loan = match && loans.status === 'ready' ? loans.data.find((l) => l.matchId === match.id) : undefined;
   const [cancelling, setCancelling] = useState(false);
+  const qrShown = loans.status !== 'loading' && !loan && normalizeGameboxNumber(gamebox.number) !== null;
+  const { id } = gamebox;
+  useEffect(() => {
+    onQrShown(id, qrShown);
+    return () => onQrShown(id, false);
+  }, [id, qrShown, onQrShown]);
   return (
     <ScrollView
       contentContainerStyle={{
@@ -272,17 +295,28 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   const [current, setCurrent] = useState(initialIndex);
   // Um hook por modalidade (lista fixa, ordem estável); partilhado por todas as páginas.
   const lists = SPORTS.map((sport) => useUpcomingMatches(sport, now)); // eslint-disable-line react-hooks/rules-of-hooks
-  const match = useMemo(
+  // A faixa não pisca: enquanto alguma lista volta a carregar (a consulta muda de 10 em 10 minutos) fica o último jogo
+  // conhecido; sem jogo em casa a faixa é só o nome da GameBox, sempre.
+  const settled = lists.every((l) => l.status !== 'loading');
+  const lastMatch = useRef<Match | null>(null);
+  const computed = useMemo(
     () => upcomingHome(lists.flatMap((l) => (l.status === 'ready' ? l.data : [])), now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...lists, now],
   );
+  if (settled) lastMatch.current = computed;
+  const match = settled ? computed : lastMatch.current;
+  // Brilho no máximo e ecrã ligado só com o QR desenhado da GameBox à vista e sem o bloqueio por cima.
+  const [shown, setShown] = useState<Record<string, boolean>>({});
+  const onQrShown = useCallback((id: string, on: boolean) => setShown((s) => (s[id] === on ? s : { ...s, [id]: on })), []);
+  const covered = useGateCovered();
   const data = user.status === 'ready' ? user.data : null;
   const rawName = (data?.name ?? '').trim();
   const name = rawName.includes('@') ? '' : rawName;
   const member = (data?.memberNumber ?? '').trim();
   const count = views.length;
   const index = Math.min(current, count - 1);
+  useTicketMode(!covered && shown[views[index]!.id] === true);
 
   const goTo = useCallback(
     (next: number) => {
@@ -298,7 +332,7 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   };
 
   if (count === 1) {
-    return <Page gamebox={views[0]!} index={0} match={match} name={name} member={member} />;
+    return <Page gamebox={views[0]!} index={0} match={match} name={name} member={member} onQrShown={onQrShown} />;
   }
   const active = views[index]!;
   return (
@@ -322,7 +356,7 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
             accessibilityElementsHidden={i !== index}
             importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
           >
-            <Page gamebox={item} index={i} match={match} name={name} member={member} />
+            <Page gamebox={item} index={i} match={match} name={name} member={member} onQrShown={onQrShown} />
           </View>
         )}
         style={{ flex: 1 }}
@@ -338,7 +372,6 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
 }
 
 export default function GameboxBilhete() {
-  useTicketMode();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;

@@ -5,6 +5,7 @@ import {
   goalsFromEvents,
   groupEvents,
   isShownEvent,
+  liveFeed,
   minuteText,
   penaltiesText,
   scoreText,
@@ -487,5 +488,49 @@ describe('goalsFromEvents', () => {
     );
     expect(goals).toHaveLength(1);
     expect(goals[0]!.side).toBe('home');
+  });
+});
+
+describe('liveFeed (Sumário ao vivo, Figma 06)', () => {
+  const item = (over: Partial<EventItem>): EventItem => ({
+    minute: 10,
+    extra: null,
+    teamId: '228',
+    playerId: null,
+    playerName: 'X',
+    assistId: null,
+    assistName: null,
+    type: 'goal',
+    detail: 'Normal Goal',
+    comments: null,
+    ...over,
+  });
+  const feed = (items: EventItem[]) => liveFeed(items, '228', 'home');
+
+  it('mais recente primeiro, com o minuto e a coluna', () => {
+    const f = feed([item({ minute: 23 }), item({ minute: 54, teamId: '217' }), item({ minute: 54, extra: null, type: 'card', detail: 'Yellow Card' })]);
+    expect(f.map((e) => e.minute)).toEqual(['54’', '54’', '23’']);
+    expect(f[0]).toMatchObject({ kind: 'yellow', side: 'sporting' });
+    expect(f[1]).toMatchObject({ kind: 'goal', side: 'opponent' });
+  });
+
+  it('golo: "Assistência de {nome}" só com assistência; penálti e autogolo têm a sua linha', () => {
+    expect(feed([item({ assistName: 'Pedro Gonçalves' })])[0]!.line).toBe('Assistência de Pedro Gonçalves');
+    expect(feed([item({ detail: 'Penalty' })])[0]!.line).toBe('De penálti');
+    expect(feed([item({ detail: 'Own Goal', teamId: '217' })])[0]).toMatchObject({ line: 'Autogolo', side: 'sporting' });
+    expect(feed([item({})])[0]).not.toHaveProperty('line');
+  });
+
+  it('substituição: "Entra {quem entra}, sai {quem sai}", e só o que os dados têm', () => {
+    expect(feed([item({ type: 'subst', playerName: 'Gyökeres', assistName: 'Giroud' })])[0]!.line).toBe('Entra Giroud, sai Gyökeres');
+    expect(feed([item({ type: 'subst', playerName: null, assistName: 'Giroud' })])[0]!.line).toBe('Entra Giroud');
+    expect(feed([item({ type: 'subst', playerName: 'Gyökeres', assistName: null })])[0]!.line).toBe('Sai Gyökeres');
+    expect(feed([item({ type: 'subst', playerName: null, assistName: null })])[0]).not.toHaveProperty('line');
+  });
+
+  it('cartões e penálti falhado não inventam segunda linha; VAR dá a decisão', () => {
+    expect(feed([item({ type: 'card', detail: 'Red Card' })])[0]).not.toHaveProperty('line');
+    expect(feed([item({ detail: 'Missed Penalty' })])[0]).not.toHaveProperty('line');
+    expect(feed([item({ type: 'var', detail: 'Goal Disallowed - offside' })])[0]!.line).toBe('Golo anulado');
   });
 });
