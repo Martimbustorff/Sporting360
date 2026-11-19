@@ -93,6 +93,10 @@ export default function Agenda() {
     loading: false,
   });
 
+  // As pílulas de modalidade também ficam em carregamento e erro (a lista, com o cartão, ainda não existe): quem vê um erro
+  // numa modalidade tem de poder mudar de modalidade.
+  const sportChips = <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />;
+
   const header = (
     <View style={{ gap: space.s12, paddingBottom: space.s12 }}>
       {next ? (
@@ -106,7 +110,7 @@ export default function Agenda() {
           onOpenAgenda={() => undefined}
         />
       ) : null}
-      <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />
+      {sportChips}
       <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
     </View>
   );
@@ -141,9 +145,15 @@ export default function Agenda() {
       />
       <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
       {isError(upcoming) || isError(results) ? (
-        <EmptyState icon="info" text={ERROR_TEXT} />
+        <>
+          <View style={{ paddingHorizontal: space.s24, paddingTop: space.s12 }}>{sportChips}</View>
+          <EmptyState icon="info" text={ERROR_TEXT} />
+        </>
       ) : isLoading(upcoming) || isLoading(results) ? (
-        <Skeleton />
+        <>
+          <View style={{ paddingHorizontal: space.s24, paddingTop: space.s12 }}>{sportChips}</View>
+          <Skeleton />
+        </>
       ) : (
         <FlatList
           data={list}

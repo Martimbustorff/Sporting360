@@ -2,8 +2,7 @@
 // Title 24 primary-on-dark junto ao nome em Title 24 e a linha "Extremo · 25 anos" em Caption 12 muted; quatro quadrados
 // (JOGOS, GOLOS, ASSIST., NOTA a primary; surface-06, raio 12, 12 em cima e em baixo); linhas com `InfoRow`; TROFÉUS com o ícone
 // (4950:8548) e HISTÓRICO DE LESÕES, "Sem lesões registadas." em Caption 12 muted.
-// Diferenças do frame: a foto fica redonda (o frame mostra um quadrado de cantos redondos; `PlayerPhoto` é circular em todo o
-// app); a linha de facto não leva nacionalidade (o plantel não a tem); as linhas Remates à baliza, Passes-chave e Dribles
+// Diferenças do frame: a linha de facto não leva nacionalidade (o plantel não a tem); as linhas Remates à baliza, Passes-chave e Dribles
 // certos não existem nos dados e não se mostram; ficam Minutos e os cartões amarelos e vermelhos (copy já existente).
 // SEM FIGMA: o aviso de cache, o erro, "Jogador não encontrado.", "Sem jogos esta época.", "Sem troféus registados." e o erro de
 // secção. O número só se mostra com número no plantel.
@@ -132,7 +131,7 @@ export default function Jogador() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32, gap: space.s12 }}>
         <OfflineBanner visible={fromCache} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.playerHeaderGap, paddingTop: space.s12 }}>
-          <PlayerPhoto testID="player-photo" photo={photo} size={layout.playerHeaderPhoto} />
+          <PlayerPhoto testID="player-photo" photo={photo} size={layout.playerHeaderPhoto} shape="rounded" />
           <View style={{ flex: 1, minWidth: 0, gap: layout.playerNameGap / 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.playerNameGap }}>
               {number !== null ? (
@@ -151,7 +150,7 @@ export default function Jogador() {
         ) : trophies.status === 'loading' ? null : won.length > 0 ? (
           <View>
             {won.map((t, i) => (
-              <TextRow key={`${t.league}-${t.season}-${i}`} left={`${t.league} · ${t.season}`} right={trophyPlaceText(t.place)} />
+              <TextRow key={`${t.league}-${t.season}-${i}`} icon left={`${t.league} · ${t.season}`} right={trophyPlaceText(t.place)} />
             ))}
           </View>
         ) : (
@@ -163,7 +162,7 @@ export default function Jogador() {
         ) : sidelined.status === 'loading' ? null : injuries.length > 0 ? (
           <View>
             {injuries.map((s, i) => (
-              <TextRow key={`${s.start}-${i}`} icon={false} left={injuryReasonText(s.type)} right={sidelinedPeriodText(s)} />
+              <TextRow key={`${s.start}-${i}`} left={injuryReasonText(s.type)} right={sidelinedPeriodText(s)} />
             ))}
           </View>
         ) : (

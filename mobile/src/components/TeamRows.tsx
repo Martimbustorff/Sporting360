@@ -16,10 +16,6 @@ import { colors, layout, space } from '@/theme/tokens';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const TROPHY_ICON = require('../../assets/icons/trophy.svg');
 
-export function RowSeparator() {
-  return <View style={{ height: layout.separator, backgroundColor: colors.separator }} />;
-}
-
 const TAG_BG = {
   injury: colors.injuryBg,
   doubt: colors.yellow71Bg,
@@ -108,8 +104,8 @@ export function PersonRow({
   );
 }
 
-/** Troféu do treinador: ícone (`icon`) e texto; o rótulo de acessibilidade é "texto: valor" (o valor, quando há, fica à direita). */
-export function TextRow({ left, right, icon = true }: { left: string; right?: string; icon?: boolean }) {
+/** Troféu do treinador: ícone (com `icon`) e texto; o rótulo de acessibilidade é "texto: valor" (o valor, quando há, fica à direita). */
+export function TextRow({ left, right, icon = false }: { left: string; right?: string; icon?: boolean }) {
   return (
     <View
       accessible
@@ -124,14 +120,14 @@ export function TextRow({ left, right, icon = true }: { left: string; right?: st
       }}
     >
       {icon ? (
-      <Image
-        testID="trophy-icon"
-        source={TROPHY_ICON}
-        contentFit="contain"
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-        style={{ width: layout.trophyIcon, height: layout.trophyIcon }}
-      />
+        <Image
+          testID="trophy-icon"
+          source={TROPHY_ICON}
+          contentFit="contain"
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          style={{ width: layout.trophyIcon, height: layout.trophyIcon }}
+        />
       ) : null}
       <Text71 variant="body14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{left}</Text71>
       {right ? (

@@ -452,7 +452,7 @@ function TrophiesTab() {
         <View>
           <SectionBar label={coachName ? `Treinador, ${coachName}` : 'Treinador'} />
           {coachTrophies.map((x, i) => (
-            <TextRow key={`${x.league}-${x.season}-${i}`} left={`${x.league} · ${x.season}`} right={trophyPlaceText(x.place)} />
+            <TextRow key={`${x.league}-${x.season}-${i}`} icon left={`${x.league} · ${x.season}`} right={trophyPlaceText(x.place)} />
           ))}
         </View>
       ) : null}

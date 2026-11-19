@@ -124,6 +124,18 @@ describe('adiado e cancelado (Review Focus 2)', () => {
 });
 
 describe('leitores de ecrã', () => {
+  it('a ronda da API sai traduzida no rótulo ("Round of 32" em português)', async () => {
+    await render(
+      <MatchRow
+        match={match({ competition: { key: 'football_96_2026', id: '96', name: 'Taça de Portugal', type: 'cup', season: '2026', round: 'Round of 32', roundLabel: null } })}
+        onPress={jest.fn()}
+      />,
+    );
+    const label = screen.getByTestId('match-row-1001').props.accessibilityLabel as string;
+    expect(label).toContain('Taça de Portugal, 16 avos de final');
+    expect(label).not.toMatch(/Round of/);
+  });
+
   it('a linha por jogar lê-se de uma vez: equipas, competição e estado', async () => {
     await render(<MatchRow match={match()} onPress={jest.fn()} />);
     const row = screen.getByTestId('match-row-1001');

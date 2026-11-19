@@ -12,11 +12,14 @@ export function PlayerPhoto({
   size,
   number,
   testID,
+  shape = 'circle',
 }: {
   photo: string | null;
   size: number;
   number?: string | number | null;
   testID?: string;
+  /** `rounded`: quadrado de cantos arredondados do frame do jogador (4950:8462, 84 pt); por defeito, círculo. */
+  shape?: 'circle' | 'rounded';
 }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [photo]);
@@ -28,7 +31,7 @@ export function PlayerPhoto({
         style={{
           width: size,
           height: size,
-          borderRadius: size / 2,
+          borderRadius: shape === 'rounded' ? layout.playerPhotoRoundedRadius : size / 2,
           overflow: 'hidden',
           backgroundColor: colors.surface10,
         }}

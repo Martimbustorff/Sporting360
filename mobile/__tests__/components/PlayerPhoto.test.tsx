@@ -1,5 +1,20 @@
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
+
+describe('PlayerPhoto: forma', () => {
+  it('círculo por defeito (raio = metade)', async () => {
+    await render(<PlayerPhoto photo={null} size={40} testID="p" />);
+    const inner = screen.getByTestId('p').children[0] as unknown as { props: { style: object } };
+    expect(StyleSheet.flatten(inner.props.style)).toMatchObject({ borderRadius: 20 });
+  });
+
+  it('rounded: quadrado de cantos de 20 também a 84 pt', async () => {
+    await render(<PlayerPhoto photo={null} size={84} shape="rounded" testID="p" />);
+    const inner = screen.getByTestId('p').children[0] as unknown as { props: { style: object } };
+    expect(StyleSheet.flatten(inner.props.style)).toMatchObject({ width: 84, height: 84, borderRadius: 20 });
+  });
+});
 
 describe('PlayerPhoto', () => {
   it('shows the silhouette when photo is null', async () => {

@@ -51,9 +51,9 @@ export function LeaderPlayerRow({
       <PlayerPhoto photo={photo} size={layout.leaderRowPhoto} />
       <View style={{ flex: 1, minWidth: 0, gap: layout.leaderNameGap }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.leaderNameGap }}>
-          <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1 }}>{name}</Text71>
+          <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1, minWidth: layout.leaderNameMinWidth }}>{name}</Text71>
           {sub ? (
-            <Text71 variant="caption12" color="textSubtle" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 0 }}>{sub}</Text71>
+            <Text71 variant="caption12" color="textSubtle" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1, minWidth: 0 }}>{sub}</Text71>
           ) : null}
         </View>
         <View style={{ height: layout.leaderBarHeight, borderRadius: layout.leaderBarRadius, backgroundColor: colors.surface10, overflow: 'hidden' }}>

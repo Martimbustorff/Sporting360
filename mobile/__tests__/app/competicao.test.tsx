@@ -173,7 +173,8 @@ describe('Jornadas', () => {
     await openTab('Jornadas');
     const other = screen.getByTestId('match-row-11a');
     expect(other.props.accessibilityRole).toBeUndefined();
-    expect(within(other).queryByTestId('row-arrow', { includeHiddenElements: true })).toBeNull();
+    expect(other.props.accessible).toBe(true);
+    expect(other.props.onPress).toBeUndefined();
     await fireEvent.press(screen.getByTestId('match-row-11b'));
     expect(mockPush).toHaveBeenCalledWith('/jogo/11b');
   });
@@ -188,6 +189,8 @@ describe('Jornadas', () => {
     expect(roundLabel().props.children).toBe('16 avos de final');
     const row = screen.getByTestId('match-row-3001');
     expect(row.props.accessibilityLabel).toBe('Gil Vicente contra Sporting CP. Taça de Portugal, 16 avos de final. Próximo');
+    // A ronda inglesa "Round of 32" sai traduzida no rótulo, nunca em inglês.
+    expect(row.props.accessibilityLabel).not.toMatch(/Round of/);
   });
 
   it('ronda com etiqueta vazia: traduz o texto da API, nunca a ronda em inglês', async () => {
@@ -272,6 +275,11 @@ describe('tops', () => {
     expect(screen.getByText(long).props.numberOfLines).toBe(1);
     expect(screen.getByText('Sporting Clube de Portugal B').props.numberOfLines).toBe(1);
     expect(screen.getByTestId('top-value-7').props.children).toBe(12);
+    // Contrato de estilo: o nome tem largura mínima (prioridade), a equipa cede com reticências.
+    expect(StyleSheet.flatten(screen.getByText(long).props.style)).toMatchObject({ flexShrink: 1, minWidth: 96 });
+    const team = screen.getByText('Sporting Clube de Portugal B');
+    expect(team.props.ellipsizeMode).toBe('tail');
+    expect(StyleSheet.flatten(team.props.style)).toMatchObject({ flexShrink: 1, minWidth: 0 });
   });
 
   it('nome longo numa linha com reticências; o valor não encolhe', async () => {

@@ -430,6 +430,9 @@ describe('/equipa/jogador/[id]', () => {
     });
     // PlayerPhoto partilhado a 84 pt no cabeçalho (V7.1 4950:8462).
     expect(StyleSheet.flatten(screen.getByTestId('player-photo').props.style)).toMatchObject({ width: 84, height: 84 });
+    // Quadrado de cantos arredondados como no frame (4950:8462), não círculo.
+    const box = screen.getByTestId('player-photo').children[0] as unknown as { props: { style: object } };
+    expect(StyleSheet.flatten(box.props.style)).toMatchObject({ borderRadius: 20 });
     expect(screen.getByText('Viktor Gyökeres')).toBeTruthy();
     expect(screen.getByTestId('player-shirt').props.children).toBe('9');
     expect(screen.getByText('Avançado · 24 anos')).toBeTruthy();

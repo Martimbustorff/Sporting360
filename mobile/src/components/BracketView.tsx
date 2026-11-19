@@ -87,9 +87,11 @@ function TieCard({ tie, highlight }: { tie: Tie; highlight: boolean }) {
   const sides = single && leg ? legSides(leg, 0, tie.home.id) : null;
   const unplayed = single && leg && !sides ? legValue(tie, leg, 0) : '';
   const hasPen = sides !== null && sides.penHome !== null && sides.penAway !== null;
-  const homeScore = single ? (sides ? String(sides.home) : null) : (tie.aggregate?.home ?? null) !== null ? String(tie.aggregate?.home) : null;
-  const awayBase = single ? (sides ? String(sides.away) : null) : (tie.aggregate?.away ?? null) !== null ? String(tie.aggregate?.away) : null;
-  // Penáltis do lado de `tie.away`: "1 (4-2 g.p.)" na linha de baixo.
+  // Golos sempre do agregado do servidor (F11); da mão só se leem os penáltis (que o agregado não traz), do lado de `tie.home`.
+  const goal = (n: number | null | undefined): string | null => (n == null ? null : String(n));
+  const homeScore = goal(tie.aggregate?.home);
+  const awayBase = goal(tie.aggregate?.away);
+  // Penáltis na linha de baixo: "1 (4-2 g.p.)".
   const awayScore =
     awayBase !== null && hasPen && sides ? `${awayBase} (${sides.penHome}-${sides.penAway} g.p.)` : awayBase;
   return (

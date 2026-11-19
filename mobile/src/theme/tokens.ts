@@ -680,6 +680,7 @@ export const layout = {
   leaderBarHeight: 4,
   leaderBarRadius: 2,
   leaderTextGap: 2,
+  leaderNameMinWidth: 96, // o nome do jogador tem prioridade sobre a equipa ao lado (320 pt)
   leaderNameGap: 6, // nome / posição e barra (4935:7490)
   // V7.1 Perfil, Editar perfil, Ranking, Notícias, Definições, Estádio e Consentimento (frames 22 a 27, 02, 04, 05)
   statTilePadX: 16, // 22: PONTOS / POSIÇÃO (4942:7687)
@@ -731,6 +732,7 @@ export const layout = {
   chipPadX: 12, // pílulas de filtro (4948:8262)
   chipPadY: 6,
   pillRadius: 999,
+  playerPhotoRoundedRadius: 20, // Foto do jogador 4959:9551: cantos de 20 também a 84 (frame 42)
   // V7.1 Calendário e jornadas (35 a 37): linha de jogo (4948:8278), seletor de ronda (4948:8390), quadro (4948:8517)
   crestRow: { width: 22, height: 25.52 }, // 4948:8283
   matchRowDate: 56, // coluna da data
@@ -744,7 +746,6 @@ export const layout = {
   tieCardPadY: 10,
   tieCardGap: 8,
   tieCardRadius: 12,
-  roundArrow: 44, // setas da jornada (4948:8391)
   // V7.1 Equipa (38 a 41): pessoa, estatísticas, transferências e troféus
   personPhoto: 36, // 4949:8366
   personRowPadY: 9,
@@ -785,5 +786,4 @@ export const layout = {
   playerNameGap: 8, // número e nome
   playerTileGap: 8,
   playerTilePadY: 12, // mosaicos da época (4950:8510)
-  playerRowPadY: 10, // Mais números (4950:8523)
 } as const;

@@ -159,6 +159,14 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     expect(screen.queryByTestId('empty-state')).toBeNull();
   });
 
+  it('a carregar: as pílulas de modalidade continuam e mudar de modalidade funciona', async () => {
+    mockUpcoming.current = { status: 'loading' };
+    await render(ui());
+    expect(screen.getByTestId('sport-football')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
+    expect(useUpcomingMatches).toHaveBeenLastCalledWith('futsal', expect.any(Date));
+  });
+
   it('dados da cache mostram o aviso de falta de ligação', async () => {
     mockUpcoming.current = ready([match({ id: '1001' })], true);
     await render(ui());
@@ -178,5 +186,14 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     await render(ui());
     expect(screen.getByText('Não foi possível carregar a agenda.')).toBeTruthy();
     expect(screen.queryByTestId('agenda-skeleton')).toBeNull();
+  });
+
+  it('em erro as pílulas de modalidade continuam, para poder mudar de modalidade', async () => {
+    mockResults.current = { status: 'error', error: new Error('x') };
+    await render(ui());
+    for (const k of ['football', 'futsal', 'handball', 'roller_hockey']) expect(screen.getByTestId(`sport-${k}`)).toBeTruthy();
+    mockResults.current = ready([]);
+    await fireEvent.press(screen.getByTestId('sport-futsal'));
+    expect(useResultMatches).toHaveBeenLastCalledWith('futsal', expect.any(Date));
   });
 });
