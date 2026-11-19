@@ -232,6 +232,9 @@ describe('Perfil: meu jogo', () => {
     expect(rows).toHaveLength(5);
     expect(screen.getByLabelText('15 novembro, prognóstico 1-0, por liquidar, 1 ponto')).toBeTruthy();
     expect(screen.getByLabelText('12 novembro, prognóstico 2-1, final 2-1, 6 pontos')).toBeTruthy();
+    // Figma 22: pontos positivos com sinal ("+6 PTS"); zero sem sinal ("0 PTS").
+    expect(screen.getAllByText('+6 PTS').length).toBeGreaterThan(0);
+    expect(screen.queryByText('+0 PTS')).toBeNull();
   });
 
   it('sem liquidados mostra "Ainda sem jogos liquidados."', async () => {

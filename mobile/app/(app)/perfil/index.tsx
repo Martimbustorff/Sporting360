@@ -188,7 +188,7 @@ function HistoryRow({ item }: { item: MyGameHistoryItem }) {
           backgroundColor: settled && item.points > 0 ? colors.primary : colors.surface10,
         }}
       >
-        <Text71 variant="badge11" numberOfLines={1}>{settled ? `+${item.points} PTS` : 'Por liquidar'}</Text71>
+        <Text71 variant="badge11" numberOfLines={1}>{settled ? `${item.points > 0 ? '+' : ''}${item.points} PTS` : 'Por liquidar'}</Text71>
       </View>
     </View>
   );
