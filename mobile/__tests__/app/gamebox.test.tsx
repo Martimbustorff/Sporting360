@@ -31,11 +31,12 @@ jest.mock('@/services/gamebox', () => {
   return {
     GameboxSaveError,
     saveGamebox: jest.fn(() => Promise.resolve('new1')),
+    reorderGameboxes: jest.fn(() => Promise.resolve()),
     deleteGamebox: jest.fn(() => Promise.resolve()),
   };
 });
 
-import { deleteGamebox, GameboxSaveError, saveGamebox } from '@/services/gamebox';
+import { deleteGamebox, GameboxSaveError, reorderGameboxes, saveGamebox } from '@/services/gamebox';
 import GameboxList from '../../app/(app)/gamebox/index';
 import GameboxForm from '../../app/(app)/gamebox/[id]';
 
@@ -73,6 +74,46 @@ describe('Gestão de Gamebox', () => {
     expect(screen.getByText('Gamebox 2')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Gamebox 2' }));
     expect(mockRouter.push).toHaveBeenCalledWith('/gamebox/g2');
+  });
+
+  describe('arrastar para reordenar', () => {
+    const labels = () => screen.getAllByRole('button').map((b) => b.props.accessibilityLabel).filter((l: string) => /^(João|Gamebox|Ana)/.test(l));
+    const act1 = (name: string, action: string) =>
+      fireEvent(screen.getByRole('button', { name }), 'accessibilityAction', { nativeEvent: { actionName: action } });
+    beforeEach(() => {
+      mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' }), box('g2', 2, { gameboxName: 'Ana' }), box('g3', 3, { gameboxName: 'Gamebox X' })]);
+    });
+
+    it('cada linha tem pega de arrastar e ações de mover', async () => {
+      await render(wrap(<GameboxList />));
+      expect(screen.getAllByTestId('gamebox-drag-handle', { includeHiddenElements: true })).toHaveLength(3);
+      expect(screen.getByRole('button', { name: 'João' }).props.accessibilityActions).toEqual([
+        { name: 'moveUp', label: 'Mover para cima' },
+        { name: 'moveDown', label: 'Mover para baixo' },
+      ]);
+    });
+
+    it('mover para baixo grava a nova ordem e mostra-a já', async () => {
+      await render(wrap(<GameboxList />));
+      await act1('João', 'moveDown');
+      expect(reorderGameboxes).toHaveBeenCalledWith(['g2', 'g1', 'g3'], { g1: 1, g2: 2, g3: 3 });
+      expect(labels()).toEqual(['Ana', 'João', 'Gamebox X']);
+    });
+
+    it('a primeira não sobe e a última não desce', async () => {
+      await render(wrap(<GameboxList />));
+      await act1('João', 'moveUp');
+      await act1('Gamebox X', 'moveDown');
+      expect(reorderGameboxes).not.toHaveBeenCalled();
+    });
+
+    it('falha ao gravar: volta à ordem anterior com mensagem', async () => {
+      (reorderGameboxes as jest.Mock).mockRejectedValueOnce(new GameboxSaveError('OFFLINE'));
+      await render(wrap(<GameboxList />));
+      await act1('Ana', 'moveUp');
+      expect(await screen.findByText('Não foi possível guardar a nova ordem. Tenta outra vez.')).toBeTruthy();
+      expect(labels()).toEqual(['João', 'Ana', 'Gamebox X']);
+    });
   });
 
   it('o "+" abre a nova', async () => {
@@ -282,6 +323,16 @@ describe('Formulário da Gamebox', () => {
     mockParams.current = { id: 'nova', numero: 'abc' };
     await rerender(wrap(<GameboxForm />));
     expect(screen.getByLabelText('Número da GameBox').props.value).toBe('123456');
+  });
+
+  it('editar: título GAMEBOX, quatro campos do lugar e "Apagar Gamebox" a vermelho', async () => {
+    mockParams.current = { id: 'g1' };
+    mockBoxes.current = ready([box('g1', 1, { gameboxName: 'Lugar anual' })]);
+    await render(wrap(<GameboxForm />));
+    expect(screen.getByText('Gamebox')).toBeTruthy();
+    for (const l of ['Porta', 'Sector', 'Fila', 'Lugar']) expect(screen.getByLabelText(l)).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Estádio' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByText('Apagar Gamebox')).toHaveStyle({ color: '#F74C66' });
   });
 
   it('apagar pede confirmação e só apaga depois de confirmar', async () => {

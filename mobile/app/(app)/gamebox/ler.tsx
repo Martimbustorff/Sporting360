@@ -1,6 +1,8 @@
-// SEM FIGMA: leitor do código da GameBox (o Mapa do Figma não tem frame do leitor). Compõe Screen, Header, a câmara em
-// ecrã inteiro com uma moldura de mira, e por baixo uma folha `colors.bg` com o raio da folha GameBox (radius.sheet, 564:6981; escura porque o
-// PrimaryButton é branco) para "Número lido", Confirmar (PrimaryButton) e Corrigir. Sem acesso à câmara: EmptyState e "Abrir definições".
+// Figma V7.1: 46 Ler código da GameBox (4951:9373). Câmara em ecrã inteiro com mira de quatro cantos (primary-on-dark), e por
+// baixo a folha bg com raio 28 em cima: "Número lido" (Eyebrow 13 a text-subtle), o número em Title 24 (em grupos de quatro),
+// Confirmar (botão Branco) e Corrigir (Contorno). Sem acesso à câmara: aviso e "Abrir definições" (nota 46).
+// SEM FIGMA: o estado antes da leitura (dica sobre a câmara e "Inserir manualmente"), o aviso de código não reconhecido e o
+// ecrã sem acesso (EmptyState).
 // Task 24: aceita só o formato do cartão (6 a 20 algarismos, lib/gamebox). Depois da primeira leitura válida a câmara
 // deixa de ler até "Corrigir". Confirmar (F12 revisto): com `from` válido (`nova` ou id do Firestore) volta ao formulário
 // que abriu o leitor com `dismissTo` e o parâmetro `numero` (o formulário mantém o que já se escreveu e não fica outro na
@@ -9,20 +11,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
-import { isGameboxRouteId, normalizeGameboxNumber } from '@/lib/gamebox';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Touchable } from '@/components/Touchable';
+import { groupGameboxNumber, isGameboxRouteId, normalizeGameboxNumber } from '@/lib/gamebox';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const LER_TEXT = {
   title: 'Ler GameBox',
   hint: 'Aponta a câmara para o código da tua GameBox.',
   unknown: 'Código não reconhecido.',
-  read: 'Número lido:',
+  read: 'Número lido',
   confirm: 'Confirmar',
   retry: 'Corrigir',
   manual: 'Inserir manualmente',
@@ -38,15 +42,38 @@ const single = (v: string | string[] | undefined): string | undefined => (Array.
 
 function ManualLink({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={LER_TEXT.manual}
       onPress={onPress}
-      hitSlop={12}
       style={{ minHeight: layout.minTouch, alignItems: 'center', justifyContent: 'center' }}
     >
-      <Text style={type.authLinkAction}>{LER_TEXT.manual}</Text>
-    </Pressable>
+      <Text71 variant="captionStrong12" color="primaryOnDark">{LER_TEXT.manual}</Text71>
+    </Touchable>
+  );
+}
+
+const CORNER = {
+  topLeft: { top: 0, left: 0, borderTopWidth: layout.scanAimStroke, borderLeftWidth: layout.scanAimStroke, borderTopLeftRadius: radii.r8 },
+  topRight: { top: 0, right: 0, borderTopWidth: layout.scanAimStroke, borderRightWidth: layout.scanAimStroke, borderTopRightRadius: radii.r8 },
+  bottomLeft: { bottom: 0, left: 0, borderBottomWidth: layout.scanAimStroke, borderLeftWidth: layout.scanAimStroke, borderBottomLeftRadius: radii.r8 },
+  bottomRight: { bottom: 0, right: 0, borderBottomWidth: layout.scanAimStroke, borderRightWidth: layout.scanAimStroke, borderBottomRightRadius: radii.r8 },
+} as const;
+
+/** Mira de quatro cantos (Figma 4951:9413). */
+function Aim({ locked }: { locked: boolean }) {
+  return (
+    <View testID="scan-aim" style={{ width: layout.scanAim.width, height: layout.scanAim.height }}>
+      {(Object.keys(CORNER) as (keyof typeof CORNER)[]).map((k) => (
+        <View
+          key={k}
+          style={[
+            { position: 'absolute', width: layout.scanAimCorner, height: layout.scanAimCorner, borderColor: locked ? colors.white : colors.primaryOnDark },
+            CORNER[k],
+          ]}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -129,9 +156,9 @@ export default function GameboxLer() {
     return (
       <Screen padded="none">
         <Header title={LER_TEXT.title} onBack={back} />
-        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.screenXWide, gap: spacing.lg }}>
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: space.s24, gap: space.s24 }}>
           <EmptyState icon="info" text={LER_TEXT.denied} />
-          <Text style={[type.body, { color: colors.textMuted, textAlign: 'center' }]}>{LER_TEXT.deniedHint}</Text>
+          <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>{LER_TEXT.deniedHint}</Text71>
           <PrimaryButton label={LER_TEXT.settings} onPress={() => void Linking.openSettings()} />
           <ManualLink onPress={manual} />
         </View>
@@ -142,51 +169,54 @@ export default function GameboxLer() {
   return (
     <Screen padded="none" edges={['left', 'right']}>
       <Header title={LER_TEXT.title} onBack={back} />
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: colors.bgRaised }}>
         <CameraView
           style={StyleSheet.absoluteFill}
           facing="back"
           barcodeScannerSettings={{ barcodeTypes: [...BARCODE_TYPES] }}
           onBarcodeScanned={scanned ? undefined : onScan}
         />
-        <View pointerEvents="none" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md }}>
-          <View
-            style={{
-              width: layout.scannerFrame,
-              height: layout.scannerFrame,
-              borderWidth: layout.scannerFrameBorder,
-              borderColor: scanned ? colors.primary : colors.white,
-              borderRadius: radius.pill,
-            }}
-          />
-          <View style={{ backgroundColor: colors.scrim, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
-            <Text
-              accessibilityRole={unknown && !scanned ? 'alert' : undefined}
-              accessibilityLiveRegion="polite"
-              style={[type.body, { textAlign: 'center' }, unknown && !scanned ? { color: colors.cardRed } : null]}
-            >
-              {unknown && !scanned ? LER_TEXT.unknown : LER_TEXT.hint}
-            </Text>
-          </View>
+        <View pointerEvents="none" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.s16 }}>
+          <Aim locked={scanned !== null} />
+          {scanned ? null : (
+            <View style={{ backgroundColor: colors.scrimV71, borderRadius: radii.r8, paddingHorizontal: space.s16, paddingVertical: space.s8 }}>
+              <Text71
+                variant="body14"
+                accessibilityRole={unknown ? 'alert' : undefined}
+                accessibilityLiveRegion="polite"
+                color={unknown ? 'danger' : 'white'}
+                style={{ textAlign: 'center' }}
+              >
+                {unknown ? LER_TEXT.unknown : LER_TEXT.hint}
+              </Text71>
+            </View>
+          )}
         </View>
         <View
           style={{
             backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            paddingHorizontal: layout.scannerPad,
-            paddingTop: layout.scannerPad,
-            paddingBottom: layout.scannerPad + Math.max(bottom, layout.homeIndicator),
-            gap: spacing.md,
+            borderTopLeftRadius: radii.r28,
+            borderTopRightRadius: radii.r28,
+            paddingHorizontal: space.s24,
+            paddingTop: layout.scanSheetPadTop,
+            paddingBottom: layout.scanSheetPadBottom + Math.max(bottom, layout.homeIndicator),
+            gap: layout.scanSheetGap,
           }}
         >
           {scanned ? (
             <>
-              <Text accessibilityLiveRegion="polite" style={[type.fieldValue, { textAlign: 'center' }]}>
-                {`${LER_TEXT.read} ${scanned}`}
-              </Text>
-              <PrimaryButton label={LER_TEXT.confirm} onPress={confirm} />
-              <PrimaryButton label={LER_TEXT.retry} variant="secondary" onPress={retry} />
+              <Text71 variant="eyebrow13" color="textSubtle">{LER_TEXT.read}</Text71>
+              <Text71
+                variant="title24"
+                accessibilityLiveRegion="polite"
+                accessibilityLabel={`${LER_TEXT.read} ${scanned}`}
+                adjustsFontSizeToFit
+                numberOfLines={1}
+              >
+                {groupGameboxNumber(scanned)}
+              </Text71>
+              <PrimaryButton label={LER_TEXT.confirm} onPress={confirm} variant="white" />
+              <PrimaryButton label={LER_TEXT.retry} onPress={retry} variant="outline" />
             </>
           ) : null}
           <ManualLink onPress={manual} />

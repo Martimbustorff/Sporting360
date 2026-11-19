@@ -82,3 +82,13 @@ export async function saveGamebox(
 export async function deleteGamebox(id: string): Promise<void> {
   await withTimeout(deleteDoc(doc(db(), `gamebox/${id}`)), 'GAMEBOX_DELETE_FAILED');
 }
+
+/**
+ * Arrastar na lista: grava a nova ordem (1..n) só nos documentos que mudaram de posição. `ids` é a lista completa
+ * pela ordem pretendida e `current` as ordens guardadas. Só o campo `order` é escrito (as regras exigem `userid` igual).
+ */
+export async function reorderGameboxes(ids: readonly string[], current: Readonly<Record<string, number>>): Promise<void> {
+  const writes = ids.flatMap((id, i) => (current[id] === i + 1 ? [] : [updateDoc(doc(db(), `gamebox/${id}`), { order: i + 1 })]));
+  if (writes.length === 0) return;
+  await withTimeout(Promise.all(writes), 'GAMEBOX_REORDER_FAILED');
+}

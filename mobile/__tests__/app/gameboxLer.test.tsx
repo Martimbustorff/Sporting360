@@ -44,8 +44,9 @@ describe('/gamebox/ler', () => {
       handler({ data: '266571276572', type: 'qr' });
       handler({ data: '111111111111', type: 'qr' });
     });
-    expect(screen.getByText(`${LER_TEXT.read} 266571276572`)).toBeTruthy();
-    expect(screen.queryByText(`${LER_TEXT.read} 111111111111`)).toBeNull();
+    expect(screen.getByLabelText(`${LER_TEXT.read} 266571276572`)).toBeTruthy();
+    expect(screen.getByText('2665 7127 6572')).toBeTruthy();
+    expect(screen.queryByLabelText(`${LER_TEXT.read} 111111111111`)).toBeNull();
     expect(lastProps().onBarcodeScanned).toBeUndefined();
   });
 
@@ -55,7 +56,7 @@ describe('/gamebox/ler', () => {
     expect(lastProps().onBarcodeScanned).toBeUndefined();
     await fireEvent.press(screen.getByRole('button', { name: LER_TEXT.retry }));
     expect(lastProps().onBarcodeScanned).toEqual(expect.any(Function));
-    expect(screen.queryByText(`${LER_TEXT.read} 266571276572`)).toBeNull();
+    expect(screen.queryByLabelText(`${LER_TEXT.read} 266571276572`)).toBeNull();
   });
 
   it('texto não numérico: "Código não reconhecido." e continua a ler', async () => {
@@ -65,7 +66,7 @@ describe('/gamebox/ler', () => {
     expect(lastProps().onBarcodeScanned).toEqual(expect.any(Function));
     await act(async () => lastProps().onBarcodeScanned!({ data: '12345', type: 'qr' }));
     expect(screen.getByText(LER_TEXT.unknown)).toBeTruthy();
-    expect(screen.queryByText(new RegExp(LER_TEXT.read))).toBeNull();
+    expect(screen.queryByText(LER_TEXT.read)).toBeNull();
   });
 
   it('Confirmar sem origem vai para /gamebox/nova com o número', async () => {
@@ -111,7 +112,7 @@ describe('/gamebox/ler', () => {
     await render(ui());
     await act(async () => lastProps().onBarcodeScanned!({ data, type: 'code128' }));
     if (ok) {
-      expect(screen.getByText(`${LER_TEXT.read} ${data}`)).toBeTruthy();
+      expect(screen.getByLabelText(`${LER_TEXT.read} ${data}`)).toBeTruthy();
     } else {
       expect(screen.getByText(LER_TEXT.unknown)).toBeTruthy();
       expect(lastProps().onBarcodeScanned).toEqual(expect.any(Function));

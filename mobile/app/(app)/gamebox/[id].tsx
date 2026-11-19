@@ -1,8 +1,7 @@
-// Figma: 327:15134 (editar: Número da Gamebox com ícone Qr_Code, Nome, cartão com contorno branco e tabs Estádio /
-// Pavilhão com Porta, Sector, Fila, Lugar; "Apagar Gamebox"), 450:5633 (tab Estádio) e 450:5683 (tab Pavilhão), com o
-// ✓ (Check_Big) no header para guardar. Campos com TextField (564:6907 / 564:6938), tabs com Tabs 'equal' (500:28814;
-// sublinhado de 2 px em vez da barra de 6 px do nó, como nas outras tabs da app). Ícones qr-code.svg e check-big.svg
-// descarregados dos nós. O botão "GUARDAR" de 327:15134 não se usa: os nós mais recentes guardam no ✓.
+// Figma V7.1: 45 Editar Gamebox (4951:9265) e 49b Apagar (alerta nativo, ação a vermelho). Título "GAMEBOX", visto (Check) no
+// cabeçalho para guardar; número (TextField) com botão de ler o código 48x48 (surface-10, raio 12), nome, cartão com contorno
+// branco e raio 16 com tabs Estádio / Pavilhão e Porta, Sector, Fila, Lugar em quatro campos; "Apagar Gamebox" a danger
+// (Caption Strong 12). Ícones qr-code.svg e check-big.svg do Figma. O alerta de apagar é o nativo (Alert) com estilo destrutivo.
 // SEM FIGMA: mensagens de erro e de rede, estados de carregamento e "já não existe".
 // Task 23: /gamebox/nova cria, /gamebox/{id} edita. Lê `?numero=` (vindo do leitor, Task 24) para preencher o número;
 // abre o leitor com `?from={id|nova}`. Task 24 (F12 revisto): o leitor volta a esta mesma instância com `dismissTo` e um
@@ -10,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
@@ -18,11 +17,11 @@ import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
+import { Touchable } from '@/components/Touchable';
 import { useMyGameboxes } from '@/data/user';
 import {
   EMPTY_SEAT,
   fromGameboxDoc,
-  gameboxLabel,
   gameboxNumberError,
   isEmptySeat,
   normalizeGameboxNumber,
@@ -31,7 +30,8 @@ import {
 } from '@/lib/gamebox';
 import { useSession } from '@/providers/SessionProvider';
 import { deleteGamebox, GameboxSaveError, saveGamebox, type GameboxSaveCode } from '@/services/gamebox';
-import { colors, layout, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const QR_CODE = require('../../../assets/icons/qr-code.svg');
@@ -39,6 +39,7 @@ const QR_CODE = require('../../../assets/icons/qr-code.svg');
 const CHECK = require('../../../assets/icons/check-big.svg');
 
 export const FORM_TEXT = {
+  title: 'Gamebox',
   newTitle: 'Nova Gamebox',
   number: 'Número da GameBox',
   name: 'Nome',
@@ -156,26 +157,30 @@ function GameboxFormView({
         title={title}
         onBack={back}
         right={
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel={FORM_TEXT.save}
             accessibilityState={{ disabled, busy }}
             disabled={disabled}
             onPress={save}
-            hitSlop={12}
-            style={{ opacity: disabled ? layout.disabledOpacity : 1 }}
+            style={{ width: layout.minTouch, height: layout.minTouch, alignItems: 'center', justifyContent: 'center', opacity: disabled ? layout.disabledOpacity : 1 }}
           >
             <Image source={CHECK} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
-          </Pressable>
+          </Touchable>
         }
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: spacing.screenXWide, paddingTop: spacing.xl, paddingBottom: spacing.xl }}
+          contentContainerStyle={{
+            paddingHorizontal: space.s24,
+            paddingTop: layout.gameboxContentTop,
+            paddingBottom: space.s24,
+            gap: layout.gameboxBlockGap,
+          }}
         >
-          <View style={{ gap: layout.gameboxBlockGap }}>
-            <View style={{ gap: layout.gameboxFieldsGap }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.s12 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <TextField
                 label={FORM_TEXT.number}
                 value={form.number}
@@ -185,73 +190,73 @@ function GameboxFormView({
                 }}
                 error={numberError ? FORM_TEXT[numberError] : undefined}
                 keyboardType="number-pad"
-                accessory={
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={FORM_TEXT.scan}
-                    onPress={() => router.push(`/gamebox/ler?from=${routeId}`)}
-                    hitSlop={12}
-                    style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, alignItems: 'flex-end', justifyContent: 'center' }}
-                  >
-                    <Image source={QR_CODE} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
-                  </Pressable>
-                }
-              />
-              <TextField
-                label={FORM_TEXT.name}
-                value={form.name}
-                onChangeText={(v) => {
-                  setForm((f) => ({ ...f, name: v }));
-                  setMessage(null);
-                }}
-                autoCapitalize="words"
               />
             </View>
-            <View
+            <Touchable
+              accessibilityRole="button"
+              accessibilityLabel={FORM_TEXT.scan}
+              onPress={() => router.push(`/gamebox/ler?from=${routeId}`)}
               style={{
-                borderWidth: layout.gameboxCardBorder,
-                borderColor: colors.white,
-                borderRadius: layout.gameboxCardRadius,
-                paddingHorizontal: layout.gameboxCardPadX,
-                paddingTop: layout.gameboxCardPadTop,
-                paddingBottom: layout.gameboxCardPadBottom,
-                gap: layout.gameboxBlockGap,
+                width: layout.gameboxScanButton,
+                height: layout.gameboxScanButton,
+                marginTop: layout.gameboxScanOffset,
+                borderRadius: radii.r12,
+                backgroundColor: colors.surface10,
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              <Tabs<Venue>
-                mode="equal"
-                items={[
-                  { key: 'stadium', label: 'Estádio' },
-                  { key: 'pavilion', label: 'Pavilhão' },
-                ]}
-                value={venue}
-                onChange={setVenue}
-              />
-              <View style={{ gap: layout.gameboxFieldsGap }}>
-                {SEAT_FIELDS.map((f) => (
-                  <TextField
-                    key={`${venue}-${f.key}`}
-                    label={f.label}
-                    value={seat[f.key]}
-                    onChangeText={(v) => setSeat(f.key, v)}
-                    autoCapitalize="characters"
-                  />
-                ))}
-              </View>
-            </View>
-            {message ? <FormMessage text={message} /> : null}
+              <Image source={QR_CODE} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
+            </Touchable>
           </View>
+          <TextField
+            label={FORM_TEXT.name}
+            value={form.name}
+            onChangeText={(v) => {
+              setForm((f) => ({ ...f, name: v }));
+              setMessage(null);
+            }}
+            autoCapitalize="words"
+          />
+          <View
+            style={{
+              borderWidth: layout.separator,
+              borderColor: colors.white,
+              borderRadius: radii.r16,
+              paddingHorizontal: layout.gameboxSeatsPadX,
+              paddingTop: layout.gameboxSeatsPadTop,
+              paddingBottom: layout.gameboxSeatsPadBottom,
+              gap: layout.gameboxSeatsGap,
+            }}
+          >
+            <Tabs<Venue>
+              mode="equal"
+              items={[
+                { key: 'stadium', label: 'Estádio' },
+                { key: 'pavilion', label: 'Pavilhão' },
+              ]}
+              value={venue}
+              onChange={setVenue}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: layout.gameboxSeatsFieldsGap }}>
+              {SEAT_FIELDS.map((f) => (
+                <View key={`${venue}-${f.key}`} style={{ flex: 1, minWidth: 0 }}>
+                  <TextField label={f.label} value={seat[f.key]} onChangeText={(v) => setSeat(f.key, v)} autoCapitalize="characters" />
+                </View>
+              ))}
+            </View>
+          </View>
+          {message ? <FormMessage text={message} /> : null}
           {existing ? (
-            <Pressable
+            <Touchable
               accessibilityRole="button"
               accessibilityLabel={FORM_TEXT.delete}
               disabled={busy}
               onPress={confirmDelete}
-              hitSlop={12}
-              style={{ marginTop: layout.gameboxDeleteTop, minHeight: layout.minTouch, alignItems: 'center', justifyContent: 'center' }}
+              style={{ alignSelf: 'flex-start', minHeight: layout.minTouch, justifyContent: 'center' }}
             >
-              <Text style={type.authLinkAction}>{FORM_TEXT.delete}</Text>
-            </Pressable>
+              <Text71 variant="captionStrong12" color="danger">{FORM_TEXT.delete}</Text71>
+            </Touchable>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -305,14 +310,14 @@ export default function GameboxEditar() {
       const v = found.view;
       setInitial({
         form: { number: prefill ?? v.number, name: v.name, stadium: v.stadium, pavilion: v.pavilion ?? EMPTY_SEAT },
-        title: gameboxLabel(v.name, found.index),
+        title: FORM_TEXT.title,
         existing: { id: v.id, order: v.order },
         newOrder: nextOrder ?? v.order,
       });
     }
   }, [initial, uid, isNew, boxes.status, found, scanned, nextOrder]);
 
-  const title = isNew ? FORM_TEXT.newTitle : 'Gamebox';
+  const title = isNew ? FORM_TEXT.newTitle : FORM_TEXT.title;
   if (initial) {
     return (
       <GameboxFormView

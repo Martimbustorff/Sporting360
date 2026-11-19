@@ -159,3 +159,14 @@ export function resolveGameboxList(
   const legacy = user.status === 'ready' ? legacyGameboxFromUser(user.data, uid) : null;
   return { status: 'ready', list: [], legacy, fromCache };
 }
+
+/** Recinto do bilhete: o futebol joga-se no Estádio, as restantes modalidades no Pavilhão. Sem jogo, Estádio. */
+export type TicketVenue = 'stadium' | 'pavilion';
+export const ticketVenue = (sport: string | null | undefined): TicketVenue => (!sport || sport === 'football' ? 'stadium' : 'pavilion');
+
+/** Lugar guardado para o recinto; o Pavilhão por preencher dá um lugar vazio (nunca o do Estádio). */
+export const ticketSeat = (g: Pick<GameboxInput, 'stadium' | 'pavilion'>, venue: TicketVenue): Seat =>
+  venue === 'stadium' ? g.stadium : (g.pavilion ?? EMPTY_SEAT);
+
+/** "2665 7127 6572": o número em grupos de quatro, só para mostrar. */
+export const groupGameboxNumber = (n: string): string => n.replace(/(\d{4})(?=\d)/g, '$1 ');

@@ -462,6 +462,46 @@ export const layout = {
   scannerPad: 24, // SEM FIGMA: leitor, margens dos painéis sobre a câmara
   scannerFrame: 240, // SEM FIGMA: moldura de mira do leitor
   scannerFrameBorder: 2,
+  // V7.1 Modo bilhete (Figma 4936:7161)
+  ticketRadius: 20, // cartão branco e faixa de cima
+  ticketBandPadX: 20,
+  ticketBandPadY: 16,
+  ticketBandGap: 12,
+  ticketCrest: 40, // emblema redondo na faixa
+  ticketCrestImage: { width: 30, height: 35 },
+  ticketQr: 220,
+  ticketQrPadTop: 24,
+  ticketQrPadBottom: 16,
+  ticketQrGap: 12,
+  ticketPerforation: 1.5, // picotado (traço tracejado)
+  ticketSeatPadX: 20,
+  ticketSeatPadTop: 16,
+  ticketSeatPadBottom: 20,
+  ticketSeatGap: 8,
+  ticketSeatMinScale: 0.6, // um sector ou lugar comprido encolhe em vez de cortar
+  ticketBlockGap: 16, // cartão, sócio e aviso do brilho
+  ticketTop: 16, // do Header ao cartão
+  // V7.1 Gestão de GameBox (Figma 4951:9204) e Editar (4951:9265)
+  gameboxRowGap: 14, // arrastar, nome e seta
+  gameboxRowPadY: 18,
+  gameboxRowArrow: 20,
+  gameboxListTop: 8, // do Header à primeira linha
+  gameboxFabEdge: 24, // "+" a 24 pt da direita e de baixo
+  gameboxScanButton: 48, // botão de ler o código (4951:9315)
+  gameboxScanOffset: 7, // alinha o botão com a linha do número (campo de 55 pt)
+  gameboxSeatsPadX: 16, // cartão dos lugares (4951:9327)
+  gameboxSeatsPadTop: 4,
+  gameboxSeatsPadBottom: 16,
+  gameboxSeatsGap: 20,
+  gameboxSeatsFieldsGap: 12,
+  gameboxContentTop: 16, // do Header ao primeiro campo
+  // V7.1 Ler código (Figma 4951:9373)
+  scanAim: { width: 260, height: 160 }, // mira
+  scanAimCorner: 34,
+  scanAimStroke: 3,
+  scanSheetPadTop: 20,
+  scanSheetPadBottom: 10, // somado à área do indicador home
+  scanSheetGap: 14,
   termsTop: 16, // header bottom to text (564:7169)
   termsSectionGap: 12,
 } as const;

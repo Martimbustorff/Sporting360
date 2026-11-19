@@ -2,7 +2,7 @@
 // 4951:9190 (fundo bg, título primary-on-dark, seta para baixo, fundo escurecido por trás). Frames 43 e 43b da Home.
 // Task 24: lê as GameBox do utilizador (useMyGameboxes) e mostra uma página por GameBox. Sem documentos e com número
 // antigo em users/{uid}.gameboxNumber mostra-o como "Principal" (mesma regra da lista, resolveGameboxList).
-// Tocar no QR abre o modo bilhete `/gamebox/bilhete?id={id}` (Tarefa 5 cria a rota; `onOpenTicket` troca o destino).
+// Tocar no QR abre o modo bilhete `/gamebox/bilhete?id={id}` (`onOpenTicket` troca o destino).
 // SEM FIGMA: esqueleto de carregamento e erro de leitura.
 import { useState } from 'react';
 import { Image } from 'expo-image';
@@ -40,7 +40,7 @@ export function useGameboxSheetCollapsedHeight(): number {
 }
 
 /** Rota do modo bilhete de uma GameBox (Tarefa 5). */
-export const ticketHref = (id: string): Href => `/gamebox/bilhete?id=${encodeURIComponent(id)}` as Href;
+export const ticketHref = (id: string): Href => `/gamebox/bilhete?id=${encodeURIComponent(id)}`;
 
 function Empty() {
   const router = useRouter();

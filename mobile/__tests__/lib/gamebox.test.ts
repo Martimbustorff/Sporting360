@@ -2,10 +2,13 @@
 import {
   fromGameboxDoc,
   gameboxLabel,
+  groupGameboxNumber,
   legacyGameboxFromUser,
   normalizeGameboxNumber,
   readStoredGameboxNumber,
   resolveGameboxList,
+  ticketSeat,
+  ticketVenue,
   toGameboxDoc,
   type GameboxInput,
 } from '@/lib/gamebox';
@@ -175,5 +178,27 @@ describe('gameboxLabel', () => {
     expect(gameboxLabel('João', 0)).toBe('João');
     expect(gameboxLabel('', 1)).toBe('Gamebox 2');
     expect(gameboxLabel('   ', 0)).toBe('Gamebox 1');
+  });
+});
+
+describe('modo bilhete: recinto e lugar', () => {
+  const g = {
+    stadium: { port: '5', sector: 'A12', line: '7', seat: '14' },
+    pavilion: { port: 'P1', sector: 'B2', line: '3', seat: '9' },
+  };
+  it('futebol (ou sem jogo) usa o Estádio, as outras modalidades o Pavilhão', () => {
+    expect(ticketVenue(undefined)).toBe('stadium');
+    expect(ticketVenue('football')).toBe('stadium');
+    for (const s of ['futsal', 'handball', 'roller_hockey', 'volleyball', 'basketball']) expect(ticketVenue(s)).toBe('pavilion');
+  });
+  it('o Pavilhão por preencher dá lugar vazio, nunca o do Estádio', () => {
+    expect(ticketSeat(g, 'stadium').sector).toBe('A12');
+    expect(ticketSeat(g, 'pavilion').sector).toBe('B2');
+    expect(ticketSeat({ ...g, pavilion: null }, 'pavilion')).toEqual({ port: '', sector: '', line: '', seat: '' });
+  });
+  it('mostra o número em grupos de quatro', () => {
+    expect(groupGameboxNumber('266571276572')).toBe('2665 7127 6572');
+    expect(groupGameboxNumber('123456')).toBe('1234 56');
+    expect(groupGameboxNumber('1234')).toBe('1234');
   });
 });

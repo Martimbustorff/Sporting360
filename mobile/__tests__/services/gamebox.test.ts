@@ -7,7 +7,7 @@ import { deleteDoc, doc, setDoc, updateDoc } from '@react-native-firebase/firest
 import { recordError } from '@react-native-firebase/crashlytics';
 import { decryptGameboxNumber } from '@/lib/gameboxCrypto';
 import type { GameboxInput } from '@/lib/gamebox';
-import { deleteGamebox, GAMEBOX_SAVE_TIMEOUT_MS, saveGamebox } from '@/services/gamebox';
+import { deleteGamebox, GAMEBOX_SAVE_TIMEOUT_MS, reorderGameboxes, saveGamebox } from '@/services/gamebox';
 
 const INPUT: GameboxInput = {
   number: '266571276572',
@@ -120,5 +120,25 @@ describe('deleteGamebox', () => {
   it('permission-denied é DENIED', async () => {
     (deleteDoc as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'firestore/permission-denied' }));
     await expect(deleteGamebox('g1')).rejects.toMatchObject({ saveCode: 'DENIED' });
+  });
+});
+
+describe('reorderGameboxes', () => {
+  it('grava só o campo order (1..n) nos documentos que mudaram', async () => {
+    await reorderGameboxes(['b', 'a', 'c'], { a: 1, b: 2, c: 3 });
+    const calls = (updateDoc as jest.Mock).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls.map((c) => [c[0].path, c[1]])).toEqual([
+      ['gamebox/b', { order: 1 }],
+      ['gamebox/a', { order: 2 }],
+    ]);
+  });
+  it('sem mudanças não escreve', async () => {
+    await reorderGameboxes(['a', 'b'], { a: 1, b: 2 });
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+  it('permission-denied é DENIED', async () => {
+    (updateDoc as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'firestore/permission-denied' }));
+    await expect(reorderGameboxes(['b', 'a'], { a: 1, b: 2 })).rejects.toMatchObject({ saveCode: 'DENIED' });
   });
 });
