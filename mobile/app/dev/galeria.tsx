@@ -18,12 +18,15 @@ import { MenuRow } from '@/components/MenuRow';
 import { NewsCard, type NewsVM } from '@/components/NewsCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Pitch } from '@/components/Pitch';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { RankingRow, type RankingVM } from '@/components/RankingRow';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { ShareCard } from '@/components/ShareCard';
 import { Sheet } from '@/components/Sheet';
+import { Switch } from '@/components/Switch';
+import { SocialButtons } from '@/components/SocialButtons';
 import { StandingsTable } from '@/components/StandingsTable';
 import { StatRow } from '@/components/StatRow';
 import { Tabs } from '@/components/Tabs';
@@ -148,19 +151,22 @@ function Gallery() {
 
         <Section title="PrimaryButton">
           <PrimaryButton label="Entrar" onPress={() => {}} />
-          <PrimaryButton label="Criar conta" variant="secondary" onPress={() => {}} />
+          <PrimaryButton label="Escuro" variant="dark" onPress={() => {}} />
+          <PrimaryButton label="Contorno" variant="outline" onPress={() => {}} />
+          <PrimaryButton label="Branco" variant="white" onPress={() => {}} />
+          <PrimaryButton label="Criar conta (secondary)" variant="secondary" onPress={() => {}} />
           <PrimaryButton label="A carregar" loading onPress={() => {}} />
           <PrimaryButton label="Desativado" disabled onPress={() => {}} />
         </Section>
 
         <Section title="TextField">
-          <TextField label="Nome público" value={name} onChangeText={setName} />
+          <TextField label="Nome público" value={name} onChangeText={setName} placeholder="Como apareces no ranking" />
           <TextField label="Nome público" value={filled} onChangeText={setFilled} />
           <TextField label="Palavra-passe" value="segredo" onChangeText={() => {}} secure />
           <TextField label="Email" value="erro" onChangeText={() => {}} error="Email inválido" />
         </Section>
 
-        <Section title="Tabs" caption="SEM FIGMA (modo igual e deslizante): confirmar: sublinhado ativo branco, etiquetas brancas">
+        <Section title="Tabs" caption="V7.1: modo igual (4942:7676) e deslizante (4935:7125)">
           <Tabs
             mode="equal"
             value={equal}
@@ -199,12 +205,14 @@ function Gallery() {
 
         <Section title="SectionBar">
           <SectionBar label="1ª Parte" />
-          <SectionBar label="Informação do Jogo" right="Ver tudo" />
+          <SectionBar label="Informação do Jogo" right="Ver tudo" onRightPress={() => {}} />
         </Section>
 
         <Section title="MenuRow">
           <MenuRow icon={<Feather name="calendar" size={layout.menuRowIcon} color={colors.white} />} label="Agenda" onPress={() => {}} />
           <MenuRow icon={<Feather name="external-link" size={layout.menuRowIcon} color={colors.white} />} label="Loja oficial" external onPress={() => {}} />
+          <MenuRow icon={<Feather name="user" size={layout.menuRowIcon} color={colors.white} />} label="Tamanho M, sem seta" size="M" trailing="none" onPress={() => {}} />
+          <MenuRow icon={<Feather name="globe" size={layout.menuRowIcon} color={colors.white} />} label="Nome muito comprido para provar as reticências num ecrã de 320 pontos" size="M" separator={false} onPress={() => {}} />
         </Section>
 
         <Section title="Sheet" caption="SEM FIGMA (gesto): confirmar: direção da seta e arrastar">
@@ -267,6 +275,33 @@ function Gallery() {
         <Section title="ToggleRow">
           <ToggleRow icon={<Feather name="bell" size={layout.menuRowIcon} color={colors.white} />} label="Notificações" value={toggle} onChange={setToggle} />
           <ToggleRow icon={<Feather name="lock" size={layout.menuRowIcon} color={colors.white} />} label="Desativado" value={false} onChange={() => {}} disabled />
+        </Section>
+
+        <Section title="ToggleRow M">
+          <ToggleRow icon={<Feather name="bell" size={layout.menuRowIcon} color={colors.white} />} label="Tamanho M ligado" value size="M" onChange={() => {}} />
+          <ToggleRow icon={<Feather name="bell-off" size={layout.menuRowIcon} color={colors.white} />} label="Tamanho M desligado" value={false} size="M" onChange={() => {}} />
+        </Section>
+
+        <Section title="Switch">
+          <View style={{ flexDirection: 'row', gap: spacing.md }}>
+            <Switch label="Ligado" value onValueChange={() => {}} />
+            <Switch label="Desligado" value={false} onValueChange={() => {}} />
+            <Switch label="Desativado" value disabled onValueChange={() => {}} />
+          </View>
+        </Section>
+
+        <Section title="PlayerPhoto" caption="Com foto, sem foto, foto que falha, com número, tamanhos 32 / 40 / 96">
+          <View style={{ flexDirection: 'row', gap: spacing.lg, alignItems: 'center' }}>
+            <PlayerPhoto photo="https://picsum.photos/200" size={40} number={17} />
+            <PlayerPhoto photo={null} size={40} />
+            <PlayerPhoto photo={null} size={40} number="9" />
+            <PlayerPhoto photo="https://invalid.invalid/x.png" size={32} number={10} />
+            <PlayerPhoto photo={null} size={96} />
+          </View>
+        </Section>
+
+        <Section title="SocialButtons">
+          <SocialButtons />
         </Section>
 
         <Section title="OfflineBanner">

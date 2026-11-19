@@ -12,6 +12,13 @@ jest.mock('expo-router', () => {
   };
 });
 
+// A galeria mostra os botões sociais; o serviço (módulos nativos) não corre nos testes.
+jest.mock('@/services/social', () => ({
+  signInWithGoogle: jest.fn(),
+  signInWithApple: jest.fn(),
+  NEEDS_EXISTING_LOGIN_MESSAGE: 'Já tens conta S360?',
+}));
+
 // Conta quantas vezes o módulo dos dados do emulador (com a palavra-passe de teste) é carregado.
 const mockFixturesLoaded = { count: 0 };
 jest.mock('@/data/fixtures', () => {
