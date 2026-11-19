@@ -12,7 +12,10 @@ jest.mock('@/data/hooks', () => ({
   usePublicProfile: () => ({ status: 'loading' }),
   useAppConfig: () => ({ status: 'loading' }),
 }));
-jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'loading' }) }));
+// Plano 7, Tarefa 4: o esqueleto do cartão do jogo usa Reanimated (mesmo problema do oficial em Jest); testado em NextMatchCard.test.
+jest.mock('@/components/NextMatchCard', () => ({ NextMatchCard: () => null }));
+jest.mock('@/data/sports', () => ({ useHomeMatches: () => ({ status: 'loading' }) }));
+jest.mock('@/data/user', () => ({ useMyMvpVote: () => ({ status: 'missing' }) }));
 
 type S = { status: 'loading' | 'signedOut' | 'signedIn'; user: unknown };
 const SIGNED_IN: S = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } };

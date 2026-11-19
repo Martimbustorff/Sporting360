@@ -13,6 +13,7 @@ jest.mock('expo-router', () => {
     Slot: () => null,
     useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
     useLocalSearchParams: () => ({}),
+    useIsFocused: () => true,
     router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   };
 });
@@ -37,6 +38,7 @@ jest.mock('react-native-reanimated', () => {
     makeMutable: (v: unknown) => ({ get: () => v, set: () => {} }),
     withSpring: jest.fn((v: unknown) => v),
     withTiming: jest.fn((v: unknown) => v),
+    withRepeat: jest.fn((v: unknown) => v),
   };
 });
 

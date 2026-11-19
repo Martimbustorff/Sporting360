@@ -95,6 +95,8 @@ export const text71 = {
   bodyLight14: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: lh(14, 155), letterSpacing: 0.2, textTransform: 'none' },
   strong14: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: lh(14, 140), letterSpacing: 0, textTransform: 'none' },
   caption12: { fontFamily: fonts.body, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
+  /** Contagem do cartão do jogo (Figma 4932:6358): Title 32, números tabulares para não tremer ao segundo. */
+  countdown32: { ...dinC, fontSize: 32, lineHeight: lh(32, 110), letterSpacing: 0, fontVariant: ['tabular-nums'] },
   captionStrong12: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
 } as const satisfies Record<string, TextStyle>;
 
@@ -258,6 +260,7 @@ export const layout = {
   sheetChevron: 24,
   grabberWidth: 36, // V7.1 GameBox sheet (4920:5084)
   grabberHeight: 5,
+  sheetGrabberTopOpen: 10, // folha GameBox aberta (4951:8674)
   grabberOpacity: 0.18,
   sheetVelocity: 500, // px/s: a flick is enough to toggle
   consentSheetHeight: 380, // SEM FIGMA: analytics consent sheet (title, 5 lines of text, two buttons) above the home indicator
@@ -358,6 +361,38 @@ export const layout = {
   welcomeTaglineWidth: 302,
   welcomeButtonsGap: 20, // between "Entrar" and "Criar uma conta"
   welcomeBottom: 16, // under "Criar uma conta", above the home indicator
+  // V7.1 Cartão do próximo jogo (Figma 4920:5140): altura fixa em todos os estados, para o menu não saltar
+  matchCardHeight: 192,
+  matchCardStrip: 36,
+  matchCardTeamMax: 108,
+  matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
+  matchCardBorder: 1,
+  crestCard: { width: 52, height: 60 }, // 4920:5096
+  matchCardIcon: 28, // calendário do estado "Sem jogo" (4920:5117)
+  matchCardIconOpacity: 0.4, // nota 01b: ícone a 40 %
+  matchCardBadgePadY: 3, // badge da ronda e canal de TV (4920:5094)
+  matchCardShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 12 },
+  shimmerMin: 0.55, // esqueleto: opacidade mínima do brilho
+  shimmerMs: 900,
+  // V7.1 Home backdrop (Figma 4920:5141)
+  homeBackdropLion: { left: -46, top: 80, width: 494, height: 874 },
+  homeBackdropLionImage: { left: '-83.11%', top: '-5.4%', width: '239.87%', height: '105.4%' },
+  homeBackdropLionOpacity: 0.62,
+  homeBackdropTintOpacity: 0.6,
+  homeBackdropRingsClip: { width: 402, height: 520 },
+  homeBackdropRings: { left: 35, top: 67, width: 608, height: 608 },
+  homeBackdropFade: { height: 220, from: 'rgba(0, 27, 19, 0)', to: 'rgba(0, 27, 19, 0.9)' },
+  // V7.1 Folha GameBox aberta (Figma 4951:8673 com GameBox, 4951:9190 sem)
+  gameboxOpenGap: 14, // todos os espaços verticais da folha aberta (4951:8673)
+  gameboxEmptyGapOpen: 20, // câmara, texto e botão (4951:9190)
+  gameboxPaginationGap: 6,
+  gameboxTextGap: 2, // nome e número; rótulo e valor da coluna
+  gameboxOpenHeight: 630,
+  gameboxEmptyOpenHeight: 327,
+  gameboxQrPad: 12,
+  gameboxDotActive: 8,
+  gameboxDotInactive: 6,
+  gameboxCamera: 64,
   homeIndicator: 34, // iOS home indicator area included in Figma bottoms
   // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)
   // Lock screen (Figma 310:9622 / 348:37997, no keypad). Offsets are from the top of the 812px frame.
@@ -380,7 +415,7 @@ export const layout = {
   homeSinceGap: 14, // name bottom (222) to "Sócio desde" (236)
   homeSinceLabelOpacity: 0.5,
   homeBlockGap: 32, // SEM FIGMA: between name, next-game card and menu (card is not on 1561:5056)
-  homeMenuSheetGap: 41, // menu bottom (812 - 141) to the collapsed sheet top (712)
+  homeMenuSheetGap: 9, // V7.1: o menu acaba 9 pt acima da folha GameBox (nota 01)
   homeSheetExpandedRatio: 0.8, // SEM FIGMA: open GameBox sheet height as a share of the window (content in Task 24)
   authContentTop: 32, // header bottom to the first field
   authIntroTop: 24, // header bottom to the intro text (564:6971)

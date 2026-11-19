@@ -11,8 +11,8 @@ jest.mock('@/data/hooks', () => ({
   usePublicProfile: () => ({ status: 'loading' }),
   useAppConfig: () => ({ status: 'loading' }),
 }));
-jest.mock('@/data/user', () => ({ useMyGameboxes: () => ({ status: 'loading' }) }));
-jest.mock('@/data/sports', () => ({ useNextFootballMatch: () => ({ status: 'loading' }) }));
+jest.mock('@/data/user', () => ({ useMyGameboxes: () => ({ status: 'loading' }), useMyMvpVote: () => ({ status: 'missing' }) }));
+jest.mock('@/data/sports', () => ({ useHomeMatches: () => ({ status: 'loading' }) }));
 
 import Home from '../../app/(app)/index';
 

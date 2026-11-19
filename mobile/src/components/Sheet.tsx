@@ -30,13 +30,19 @@ export type SheetProps = {
   onOpenChange: (open: boolean) => void;
   /** `false`: folha fixa (consentimento): o título é só cabeçalho, sem toque nem seta, e o gesto não muda nada. */
   toggleable?: boolean;
-  /** `light` (por omissão): fundo branco, título Title 24 primary (GameBox, 4920:5083). `dark`: bg-raised, título Title S 20 branco, grabber à esquerda (folhas escuras do Figma, ex. 4953:9228). */
-  tone?: 'light' | 'dark';
+  /**
+   * `light` (por omissão): fundo branco, título Title 24 primary (GameBox recolhida, 4920:5083). `dark`: bg-raised, título
+   * Title S 20 branco, grabber à esquerda (folhas escuras do Figma, ex. 4953:9228). `night`: fundo bg, título Title 24
+   * primary-on-dark, grabber ao centro, seta para baixo (GameBox aberta, 4951:8673 e 4951:9190).
+   */
+  tone?: 'light' | 'dark' | 'night';
   children?: ReactNode;
 };
 
 export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChange, toggleable = true, tone = 'light', children }: SheetProps) {
   const dark = tone === 'dark';
+  const night = tone === 'night';
+  const onDark = dark || night;
   const reduced = useReducedMotion();
   const range = Math.max(0, expandedHeight - collapsedHeight);
   // 0 = aberta, range = fechada
@@ -79,7 +85,7 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
 
   const animated = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
 
-  const pad = { paddingHorizontal: space.s24, paddingTop: dark ? space.s24 : space.s16, paddingBottom: space.s24 };
+  const pad = { paddingHorizontal: space.s24, paddingTop: dark ? space.s24 : night ? space.s16 + space.s4 : space.s16, paddingBottom: space.s24 };
 
   return (
     <GestureDetector gesture={pan}>
@@ -93,7 +99,7 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
             right: 0,
             bottom: 0,
             height: expandedHeight,
-            backgroundColor: dark ? colors.bgRaised : colors.white,
+            backgroundColor: dark ? colors.bgRaised : night ? colors.bg : colors.white,
             borderTopLeftRadius: radii.r28,
             borderTopRightRadius: radii.r28,
             ...layout.sheetShadow,
@@ -105,13 +111,13 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
           testID="sheet-grabber"
           style={{
             position: 'absolute',
-            top: space.s8,
+            top: night ? layout.sheetGrabberTopOpen : space.s8,
             ...(dark ? { top: space.s12, left: space.s24 } : { alignSelf: 'center' as const }),
             width: layout.grabberWidth,
             height: layout.grabberHeight,
             borderRadius: layout.grabberHeight / 2,
-            backgroundColor: dark ? colors.surface20 : colors.ink,
-            opacity: dark ? undefined : layout.grabberOpacity,
+            backgroundColor: onDark ? colors.surface20 : colors.ink,
+            opacity: onDark ? undefined : layout.grabberOpacity,
             zIndex: 1,
           }}
         />
@@ -133,12 +139,12 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
               onPress={() => onOpenChange(!open)}
               style={titleRow}
             >
-              <Text71 variant={dark ? 'titleS20' : 'title24'} color={dark ? 'white' : 'primary'} numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
-              <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={dark ? colors.white : colors.ink} />
+              <Text71 variant={dark ? 'titleS20' : 'title24'} color={dark ? 'white' : night ? 'primaryOnDark' : 'primary'} numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
+              <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={onDark ? colors.white : colors.ink} />
             </Touchable>
           ) : (
             <View style={titleRow}>
-              <Text71 variant={dark ? 'titleS20' : 'title24'} color={dark ? 'white' : 'primary'} accessibilityRole="header" numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
+              <Text71 variant={dark ? 'titleS20' : 'title24'} color={dark ? 'white' : night ? 'primaryOnDark' : 'primary'} accessibilityRole="header" numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
             </View>
           )}
           <View

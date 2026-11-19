@@ -1,26 +1,26 @@
-// Figma: nó 564:6981 (folha GameBox recolhida, título "GameBox Digital"); na Home 1561:5164.
-// Aberta com GameBox: 450:5419 (QR, nome e número, Estádio/Pavilhão, paginação 450:5562) e 348:40189 (só Estádio).
-// Aberta sem GameBox: 348:39454 (botão verde "Digitalizar" com o ícone System/Camera 348:39561, descarregado do nó para
-// assets/icons/camera.svg, e o texto com "insere manualmente" sublinhado).
-// SEM FIGMA: esqueleto de carregamento e erro de leitura.
+// Figma V7.1: folha recolhida 4920:5083 (branca, "GameBox Digital" a primary); aberta com GameBox 4951:8673 e sem GameBox
+// 4951:9190 (fundo bg, título primary-on-dark, seta para baixo, fundo escurecido por trás). Frames 43 e 43b da Home.
 // Task 24: lê as GameBox do utilizador (useMyGameboxes) e mostra uma página por GameBox. Sem documentos e com número
 // antigo em users/{uid}.gameboxNumber mostra-o como "Principal" (mesma regra da lista, resolveGameboxList).
+// Tocar no QR abre o modo bilhete `/gamebox/bilhete?id={id}` (Tarefa 5 cria a rota; `onOpenTicket` troca o destino).
+// SEM FIGMA: esqueleto de carregamento e erro de leitura.
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { ScrollView, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CARD_TEXT, GameboxCard } from '@/components/GameboxCard';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { Sheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
 import { useMyGameboxes } from '@/data/user';
-import { fromGameboxDoc, resolveGameboxList, type GameboxView } from '@/lib/gamebox';
-import { Display } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { fromGameboxDoc, normalizeGameboxNumber, resolveGameboxList, type GameboxView } from '@/lib/gamebox';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const CAMERA = require('../../assets/icons/camera.svg');
+const CAMERA = require('../../assets/icons/camera-large.svg');
 
 export const SHEET_TEXT = {
   title: 'GameBox Digital',
@@ -30,6 +30,7 @@ export const SHEET_TEXT = {
   emptyAfter: ' o número.',
   loadError: 'Não foi possível carregar as tuas GameBox.',
   unreadable: CARD_TEXT.unreadable,
+  close: 'Fechar a GameBox Digital',
 } as const;
 
 /** Altura visível da folha recolhida: padding, linha do título e a zona do indicador home. */
@@ -38,42 +39,33 @@ export function useGameboxSheetCollapsedHeight(): number {
   return layout.sheetPadYCollapsed + layout.minTouch + Math.max(bottom, layout.homeIndicator);
 }
 
+/** Rota do modo bilhete de uma GameBox (Tarefa 5). */
+export const ticketHref = (id: string): Href => `/gamebox/bilhete?id=${encodeURIComponent(id)}` as Href;
+
 function Empty() {
   const router = useRouter();
   return (
-    <View style={{ gap: layout.gameboxSheetEmptyGap, alignItems: 'stretch' }}>
-      <Touchable
-        accessibilityRole="button"
-        accessibilityLabel={SHEET_TEXT.scan}
-        onPress={() => router.push('/gamebox/ler')}
-        style={{
-          height: layout.buttonHeight,
-          borderRadius: radius.button,
-          backgroundColor: colors.primary,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: spacing.sm,
-        }}
-      >
-        <Image source={CAMERA} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
-        <Display variant="screenTitle" style={{ color: colors.white }}>
-          {SHEET_TEXT.scan}
-        </Display>
-      </Touchable>
-      <Text style={type.gameboxEmpty}>
+    <View style={{ gap: layout.gameboxEmptyGapOpen, alignItems: 'stretch' }}>
+      <Image
+        source={CAMERA}
+        accessible={false}
+        style={{ width: layout.gameboxCamera, height: layout.gameboxCamera, alignSelf: 'center' }}
+      />
+      <Text71 variant="bodyLight14" color="textMuted" style={{ textAlign: 'center' }}>
         {SHEET_TEXT.emptyBefore}
-        <Text
+        <Text71
+          variant="bodyLight14"
           accessibilityRole="link"
           accessibilityLabel={SHEET_TEXT.manual}
           onPress={() => router.push('/gamebox/nova')}
           suppressHighlighting
-          style={type.gameboxEmptyLink}
+          style={{ textDecorationLine: 'underline' }}
         >
           {SHEET_TEXT.manual}
-        </Text>
+        </Text71>
         {SHEET_TEXT.emptyAfter}
-      </Text>
+      </Text71>
+      <PrimaryButton label={SHEET_TEXT.scan} onPress={() => router.push('/gamebox/ler')} />
     </View>
   );
 }
@@ -83,41 +75,44 @@ function Pagination({ count, active }: { count: number; active: number }) {
     <View
       accessible
       accessibilityLabel={`GameBox ${active + 1} de ${count}`}
-      style={{ flexDirection: 'row', justifyContent: 'center', gap: layout.paginationGap }}
+      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: layout.gameboxPaginationGap }}
     >
-      {Array.from({ length: count }, (_, i) => (
-        <View
-          key={`dot-${i}`}
-          testID={`pagination-dot-${i}`}
-          style={{
-            width: layout.paginationDot,
-            height: layout.paginationDot,
-            borderRadius: layout.paginationDot / 2,
-            backgroundColor: i === active ? colors.primary : colors.dotInactive,
-          }}
-        />
-      ))}
+      {Array.from({ length: count }, (_, i) => {
+        const on = i === active;
+        const d = on ? layout.gameboxDotActive : layout.gameboxDotInactive;
+        return (
+          <View
+            key={`dot-${i}`}
+            testID={`pagination-dot-${i}`}
+            style={{ width: d, height: d, borderRadius: d / 2, backgroundColor: on ? colors.white : colors.surface20 }}
+          />
+        );
+      })}
     </View>
   );
 }
 
-function Content({ uid }: { uid: string }) {
+type Sheetable = { views: GameboxView[] } | { status: 'loading' } | { status: 'error' };
+
+function useSheetState(uid: string): Sheetable {
   const boxes = useMyGameboxes(uid);
   const user = useMyUser(uid);
   const state = resolveGameboxList(boxes, user, uid);
+  if (state.status === 'loading') return { status: 'loading' };
+  if (state.status === 'error') return { status: 'error' };
+  return { views: state.legacy ? [{ ...state.legacy, id: 'principal', order: 0 }] : state.list.map((d) => fromGameboxDoc(d, uid)) };
+}
+
+function Content({ state, onOpenTicket }: { state: Sheetable; onOpenTicket: (g: GameboxView) => void }) {
   const { width } = useWindowDimensions();
   const pageWidth = width - 2 * layout.sheetPadXOpen;
   const [page, setPage] = useState(0);
 
-  if (state.status === 'loading') return <View testID="gamebox-sheet-loading" style={{ minHeight: layout.gameboxQr }} />;
-  if (state.status === 'error') {
-    return (
-      <Text style={[type.gameboxEmpty, { marginTop: spacing.lg }]}>{SHEET_TEXT.loadError}</Text>
-    );
+  if ('status' in state) {
+    if (state.status === 'loading') return <View testID="gamebox-sheet-loading" style={{ minHeight: layout.gameboxQr }} />;
+    return <Text71 variant="caption12" color="textMuted" style={{ textAlign: 'center' }}>{SHEET_TEXT.loadError}</Text71>;
   }
-  const views: GameboxView[] = state.legacy
-    ? [{ ...state.legacy, id: 'principal', order: 0 }]
-    : state.list.map((d) => fromGameboxDoc(d, uid));
+  const { views } = state;
   if (views.length === 0) return <Empty />;
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -125,41 +120,62 @@ function Content({ uid }: { uid: string }) {
     const next = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
     setPage(Math.max(0, Math.min(views.length - 1, next)));
   };
+  const active = Math.min(page, views.length - 1);
+  const showHint = normalizeGameboxNumber(views[active]?.number ?? '') !== null;
   return (
-    <View style={{ gap: layout.gameboxSheetGap }}>
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScroll}
-        style={{ flexGrow: 0 }}
-      >
+    <View style={{ gap: layout.gameboxOpenGap }}>
+      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={onScroll} style={{ flexGrow: 0 }}>
         {views.map((g, i) => (
           <View key={g.id} testID="gamebox-page" style={{ width: pageWidth }}>
-            <GameboxCard gamebox={g} index={i} />
+            <GameboxCard gamebox={g} index={i} onOpenTicket={onOpenTicket} />
           </View>
         ))}
       </ScrollView>
-      {views.length > 1 ? <Pagination count={views.length} active={Math.min(page, views.length - 1)} /> : null}
+      {views.length > 1 ? <Pagination count={views.length} active={active} /> : null}
+      {showHint ? (
+        <Text71 variant="caption12" color="textSubtle" style={{ textAlign: 'center' }}>{CARD_TEXT.ticketHint}</Text71>
+      ) : null}
     </View>
   );
 }
 
-export function HomeGameboxSheet({ uid }: { uid: string }) {
+export function HomeGameboxSheet({ uid, onOpenTicket }: { uid: string; onOpenTicket?: (gamebox: GameboxView) => void }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const { height } = useWindowDimensions();
+  const { bottom } = useSafeAreaInsets();
   const collapsedHeight = useGameboxSheetCollapsedHeight();
+  const state = useSheetState(uid);
+  const empty = !('status' in state) && state.views.length === 0;
+  const openHeight = empty ? layout.gameboxEmptyOpenHeight : layout.gameboxOpenHeight;
+  const openTicket = onOpenTicket ?? ((g: GameboxView) => router.push(ticketHref(g.id)));
   return (
-    <Sheet
-      title={SHEET_TEXT.title}
-      collapsedHeight={collapsedHeight}
-      expandedHeight={Math.max(collapsedHeight, Math.round(height * layout.homeSheetExpandedRatio))}
-      open={open}
-      onOpenChange={setOpen}
-    >
-      <View style={{ paddingTop: layout.gameboxSheetGap }}>
-        <Content uid={uid} />
-      </View>
-    </Sheet>
+    <>
+      {open ? (
+        <Touchable
+          testID="gamebox-scrim"
+          accessibilityRole="button"
+          accessibilityLabel={SHEET_TEXT.close}
+          feedback="none"
+          onPress={() => setOpen(false)}
+          style={[StyleSheet.absoluteFill, { backgroundColor: colors.scrimV71 }]}
+        />
+      ) : null}
+      <Sheet
+        title={SHEET_TEXT.title}
+        tone={open ? 'night' : 'light'}
+        collapsedHeight={collapsedHeight}
+        expandedHeight={Math.max(collapsedHeight, Math.min(height, openHeight + Math.max(0, bottom - layout.homeIndicator)))}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: layout.gameboxOpenGap, paddingBottom: Math.max(bottom, space.s24) }}
+        >
+          <Content state={state} onOpenTicket={openTicket} />
+        </ScrollView>
+      </Sheet>
+    </>
   );
 }

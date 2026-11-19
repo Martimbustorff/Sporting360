@@ -21,7 +21,7 @@ jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null
 // Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.
 jest.mock('@/components/AnalyticsConsentSheet', () => ({ AnalyticsConsentSheet: () => null }));
 jest.mock('@/data/sports', () => ({
-  useNextFootballMatch: () => ({ status: 'ready', data: null }),
+  useHomeMatches: () => ({ status: 'ready', data: [] }),
   // Task 7: a Agenda lê as duas listas da modalidade escolhida.
   useUpcomingMatches: () => ({ status: 'ready', data: [] }),
   useResultMatches: () => ({ status: 'ready', data: [] }),
@@ -38,6 +38,8 @@ jest.mock('@/data/sports', () => ({
 }));
 // Task 19: o Ranking lê o top 100 e a entrada do próprio; Task 20: as Notícias leem a lista (aqui ficam a carregar).
 jest.mock('@/data/user', () => ({
+  // Plano 7, Tarefa 4: o cartão da Home lê o voto no MVP do jogo (aqui sem jogo, por isso nunca com utilizador).
+  useMyMvpVote: () => ({ status: 'missing' }),
   useNews: () => ({ status: 'loading' }),
   useLeaderboard: () => ({ status: 'loading' }),
   useMyLeaderboardEntry: () => ({ status: 'loading' }),

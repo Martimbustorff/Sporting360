@@ -38,9 +38,9 @@ describe('V7.1 tokens', () => {
     expect(FONT_ASSETS).not.toHaveProperty('DinCondensedBold');
   });
 
-  it('text71 has the 14 styles', () => {
+  it('text71 has the 14 styles plus the card countdown', () => {
     expect(Object.keys(text71).sort()).toEqual(
-      ['score72', 'display40', 'titleL28', 'title24', 'titleS20', 'label16', 'eyebrow13', 'menu15', 'badge11', 'body14', 'bodyLight14', 'strong14', 'caption12', 'captionStrong12'].sort(),
+      ['score72', 'display40', 'titleL28', 'title24', 'titleS20', 'label16', 'eyebrow13', 'menu15', 'badge11', 'body14', 'bodyLight14', 'strong14', 'caption12', 'captionStrong12', 'countdown32'].sort(),
     );
   });
 

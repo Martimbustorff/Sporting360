@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Reanimated from 'react-native-reanimated';
 import { Sheet } from '@/components/Sheet';
-import { colors } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
 const wrap = (ui: React.ReactElement) => <GestureHandlerRootView>{ui}</GestureHandlerRootView>;
 const base = { title: 'GameBox Digital', collapsedHeight: 100, expandedHeight: 500 };
@@ -79,5 +79,18 @@ describe('Sheet', () => {
     const t = StyleSheet.flatten(screen.getByText('GameBox Digital').props.style);
     expect(t.color).toBe(colors.white);
     expect(t.fontSize).toBe(20);
+  });
+  it('night: bg, título Title 24 em primaryOnDark, grabber ao centro mais abaixo', async () => {
+    await render(wrap(<Sheet {...base} tone="night" open onOpenChange={() => {}}><Text>corpo</Text></Sheet>));
+    const outer = StyleSheet.flatten(screen.getByTestId('sheet').props.style);
+    expect(outer.backgroundColor).toBe(colors.bg);
+    expect(outer.borderTopLeftRadius).toBe(28);
+    const g = StyleSheet.flatten(screen.getByTestId('sheet-grabber').props.style);
+    expect(g.backgroundColor).toBe(colors.surface20);
+    expect(g.alignSelf).toBe('center');
+    expect(g.top).toBe(layout.sheetGrabberTopOpen);
+    const t = StyleSheet.flatten(screen.getByText('GameBox Digital').props.style);
+    expect(t.color).toBe(colors.primaryOnDark);
+    expect(t.fontSize).toBe(24);
   });
 });

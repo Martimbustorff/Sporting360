@@ -1,5 +1,6 @@
 // Task 24: folha GameBox Digital da Home. Hook mockado; o número vem cifrado como na V2 e decifra-se só para o QR.
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,6 +17,7 @@ jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) })
 import QRCode from 'react-native-qrcode-svg';
 import { HomeGameboxSheet, SHEET_TEXT } from '@/components/HomeGameboxSheet';
 import { useMyGameboxes } from '@/data/user';
+import { colors, layout } from '@/theme/tokens';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 const ui = () => (
@@ -140,5 +142,49 @@ describe('HomeGameboxSheet', () => {
     await open();
     expect(screen.getByTestId('gamebox-sheet-loading')).toBeTruthy();
     expect(screen.queryByText(SHEET_TEXT.scan)).toBeNull();
+  });
+});
+
+describe('HomeGameboxSheet V7.1 (aberta)', () => {
+  const sheetStyle = () => StyleSheet.flatten(screen.getByTestId('sheet').props.style);
+
+  it('fechada é branca; aberta passa a noite (bg escuro)', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('a', 1)] };
+    await render(ui());
+    expect(sheetStyle().backgroundColor).toBe(colors.white);
+    await open();
+    expect(sheetStyle().backgroundColor).toBe(colors.bg);
+  });
+
+  it('tocar no QR abre o modo bilhete da GameBox', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('a b', 1)] };
+    await render(ui());
+    await open();
+    await fireEvent.press(screen.getByRole('button', { name: /Código QR da GameBox/ }));
+    expect(mockPush).toHaveBeenCalledWith('/gamebox/bilhete?id=a%20b');
+  });
+
+  it('a película por trás fecha a folha e só existe aberta', async () => {
+    mockBoxes.current = { status: 'ready', data: [box('a', 1)] };
+    await render(ui());
+    expect(screen.queryByTestId('gamebox-scrim')).toBeNull();
+    await open();
+    await fireEvent.press(screen.getByTestId('gamebox-scrim'));
+    expect(screen.queryByTestId('gamebox-scrim')).toBeNull();
+    expect(sheetStyle().backgroundColor).toBe(colors.white);
+  });
+
+  it('o estado vazio abre mais baixo do que o das GameBox', async () => {
+    mockBoxes.current = { status: 'ready', data: [] };
+    const empty = await render(ui());
+    await open();
+    const emptyH = sheetStyle().height as number;
+    empty.unmount();
+    mockBoxes.current = { status: 'ready', data: [box('a', 1)] };
+    await render(ui());
+    await open();
+    const fullH = sheetStyle().height as number;
+    expect(emptyH).toBeLessThan(fullH);
+    expect(layout.gameboxEmptyOpenHeight).toBeLessThan(layout.gameboxOpenHeight);
   });
 });
