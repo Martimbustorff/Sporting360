@@ -206,3 +206,4 @@
 - Deploy do servidor (regras fase 2 com `loans`, índices, `createLoan`, `claimLoan`, `cancelLoan`, `loansMaintenance`, `onGameboxDeleted`, `deleteAccount`) e do hosting (rewrite `/e` para `loanRedirect`, AASA): só com OK.
 - Builds de produção 7.0.0 com tudo dentro: só com OK. O link `/e`, o bloqueio de capturas e o brilho verificam-se nesses builds.
 - No lançamento (passo L5), publicar `firestore.final.rules`, que fecha a leitura pública das GameBox: o empréstimo depende disso.
+- No deploy, criar uma exclusão no Cloud Logging para os registos de pedidos da `loanRedirect`: a plataforma regista o URL e este contém o código do empréstimo. Até lá o risco é aceite: só os administradores do projeto leem esses registos, e cada empréstimo só é aberto uma vez e expira.

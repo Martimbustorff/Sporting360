@@ -1,9 +1,10 @@
 // Plano 8, Task 7: referrer da instalação (Play Store) lido uma só vez; só Android; nunca regista o id.
-const mockFlags: Record<string, boolean> = {};
+const mockFlags: Record<string, boolean | number> = {};
 jest.mock('react-native-mmkv', () => ({
   MMKV: jest.fn((opts?: { id?: string }) => ({
     getBoolean: (k: string) => mockFlags[`${opts?.id ?? 'default'}:${k}`],
-    set: (k: string, v: boolean) => {
+    getNumber: (k: string) => mockFlags[`${opts?.id ?? 'default'}:${k}`],
+    set: (k: string, v: boolean | number) => {
       mockFlags[`${opts?.id ?? 'default'}:${k}`] = v;
     },
   })),
@@ -56,6 +57,15 @@ describe('readLoanReferrerOnce', () => {
     expect(await readLoanReferrerOnce()).toBeNull();
     mockReferrer.mockResolvedValue(`loan=${ID}`);
     expect(await readLoanReferrerOnce()).toBe(ID);
+  });
+
+  it('depois de 3 falhas da API desiste: marca como lido e deixa de chamar a API', async () => {
+    mockReferrer.mockRejectedValue(new Error('FEATURE_NOT_SUPPORTED'));
+    for (let i = 0; i < 3; i++) expect(await readLoanReferrerOnce()).toBeNull();
+    expect(mockReferrer).toHaveBeenCalledTimes(3);
+    mockReferrer.mockResolvedValue(`loan=${ID}`);
+    expect(await readLoanReferrerOnce()).toBeNull();
+    expect(mockReferrer).toHaveBeenCalledTimes(3);
   });
 
   it('iOS: null sem chamar a API', async () => {
