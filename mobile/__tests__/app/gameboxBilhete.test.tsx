@@ -1,5 +1,5 @@
 // Tarefa 5 (Plano 7): modo bilhete. Módulos nativos simulados (__mocks__): brilho, ecrã sempre ligado e orientação.
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Match } from '@/data/schemas';
@@ -29,6 +29,8 @@ jest.mock('@/data/sports', () => ({
   }),
 }));
 
+import { StyleSheet } from 'react-native';
+import { colors } from '@/theme/tokens';
 import * as Brightness from 'expo-brightness';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -197,6 +199,89 @@ describe('/gamebox/bilhete', () => {
     await render(ui());
     await flush();
     expect(screen.getByText('Esta GameBox já não existe.')).toBeTruthy();
+  });
+
+  describe('várias GameBox: deslizar entre bilhetes', () => {
+    const three = () => [
+      box('g1', { gameboxName: 'Pai', order: 1, gameboxSeat: '14' }),
+      box('g2', { gameboxName: 'Filho um', order: 2, gameboxSeat: '15' }),
+      box('g3', { gameboxName: 'Filho dois', order: 3, gameboxSeat: '16' }),
+    ];
+    const control = () => screen.getByTestId('ticket-pager-control');
+    const dotColors = () => screen.getAllByTestId('ticket-dot').map((d) => StyleSheet.flatten(d.props.style).backgroundColor);
+    const scrollTo = (page: number) =>
+      fireEvent(screen.getByTestId('ticket-pager'), 'momentumScrollEnd', {
+        nativeEvent: { contentOffset: { x: page * 750, y: 0 }, contentSize: { width: 2250, height: 100 }, layoutMeasurement: { width: 750, height: 100 } },
+      });
+
+    it('uma página por GameBox, pela ordem guardada', async () => {
+      mockBoxes.current = { status: 'ready', data: three() };
+      await render(ui());
+      await flush();
+      expect(screen.getAllByText(/^(Pai|Filho um|Filho dois)$/, { includeHiddenElements: true }).map((n) => n.props.children)).toEqual(['Pai', 'Filho um', 'Filho dois']);
+    });
+
+    it('abre na página do id recebido', async () => {
+      mockBoxes.current = { status: 'ready', data: three() };
+      mockParams.current = { id: 'g2' };
+      await render(ui());
+      await flush();
+      expect(screen.getByTestId('ticket-pager').props.initialScrollIndex).toBe(1);
+      expect(control().props.accessibilityLabel).toBe('GameBox 2 de 3, Filho um');
+      expect(dotColors()).toEqual([colors.surface20, colors.white, colors.surface20]);
+    });
+
+    it('pontos: um por GameBox e o ativo acompanha o deslize', async () => {
+      mockBoxes.current = { status: 'ready', data: three() };
+      await render(ui());
+      await flush();
+      expect(screen.getAllByTestId('ticket-dot')).toHaveLength(3);
+      expect(dotColors()).toEqual([colors.white, colors.surface20, colors.surface20]);
+      await scrollTo(2);
+      expect(dotColors()).toEqual([colors.surface20, colors.surface20, colors.white]);
+      expect(control().props.accessibilityLabel).toBe('GameBox 3 de 3, Filho dois');
+    });
+
+    it('uma só GameBox: sem pontos, sem paginação e sem controlo', async () => {
+      mockBoxes.current = { status: 'ready', data: [box('g1')] };
+      await render(ui());
+      await flush();
+      expect(screen.queryByTestId('ticket-dot')).toBeNull();
+      expect(screen.queryByTestId('ticket-pager')).toBeNull();
+      expect(screen.queryByTestId('ticket-pager-control')).toBeNull();
+      expect(screen.getByText('Mostra este código na porta')).toBeTruthy();
+    });
+
+    it('acessibilidade: "GameBox N de M, nome" e ações seguinte e anterior', async () => {
+      mockBoxes.current = { status: 'ready', data: three() };
+      await render(ui());
+      await flush();
+      expect(control().props.accessibilityLabel).toBe('GameBox 1 de 3, Pai');
+      expect(control().props.accessibilityActions.map((a: { name: string }) => a.name)).toEqual(['next', 'previous']);
+      await fireEvent(control(), 'accessibilityAction', { nativeEvent: { actionName: 'previous' } });
+      expect(control().props.accessibilityLabel).toBe('GameBox 1 de 3, Pai');
+      await fireEvent(control(), 'accessibilityAction', { nativeEvent: { actionName: 'next' } });
+      expect(control().props.accessibilityLabel).toBe('GameBox 2 de 3, Filho um');
+      await fireEvent(control(), 'accessibilityAction', { nativeEvent: { actionName: 'next' } });
+      await fireEvent(control(), 'accessibilityAction', { nativeEvent: { actionName: 'next' } });
+      expect(control().props.accessibilityLabel).toBe('GameBox 3 de 3, Filho dois');
+      await fireEvent(control(), 'accessibilityAction', { nativeEvent: { actionName: 'previous' } });
+      expect(control().props.accessibilityLabel).toBe('GameBox 2 de 3, Filho um');
+    });
+
+    it('brilho e ecrã ligado mantêm-se ao mudar de página (uma só leitura, um só máximo)', async () => {
+      mockBoxes.current = { status: 'ready', data: three() };
+      await render(ui());
+      await flush();
+      await scrollTo(1);
+      await scrollTo(2);
+      await flush();
+      expect(getBrightness).toHaveBeenCalledTimes(1);
+      expect(setBrightness).toHaveBeenCalledTimes(1);
+      expect(setBrightness).toHaveBeenLastCalledWith(1);
+      expect(activateKeepAwakeAsync).toHaveBeenCalledTimes(1);
+      expect(deactivateKeepAwake).not.toHaveBeenCalled();
+    });
   });
 
   describe('brilho, ecrã ligado e orientação', () => {

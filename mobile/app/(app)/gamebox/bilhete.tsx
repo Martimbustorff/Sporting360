@@ -5,12 +5,15 @@
 // vertical (lib/ticketMode). Lugar: Estádio no futebol, Pavilhão nas outras modalidades (lib/gamebox.ticketVenue).
 // Jogo seguinte: o primeiro jogo EM CASA do Sporting por abrir, em todas as modalidades (useUpcomingMatches por
 // modalidade); fora de casa não conta. SEM FIGMA: sem jogo a faixa mostra só o nome da GameBox; "Esta GameBox já não existe." e o erro de leitura reusam os textos do formulário.
+// Várias GameBox (ex.: um pai com três filhos a passar o torniquete com o mesmo telemóvel): deslizar na horizontal entre
+// bilhetes, pela ordem guardada, a abrir na do `id`; pontos de página por baixo (acrescentado a pedido do Martim, o frame 12
+// não os tem). Uma só GameBox: sem pontos nem paginação.
 // Rota `/gamebox/bilhete?id={id}`: `principal` é a GameBox antiga do perfil da V2 (mesma regra da folha da Home).
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { FlatList, ScrollView, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { EmptyState } from '@/components/EmptyState';
 import { CARD_TEXT } from '@/components/GameboxCard';
@@ -46,6 +49,8 @@ export const TICKET_TEXT = {
   brightness: 'Brilho no máximo enquanto este ecrã está aberto',
   memberPrefix: 'Sócio n.º',
   notFound: 'Esta GameBox já não existe.',
+  next: 'Seguinte',
+  previous: 'Anterior',
   loadError: 'Não foi possível carregar as tuas GameBox.',
   venueShort: { stadium: 'Alvalade', pavilion: 'João Rocha' },
 } as const;
@@ -177,22 +182,7 @@ function Ticket({ gamebox, index, match }: { gamebox: GameboxView; index: number
   );
 }
 
-function Body({ gamebox, index }: { gamebox: GameboxView; index: number }) {
-  const session = useSession();
-  const uid = session.status === 'signedIn' ? session.user.uid : null;
-  const user = useMyUser(uid);
-  const now = useNow(60_000);
-  // Um hook por modalidade (lista fixa, ordem estável).
-  const lists = SPORTS.map((sport) => useUpcomingMatches(sport, now)); // eslint-disable-line react-hooks/rules-of-hooks
-  const match = useMemo(
-    () => upcomingHome(lists.flatMap((l) => (l.status === 'ready' ? l.data : [])), now),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [...lists, now],
-  );
-  const data = user.status === 'ready' ? user.data : null;
-  const rawName = (data?.name ?? '').trim();
-  const name = rawName.includes('@') ? '' : rawName;
-  const member = (data?.memberNumber ?? '').trim();
+function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; index: number; match: Match | null; name: string; member: string }) {
   return (
     <ScrollView
       contentContainerStyle={{
@@ -230,6 +220,114 @@ function Body({ gamebox, index }: { gamebox: GameboxView; index: number }) {
   );
 }
 
+/** Pontos de página; um só elemento de acessibilidade com "GameBox N de M, nome" e as ações seguinte e anterior. */
+function PageDots({ index, count, label, onStep }: { index: number; count: number; label: string; onStep: (delta: 1 | -1) => void }) {
+  return (
+    <View
+      testID="ticket-pager-control"
+      accessible
+      accessibilityLabel={label}
+      accessibilityActions={[
+        { name: 'next', label: TICKET_TEXT.next },
+        { name: 'previous', label: TICKET_TEXT.previous },
+      ]}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'next') onStep(1);
+        else if (e.nativeEvent.actionName === 'previous') onStep(-1);
+      }}
+      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: space.s8, paddingTop: space.s8, paddingBottom: space.s16 }}
+    >
+      {Array.from({ length: count }, (_, i) => (
+        <View
+          key={i}
+          testID="ticket-dot"
+          style={{
+            width: space.s8,
+            height: space.s8,
+            borderRadius: space.s4,
+            backgroundColor: i === index ? colors.white : colors.surface20,
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: number }) {
+  const session = useSession();
+  const uid = session.status === 'signedIn' ? session.user.uid : null;
+  const user = useMyUser(uid);
+  const now = useNow(60_000);
+  const { width } = useWindowDimensions();
+  const listRef = useRef<FlatList<GameboxView>>(null);
+  const [current, setCurrent] = useState(initialIndex);
+  // Um hook por modalidade (lista fixa, ordem estável); partilhado por todas as páginas.
+  const lists = SPORTS.map((sport) => useUpcomingMatches(sport, now)); // eslint-disable-line react-hooks/rules-of-hooks
+  const match = useMemo(
+    () => upcomingHome(lists.flatMap((l) => (l.status === 'ready' ? l.data : [])), now),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [...lists, now],
+  );
+  const data = user.status === 'ready' ? user.data : null;
+  const rawName = (data?.name ?? '').trim();
+  const name = rawName.includes('@') ? '' : rawName;
+  const member = (data?.memberNumber ?? '').trim();
+  const count = views.length;
+  const index = Math.min(current, count - 1);
+
+  const goTo = useCallback(
+    (next: number) => {
+      if (next < 0 || next >= count) return;
+      setCurrent(next);
+      listRef.current?.scrollToIndex({ index: next, animated: true });
+    },
+    [count],
+  );
+  const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const page = Math.round(e.nativeEvent.contentOffset.x / (width || 1));
+    if (page >= 0 && page < count) setCurrent(page);
+  };
+
+  if (count === 1) {
+    return <Page gamebox={views[0]!} index={0} match={match} name={name} member={member} />;
+  }
+  const active = views[index]!;
+  return (
+    <>
+      <FlatList
+        ref={listRef}
+        testID="ticket-pager"
+        data={views}
+        keyExtractor={(g) => g.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        initialScrollIndex={initialIndex}
+        initialNumToRender={count}
+        windowSize={count + 1}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+        onMomentumScrollEnd={onEnd}
+        renderItem={({ item, index: i }) => (
+          <View
+            style={{ width }}
+            accessibilityElementsHidden={i !== index}
+            importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
+          >
+            <Page gamebox={item} index={i} match={match} name={name} member={member} />
+          </View>
+        )}
+        style={{ flex: 1 }}
+      />
+      <PageDots
+        index={index}
+        count={count}
+        label={`GameBox ${index + 1} de ${count}, ${gameboxLabel(active.name, index)}`}
+        onStep={(d) => goTo(index + d)}
+      />
+    </>
+  );
+}
+
 export default function GameboxBilhete() {
   useTicketMode();
   const router = useRouter();
@@ -253,7 +351,7 @@ export default function GameboxBilhete() {
       : state.list.map((d) => fromGameboxDoc(d, uid));
     const index = views.findIndex((g) => g.id === id);
     const found = views[index];
-    content = found ? <Body gamebox={found} index={index} /> : <EmptyState icon="info" text={TICKET_TEXT.notFound} />;
+    content = found ? <Body views={views} initialIndex={index} /> : <EmptyState icon="info" text={TICKET_TEXT.notFound} />;
   }
   return (
     <Screen padded="none">
