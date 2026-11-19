@@ -2,7 +2,9 @@
 // Etiqueta Label 16; a ativa é branca com texto ink (`tone="white"`) ou primary com texto branco (`tone="primary"`,
 // rondas do quadro); as inativas surface-10. Alvo de toque de 44 pt: o Touchable tem `minHeight` 44 e
 // a pílula desenhada é uma View por dentro (o aspeto não muda; o alargamento automático do Touchable seria cortado por um
-// pai da altura de uma pílula).
+// pai da altura de uma pílula). Os 44 pt acrescentam espaço visível que o frame não tem: o excesso de cada lado
+// ((44 menos a pílula) / 2) devolve-se com margem vertical negativa, para as folgas visíveis serem as do frame (8 entre
+// linhas, tira com a altura da pílula). O alvo continua a ter 44 pt (a margem só mexe no espaço que ocupa).
 // `wrap`: as pílulas quebram de linha (Marcadores); sem ele correm na horizontal com scroll (320 pt sem cortes).
 import { ScrollView, View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
@@ -28,9 +30,8 @@ export function Chips<K extends string>({
   padY?: number;
   testIDPrefix?: string;
 }) {
-  // A altura extra do alvo (44 menos a pílula) já separa as linhas: o espaço entre linhas desconta-a.
   const pillHeight = 2 * padY + text71.label16.lineHeight;
-  const rowGap = Math.max(0, space.s8 - Math.max(0, layout.minTouch - pillHeight));
+  const overhang = Math.max(0, layout.minTouch - pillHeight) / 2;
   const chips = items.map((it) => {
     const active = it.key === value;
     const activeBg = tone === 'primary' ? colors.primary : colors.white;
@@ -43,7 +44,7 @@ export function Chips<K extends string>({
         accessibilityState={{ selected: active }}
         accessibilityLabel={it.label}
         onPress={() => onChange(it.key)}
-        style={{ minHeight: layout.minTouch, justifyContent: 'center' }}
+        style={{ minHeight: layout.minTouch, justifyContent: 'center', marginVertical: wrap ? -overhang : 0 }}
       >
         <View
           style={{
@@ -62,16 +63,24 @@ export function Chips<K extends string>({
   });
   if (wrap) {
     return (
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space.s8, rowGap }}>
+      <View
+        testID={`${testIDPrefix}-strip`}
+        accessibilityRole="tablist"
+        // Cada pílula sobressai `overhang` do espaço que ocupa; o enchimento mantém o alvo dentro do contentor e a margem
+        // devolve esse espaço ao que está à volta.
+        style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: space.s8, rowGap: space.s8, paddingVertical: overhang, marginVertical: -overhang }}
+      >
         {chips}
       </View>
     );
   }
   return (
     <ScrollView
+      testID={`${testIDPrefix}-strip`}
       horizontal
       showsHorizontalScrollIndicator={false}
       accessibilityRole="tablist"
+      style={{ marginVertical: -overhang }}
       contentContainerStyle={{ gap: space.s8, alignItems: 'center' }}
     >
       {chips}

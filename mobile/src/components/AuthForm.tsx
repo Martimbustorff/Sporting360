@@ -9,7 +9,7 @@ import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, radii, space } from '@/theme/tokens';
+import { colors, layout, radii, space, text71 } from '@/theme/tokens';
 
 export function AuthScaffold({
   title,
@@ -66,10 +66,13 @@ export function AuthScaffold({
   );
 }
 
+/** Excesso do alvo de 44 pt sobre a linha de texto, por cada lado: devolve-se com margem negativa (o frame tem as linhas a `authLinksRowGap`). */
+const LINK_ROW_OVERHANG = (layout.minTouch - text71.captionStrong12.lineHeight) / 2;
+
 /** Linha "texto Caption 12 text-muted + ação Caption Strong primary-on-dark" (Figma 4940:7374). */
 export function AuthLinkRow({ text, action, onPress }: { text: string; action: string; onPress: () => void }) {
   return (
-    <View className="flex-row items-center justify-center" style={{ gap: layout.authLinkGap }}>
+    <View testID="auth-link-row" className="flex-row items-center justify-center" style={{ gap: layout.authLinkGap, marginVertical: -LINK_ROW_OVERHANG }}>
       <Text71 variant="caption12" color="textMuted">
         {text}
       </Text71>
