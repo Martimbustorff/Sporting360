@@ -18,12 +18,11 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
 jest.mock('@/data/loans', () => ({ useOwnerLoans: jest.fn(() => mockLoans.current) }));
-jest.mock('@/data/sports', () => ({
-  useUpcomingMatches: jest.fn((sport: string) => {
-    const m = mockMatches.current as { status: string; data?: { sport: string }[] };
-    return m.status === 'ready' ? { status: 'ready', data: (m.data ?? []).filter((x) => x.sport === sport) } : m;
-  }),
-}));
+const bySport = (sport: string) => {
+  const m = mockMatches.current as { status: string; data?: { sport: string }[] };
+  return m.status === 'ready' ? { status: 'ready', data: (m.data ?? []).filter((x) => x.sport === sport) } : m;
+};
+jest.mock('@/data/sports', () => ({ useUpcomingMatches: jest.fn((sport: string) => bySport(sport)) }));
 jest.mock('@/services/gamebox', () => ({
   GameboxSaveError: class extends Error {},
   saveGamebox: jest.fn(),
@@ -90,6 +89,7 @@ beforeEach(() => {
   mockBoxes.current = { status: 'ready', data: [box()] };
   mockLoans.current = { status: 'ready', data: [] };
   mockMatches.current = { status: 'ready', data: [match('m1', 'football', 2)] };
+  (jest.requireMock('@/data/sports') as { useUpcomingMatches: jest.Mock }).useUpcomingMatches.mockImplementation(bySport);
   share.mockResolvedValue({ action: 'sharedAction' } as never);
   (createLoan as jest.Mock).mockResolvedValue({ loanId: 'L1', url: 'https://h/e/L1' });
   (cancelLoan as jest.Mock).mockResolvedValue(undefined);
@@ -153,7 +153,56 @@ describe('Emprestar: botão e folha de confirmação', () => {
   });
 });
 
+describe('Emprestar: listas do recinto por ler', () => {
+  const open = async () => {
+    await render(ui());
+    await fireEvent.press(screen.getByRole('tab', { name: /Pavilhão/ }));
+    await fireEvent.press(lendButton());
+    return screen.getByTestId('modal-sheet');
+  };
+  // Pavilhão: uma modalidade por chegar, outra já com um jogo mais tarde.
+  const mixed = (other: { status: string; error?: Error }) => {
+    const later = match('m4', 'futsal', 5);
+    mockMatches.current = { status: 'ready', data: [later] };
+    const sports = jest.requireMock('@/data/sports') as { useUpcomingMatches: jest.Mock };
+    sports.useUpcomingMatches.mockImplementation((sport: string) =>
+      sport === 'handball' ? other : { status: 'ready', data: sport === 'futsal' ? [later] : [] },
+    );
+  };
+
+  it('com uma lista ainda a carregar não oferece jogo nem Emprestar', async () => {
+    mixed({ status: 'loading' });
+    const sheet = await open();
+    expect(within(sheet).queryByText(/Rival/)).toBeNull();
+    expect(within(sheet).queryByRole('button', { name: 'Emprestar' })).toBeNull();
+    expect(within(sheet).getByRole('button', { name: 'Fechar' })).toBeTruthy();
+  });
+
+  it('com uma lista em erro não oferece jogo, só a mensagem e Fechar', async () => {
+    mixed({ status: 'error', error: new Error('x') });
+    const sheet = await open();
+    expect(within(sheet).queryByText(/Rival/)).toBeNull();
+    expect(within(sheet).queryByRole('button', { name: 'Emprestar' })).toBeNull();
+    expect(within(sheet).getByText('Não foi possível concluir. Tenta outra vez.')).toBeTruthy();
+    expect(within(sheet).getByRole('button', { name: 'Fechar' })).toBeTruthy();
+  });
+});
+
 describe('Emprestar: criar e partilhar', () => {
+  it('dois toques seguidos em Emprestar criam e partilham uma só vez', async () => {
+    let resolve!: (v: { loanId: string; url: string }) => void;
+    (createLoan as jest.Mock).mockReturnValueOnce(new Promise((r) => (resolve = r)));
+    await render(ui());
+    await fireEvent.press(lendButton());
+    const go = screen.getByRole('button', { name: 'Emprestar' });
+    await fireEvent.press(go);
+    await fireEvent.press(go);
+    await act(async () => resolve({ loanId: 'L1', url: 'https://h/e/L1' }));
+    await flush();
+    expect(createLoan).toHaveBeenCalledTimes(1);
+    expect(share).toHaveBeenCalledTimes(1);
+  });
+
   it('cria com o número decifrado e abre a partilha com o texto do link', async () => {
     await render(ui());
     await fireEvent.press(lendButton());

@@ -118,7 +118,7 @@ function Perforation() {
   );
 }
 
-function Ticket({ gamebox, index, match, lent }: { gamebox: GameboxView; index: number; match: Match | null; lent: boolean }) {
+function Ticket({ gamebox, index, match, lent, loading }: { gamebox: GameboxView; index: number; match: Match | null; lent: boolean; loading: boolean }) {
   const number = normalizeGameboxNumber(gamebox.number);
   const venue = ticketVenue(match?.sport);
   const seat = ticketSeat(gamebox, venue);
@@ -139,7 +139,10 @@ function Ticket({ gamebox, index, match, lent }: { gamebox: GameboxView; index: 
           paddingHorizontal: layout.ticketBandPadX,
         }}
       >
-        {lent ? (
+        {loading ? (
+          // Estado do empréstimo por saber: nem QR nem aviso, só o espaço do código.
+          <View testID="ticket-loan-loading" style={{ width: layout.ticketQr, height: layout.ticketQr }} />
+        ) : lent ? (
           // 12L (4984:12044): emprestada para este jogo, o código não se mostra.
           <View style={{ alignItems: 'center', gap: layout.loanStateGap, paddingVertical: space.s8 }}>
             <Text71 variant="title24" color="ink" style={{ textAlign: 'center' }}>{LOAN_TEXT.lentForThisGame}</Text71>
@@ -193,7 +196,7 @@ function Page({ gamebox, index, match, name, member }: { gamebox: GameboxView; i
         gap: layout.ticketBlockGap,
       }}
     >
-      <Ticket gamebox={gamebox} index={index} match={match} lent={!!loan} />
+      <Ticket gamebox={gamebox} index={index} match={match} lent={!!loan} loading={loans.status === 'loading'} />
       {name || member ? (
         <View style={{ alignItems: 'center', gap: layout.gameboxTextGap }}>
           {name ? <Text71 variant="label16" numberOfLines={1} ellipsizeMode="tail">{name}</Text71> : null}

@@ -55,13 +55,18 @@ export const loanWhen = (kickoff: Date): string => `${formatCardDate(kickoff).to
 const STADIUM_SPORTS = venueSports('stadium');
 const PAVILION_SPORTS = venueSports('pavilion');
 
-/** Os jogos do recinto; a lista de modalidades é fixa por recinto, por isso a ordem dos hooks é estável. */
+/**
+ * Os jogos do recinto. Só se oferece um jogo com TODAS as listas do recinto lidas (o Pavilhão tem cinco): com uma por chegar
+ * o mais cedo podia não ser o próximo e o servidor responderia `not-next`. Com uma lista em erro não se oferece nenhum.
+ */
 function useVenueMatches(venue: TicketVenue, now: Date): { match: Match | null; loading: boolean; error: boolean } {
   const sports = venue === 'stadium' ? STADIUM_SPORTS : PAVILION_SPORTS;
   const lists = sports.map((s) => useUpcomingMatches(s, now)); // eslint-disable-line react-hooks/rules-of-hooks
+  const error = lists.some((l) => l.status === 'error');
+  const loading = !error && lists.some((l) => l.status === 'loading');
+  if (error || loading) return { match: null, loading, error };
   const matches = lists.flatMap((l) => (l.status === 'ready' ? l.data : []));
-  const match = loanableMatch(matches, venue, now);
-  return { match, loading: !match && lists.some((l) => l.status === 'loading'), error: !match && lists.some((l) => l.status === 'error') };
+  return { match: loanableMatch(matches, venue, now), loading: false, error: false };
 }
 
 function GameCard({ match, venue }: { match: Match; venue: TicketVenue }) {

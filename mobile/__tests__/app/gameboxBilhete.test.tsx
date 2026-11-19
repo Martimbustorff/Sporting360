@@ -21,8 +21,13 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
 const mockLoans: { current: { id: string; gameboxId: string; matchId: string }[] } = { current: [] };
+const mockLoansStatus: { current: 'ready' | 'loading' | 'error' } = { current: 'ready' };
 jest.mock('@/data/loans', () => ({
-  useOwnerLoans: jest.fn((id: string) => ({ status: 'ready', data: mockLoans.current.filter((l) => l.gameboxId === id) })),
+  useOwnerLoans: jest.fn((id: string) =>
+    mockLoansStatus.current === 'ready'
+      ? { status: 'ready', data: mockLoans.current.filter((l) => l.gameboxId === id) }
+      : { status: mockLoansStatus.current },
+  ),
 }));
 jest.mock('@/services/loans', () => ({ cancelLoan: jest.fn(() => Promise.resolve()) }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
@@ -90,6 +95,7 @@ beforeEach(() => {
   mockBoxes.current = { status: 'ready', data: [box('g1')] };
   mockMatches.current = { status: 'ready', data: [] };
   mockLoans.current = [];
+  mockLoansStatus.current = 'ready';
   getBrightness.mockResolvedValue(0.4);
   appStateHandler = undefined;
   jest.spyOn(AppState, 'addEventListener').mockImplementation(((_: string, h: (s: string) => void) => {
@@ -406,6 +412,24 @@ describe('/gamebox/bilhete: GameBox emprestada', () => {
     expect(screen.getByTestId('qrcode')).toBeTruthy();
     expect(screen.queryByText('Emprestada para este jogo')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Cancelar empréstimo' })).toBeNull();
+  });
+
+  it('enquanto o estado do empréstimo não é conhecido não mostra o QR como se estivesse livre', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoansStatus.current = 'loading';
+    await render(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    expect(screen.queryByText('Emprestada para este jogo')).toBeNull();
+    expect(screen.getByTestId('ticket-loan-loading')).toBeTruthy();
+  });
+
+  it('com erro a ler o empréstimo mostra o QR (é o código do próprio dono)', async () => {
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    mockLoansStatus.current = 'error';
+    await render(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
   });
 
   it('sem jogo na faixa não há estado emprestada', async () => {

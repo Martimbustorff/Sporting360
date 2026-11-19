@@ -20,7 +20,7 @@ function useActiveLoans(field: 'ownerUid' | 'recipientUid', gameboxId: string | 
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const now = useNow(CLOCK_MS);
-  const q = useMemo(() => (uid ? query(collection(db(), 'loans'), where(field, '==', uid)) : null), [uid, field]);
+  const q = useMemo(() => (uid ? query(collection(db(), 'loans'), where(field, '==', uid), ...(field === 'ownerUid' ? [where('cancelledAt', '==', null)] : [])) : null), [uid, field]);
   const all = useCollection(q, LoanSchema);
   return useMemo(
     () =>
