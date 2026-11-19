@@ -325,4 +325,10 @@ describe("users/{uid}/devices", () => {
     await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, platform: "web" }));
     await assertFails(setDoc(doc(as("alice"), "users/alice/devices/outro"), dev));
   });
+
+  it("updatedAt tem de ser a hora do servidor", async () => {
+    await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, updatedAt: new Date("2020-01-01T00:00:00Z") }));
+    await assertFails(setDoc(doc(as("alice"), DEV), { token: "tok-1", platform: "ios" }));
+    await assertSucceeds(setDoc(doc(as("alice"), DEV), dev));
+  });
 });

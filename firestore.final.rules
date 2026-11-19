@@ -102,7 +102,8 @@ service cloud.firestore {
       allow create, update: if signedIn() && request.auth.uid == uid
                             && request.resource.data.keys().hasOnly(['token', 'platform', 'updatedAt'])
                             && request.resource.data.token == deviceId
-                            && request.resource.data.platform in ['ios', 'android'];
+                            && request.resource.data.platform in ['ios', 'android']
+                            && request.resource.data.updatedAt == request.time;
     }
 
     // gamebox: campo `userid` (minúsculas, formato da V2). Só o dono; as queries têm de filtrar por userid == uid.
