@@ -20,12 +20,15 @@ const NETWORK_MESSAGE =
   /network|internet|offline|connection|unreachable|timed? ?out|resolve host|UnknownHost|ECONN|socket/i;
 const REASONS: readonly LoanErrorCode[] = ['claimed-by-other', 'inactive', 'not-home', 'not-next', 'finished'];
 
-function toCode(e: unknown): LoanErrorCode {
+function toCode(e: unknown, forClaim: boolean): LoanErrorCode {
   const code = (codeOf(e) ?? '').replace(/^functions\//, '');
   const obj = typeof e === 'object' && e !== null ? (e as { message?: unknown; details?: unknown }) : {};
   switch (code) {
     case 'already-exists':
       return 'exists';
+    case 'not-found':
+      // Abrir um link de um empréstimo que já não existe: "já não está ativo", sem tentar outra vez.
+      return forClaim ? 'inactive' : 'unknown';
     case 'unavailable':
     case 'deadline-exceeded':
       return 'offline';
@@ -45,7 +48,7 @@ async function call(name: 'createLoan' | 'claimLoan' | 'cancelLoan', payload: ob
     const res = await httpsCallable(fns(), name)(payload);
     return (res as { data?: unknown }).data;
   } catch (e) {
-    const code = toCode(e);
+    const code = toCode(e, name === 'claimLoan');
     if (code === 'unknown') reportCode(`${name.toUpperCase()}_FAILED`, e);
     throw new LoanError(code);
   }

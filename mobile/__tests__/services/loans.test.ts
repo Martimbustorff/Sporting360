@@ -82,6 +82,13 @@ describe('claimLoan e cancelLoan', () => {
     expect(await codeOf(claimLoan('L1'))).toBe(reason);
   });
 
+  it('claimLoan: not-found vira inactive (sem nova tentativa); nas outras chamadas continua unknown', async () => {
+    mockCall.mockRejectedValueOnce(err('not-found'));
+    expect(await codeOf(claimLoan('L1'))).toBe('inactive');
+    mockCall.mockRejectedValueOnce(err('not-found'));
+    expect(await codeOf(cancelLoan('L1'))).toBe('unknown');
+  });
+
   it('cancelLoan chama a callable e não devolve nada', async () => {
     mockCall.mockResolvedValueOnce({ data: { ok: true } });
     await expect(cancelLoan('L1')).resolves.toBeUndefined();

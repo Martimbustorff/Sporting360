@@ -26,3 +26,8 @@ export function pendingLinkRoute(link: string): string {
   const m = /^\/e\/([\w-]+)$/.exec(link);
   return m ? `/emprestimo/${m[1]}` : link;
 }
+
+/** Ao terminar a sessão: um link guardado não passa para a conta seguinte. */
+export function clearPendingLink(): void {
+  pending = null;
+}

@@ -5,7 +5,8 @@
 // equipas, recinto, só os campos do lugar que estão preenchidos, QR numa caixa branca e "Emprestada por {nome público}".
 // Decisão do Martim (19/11): o destinatário NUNCA vê o número como texto, só a imagem do QR. O número não entra em Text,
 // accessibilityLabel, testID, log, analytics nem mensagem de erro; a etiqueta do QR é genérica.
-// Capturas e gravações bloqueadas (usePreventScreenCapture); brilho no máximo e ecrã sempre ligado (lib/ticketMode).
+// Capturas e gravações bloqueadas em todo o ecrã (usePreventScreenCapture); brilho no máximo e ecrã sempre ligado (lib/ticketMode)
+// só enquanto o cartão com o QR está à vista (LoanCard): os avisos e o a carregar não os ligam e a troca para "já não está ativo" liberta-os.
 // Cancelado ou expirado com o ecrã aberto: o segredo falha com permissão negada (ou o documento mostra cancelledAt /
 // expiresAt) e passa logo a "já não está ativo", sem QR e sem reabrir; a validade também se vigia aqui com um temporizador.
 // SEM FIGMA (textos genéricos da app reutilizados): a carregar (espaço vazio, como as outras listas), sem rede e erro
@@ -86,6 +87,7 @@ function Notice({ text, onClose, onRetry }: { text: string; onClose: () => void;
 }
 
 function LoanCard({ loan, number }: { loan: Loan; number: string | null }) {
+  useTicketMode();
   const { match } = loan;
   const seatValue = (k: keyof Loan['seat']): string => {
     const v: unknown = loan.seat[k];
@@ -143,12 +145,16 @@ function LoanCard({ loan, number }: { loan: Loan; number: string | null }) {
   );
 }
 
-export default function Emprestimo() {
-  usePreventScreenCapture();
-  useTicketMode();
-  const router = useRouter();
+export default function EmprestimoRoute() {
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const raw = Array.isArray(params.id) ? params.id[0] : params.id;
+  // Outro id (a rota reutiliza o ecrã): estado novo, nada do empréstimo anterior fica à vista.
+  return <Emprestimo key={raw ?? ''} raw={raw} />;
+}
+
+function Emprestimo({ raw }: { raw: string | undefined }) {
+  usePreventScreenCapture();
+  const router = useRouter();
   const id = raw && LOAN_ID.test(raw) ? raw : null;
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
@@ -207,7 +213,7 @@ export default function Emprestimo() {
           onRetry={() => setAttempt((n) => n + 1)}
         />
       );
-  } else if (claim.status === 'owner' && loan.status === 'error') {
+  } else if (claim.status === 'owner' && (loan.status === 'error' || loan.status === 'missing')) {
     body = <Notice text={LOAN_SCREEN_TEXT.inactive} onClose={close} />;
   } else if (claim.status === 'claimed' && loanData) {
     body = <LoanCard loan={loanData} number={secret.status === 'ready' ? secret.data.number : null} />;

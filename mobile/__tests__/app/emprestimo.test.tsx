@@ -298,4 +298,89 @@ describe('Empréstimo (destinatário)', () => {
     await flush();
     expect(mockCapture.active).toBe(1);
   });
+
+  describe('brilho e ecrã sempre ligado só com o cartão à vista', () => {
+    const ticketOn = () => (Brightness.setBrightnessAsync as jest.Mock).mock.calls.length > 0 || (activateKeepAwakeAsync as jest.Mock).mock.calls.length > 0;
+
+    it('a pedir o claim, "já não está ativo" e "aberto noutra conta": não ligam', async () => {
+      (claimLoan as jest.Mock).mockReturnValue(new Promise(() => {}));
+      const a = await render(ui());
+      await flush();
+      expect(ticketOn()).toBe(false);
+      await a.unmount();
+      (claimLoan as jest.Mock).mockRejectedValue(new LoanError('inactive'));
+      const b = await render(ui());
+      await flush();
+      expect(ticketOn()).toBe(false);
+      await b.unmount();
+      (claimLoan as jest.Mock).mockRejectedValue(new LoanError('claimed-by-other'));
+      await render(ui());
+      await flush();
+      expect(ticketOn()).toBe(false);
+    });
+
+    it('liga com o cartão e liberta quando o cartão dá lugar a "já não está ativo"', async () => {
+      claimed();
+      READY();
+      const { rerender } = await render(ui());
+      await flush();
+      expect(Brightness.setBrightnessAsync).toHaveBeenCalledWith(1);
+      expect(activateKeepAwakeAsync).toHaveBeenCalled();
+      expect(deactivateKeepAwake).not.toHaveBeenCalled();
+      mockSecret.current = { status: 'error', error: new Error('permission-denied') };
+      await rerender(ui());
+      await flush();
+      expect(screen.getByText(INACTIVE)).toBeTruthy();
+      expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.4);
+      expect(deactivateKeepAwake).toHaveBeenCalled();
+      expect(mockCapture.active).toBe(1); // o bloqueio de capturas continua no ecrã
+    });
+  });
+
+  it('com o cartão à vista, passar da validade tira o QR e mostra "já não está ativo"', async () => {
+    jest.useFakeTimers();
+    try {
+      claimed();
+      mockLoan.current = { status: 'ready', data: loan({ expiresAt: new Date(Date.now() + 60_000) }) };
+      mockSecret.current = { status: 'ready', data: { number: NUMBER } };
+      await render(ui());
+      await flush();
+      expect(screen.getByTestId('qrcode')).toBeTruthy();
+      await act(async () => {
+        jest.advanceTimersByTime(59_000);
+      });
+      expect(screen.getByTestId('qrcode')).toBeTruthy();
+      await act(async () => {
+        jest.advanceTimersByTime(2_000);
+      });
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+      expect(screen.getByText(INACTIVE)).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('owner com o documento em falta: "já não está ativo" em vez de ficar a carregar', async () => {
+    (claimLoan as jest.Mock).mockResolvedValue('owner');
+    mockLoan.current = { status: 'missing' };
+    await render(ui());
+    await flush();
+    expect(screen.getByText(INACTIVE)).toBeTruthy();
+    expect(screen.queryByTestId('loan-loading')).toBeNull();
+    expect(mockRouter.replace).not.toHaveBeenCalled();
+  });
+
+  it('mudar o id da rota repõe o ecrã: novo claim e nada do estado anterior', async () => {
+    (claimLoan as jest.Mock).mockRejectedValueOnce(new LoanError('claimed-by-other')).mockReturnValueOnce(new Promise(() => {}));
+    const { rerender } = await render(ui());
+    await flush();
+    expect(screen.getByText('Este empréstimo já foi aberto noutra conta.')).toBeTruthy();
+    mockParams.current = { id: 'L2' };
+    await rerender(ui());
+    await flush();
+    expect(claimLoan).toHaveBeenCalledTimes(2);
+    expect(claimLoan).toHaveBeenLastCalledWith('L2');
+    expect(screen.queryByText('Este empréstimo já foi aberto noutra conta.')).toBeNull();
+    expect(screen.getByTestId('loan-loading')).toBeTruthy();
+  });
 });

@@ -95,6 +95,56 @@ describe('useDocument', () => {
     expect(recordError).toHaveBeenCalledTimes(1);
   });
 
+  describe('opções (permissão negada esperada, caminho sem ids)', () => {
+    const OPTS = { expectDenied: true, reportAs: 'things/*' } as const;
+    const Opt = ({ path }: { path: string }) => <Probe value={useDocument(path, ItemSchema, OPTS)} />;
+    const withCode = (code: string) => Object.assign(new Error('x'), { code });
+
+    it('permission-denied esperado vira error sem ir ao Crashlytics', async () => {
+      await render(<Opt path="things/L1" />);
+      await act(async () => lastSubscription().error(withCode('firestore/permission-denied')));
+      expect(out().status).toBe('error');
+      expect(recordError).not.toHaveBeenCalled();
+    });
+
+    it('outros erros vão ao Crashlytics, com o caminho mascarado', async () => {
+      await render(<Opt path="things/L1" />);
+      await act(async () => lastSubscription().error(withCode('firestore/unavailable')));
+      expect(recordError).toHaveBeenCalledTimes(1);
+      expect(String((recordError as jest.Mock).mock.calls[0]?.[1]?.message)).not.toContain('L1');
+    });
+
+    it('documento inválido: o relatório e o erro usam o caminho mascarado', async () => {
+      await render(<Opt path="things/L9" />);
+      await act(async () => lastSubscription().next(docSnap({ name: 5 })));
+      expect(recordError).toHaveBeenCalledTimes(1);
+      expect(String((recordError as jest.Mock).mock.calls[0]?.[1]?.message)).not.toContain('L9');
+      expect(out().message).not.toContain('L9');
+    });
+
+    it('sem a opção, permission-denied continua a ser reportado', async () => {
+      await render(<DocProbe path="things/a" />);
+      await act(async () => lastSubscription().error(withCode('firestore/permission-denied')));
+      expect(recordError).toHaveBeenCalledTimes(1);
+    });
+
+    it('useLoanSecret e useLoan: negado esperado não se reporta e o id nunca vai num relatório', async () => {
+      const { useLoan, useLoanSecret } = jest.requireActual('@/data/loans') as typeof import('@/data/loans');
+      const P = () => (
+        <>
+          <Probe value={useLoanSecret('LOANID1')} />
+        </>
+      );
+      await render(<P />);
+      expect(doc).toHaveBeenCalledWith(expect.anything(), 'loans/LOANID1/secret/number');
+      await act(async () => lastSubscription().error(withCode('firestore/permission-denied')));
+      expect(recordError).not.toHaveBeenCalled();
+      await act(async () => lastSubscription().error(withCode('firestore/unavailable')));
+      expect(String((recordError as jest.Mock).mock.calls[0]?.[1]?.message)).not.toContain('LOANID1');
+      expect(typeof useLoan).toBe('function');
+    });
+  });
+
   it('unsubscribes on unmount', async () => {
     const view = await render(<DocProbe path="things/a" />);
     const { unsubscribe } = lastSubscription();

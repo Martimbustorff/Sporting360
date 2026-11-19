@@ -28,6 +28,7 @@ import { authInstance } from '@/services/firebase';
 import { signInEmail, signUpEmail, sendReset, signOut } from '@/services/auth';
 import { ensureProfile } from '@/services/profile';
 import { unregisterPush } from '@/services/push';
+import { setPendingLink, takePendingLink } from '@/lib/pendingLink';
 import { claimProfileEnsure, resetProfileEnsured } from '@/lib/profileEnsured';
 
 beforeEach(() => {
@@ -126,6 +127,12 @@ describe('signOut', () => {
     await signOut();
     expect(fbSignOut).toHaveBeenCalled();
     expect(GoogleSignin.signOut).toHaveBeenCalled();
+  });
+  it('signOut limpa o link pendente (não passa para a conta seguinte)', async () => {
+    (authInstance as jest.Mock).mockReturnValue({ currentUser: null });
+    setPendingLink('/e/abc');
+    await signOut();
+    expect(takePendingLink()).toBeNull();
   });
   it('signOut desregista o push do utilizador atual antes do fbSignOut', async () => {
     (authInstance as jest.Mock).mockReturnValue({ currentUser: { uid: 'alice', providerData: [{ providerId: 'password' }] } });

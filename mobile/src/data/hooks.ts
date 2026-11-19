@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { z } from 'zod';
 import { doc, onSnapshot, type Query } from '@react-native-firebase/firestore';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
+import { codeOf } from '@/lib/report';
 import { db } from '@/services/firebase';
 import {
   AppConfigSchema,
@@ -64,11 +65,20 @@ export function reportInvalidDocs(paths: string[], context: string): void {
   reportDataError(new Error(`${fresh.length} documento(s) inválido(s) descartado(s): ${where}`), context);
 }
 
+export type DocumentOptions = {
+  /** Negar a permissão é esperado (ex.: empréstimo cancelado): vira `error` sem ir ao Crashlytics. */
+  expectDenied?: boolean;
+  /** Caminho a mostrar em relatórios e mensagens, sem ids (ex.: `loans/*`/secret/number); por omissão, o caminho. */
+  reportAs?: string;
+};
+
+const isDenied = (e: unknown): boolean => /(^|\/)permission-denied$/.test(codeOf(e) ?? '');
+
 /**
  * Live document. `path` null means "not ready to read" (e.g. no uid yet): stays `loading`
- * and never subscribes. `schema` should be a stable (module-level) value.
+ * and never subscribes. `schema` should be a stable (module-level) value; `options` too.
  */
-export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loadable<T> {
+export function useDocument<T>(path: string | null, schema: z.ZodType<T>, options?: DocumentOptions): Loadable<T> {
   // The state remembers which path produced it: after the path changes, the first render
   // returns LOADING instead of the previous (possibly another user's) data.
   const [held, setHeld] = useState<{ key: string | null; value: Loadable<T> }>({
@@ -77,6 +87,8 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
   });
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
   const setState = (value: Loadable<T>) => setHeld({ key: path, value });
 
   useEffect(() => {
@@ -89,20 +101,23 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>): Loada
           setState({ status: 'missing' });
           return;
         }
+        const shown = optionsRef.current?.reportAs ?? path;
         const parsed = schemaRef.current.safeParse(snap.data());
         if (parsed.success) {
           setState({ status: 'ready', data: parsed.data, fromCache: snap.metadata?.fromCache === true });
         } else {
-          const error = new Error(`Documento inválido em ${path}: ${parsed.error.message}`);
+          const error = new Error(`Documento inválido em ${shown}: ${parsed.error.message}`);
           if (!reportedPaths.has(path)) {
             reportedPaths.add(path);
-            reportDataError(error, `invalid document ${path}`);
+            reportDataError(error, `invalid document ${shown}`);
           }
           setState({ status: 'error', error });
         }
       },
       (e) => {
-        reportDataError(e, `listener failed ${path}`);
+        if (!(optionsRef.current?.expectDenied && isDenied(e))) {
+          reportDataError(e, `listener failed ${optionsRef.current?.reportAs ?? path}`);
+        }
         setState({ status: 'error', error: toError(e) });
       },
     );

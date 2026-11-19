@@ -42,6 +42,10 @@ export function useRecipientLoans(): Loadable<LoanItem[]> {
   return useActiveLoans('recipientUid', null);
 }
 
+// Cancelado ou expirado, as regras negam a leitura: é esperado (não vai ao Crashlytics) e o id do empréstimo nunca entra num relatório.
+const LOAN_DOC = { expectDenied: true, reportAs: 'loans/*' } as const;
+const SECRET_DOC = { expectDenied: true, reportAs: 'loans/*/secret/number' } as const;
+
 const SecretSchema = z.object({ number: z.string().min(1) });
 export type LoanSecret = z.infer<typeof SecretSchema>;
 
@@ -50,7 +54,7 @@ export type LoanSecret = z.infer<typeof SecretSchema>;
  * Quando as regras deixam de o permitir, o listener falha e o estado passa a `error`.
  */
 export function useLoan(id: string | null): Loadable<Loan> {
-  return useDocument(id ? `loans/${id}` : null, LoanSchema);
+  return useDocument(id ? `loans/${id}` : null, LoanSchema, LOAN_DOC);
 }
 
 /**
@@ -58,5 +62,5 @@ export function useLoan(id: string | null): Loadable<Loan> {
  * ativo: cancelado ou expirado, o listener falha com permissão negada (`error`). O número nunca vai a texto nem a logs.
  */
 export function useLoanSecret(id: string | null): Loadable<LoanSecret> {
-  return useDocument(id ? `loans/${id}/secret/number` : null, SecretSchema);
+  return useDocument(id ? `loans/${id}/secret/number` : null, SecretSchema, SECRET_DOC);
 }

@@ -7,6 +7,7 @@ import {
 import { doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authErrorMessage } from '@/lib/authErrors';
+import { clearPendingLink } from '@/lib/pendingLink';
 import { beginSignUp, endSignUp, markProfileEnsured } from '@/lib/profileEnsured';
 import { codeOf, reportCode } from '@/lib/report';
 import { authInstance, db } from '@/services/firebase';
@@ -61,6 +62,7 @@ export async function sendReset(email: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  clearPendingLink();
   const user = authInstance().currentUser;
   // Plano 6: este telemóvel deixa de receber o push desta conta (tópicos e dispositivo) antes de sair.
   if (user?.uid) {
