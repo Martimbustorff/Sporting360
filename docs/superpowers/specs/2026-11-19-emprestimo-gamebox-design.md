@@ -34,6 +34,8 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 - Uma fotografia do ecrã com outro telemóvel nunca se consegue impedir.
 - Bloqueio de capturas: expo-screen-capture no SDK 58 bloqueia capturas e gravações em iOS 13+ e no Android. Em iOS mais antigo só a gravação.
 - Hoje a coleção `gamebox` tem leitura pública (regras da fase 2, por causa da V2). As regras finais (`firestore.final.rules`, passo L5 do lançamento da 7.0.0) já a fecham ao dono. O empréstimo depende dessas regras finais estarem publicadas.
+- Martim aceitou (19/11, 22:03) que o empréstimo fique ativo desde o lançamento, mesmo antes de as regras finais fecharem a leitura pública das GameBox.
+- Sem rede, o destinatário já com o empréstimo em cache vê o cartão; um cancelamento do dono só chega quando voltar a ter ligação (aceite).
 - `/e/{id}` (links universais e intent filter) e `expo-screen-capture` precisam de um binário nativo novo: não seguem por atualização OTA.
 
 ## Abordagens consideradas

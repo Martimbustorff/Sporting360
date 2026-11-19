@@ -25,7 +25,7 @@
 - Cartão com o layout do cartão de prognóstico (frame 30), extraído e partilhado, não copiado.
 - Todos os ecrãs e estados novos têm frame no Figma antes do código.
 - V7.1: tokens apenas (`npm run check:tokens`), `Touchable` com estilos em array, alvos de 44 pt, 320 pt sem cortes, PT-PT, sem travessões, sem uid, email ou nomes nos logs.
-- Commits com o trailer da sessão (`Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` e `Claude-Session: https://claude.ai/code/session_01PDeJmrF15KjPgyTiQA5q2G`).
+- Commits com o trailer de atribuição da sessão em curso (Claude Fable 5.2 a partir de 19/11) e `Claude-Session: https://claude.ai/code/session_01PDeJmrF15KjPgyTiQA5q2G`.
 
 ## Review Focus
 
@@ -203,7 +203,15 @@
 
 ## Depois do plano (paragens do Martim)
 
-- Deploy do servidor (regras fase 2 com `loans`, índices, `createLoan`, `claimLoan`, `cancelLoan`, `loansMaintenance`, `onGameboxDeleted`, `deleteAccount`) e do hosting (rewrite `/e` para `loanRedirect`, AASA): só com OK.
-- Builds de produção 7.0.0 com tudo dentro: só com OK. O link `/e`, o bloqueio de capturas e o brilho verificam-se nesses builds.
-- No lançamento (passo L5), publicar `firestore.final.rules`, que fecha a leitura pública das GameBox: o empréstimo depende disso.
-- No deploy, criar uma exclusão no Cloud Logging para os registos de pedidos da `loanRedirect`: a plataforma regista o URL e este contém o código do empréstimo. Até lá o risco é aceite: só os administradores do projeto leem esses registos, e cada empréstimo só é aberto uma vez e expira.
+Cada passo só avança com o OK do Martim. Ordem de publicação:
+
+1. Regras (fase 2, com `loans`) e índices (`firestore.indexes.json`, sem índices de `loans`: as consultas são de igualdade ou de um só campo).
+2. Functions: `createLoan`, `claimLoan`, `cancelLoan`, `loansMaintenance`, `onGameboxDeleted`, `onGameboxUpdated`, `loanRedirect`, `deleteAccount`.
+3. Hosting com o rewrite `/e` para `loanRedirect` e a alteração do AASA, bem antes de a app chegar aos utilizadores: a Apple guarda o AASA em cache.
+4. Exclusão no Cloud Logging dos registos de pedidos da `loanRedirect`: a plataforma regista o URL e este contém o código do empréstimo. Até lá o risco é aceite: só os administradores do projeto leem esses registos, e cada empréstimo só é aberto uma vez e expira.
+5. Builds de produção 7.0.0 com tudo dentro e lançamento. O link `/e`, o bloqueio de capturas e o brilho verificam-se nesses builds.
+6. No lançamento (passo L5), publicar `firestore.final.rules`, que fecha a leitura pública das GameBox.
+
+Se a app sair antes dos passos 1 a 3: `createLoan` falha (functions por publicar) e as consultas e leituras de `loans` são negadas pelas regras (a app trata-o como esperado, sem Crashlytics); os links `/e` não abrem a app nem reencaminham para a loja.
+
+Aceite: um destinatário sem rede não recebe o cancelamento do dono até voltar a ter ligação (o cartão em cache continua à vista até lá, e o temporizador da validade esconde o QR quando expira).
