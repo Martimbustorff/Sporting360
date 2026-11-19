@@ -1,20 +1,21 @@
-// SEM FIGMA: tab MVP sem frame vetorial; referência na imagem raster da página "Appstore S360" (Mapa do Figma do
-// Plano 4: "Vídeos, Prognóstico, MVP, cartão S360 MATCHDAY", nó 818:21193, visto com get_screenshot). Composto com
-// tokens: lista de candidatos em linhas com contorno e cantos arredondados, a escolhida preenchida a primary com o
-// visto. As percentagens da referência aparecem depois de votar ou quando a votação fecha (antes disso puxariam o voto
-// para o mais votado e o voto é definitivo): linha só de leitura com a percentagem à direita (estilo secundário) e
-// "{n} votos" por baixo (mvpTallies, escrito pelo servidor ao minuto, pode atrasar-se). Confirmação numa folha
-// inferior em Modal, FormMessage para erros e OfflineBanner, como na tab Prognóstico. Sem fotografias.
+// Figma V7.1 "09 Jogo · MVP (votação, notas dos jogadores)" 4934:7087. Banner "Votação aberta" com a contagem, texto de
+// referência, lista por candidato (foto com número, nome, posição, nota da API-Football em caixa, escolha), selo "Melhor
+// nota" nos ids de bestRatedIds e, só depois da escolha, o botão "VOTAR EM {NOME}" (nada vem pré-selecionado). O botão
+// abre a folha de confirmação (o voto é definitivo). As percentagens da referência aparecem depois de votar ou quando a
+// votação fecha (antes disso puxariam o voto para o mais votado): linha só de leitura com a percentagem à direita e
+// "{n} votos" por baixo (mvpTallies, escrito pelo servidor ao minuto, pode atrasar-se). FormMessage para erros e
+// OfflineBanner, como na tab Prognóstico. A ordem da lista é a de mvpCandidates (a do servidor), nunca a das notas.
 // Regras (spec §6): abre ao minuto 80, fecha 20 minutos depois do apito final; um voto definitivo, só pela callable
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Text, View } from 'react-native';
-import Feather from '@expo/vector-icons/Feather';
+import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Touchable } from '@/components/Touchable';
 import type { Match, MvpTally, PlayersDoc, PointEvent } from '@/data/schemas';
@@ -30,11 +31,12 @@ import {
   type GameActionCode,
   type MvpCandidate,
 } from '@/lib/gameWindows';
+import { bestRatedIds, positionAbbr, ratingTone, shownRating } from '@/lib/mvpBestRating';
 import { mvpPercentages } from '@/lib/mvpPercent';
 import { useSession } from '@/providers/SessionProvider';
 import { voteMvp } from '@/services/game';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Body, Display, Text71 } from '@/theme/typography';
+import { colors, layout, radii, radius, space, spacing, type } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const MVP_TEXT = {
@@ -119,7 +121,69 @@ function Info({ text }: { text: string }) {
   );
 }
 
-function CandidateRow({ candidate, selected, onPress }: { candidate: MvpCandidate; selected: boolean; onPress: () => void }) {
+type CandidateLine = { photo: string | null; position: string | null; rating: number | null };
+
+/** Foto, posição e nota de cada candidato, do documento `players` (a primeira linha de cada `playerId`, como em mvpCandidates). */
+function candidateLines(doc: PlayersDoc | null): Record<string, CandidateLine> {
+  const out: Record<string, CandidateLine> = {};
+  for (const t of doc?.teams ?? []) {
+    for (const p of t.players) {
+      const id = String(p.playerId);
+      if (!(id in out)) out[id] = { photo: p.photo, position: p.position, rating: shownRating(p.rating) };
+    }
+  }
+  return out;
+}
+
+const RATING_BG = { high: colors.primary, mid: colors.surface20, low: colors.surface10 } as const;
+
+/** Estrela do selo "Melhor nota" (V7.1 Icon / Star, contorno branco). */
+function StarIcon() {
+  return (
+    <Svg width={layout.mvpStar} height={layout.mvpStar} viewBox="0 0 24 24" fill="none" accessible={false}>
+      <Path
+        d="M12 3L14.6 8.6L20.6 9.3L16.1 13.4L17.4 19.4L12 16.3L6.6 19.4L7.9 13.4L3.4 9.3L9.4 8.6L12 3Z"
+        stroke={colors.white}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Escolha (4934:7273): círculo vazio com contorno surface-20; marcada, anel branco com o miolo em primary-on-dark. */
+function Radio({ selected }: { selected: boolean }) {
+  return (
+    <View
+      accessible={false}
+      style={{
+        width: layout.mvpRadio,
+        height: layout.mvpRadio,
+        borderRadius: layout.mvpRadio / 2,
+        borderWidth: selected ? layout.mvpRadioRing : layout.mvpRadioStroke,
+        borderColor: selected ? colors.white : colors.surface20,
+        backgroundColor: selected ? colors.primaryOnDark : undefined,
+      }}
+    />
+  );
+}
+
+function CandidateRow({
+  candidate,
+  line,
+  best,
+  selected,
+  onPress,
+}: {
+  candidate: MvpCandidate;
+  line: CandidateLine | undefined;
+  best: boolean;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const rating = line?.rating ?? null;
+  const position = positionAbbr(line?.position ?? null);
   return (
     <Touchable
       testID={`mvp-candidate-${candidate.playerId}`}
@@ -127,22 +191,69 @@ function CandidateRow({ candidate, selected, onPress }: { candidate: MvpCandidat
       accessibilityLabel={`Votar em ${candidate.name}`}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={{
-        minHeight: layout.mvpRowHeight,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.md,
-        borderWidth: layout.separator,
-        borderColor: selected ? colors.primary : colors.textDisabled,
-        backgroundColor: selected ? colors.primary : undefined,
-      }}
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: layout.mvpRowGap,
+          paddingVertical: layout.mvpRowPadY,
+          borderBottomWidth: layout.separator,
+          borderBottomColor: colors.separator,
+        },
+        selected ? { paddingHorizontal: layout.mvpSelectedPadX, borderRadius: layout.mvpSelectedRadius, backgroundColor: colors.surface06 } : null,
+      ]}
     >
-      <Body variant="body" numberOfLines={1} style={{ flex: 1 }}>
-        {candidate.name}
-      </Body>
-      {selected ? <Feather name="check-circle" size={layout.eventGlyph} color={colors.white} /> : null}
+      <PlayerPhoto photo={line?.photo ?? null} size={layout.mvpPhoto} number={candidate.number} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.mvpNameGap }}>
+          <Text71 variant="strong14" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {candidate.name}
+          </Text71>
+          {best ? (
+            <View
+              testID={`mvp-best-${candidate.playerId}`}
+              style={{
+                flexShrink: 0,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: layout.mvpBadgeGap,
+                paddingHorizontal: layout.mvpBadgePadX,
+                paddingVertical: layout.mvpBadgePadY,
+                borderRadius: layout.mvpBadgeRadius,
+                backgroundColor: colors.primary,
+              }}
+            >
+              <StarIcon />
+              <Text71 variant="badge11" numberOfLines={1}>
+                MELHOR NOTA
+              </Text71>
+            </View>
+          ) : null}
+        </View>
+        {position ? (
+          <Text71 variant="caption12" color="textSubtle" numberOfLines={1}>
+            {position}
+          </Text71>
+        ) : null}
+      </View>
+      {rating !== null ? (
+        <View
+          testID={`mvp-rating-${candidate.playerId}`}
+          style={{
+            width: layout.mvpRatingBox.width,
+            height: layout.mvpRatingBox.height,
+            borderRadius: layout.mvpRatingRadius,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: RATING_BG[ratingTone(rating)],
+          }}
+        >
+          <Text71 variant="label16" numberOfLines={1}>
+            {rating.toFixed(1).replace('.', ',')}
+          </Text71>
+        </View>
+      ) : null}
+      <Radio selected={selected} />
     </Touchable>
   );
 }
@@ -218,12 +329,14 @@ function ConfirmSheet({ name, onConfirm, onCancel }: { name: string; onConfirm: 
 function VoteForm({
   match,
   candidates,
+  doc,
   onSent,
   onClosed,
   onAlready,
 }: {
   match: Match;
   candidates: MvpCandidate[];
+  doc: PlayersDoc | null;
   onSent: (playerId: string) => void;
   onClosed: () => void;
   onAlready: () => void;
@@ -266,22 +379,33 @@ function VoteForm({
     }
   };
 
+  const lines = candidateLines(doc);
+  const best = bestRatedIds(candidates.map((c) => ({ id: c.playerId, rating: lines[c.playerId]?.rating ?? null })));
+  const anyRating = candidates.some((c) => lines[c.playerId]?.rating != null);
+
   return (
-    <View style={{ gap: spacing.sm }}>
-      {candidates.map((c) => (
-        <CandidateRow
-          key={c.playerId}
-          candidate={c}
-          selected={c.playerId === selected}
-          onPress={() => {
-            if (sending) return;
-            setSelected(c.playerId);
-            setError(null);
-            setConfirming(true);
-          }}
-        />
-      ))}
+    <View style={{ gap: layout.mvpStackGap }}>
+      <Text71 variant="caption12" color="textMuted">
+        {anyRating ? 'Quem foi o melhor do Sporting? A nota é da API-Football e serve só de referência.' : 'Quem foi o melhor do Sporting?'}
+      </Text71>
+      <View>
+        {candidates.map((c) => (
+          <CandidateRow
+            key={c.playerId}
+            candidate={c}
+            line={lines[c.playerId]}
+            best={best.has(c.playerId)}
+            selected={c.playerId === selected}
+            onPress={() => {
+              if (sending) return;
+              setSelected(c.playerId);
+              setError(null);
+            }}
+          />
+        ))}
+      </View>
       {error ? <FormMessage text={error} /> : null}
+      {chosen ? <PrimaryButton label={`VOTAR EM ${chosen.name.toLocaleUpperCase('pt-PT')}`} loading={sending} onPress={() => setConfirming(true)} /> : null}
       {confirming && chosen ? (
         <ConfirmSheet name={chosen.name} onConfirm={() => void send(chosen.playerId)} onCancel={() => setConfirming(false)} />
       ) : null}
@@ -350,6 +474,27 @@ export function MvpTab({ match }: { match: Match }) {
   const offline = (vote.status === 'ready' && vote.fromCache === true) || (players.status === 'ready' && players.fromCache === true);
 
   const parts: React.JSX.Element[] = [];
+  if (state === 'open') {
+    parts.push(
+      <View
+        key="closes"
+        style={{
+          gap: layout.mvpBannerGap,
+          paddingHorizontal: space.s16,
+          paddingVertical: layout.mvpBannerPadY,
+          borderRadius: radii.r12,
+          backgroundColor: colors.surface06,
+        }}
+      >
+        <Text71 variant="eyebrow13" color="primaryOnDark">
+          VOTAÇÃO ABERTA
+        </Text71>
+        <Text71 variant="titleS20" numberOfLines={2}>
+          {win.closesAt ? `Fecha em ${clockText(win.closesAt.getTime() - now.getTime())}` : MVP_TEXT.closesLive}
+        </Text71>
+      </View>,
+    );
+  }
   const tallyData = showPercent && tally.status === 'ready' && tally.data.total > 0 ? tally.data : null;
   if (voted !== null) {
     const name = nameOf(doc, voted);
@@ -373,21 +518,13 @@ export function MvpTab({ match }: { match: Match }) {
     // Leitura falhada: erro, nunca a mensagem de "ainda sem candidatos".
     else if (players.status === 'error') parts.push(<EmptyState key="players-error" icon="info" text={MVP_TEXT.error} />);
     else if (candidates.length === 0) parts.push(<EmptyState key="empty" icon="info" text={MVP_TEXT.noCandidates} />);
-    else parts.push(<VoteForm key="form" match={match} candidates={candidates} onSent={setSent} onClosed={() => setServerClosed(true)} onAlready={() => setAlreadyVoted(true)} />);
+    else parts.push(<VoteForm key="form" match={match} candidates={candidates} doc={doc} onSent={setSent} onClosed={() => setServerClosed(true)} onAlready={() => setAlreadyVoted(true)} />);
   }
 
   // Votou ou fechou: lista de leitura com as percentagens (sem tally, sem votos ou erro de leitura: nada).
   if (tallyData && (voted !== null || state === 'closed' || alreadyVoted || settled !== null)) {
     const list = mvpCandidates(doc);
     if (list.length > 0) parts.push(<Results key="results" candidates={list} tally={tallyData} mineId={voted} />);
-  }
-
-  if (state === 'open') {
-    parts.push(
-      <Body key="closes" variant="strip" style={{ textAlign: 'center' }}>
-        {win.closesAt ? `Fecha em ${clockText(win.closesAt.getTime() - now.getTime())}` : MVP_TEXT.closesLive}
-      </Body>,
-    );
   }
 
   if (settled) {
@@ -406,7 +543,7 @@ export function MvpTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="mvp-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
+      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: layout.mvpStackGap }}
     >
       <OfflineBanner visible={offline} />
       {parts}

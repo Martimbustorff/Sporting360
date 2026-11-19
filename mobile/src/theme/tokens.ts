@@ -526,6 +526,26 @@ export const layout = {
   authNoteWidth: 267, // terms note under "Criar conta"
   // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
   mvpRowHeight: 48, // SEM FIGMA: linha de candidato da tab MVP (referência raster 818:21193)
+  // V7.1 MVP com notas (4934:7087): linha do jogador, caixa da nota, escolha (radio) e selo "Melhor nota"
+  mvpStackGap: 10, // banner, texto e lista
+  mvpRowPadY: 6,
+  mvpRowGap: 12, // foto, nome, nota, escolha
+  mvpPhoto: 36,
+  mvpSelectedPadX: 8, // linha escolhida: surface-06, raio 10
+  mvpSelectedRadius: 10,
+  mvpNameGap: 6, // nome ao selo
+  mvpRatingBox: { width: 40, height: 26 }, // 4934:7271
+  mvpRatingRadius: 6,
+  mvpRadio: 22, // 4934:7273
+  mvpRadioStroke: 2, // contorno da escolha por marcar
+  mvpRadioRing: 5, // anel branco da escolha marcada
+  mvpBadgePadX: 6, // selo "Melhor nota" 4934:7350
+  mvpBadgePadY: 2,
+  mvpBadgeRadius: 4,
+  mvpBadgeGap: 4,
+  mvpStar: 10,
+  mvpBannerPadY: 12, // banner "Votação aberta" 4934:7256
+  mvpBannerGap: 2,
   shareCardWidth: 347,
   shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
   shareQr: 48, // V7.1 4946:8227

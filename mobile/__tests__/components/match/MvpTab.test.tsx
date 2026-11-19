@@ -1,6 +1,8 @@
 // Task 18: tab MVP. Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__), chamada pelo
 // services/game real, para testar o caminho completo até ao código de erro do servidor (functions/src/callables/voteMvp.ts).
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { colors } from '@/theme/tokens';
 import type { GameStatus, Match } from '@/data/schemas';
 
 type L =
@@ -74,11 +76,11 @@ function match(over: { status?: GameStatus; elapsed?: number | null; finishedAt?
 const p = (playerId: string, name: string, minutes: number | null, number: number | null = null) => ({
   playerId,
   name,
-  photo: null,
+  photo: null as string | null,
   number,
-  position: null,
+  position: null as string | null,
   minutes,
-  rating: 7,
+  rating: 7 as number | null,
 });
 const players = (sporting = [p('10', 'Trincão', 90, 17), p('20', 'Gyökeres', 85, 9), p('30', 'Banco', 0)]): L => ({
   status: 'ready',
@@ -203,9 +205,11 @@ describe('Votação aberta', () => {
     expect(mockCall).not.toHaveBeenCalled();
   });
 
-  it('escolher pede confirmação e só depois chama voteMvp, uma vez', async () => {
+  it('escolher mostra o botão, que pede confirmação e só depois chama voteMvp, uma vez', async () => {
     await render(<MvpTab match={match()} />, { wrapper });
     await press('Votar em Trincão');
+    expect(screen.queryByText('Votar em Trincão? É definitivo.')).toBeNull();
+    await press('VOTAR EM TRINCÃO');
     expect(screen.getByText('Votar em Trincão? É definitivo.')).toBeTruthy();
     expect(mockCall).not.toHaveBeenCalled();
 
@@ -221,6 +225,7 @@ describe('Votação aberta', () => {
   it('cancelar não chama o servidor e a escolha fica marcada', async () => {
     await render(<MvpTab match={match()} />, { wrapper });
     await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
     await press('Cancelar');
     expect(screen.queryByText('Votar em Trincão? É definitivo.')).toBeNull();
     expect(mockCall).not.toHaveBeenCalled();
@@ -283,6 +288,7 @@ describe('Relógio de 1 segundo (carry da Task 18)', () => {
     await render(<MvpTab match={ended(10 * 60_000)} />, { wrapper });
     expect(running()).toBe(1);
     await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
     expect(screen.getByText('A votação já fechou.')).toBeTruthy();
@@ -299,6 +305,7 @@ describe('Erros da callable', () => {
   async function voteTrincao(m = match()) {
     await render(<MvpTab match={m} />, { wrapper });
     await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
   }
@@ -314,6 +321,7 @@ describe('Erros da callable', () => {
     expect(recordError).not.toHaveBeenCalled();
 
     await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
     expect(mockCall).toHaveBeenCalledTimes(3);
@@ -504,6 +512,7 @@ describe('Percentagens', () => {
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.queryByText(/%/)).toBeNull();
     await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
     expect(within(screen.getByTestId('mvp-result-10')).getByText('50%')).toBeTruthy();
@@ -558,5 +567,101 @@ describe('Percentagens', () => {
     expect(screen.queryByText(/%/)).toBeNull();
     expect(screen.queryByText('Não foi possível carregar os dados.')).toBeNull();
     expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
+  });
+});
+
+describe('MVP com notas (V7.1)', () => {
+  const q = (playerId: string, name: string, rating: number | null, over: Record<string, unknown> = {}) => ({
+    ...p(playerId, name, 90, Number(playerId)),
+    rating,
+    position: 'Midfielder',
+    ...over,
+  });
+  const withRatings = (): L =>
+    players([q('10', 'Trincão', 8.1), q('20', 'Gyökeres', 8.6), q('30', 'Hjulmand', 7.4), q('40', 'Quenda', 6.9), q('50', 'Debast', 8.6)]);
+  const bg = (id: string) => StyleSheet.flatten(screen.getByTestId(`mvp-rating-${id}`).props.style).backgroundColor;
+
+  it('nada pré-selecionado e sem botão antes da escolha', async () => {
+    mockData.players = withRatings();
+    await render(<MvpTab match={match()} />, { wrapper });
+    for (const n of ['Trincão', 'Gyökeres', 'Hjulmand', 'Quenda', 'Debast']) {
+      expect(screen.getByLabelText(`Votar em ${n}`).props.accessibilityState).toEqual(expect.objectContaining({ selected: false }));
+    }
+    expect(screen.queryByLabelText(/^VOTAR EM /)).toBeNull();
+  });
+
+  it('o botão leva o nome escolhido em maiúsculas e muda com a escolha', async () => {
+    mockData.players = withRatings();
+    await render(<MvpTab match={match()} />, { wrapper });
+    await press('Votar em Trincão');
+    expect(screen.getByLabelText('VOTAR EM TRINCÃO')).toBeTruthy();
+    expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    await press('Votar em Gyökeres');
+    expect(screen.getByLabelText('VOTAR EM GYÖKERES')).toBeTruthy();
+    expect(screen.queryByLabelText('VOTAR EM TRINCÃO')).toBeNull();
+  });
+
+  it('a ordem da lista não muda com as notas', async () => {
+    mockData.players = withRatings();
+    const { rerender } = await render(<MvpTab match={match()} />, { wrapper });
+    const order = () => screen.getAllByTestId(/^mvp-candidate-/).map((n) => n.props.testID);
+    const before = order();
+    expect(before).toEqual(['mvp-candidate-50', 'mvp-candidate-20', 'mvp-candidate-30', 'mvp-candidate-40', 'mvp-candidate-10']);
+    mockData.players = players([q('10', 'Trincão', 6.0), q('20', 'Gyökeres', 5.0), q('30', 'Hjulmand', 9.9), q('40', 'Quenda', 7.0), q('50', 'Debast', null)]);
+    await rerender(<MvpTab match={match()} />);
+    expect(order()).toEqual(before);
+  });
+
+  it('caixa da nota: 8.0 ou mais primary, 7.0 ou mais surface-20, abaixo surface-10', async () => {
+    mockData.players = players([q('10', 'A', 8.0), q('20', 'B', 7.96), q('30', 'C', 7.0), q('40', 'D', 6.94), q('50', 'E', 6.0)]);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(bg('10')).toBe(colors.primary);
+    expect(bg('20')).toBe(colors.primary);
+    expect(bg('30')).toBe(colors.surface20);
+    expect(bg('40')).toBe(colors.surface10);
+    expect(bg('50')).toBe(colors.surface10);
+    expect(within(screen.getByTestId('mvp-rating-10')).getByText('8,0')).toBeTruthy();
+  });
+
+  it('selo "Melhor nota" só nos ids da nota máxima, com empate nos dois', async () => {
+    mockData.players = withRatings();
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.getAllByText('MELHOR NOTA')).toHaveLength(2);
+    expect(screen.getByTestId('mvp-best-20')).toBeTruthy();
+    expect(screen.getByTestId('mvp-best-50')).toBeTruthy();
+    expect(screen.queryByTestId('mvp-best-10')).toBeNull();
+    expect(screen.queryByTestId('mvp-best-30')).toBeNull();
+  });
+
+  it('sem notas: sem coluna da nota, sem selo e sem erro; o voto continua a funcionar', async () => {
+    mockData.players = players([q('10', 'Trincão', null), q('20', 'Gyökeres', null)]);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.queryByTestId(/^mvp-rating-/)).toBeNull();
+    expect(screen.queryByText('MELHOR NOTA')).toBeNull();
+    expect(screen.queryByText(/API-Football/)).toBeNull();
+    await press('Votar em Trincão');
+    await press('VOTAR EM TRINCÃO');
+    await press('Confirmar');
+    await flush();
+    expect(mockCall).toHaveBeenCalledWith({ gameId: '1001', playerId: '10' });
+  });
+
+  it('banner "Votação aberta", nota de referência, foto com número e posição', async () => {
+    mockData.players = withRatings();
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.getByText('VOTAÇÃO ABERTA')).toBeTruthy();
+    expect(screen.getByText('Quem foi o melhor do Sporting? A nota é da API-Football e serve só de referência.')).toBeTruthy();
+    expect(within(screen.getByTestId('mvp-candidate-10')).getByText('10')).toBeTruthy();
+    expect(within(screen.getByTestId('mvp-candidate-10')).getByText('MED')).toBeTruthy();
+    expect(within(screen.getByTestId('mvp-candidate-10')).getByTestId('player-silhouette')).toBeTruthy();
+  });
+
+  it('nome longo a 320 pt: uma linha com reticências, selo e nota presentes', async () => {
+    mockData.players = players([q('10', 'Francisco Maximiliano Gonçalves de Albuquerque', 8.9)]);
+    await render(<MvpTab match={match()} />, { wrapper });
+    const row = screen.getByTestId('mvp-candidate-10');
+    expect(within(row).getByText('Francisco Maximiliano Gonçalves de Albuquerque').props.numberOfLines).toBe(1);
+    expect(within(row).getByText('MELHOR NOTA').props.numberOfLines).toBe(1);
+    expect(screen.getByTestId('mvp-rating-10')).toBeTruthy();
   });
 });
