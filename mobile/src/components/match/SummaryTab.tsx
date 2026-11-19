@@ -227,6 +227,28 @@ function PreMatch({ match }: { match: Match }) {
   );
 }
 
+/** Jogo a decorrer ou terminado (Figma 08/06): Forma, Confrontos diretos e Ausências por baixo da cronologia, só com dados e sem Previsão nem avisos. */
+function MatchContext({ match }: { match: Match }) {
+  const prematch = useMatchDetail(match.id, 'prematch');
+  const injuries = useMatchDetail(match.id, 'injuries');
+  const full = prematch.status === 'ready' && !isPrematchEmpty(prematch.data) ? prematch.data : null;
+  const injuriesDoc = injuries.status === 'ready' ? injuries.data : null;
+  const known = new Set([match.home.id, match.away.id]);
+  const hasInjuries = !!injuriesDoc && injuriesDoc.items.some((i) => known.has(i.teamId));
+  if (!full && !hasInjuries) return null;
+  return (
+    <>
+      {full ? (
+        <>
+          <Form p={full} match={match} />
+          <HeadToHead p={full} match={match} />
+        </>
+      ) : null}
+      {injuriesDoc && hasInjuries ? <Injuries doc={injuriesDoc} match={match} /> : null}
+    </>
+  );
+}
+
 function Events({ match, live }: { match: Match; live: boolean }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
@@ -288,7 +310,10 @@ export function SummaryTab({ match }: { match: Match }) {
       ) : state === 'cancelled' ? (
         <EmptyState icon="info" text={CANCELLED} />
       ) : (
-        <Events match={match} live={state !== 'finished'} />
+        <>
+          <Events match={match} live={state !== 'finished'} />
+          <MatchContext match={match} />
+        </>
       )}
       <MatchInfo match={match} />
     </MatchScrollView>

@@ -259,6 +259,30 @@ describe('cronologia em duas colunas', () => {
   });
 });
 
+describe('contexto do jogo (Figma 08)', () => {
+  it('terminado com dados: Forma, Confrontos e Ausências por baixo da cronologia, sem Previsão', async () => {
+    mockDetails.current = {
+      events: ready({ items: [ev({ minute: 23, playerName: 'Suárez', detail: 'Penalty', teamId: '228' })] }),
+      prematch: ready(prematch()),
+      injuries: ready(injuries()),
+    };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.getByText('Forma · últimos 5')).toBeTruthy();
+    expect(screen.getByText('Confrontos diretos · últimos 5')).toBeTruthy();
+    expect(screen.getByText('Ausências')).toBeTruthy();
+    expect(screen.queryByText('Previsão')).toBeNull();
+    expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
+  });
+
+  it('terminado sem dados de contexto: só a cronologia, sem avisos', async () => {
+    mockDetails.current = { events: ready({ items: [ev({ minute: 23, playerName: 'Suárez', teamId: '228' })] }) };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Ausências')).toBeNull();
+    expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
+  });
+});
+
 describe('adiado e cancelado', () => {
   it('PST: mensagem de adiado e sem pré-jogo', async () => {
     mockDetails.current = { prematch: ready(prematch()) };
