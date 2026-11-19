@@ -4,7 +4,7 @@
 
 **Goal:** O dono empresta uma GameBox para um jogo por um link que só abre na app S360, fica preso à conta de quem o abre primeiro, bloqueia capturas e expira no fim do jogo.
 
-**Architecture:** O servidor guarda cada empréstimo em `loans/{loanId}` (o `loanId` aleatório é o token do link) e o número da GameBox num subdocumento `loans/{id}/secret/number`, legível só pelo destinatário preso enquanto o empréstimo está ativo. Três callables (criar, abrir, cancelar), uma tarefa agendada que recalcula a validade e apaga números, e um gatilho que cancela empréstimos quando a GameBox é apagada. A validade recalcula-se numa tarefa a cada 10 minutos (em vez de ligar ao fecho de prognósticos), porque também tem de seguir jogos remarcados; as regras verificam `expiresAt` na leitura. A app ganha a ação no detalhe da GameBox, a rota `/e/{id}` e o ecrã do empréstimo com o layout do cartão de prognóstico.
+**Architecture:** O servidor guarda cada empréstimo em `loans/{loanId}` (o `loanId` aleatório é o token do link) e o número da GameBox num subdocumento `loans/{id}/secret/number`, legível só pelo destinatário preso enquanto o empréstimo está ativo. Três callables (criar, abrir, cancelar), uma tarefa agendada que recalcula a validade e apaga números, e um gatilho que cancela empréstimos quando a GameBox é apagada. A validade recalcula-se numa tarefa a cada 10 minutos (em vez de ligar ao fecho de prognósticos), porque também tem de seguir jogos remarcados; as regras verificam `expiresAt` na leitura. Sem app, `/e/{id}` reencaminha para a loja; no Android a Play Store devolve o id à app pelo install referrer. A app ganha a ação no detalhe da GameBox, a rota `/e/{id}` e o ecrã do empréstimo com o layout do cartão de prognóstico.
 
 **Tech Stack:** Firebase Functions v2 (europe-west1, codebase v2027), Firestore rules e emulador, Expo SDK 58, Expo Router, RNFirebase, zod, jest-expo, expo-screen-capture.
 
@@ -31,7 +31,7 @@
 
 1. Link aberto por uma segunda conta depois de preso: vê "Este empréstimo já foi aberto noutra conta." e nunca o QR (teste no Task 3 e no Task 6).
 2. Empréstimo cancelado ou expirado com o ecrã do destinatário aberto: o QR desaparece sem reabrir (o listener do segredo falha por regras e o ecrã passa a "já não está ativo") (teste no Task 6).
-3. Destinatário sem sessão: entra ou cria conta e cai no empréstimo, não na Home (teste no Task 6).
+3. Destinatário sem sessão, ou acabado de instalar no Android: entra ou cria conta e cai no empréstimo, não na Home; o referrer da Play Store só se usa uma vez (testes no Task 6 e no Task 7).
 4. GameBox sem jogos em casa da sua modalidade (ou calendário por carregar): a escolha de jogo mostra um vazio claro e não deixa criar (teste no Task 5).
 5. Dono no modo bilhete com a GameBox emprestada para o jogo da faixa: mostra "Emprestada para este jogo", sem QR; noutro jogo mostra o QR normal (teste no Task 5).
 
@@ -46,7 +46,7 @@
 
 - [ ] **Step 1:** Carregar `figma:figma-use` e `figma:figma-generate-design`; reutilizar os componentes do quadro 4918:5041 (Button, Header, List row, Foto do jogador, Crest, ModalSheet escuro do frame 30) e as variáveis e estilos V7.1.
 - [ ] **Step 2:** Desenhar, ao lado do 45: 45La detalhe com "Emprestar para um jogo"; 45Lb folha de escolha do jogo (lista de jogos em casa, vazio "Sem jogos em casa marcados para esta GameBox."); 45Lc detalhe com empréstimo ativo ("Emprestada para {casa} - {fora}", "Ainda não aberto" / "Aberto por {nome} às {HH:MM}", botão "Cancelar empréstimo"); 12L modo bilhete "Emprestada para este jogo".
-- [ ] **Step 3:** Desenhar o destinatário: 50 ecrã do empréstimo (cartão do frame 30 com equipas, competição, data e hora, recinto, porta/sector/fila/lugar, QR, "Emprestada por {nome}"); 50b já aberto noutra conta; 50c já não está ativo; 50d página web "Instala a app S360 e volta a tocar neste link."; 44L linha "Emprestada por {nome}" na lista de GameBox.
+- [ ] **Step 3:** Desenhar o destinatário: 50 ecrã do empréstimo (cartão do frame 30 com equipas, competição, data e hora, recinto, porta/sector/fila/lugar, QR, "Emprestada por {nome}"); 50b já aberto noutra conta; 50c já não está ativo; 44L linha "Emprestada por {nome}" na lista de GameBox.
 - [ ] **Step 4:** Captura de cada frame, uma correção visual no máximo; atualizar o mapa de cobertura; escrever os node ids no relatório.
 
 ### Task 2: Modelo e regras dos empréstimos
@@ -173,21 +173,24 @@
 - [ ] **Step 4:** Correr os testes, `npx tsc --noEmit`, `npm run check:tokens`; esperar PASSA.
 - [ ] **Step 5: Commit** `feat(emprestimo): ecrã do empréstimo com bloqueio de capturas e link pendente depois de entrar`.
 
-### Task 7: Links `/e/{id}` e página web
+### Task 7: Links `/e/{id}`, reencaminhamento para as lojas e referrer do Android
 
 **Files:**
-- Create: `mobile/app/e/[id].tsx`, `hosting/public/e/index.html`
-- Modify: `mobile/app.config.ts`, `hosting/public/.well-known/apple-app-site-association`, `firebase.json` (rewrite de `/e/**` para `/e/index.html`)
-- Test: `mobile/__tests__/config/appConfig.test.ts` (ou o teste de configuração existente), `mobile/__tests__/app/linkEmprestimo.test.tsx`, `functions/test/unit/hosting.test.ts` (ou o teste de hosting existente)
+- Create: `mobile/app/e/[id].tsx`, `functions/src/http/loanRedirect.ts`, `mobile/src/lib/installReferrer.ts`
+- Modify: `mobile/app.config.ts`, `hosting/public/.well-known/apple-app-site-association`, `firebase.json` (rewrite de `/e/**` para a função `loanRedirect`), `functions/src/index.ts`, `functions/scripts/deployLists.ts`, `mobile/app/_layout.tsx` (ou o ponto de arranque que já trata links), `mobile/package.json`
+- Test: o teste de configuração da app existente, `mobile/__tests__/app/linkEmprestimo.test.tsx`, `mobile/__tests__/lib/installReferrer.test.ts`, `functions/test/unit/loanRedirect.test.ts`
 
 **Interfaces:**
-- Consumes: rota do Task 6.
+- Consumes: rota do Task 6; `setPendingLink` do Task 6.
+- Produces:
+  - `loanRedirect` (HTTP, europe-west1): para `/e/{id}` com id de 22 caracteres base64url responde 302 para a App Store se o User-Agent for iPhone/iPad, para a Play Store com `&referrer=loan%3D{id}` se for Android, e para a App Store nos outros casos; id inválido: 302 para a loja sem referrer. Sem leitura à Firestore, sem logs com o id. Os URLs das lojas são os que `/j` já usa.
+  - `readLoanReferrerOnce(): Promise<string | null>`: só Android; lê `getInstallReferrerAsync()`, extrai `loan` (22 caracteres base64url), guarda que já foi lido e nas aberturas seguintes devolve `null`; erros da API devolvem `null`.
 
-- [ ] **Step 1: Testes:** intent filter Android com `pathPrefix: '/e/'` além de `/j`; AASA com componente `"/e/*"` além de `"/j*"`; `/e/{id}` com id válido (22 caracteres base64url) redireciona para `/emprestimo/{id}` e com id inválido para `/`; a página web não contém nenhum número, QR nem pedido à Firestore, e mostra "Instala a app S360 e volta a tocar neste link." com as ligações às lojas usadas em `/j`.
-- [ ] **Step 2:** Correr os testes; esperar FALHA.
+- [ ] **Step 1: Testes:** intent filter Android com `pathPrefix: '/e/'` além de `/j`; AASA com `"/e/*"` além de `"/j*"`; `/e/{id}` na app com id válido redireciona para `/emprestimo/{id}` e com id inválido para `/`; `loanRedirect` com User-Agent de iPhone, Android e outro, e com id inválido; `readLoanReferrerOnce` com referrer válido (devolve o id e na segunda chamada `null`), sem `loan`, com lixo, com erro da API e em iOS (`null`); no arranque, um id do referrer passa por `setPendingLink('/e/{id}')` e abre o empréstimo depois de entrar.
+- [ ] **Step 2:** `npx expo install expo-application`; correr os testes; esperar FALHA.
 - [ ] **Step 3:** Implementar.
 - [ ] **Step 4:** Correr os testes das duas pastas; esperar PASSA.
-- [ ] **Step 5: Commit** `feat(emprestimo): link universal /e e página de instalar`.
+- [ ] **Step 5: Commit** `feat(emprestimo): link /e, reencaminhamento para as lojas e referrer da Play Store`.
 
 ### Task 8: Verificação contra o Figma e notas
 
@@ -200,6 +203,6 @@
 
 ## Depois do plano (paragens do Martim)
 
-- Deploy do servidor (regras fase 2 com `loans`, índices, `createLoan`, `claimLoan`, `cancelLoan`, `loansMaintenance`, `onGameboxDeleted`, `deleteAccount`) e do hosting (`/e`, AASA): só com OK.
+- Deploy do servidor (regras fase 2 com `loans`, índices, `createLoan`, `claimLoan`, `cancelLoan`, `loansMaintenance`, `onGameboxDeleted`, `deleteAccount`) e do hosting (rewrite `/e` para `loanRedirect`, AASA): só com OK.
 - Builds de produção 7.0.0 com tudo dentro: só com OK. O link `/e`, o bloqueio de capturas e o brilho verificam-se nesses builds.
 - No lançamento (passo L5), publicar `firestore.final.rules`, que fecha a leitura pública das GameBox: o empréstimo depende disso.
