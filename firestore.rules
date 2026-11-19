@@ -121,6 +121,22 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userid == request.auth.uid;
     }
 
+    // Empréstimos de GameBox (Plano 8): só o servidor escreve. O dono e o destinatário preso leem o empréstimo;
+    // o número (secret/number) só o destinatário, com o empréstimo ativo.
+    match /loans/{id} {
+      allow read: if signedIn()
+                  && (resource.data.ownerUid == request.auth.uid || resource.data.recipientUid == request.auth.uid);
+      allow write: if false;
+
+      match /secret/{doc} {
+        allow read: if signedIn()
+                    && get(/databases/$(database)/documents/loans/$(id)).data.recipientUid == request.auth.uid
+                    && get(/databases/$(database)/documents/loans/$(id)).data.cancelledAt == null
+                    && get(/databases/$(database)/documents/loans/$(id)).data.expiresAt > request.time;
+        allow write: if false;
+      }
+    }
+
     // predictions e manofmatch (V2): id {gameId}_{uid}, só criar. `source` está reservado aos documentos
     // escritos pelo servidor (callables v2027); o cliente não o pode pôr.
     match /predictions/{id} {

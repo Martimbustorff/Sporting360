@@ -332,3 +332,69 @@ describe("users/{uid}/devices", () => {
     await assertSucceeds(setDoc(doc(as("alice"), DEV), dev));
   });
 });
+
+describe("loans (empréstimo de GameBox)", () => {
+  const L = "loans/L1";
+  const S = "loans/L1/secret/number";
+  const hora = 3600 * 1000;
+  const loan = (extra: Record<string, unknown> = {}) => ({
+    ownerUid: "alice", ownerName: "Alice", gameboxId: "g1", matchId: "m1", sport: "football",
+    match: { homeName: "Sporting", awayName: "Benfica", homeLogo: null, awayLogo: null, competition: "Liga", kickoff: new Date(Date.now() + hora), venue: "stadium" },
+    seat: { gate: "1", sector: "A", row: "2", seat: "3" },
+    createdAt: new Date(), expiresAt: new Date(Date.now() + 4 * hora),
+    recipientUid: "bob", recipientName: "Bob", openedAt: null, cancelledAt: null,
+    ...extra,
+  });
+  const seedLoan = async (extra: Record<string, unknown> = {}) => {
+    await seed(L, loan(extra));
+    await seed(S, { number: "123456" });
+  };
+
+  it("o cliente não cria, altera nem apaga empréstimos nem segredos", async () => {
+    await assertFails(setDoc(doc(as("alice"), L), loan()));
+    await assertFails(setDoc(doc(as("alice"), S), { number: "1" }));
+    await seedLoan();
+    await assertFails(updateDoc(doc(as("alice"), L), { cancelledAt: new Date() }));
+    await assertFails(updateDoc(doc(as("bob"), L), { openedAt: new Date() }));
+    await assertFails(deleteDoc(doc(as("alice"), L)));
+    await assertFails(updateDoc(doc(as("bob"), S), { number: "9" }));
+    await assertFails(deleteDoc(doc(as("bob"), S)));
+  });
+
+  it("o dono e o destinatário leem o empréstimo; outra conta e anónimo não", async () => {
+    await seedLoan();
+    await assertSucceeds(getDoc(doc(as("alice"), L)));
+    await assertSucceeds(getDoc(doc(as("bob"), L)));
+    await assertFails(getDoc(doc(as("carol"), L)));
+    await assertFails(getDoc(doc(anon(), L)));
+  });
+
+  it("o destinatário preso lê o segredo com o empréstimo ativo", async () => {
+    await seedLoan();
+    await assertSucceeds(getDoc(doc(as("bob"), S)));
+  });
+
+  it("o destinatário não lê o segredo com cancelledAt ou expiresAt no passado", async () => {
+    await seedLoan({ cancelledAt: new Date() });
+    await assertFails(getDoc(doc(as("bob"), S)));
+    await seedLoan({ expiresAt: new Date(Date.now() - hora) });
+    await assertFails(getDoc(doc(as("bob"), S)));
+  });
+
+  it("dono, outra conta e anónimo não leem o segredo; empréstimo sem destinatário também não", async () => {
+    await seedLoan();
+    await assertFails(getDoc(doc(as("alice"), S)));
+    await assertFails(getDoc(doc(as("carol"), S)));
+    await assertFails(getDoc(doc(anon(), S)));
+    await seedLoan({ recipientUid: null, recipientName: null });
+    await assertFails(getDoc(doc(as("bob"), S)));
+  });
+
+  it("consultas where ownerUid == eu e where recipientUid == eu são permitidas", async () => {
+    await seedLoan();
+    await assertSucceeds(getDocs(query(collection(as("alice"), "loans"), where("ownerUid", "==", "alice"))));
+    await assertSucceeds(getDocs(query(collection(as("bob"), "loans"), where("recipientUid", "==", "bob"))));
+    await assertFails(getDocs(query(collection(as("bob"), "loans"), where("ownerUid", "==", "alice"))));
+    await assertFails(getDocs(collection(as("alice"), "loans")));
+  });
+});
