@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
-import { colors } from '@/theme/tokens';
+import { ScrollView, StyleSheet } from 'react-native';
+import { colors, layout } from '@/theme/tokens';
 import { Tabs } from '@/components/Tabs';
 
 type K = 'results' | 'table';
@@ -46,5 +46,25 @@ describe('Tabs', () => {
   it('snapshot (default)', async () => {
     const r = await render(<Tabs items={items} value="results" onChange={() => {}} mode="equal" />);
     expect(r.toJSON()).toMatchSnapshot();
+  });
+
+  it('scroll mode: o separador ativo faz scroll para ficar à vista', async () => {
+    const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
+    scrollTo.mockClear();
+    const many = ['a', 'b', 'c', 'd'].map((k) => ({ key: k, label: k.toUpperCase() }));
+    const { rerender } = await render(<Tabs items={many} value="a" onChange={() => {}} mode="scroll" />);
+    for (const [i, t] of screen.getAllByRole('tab').entries()) {
+      await fireEvent(t, 'layout', { nativeEvent: { layout: { x: 16 + i * 104, y: 0, width: 80, height: 48 } } });
+    }
+    await rerender(<Tabs items={many} value="d" onChange={() => {}} mode="scroll" />);
+    expect(scrollTo).toHaveBeenLastCalledWith({ x: 16 + 3 * 104 - layout.tabsScrollPad, animated: true });
+  });
+
+  it('equal mode nunca faz scroll', async () => {
+    const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
+    scrollTo.mockClear();
+    await render(<Tabs items={items} value="table" onChange={() => {}} mode="equal" />);
+    await fireEvent(screen.getByText('Classificação'), 'layout', { nativeEvent: { layout: { x: 300, y: 0, width: 80, height: 48 } } });
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 });

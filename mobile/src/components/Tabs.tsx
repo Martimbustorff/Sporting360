@@ -1,6 +1,7 @@
 // Figma V7.1: tabs 4935:7125 (com scroll: espaço 24, topo 15, etiqueta a 11 do indicador) e 4942:7676 (iguais: topo 10, linha separator por baixo).
 // Etiqueta Label 16: ativa branca, inativas text-subtle. Indicador de 3 pt, raio 2, primary-on-dark na ativa.
 // Diferença deliberada: altura mínima 44 (alvo de toque).
+import { useCallback, useEffect, useRef, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
@@ -17,6 +18,17 @@ export function Tabs<K extends string>({
   onChange: (k: K) => void;
   mode: 'equal' | 'scroll';
 }) {
+  // Modo scroll: o separador ativo faz scroll para ficar à vista (também quando muda por `?tab=` ou por toque).
+  const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
+  const spans = useRef<Record<string, { x: number; width: number }>>({});
+  const reveal = useCallback(
+    (key: string) => {
+      const span = spans.current[key];
+      if (mode === 'scroll' && span) scroller.current?.scrollTo({ x: Math.max(0, span.x - layout.tabsScrollPad), animated: true });
+    },
+    [mode],
+  );
+  useEffect(() => reveal(value), [value, reveal]);
   const tabs = items.map((it) => {
     const active = it.key === value;
     const equal = mode === 'equal';
@@ -25,6 +37,11 @@ export function Tabs<K extends string>({
         key={it.key}
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
+        onLayout={(e) => {
+          const { x, width } = e.nativeEvent.layout;
+          spans.current[it.key] = { x, width };
+          if (active) reveal(it.key);
+        }}
         onPress={() => onChange(it.key)}
         style={{
           flex: equal ? 1 : undefined,
@@ -55,6 +72,7 @@ export function Tabs<K extends string>({
     return (
       <View style={line}>
         <ScrollView
+          ref={scroller}
           horizontal
           showsHorizontalScrollIndicator={false}
           accessibilityRole="tablist"

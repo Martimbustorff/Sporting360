@@ -9,6 +9,7 @@ import type { Match, Video } from '@/data/schemas';
 import { useMatchVideos } from '@/data/sports';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
+import { useMatchScroll } from '@/components/match/MatchScroll';
 
 export const VIDEOS_ERROR = 'Não foi possível carregar os dados.';
 const EMPTY = 'Os vídeos aparecem depois dos lances.';
@@ -36,6 +37,7 @@ function byMinute(vs: Video[]): Video[] {
 }
 
 export function VideosTab({ match }: { match: Match }) {
+  const scrollProps = useMatchScroll();
   const videos = useMatchVideos(match.id);
   if (videos.status === 'loading') return <View testID="videos-loading" />;
   if (videos.status === 'error') return <EmptyState icon="info" text={VIDEOS_ERROR} />;
@@ -53,6 +55,7 @@ export function VideosTab({ match }: { match: Match }) {
 
   return (
     <ScrollView
+      {...scrollProps}
       testID="videos-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: layout.videoListGap }}
     >

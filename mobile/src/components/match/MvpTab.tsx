@@ -35,6 +35,7 @@ import { useSession } from '@/providers/SessionProvider';
 import { voteMvp } from '@/services/game';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { useMatchScroll } from '@/components/match/MatchScroll';
 
 export const MVP_TEXT = {
   opensAt: `A votação abre ao minuto ${MVP_OPEN_ELAPSED}.`,
@@ -309,6 +310,7 @@ function Settled({ doc, official, points }: { doc: PlayersDoc | null; official: 
 }
 
 export function MvpTab({ match }: { match: Match }) {
+  const scrollProps = useMatchScroll();
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const vote = useMyMvpVote(match.id, uid);
@@ -404,6 +406,7 @@ export function MvpTab({ match }: { match: Match }) {
 
   return (
     <ScrollView
+      {...scrollProps}
       testID="mvp-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
     >

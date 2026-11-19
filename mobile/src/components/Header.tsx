@@ -12,7 +12,8 @@ const btn = { width: layout.minTouch, height: layout.minTouch, alignItems: 'cent
 // Lados iguais (flex 1, mínimo 44): o título fica centrado e uma ação mais larga cresce sem o deslocar.
 const side = { flex: 1, flexBasis: 0, minWidth: layout.minTouch, height: layout.minTouch, justifyContent: 'center' } as const;
 
-export function Header({ title, onBack, right }: { title: string; onBack?: () => void; right?: ReactNode }) {
+/** `center` (opcional) substitui o título de texto (cabeçalho do jogo: competição e resultado compacto). */
+export function Header({ title, onBack, right, center }: { title: string; onBack?: () => void; right?: ReactNode; center?: ReactNode }) {
   const { top } = useSafeAreaInsets();
   return (
     <View
@@ -32,6 +33,11 @@ export function Header({ title, onBack, right }: { title: string; onBack?: () =>
           </Touchable>
         ) : null}
       </View>
+      {center ? (
+        <View testID="header-center" style={{ flex: 3, flexBasis: 0, height: layout.minTouch, alignItems: 'center', justifyContent: 'center' }}>
+          {center}
+        </View>
+      ) : (
       <Text71
         variant="title24"
         color="primary"
@@ -42,6 +48,7 @@ export function Header({ title, onBack, right }: { title: string; onBack?: () =>
       >
         {title}
       </Text71>
+      )}
       <View style={[side, { alignItems: 'flex-end' }]}>{right}</View>
     </View>
   );

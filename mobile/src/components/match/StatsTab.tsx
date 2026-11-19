@@ -11,12 +11,14 @@ import { useMatchDetail } from '@/data/sports';
 import { uiState } from '@/lib/matchVM';
 import { STAT_ORDER, statRows } from '@/lib/stats';
 import { colors, layout, spacing } from '@/theme/tokens';
+import { useMatchScroll } from '@/components/match/MatchScroll';
 
 export const STATS_ERROR = 'Não foi possível carregar os dados.';
 const NO_STATS = 'Sem estatísticas para este jogo.';
 const CARD: Record<string, 'yellow' | 'red'> = { 'Yellow Cards': 'yellow', 'Red Cards': 'red' };
 
 export function StatsTab({ match }: { match: Match }) {
+  const scrollProps = useMatchScroll();
   const stats = useMatchDetail(match.id, 'statistics');
   const state = uiState(match.status);
   if (stats.status === 'loading') return <View testID="stats-loading" />;
@@ -30,6 +32,7 @@ export function StatsTab({ match }: { match: Match }) {
   const rowKey = (i: number) => STAT_ORDER[i]?.key ?? String(i);
   return (
     <ScrollView
+      {...scrollProps}
       testID="stats-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl }}
     >

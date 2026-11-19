@@ -6,13 +6,25 @@ import { OFFLINE_TEXT } from '@/components/OfflineBanner';
 import type { GameStatus, Match } from '@/data/schemas';
 
 const mockMatch: { current: unknown } = { current: { status: 'loading' } };
+const mockDetail: { current: Record<string, unknown> } = { current: {} };
+const mockUser: { current: { prediction: unknown; settlement: unknown; points: unknown } } = {
+  current: { prediction: { status: 'loading' }, settlement: { status: 'missing' }, points: { status: 'loading' } },
+};
 const mockParams: { current: Record<string, string> } = { current: { id: '1001' } };
 
 jest.mock('@/data/sports', () => ({
   useMatch: jest.fn(() => mockMatch.current),
   // Tab Sumário (Task 9): jogo sem detalhes ainda.
-  useMatchDetail: jest.fn(() => ({ status: 'missing' })),
+  useMatchDetail: jest.fn((_id: string, kind: string) => mockDetail.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => ({ status: 'missing' })),
+}));
+jest.mock('@/data/user', () => ({
+  useMyPrediction: jest.fn(() => mockUser.current.prediction),
+  useSettlement: jest.fn(() => mockUser.current.settlement),
+  useMyGamePoints: jest.fn(() => mockUser.current.points),
+}));
+jest.mock('@/providers/SessionProvider', () => ({
+  useSession: () => ({ status: 'signedIn', user: { uid: 'u1' } }),
 }));
 jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: jest.fn(() => true) },
@@ -73,6 +85,8 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.setSystemTime(NOW);
   mockParams.current = { id: '1001' };
+  mockDetail.current = {};
+  mockUser.current = { prediction: { status: 'loading' }, settlement: { status: 'missing' }, points: { status: 'loading' } };
   mockMatch.current = ready(match());
   (useMatch as jest.Mock).mockImplementation(() => mockMatch.current);
 });
@@ -130,6 +144,88 @@ describe('futebol', () => {
   });
 });
 
+describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
+  const liveMatch = () =>
+    match({
+      status: 'LIVE' as GameStatus,
+      elapsed: 67,
+      score: { home: 2, away: 1, halftime: null, extratime: null, penalty: null },
+    });
+  const scrollTo = async (y: number) =>
+    fireEvent.scroll(screen.getByTestId('summary-tab'), { nativeEvent: { contentOffset: { x: 0, y } } });
+
+  it('mostra marcadores e o cartão do prognóstico quando existe', async () => {
+    mockMatch.current = ready(liveMatch());
+    mockDetail.current = {
+      events: {
+        status: 'ready',
+        data: { items: [{ minute: 23, extra: null, teamId: '228', playerId: null, playerName: 'L. Suárez', assistId: null, assistName: null, type: 'goal', detail: 'Normal Goal', comments: null }] },
+      },
+    };
+    mockUser.current.prediction = { status: 'ready', data: { gameId: '1001', home: 2, away: 1 } };
+    await render(ui());
+    expect(screen.getByText('L. Suárez 23’')).toBeTruthy();
+    expect(screen.getByTestId('prediction-pick').props.children).toBe('2-1');
+    expect(screen.queryByTestId('prediction-points')).toBeNull();
+  });
+
+  it('sem prognóstico o cartão fica escondido', async () => {
+    mockMatch.current = ready(liveMatch());
+    await render(ui());
+    expect(screen.queryByTestId('prediction-summary')).toBeNull();
+  });
+
+  it('terminado e liquidado mostra os pontos do servidor', async () => {
+    mockMatch.current = ready(
+      match({ status: 'FT' as GameStatus, score: { home: 2, away: 1, halftime: null, extratime: null, penalty: null } }),
+    );
+    mockUser.current = {
+      prediction: { status: 'ready', data: { gameId: '1001', home: 2, away: 1 } },
+      settlement: { status: 'ready', data: { finalHome: 2, finalAway: 1 } },
+      points: {
+        status: 'ready',
+        data: [
+          { type: 'prediction_participation', points: 1 },
+          { type: 'prediction_exact', points: 3 },
+          { type: 'mvp_correct', points: 2 },
+        ],
+      },
+    };
+    await render(ui());
+    expect(within(screen.getByTestId('prediction-points')).getByText('+4 pts')).toBeTruthy();
+  });
+
+  it('o cabeçalho completo e os separadores aparecem juntos; o compacto está escondido', async () => {
+    mockMatch.current = ready(liveMatch());
+    await render(ui());
+    expect(screen.getByText('Ao vivo · 2.ª parte')).toBeTruthy();
+    expect(screen.getAllByRole('tab')).toHaveLength(7);
+    expect(screen.queryByTestId('game-header-compact')).toBeNull(); // oculto à acessibilidade
+    expect(screen.getByTestId('game-header-compact', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('com scroll o compacto passa a ser o rótulo acessível e os separadores ficam', async () => {
+    mockMatch.current = ready(liveMatch());
+    await render(ui());
+    await scrollTo(100);
+    expect(screen.getByTestId('game-header-compact').props.accessibilityLabel).toBe(
+      'Sporting CP 2, SC Braga 1, ao vivo, 67’',
+    );
+    expect(screen.getAllByRole('tab')).toHaveLength(7);
+    await scrollTo(0);
+    expect(screen.queryByTestId('game-header-compact')).toBeNull();
+  });
+
+  it('mudar de separador reabre o cabeçalho', async () => {
+    mockMatch.current = ready(liveMatch());
+    await render(ui());
+    await scrollTo(100);
+    expect(screen.getByTestId('game-header-compact')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Formações' }));
+    expect(screen.queryByTestId('game-header-compact')).toBeNull();
+  });
+});
+
 describe('outras modalidades', () => {
   const futsal = match({
     id: '2001',
@@ -147,23 +243,23 @@ describe('outras modalidades', () => {
     source: { provider: 'api-sports', id: '2001', attribution: 'API-SPORTS' },
   } as Partial<Match>);
 
-  it('não mostra tabs e dá o nome da modalidade no Header', async () => {
+  it('não mostra tabs e põe a competição na barra (frame 34)', async () => {
     mockMatch.current = ready(futsal);
     await render(ui());
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    expect(within(screen.getByTestId('header')).getByText('Futsal')).toBeTruthy();
+    const header = within(screen.getByTestId('header'));
+    expect(header.getByText('Liga Placard Futsal')).toBeTruthy();
+    expect(header.getByText('J5')).toBeTruthy();
   });
 
-  it('mostra Competição, Data e Local, e o local também no cabeçalho', async () => {
+  it('mostra data, hora e local só no cabeçalho do jogo', async () => {
     mockMatch.current = ready(futsal);
     await render(ui());
-    expect(screen.getByText('Competição')).toBeTruthy();
-    expect(screen.getByText('Liga Placard Futsal, J5')).toBeTruthy();
-    expect(screen.getByText('Data')).toBeTruthy();
-    expect(screen.getByText('14 Set 2026, 20:30')).toBeTruthy();
-    expect(screen.getByText('Local')).toBeTruthy();
-    expect(screen.getByText('Pavilhão João Rocha, Lisboa')).toBeTruthy();
-    expect(screen.getByTestId('game-venue')).toBeTruthy();
+    expect(screen.getByText('Próximo jogo')).toBeTruthy();
+    expect(screen.getByTestId('game-date').props.children).toBe('SEG 14 SET');
+    expect(screen.getByTestId('game-time').props.children).toBe('20:30');
+    expect(screen.getByTestId('game-venue').props.children).toBe('Pavilhão João Rocha, Lisboa');
+    expect(screen.queryByText('Competição')).toBeNull();
   });
 
   it('com atribuição da fonte mostra "Fonte: ..."', async () => {
@@ -172,11 +268,11 @@ describe('outras modalidades', () => {
     expect(screen.getByText('Fonte: API-SPORTS')).toBeTruthy();
   });
 
-  it('sem local não mostra a linha Local', async () => {
+  it('sem local não mostra a linha do local', async () => {
     mockMatch.current = ready(match({ id: '2002', sport: 'handball' } as Partial<Match>));
     await render(ui());
-    expect(screen.queryByText('Local')).toBeNull();
-    expect(screen.getByText('Competição')).toBeTruthy();
+    expect(screen.queryByTestId('game-venue')).toBeNull();
+    expect(screen.getByTestId('game-time')).toBeTruthy();
   });
 });
 

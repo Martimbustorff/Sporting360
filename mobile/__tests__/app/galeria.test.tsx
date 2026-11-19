@@ -85,8 +85,8 @@ describe('galeria', () => {
   it('mostra o GameHeader agendado e ao vivo', async () => {
     g.__DEV__ = true;
     await renderGaleria();
-    expect(screen.getByText('Próximo')).toBeTruthy();
-    expect(screen.getByText(/^Live/)).toBeTruthy();
+    expect(screen.getByText('Próximo jogo')).toBeTruthy();
+    expect(screen.getByText(/^Ao vivo ·/)).toBeTruthy();
   });
 
   it('inclui os casos extremos', async () => {

@@ -59,4 +59,10 @@ describe('Header', () => {
     expect(side.flex).toBe(1);
     expect(side.flexBasis).toBe(0);
   });
+
+  it('center replaces the text title', async () => {
+    await renderHeader(<Header title="Jogo" center={<Text>centro</Text>} />);
+    expect(screen.getByText('centro')).toBeTruthy();
+    expect(screen.queryByText('Jogo')).toBeNull();
+  });
 });

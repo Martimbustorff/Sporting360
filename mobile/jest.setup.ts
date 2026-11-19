@@ -39,6 +39,13 @@ jest.mock('react-native-reanimated', () => {
     withSpring: jest.fn((v: unknown) => v),
     withTiming: jest.fn((v: unknown) => v),
     withRepeat: jest.fn((v: unknown) => v),
+    Extrapolation: { CLAMP: 'clamp' },
+    interpolate: (v: number, input: number[], output: number[]) => {
+      const lo = input[0] as number;
+      const hi = input[input.length - 1] as number;
+      const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
+      return (output[0] as number) + t * ((output[output.length - 1] as number) - (output[0] as number));
+    },
   };
 });
 

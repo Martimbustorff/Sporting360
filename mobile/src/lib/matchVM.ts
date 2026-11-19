@@ -140,9 +140,35 @@ export function toGameHeaderVM(m: Match): GameHeaderVM {
     minute: m.elapsed,
     minuteText: minuteText(m.elapsed, m.elapsedExtra),
     score: scorePair(m),
+    penalty: pairOrNull(m.score.penalty?.home ?? null, m.score.penalty?.away ?? null),
     // Futebol tem a secção "Informação do Jogo"; o local no cabeçalho é só para as outras modalidades.
-    venue: m.sport === 'football' ? null : (m.venue?.name ?? null),
+    venue: m.sport === 'football' ? null : venueText(m.venue),
   };
+}
+
+/** "Pavilhão João Rocha, Lisboa"; sem cidade só o nome; sem local null. */
+function venueText(v: Match['venue']): string | null {
+  if (!v) return null;
+  return v.city ? `${v.name}, ${v.city}` : v.name;
+}
+
+export type GoalVM = { side: 'home' | 'away'; minute: number; extra: number | null; name: string; text: string };
+
+/** Golos marcados, por ordem do jogo, para os marcadores e a linha do tempo do cabeçalho. Sem penáltis falhados nem desempate. */
+export function goalsFromEvents(items: EventItem[], homeTeamId: string): GoalVM[] {
+  return items
+    .filter((e) => isScoredGoal(e) && e.comments !== 'Penalty Shootout')
+    .sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0))
+    .map((e) => {
+      const name = e.playerName ?? '';
+      return {
+        side: scoringSide(e, homeTeamId),
+        minute: e.minute,
+        extra: e.extra,
+        name,
+        text: `${name} ${minuteText(e.minute, e.extra)}`.trim(),
+      };
+    });
 }
 
 export type ShownEvent = EventItem & { type: Exclude<EventItem['type'], 'other'> };

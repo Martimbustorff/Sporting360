@@ -16,16 +16,18 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ShareCard } from '@/components/ShareCard';
 import { Stepper } from '@/components/Stepper';
-import type { Match, PointEvent } from '@/data/schemas';
+import type { Match } from '@/data/schemas';
 import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
 import { countdownText } from '@/lib/countdown';
 import { GameActionError, isKnockoutGame, predictionOpen, type GameActionCode } from '@/lib/gameWindows';
 import { useSession } from '@/providers/SessionProvider';
+import { predictionPoints } from '@/lib/predictionPoints';
 import { reportCode } from '@/lib/report';
 import { submitPrediction } from '@/services/game';
 import { shareMatchday } from '@/services/share';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { useMatchScroll } from '@/components/match/MatchScroll';
 
 export const PREDICTION_TEXT = {
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
@@ -58,11 +60,6 @@ const MAX_GOALS = 20;
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 
 const pointsText = (n: number) => `+${n} ${n === 1 ? 'ponto' : 'pontos'}`;
-
-/** Só os pontos do prognóstico (participação, exato, vencedor); o MVP do mesmo jogo fica de fora. */
-function predictionPoints(events: PointEvent[]): number {
-  return events.filter((e) => e.type.startsWith('prediction_')).reduce((sum, e) => sum + e.points, 0);
-}
 
 /**
  * Relógio a cada 30 s e um disparo exato no `kickoff`, para o formulário fechar sozinho ao apito inicial. Depois do
@@ -289,6 +286,7 @@ function MyPrediction({ home, away }: { home: number; away: number }) {
 }
 
 export function PredictionTab({ match }: { match: Match }) {
+  const scrollProps = useMatchScroll();
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const prediction = useMyPrediction(match.id, uid);
@@ -340,6 +338,7 @@ export function PredictionTab({ match }: { match: Match }) {
 
   return (
     <ScrollView
+      {...scrollProps}
       testID="prediction-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
     >

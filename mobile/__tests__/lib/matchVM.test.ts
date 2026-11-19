@@ -2,6 +2,7 @@ import type { Competition, EventItem, FixtureItem, Match } from '@/data/schemas'
 import {
   competitionText,
   fixtureToMatch,
+  goalsFromEvents,
   groupEvents,
   isShownEvent,
   minuteText,
@@ -199,8 +200,8 @@ describe('toGameHeaderVM', () => {
     expect(hockey.home.id).toBeNull();
   });
 
-  it('other sports carry the venue name', () => {
-    expect(toGameHeaderVM(match({ sport: 'futsal' })).venue).toBe('Estádio José Alvalade');
+  it('other sports carry the venue name and city', () => {
+    expect(toGameHeaderVM(match({ sport: 'futsal' })).venue).toBe('Estádio José Alvalade, Lisboa');
     expect(toGameHeaderVM(match({ sport: 'futsal', venue: null })).venue).toBeNull();
   });
 
@@ -397,5 +398,36 @@ describe('fixtureToMatch (preflight F9)', () => {
     // O adversário usa o seu id (o lado "home" não é o Sporting só por omissão: o id não é 228).
     expect(toGameHeaderVM(m).home.id).toBe(212);
     expect(toGameHeaderVM(m).away.id).toBe(211);
+  });
+});
+
+describe('goalsFromEvents', () => {
+  const ev = (over: Partial<EventItem>): EventItem =>
+    ({ minute: 10, extra: null, teamId: '228', playerId: null, playerName: 'Gyökeres', assistId: null, assistName: null, type: 'goal', detail: 'Normal Goal', comments: null, ...over }) as EventItem;
+
+  it('golos por ordem do jogo, com o lado e o texto "Nome minuto"', () => {
+    const goals = goalsFromEvents(
+      [ev({ minute: 54, playerName: 'Trincão' }), ev({ minute: 38, teamId: '212', playerName: 'Samu' }), ev({ minute: 23, extra: 2, playerName: 'L. Suárez' })],
+      '228',
+    );
+    expect(goals.map((g) => [g.side, g.text])).toEqual([
+      ['home', 'L. Suárez 23+2’'],
+      ['away', 'Samu 38’'],
+      ['home', 'Trincão 54’'],
+    ]);
+  });
+
+  it('autogolo conta para a equipa contrária; penálti falhado, cartões e desempate ficam de fora', () => {
+    const goals = goalsFromEvents(
+      [
+        ev({ minute: 5, teamId: '212', detail: 'Own Goal', playerName: 'Defesa' }),
+        ev({ minute: 20, detail: 'Missed Penalty' }),
+        ev({ minute: 30, type: 'card', detail: 'Yellow Card' }),
+        ev({ minute: 120, comments: 'Penalty Shootout' }),
+      ],
+      '228',
+    );
+    expect(goals).toHaveLength(1);
+    expect(goals[0]!.side).toBe('home');
   });
 });

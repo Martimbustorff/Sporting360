@@ -395,6 +395,44 @@ export const layout = {
   gameboxDotActive: 8,
   gameboxDotInactive: 6,
   gameboxCamera: 64,
+  // V7.1 Cabeçalho do jogo (Figma 4924:6268 ao vivo, 4945:7833 antes, 4933:7057 compacto)
+  crestHeader: { width: 60, height: 70 }, // 4920:5075 a 60x70 no cabeçalho
+  crestCompact: { width: 24, height: 28 }, // 4933:7267
+  headerTeamColumn: 104,
+  headerTeamGap: 8,
+  headerPillRadius: 14,
+  headerPillBorder: 1,
+  headerPillDot: 8,
+  headerScoreBox: { width: 64, height: 80 },
+  headerScoreGap: 12,
+  headerScoreRingWidth: 2,
+  headerScoreRing: '#1AB27D', // contorno e brilho (a 45 %) da caixa de quem marcou por último (4924:6384)
+  headerScoreGlowOpacity: 0.45,
+  headerScoreGlowRadius: 24,
+  headerHingeOpacity: 0.08,
+  headerCenterMin: 150, // coluna central: caixas 64+12+64 = 140, com folga
+  headerScorersGap: 2,
+  headerBallIcon: 12,
+  timelineHeight: 44,
+  timelineTrack: 4,
+  timelineTrackTop: 14,
+  timelineGoalDot: 8,
+  timelineNowDot: 12,
+  timelineHalfMarkHeight: 12,
+  timelineHalfMarkWidth: 2,
+  timelineHalfMarkOpacity: 0.35,
+  timelineLabelTop: 30,
+  predictionCardHeight: 64,
+  predictionPointsPadX: 10,
+  predictionPointsPadY: 6,
+  compactCrestGap: 8,
+  compactStateChipPadX: 6,
+  matchLuz: { width: 680, height: 520, top: -90 }, // 4924:6269 "Luz", centrada no ecrã
+  matchRings: { size: 560, top: -74, opacity: 0.22 }, // 4924:6270 "Anéis (marca)" a 22 %
+  matchBackdropHeight: 520, // altura do cantinho da luz (4924:6269)
+  collapseRange: 120, // scroll (pt) até o cabeçalho completo estar fechado e o compacto totalmente visível
+  collapseCompactFrom: 0.5, // progresso a partir do qual o compacto é o rótulo acessível
+  tabsScrollPad: 24, // folga ao pôr o separador ativo à vista
   homeIndicator: 34, // iOS home indicator area included in Figma bottoms
   // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)
   // Lock screen (Figma 310:9622 / 348:37997, no keypad). Offsets are from the top of the 812px frame.
