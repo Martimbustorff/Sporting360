@@ -47,7 +47,7 @@ exports[`PrimaryButton snapshots (primary, secondary): primary 1`] = `
       [
         {
           "color": "#00835B",
-          "fontFamily": "DinCondensedBold",
+          "fontFamily": "DinCondensed",
           "fontSize": 24,
           "textTransform": "uppercase",
         },
@@ -110,7 +110,7 @@ exports[`PrimaryButton snapshots (primary, secondary): secondary 1`] = `
       [
         {
           "color": "#00835B",
-          "fontFamily": "DinCondensedBold",
+          "fontFamily": "DinCondensed",
           "fontSize": 24,
           "textTransform": "uppercase",
         },

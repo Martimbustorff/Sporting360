@@ -99,7 +99,7 @@ exports[`Header snapshot (default) 1`] = `
             [
               {
                 "color": "#00835B",
-                "fontFamily": "DinCondensedBold",
+                "fontFamily": "DinCondensed",
                 "fontSize": 24,
                 "textTransform": "uppercase",
               },

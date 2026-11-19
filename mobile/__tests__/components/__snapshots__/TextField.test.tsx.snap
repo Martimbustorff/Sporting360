@@ -23,7 +23,7 @@ exports[`TextField snapshot (default) 1`] = `
         [
           {
             "color": "#FFFFFF",
-            "fontFamily": "DinCondensedBold",
+            "fontFamily": "DinCondensed",
             "fontSize": 18,
             "textTransform": "uppercase",
           },

@@ -6,6 +6,8 @@
  * colours or font names in components.
  */
 
+import type { TextStyle } from 'react-native';
+
 export const colors = {
   // Backgrounds
   bg: '#001B13', // screen background (dark green, almost black)
@@ -40,17 +42,61 @@ export const colors = {
   sheetLabel: 'rgba(0, 0, 0, 0.5)', // 450:5532 (DIN 14, opacidade 50 %)
   dotInactive: 'rgba(0, 0, 0, 0.2)', // 450:5562 (Ellipse 11/12)
   scrim: 'rgba(0, 27, 19, 0.7)', // SEM FIGMA: fundo das mensagens sobre a câmara do leitor
+
+  // V7.1 (variáveis do Figma R3IhhyNxNZuVINgUtJjZE3)
+  bgRaised: '#06261C',
+  bgTint: '#003625',
+  primaryOnDark: '#19B37E',
+  textSubtle: 'rgba(255, 255, 255, 0.5)',
+  separator: 'rgba(255, 255, 255, 0.25)',
+  surface06: 'rgba(255, 255, 255, 0.06)',
+  ink: '#001B13',
+  inkMuted: 'rgba(0, 27, 19, 0.65)',
+  inkSeparator: 'rgba(0, 27, 19, 0.12)',
+  danger: '#F74C66',
+  scrimV71: 'rgba(0, 13, 9, 0.72)',
 } as const;
 
 export const fonts = {
   // Headlines: always uppercase (screen titles, names, minutes, scores, menu items)
-  display: 'DinCondensedBold',
+  display: 'DinCondensed',
+  dinCondensed: 'DinCondensed',
+  dinCondensedLight: 'DinCondensedLight',
+  din: 'Din',
   // Body text
   body: 'Poppins',
   bodyLight: 'PoppinsLight',
   bodyMedium: 'PoppinsMedium',
   bodySemiBold: 'PoppinsSemiBold',
 } as const;
+
+export const space = { s4: 4, s8: 8, s12: 12, s16: 16, s24: 24, s32: 32, s48: 48, s64: 64 } as const;
+
+export const radii = { r8: 8, r12: 12, r16: 16, r28: 28 } as const;
+
+/** lineHeight em pt: fontSize x percentagem, arredondado a 2 casas. */
+const lh = (size: number, pct: number) => Math.round(size * pct) / 100;
+
+const dinC = { fontFamily: fonts.dinCondensed, textTransform: 'uppercase' } as const;
+const din = { fontFamily: fonts.din, textTransform: 'uppercase' } as const;
+
+/** Estilos de texto V7.1 (sem cor; a cor vem de `colors`). */
+export const text71 = {
+  score72: { ...dinC, fontSize: 72, lineHeight: lh(72, 100), letterSpacing: 0 },
+  display40: { ...dinC, fontSize: 40, lineHeight: lh(40, 100), letterSpacing: 0 },
+  titleL28: { ...dinC, fontSize: 28, lineHeight: lh(28, 110), letterSpacing: 0 },
+  title24: { ...dinC, fontSize: 24, lineHeight: lh(24, 110), letterSpacing: 0.2 },
+  titleS20: { ...dinC, fontSize: 20, lineHeight: lh(20, 110), letterSpacing: 0.2 },
+  label16: { ...dinC, fontSize: 16, lineHeight: lh(16, 110), letterSpacing: 0.4 },
+  eyebrow13: { ...dinC, fontSize: 13, lineHeight: lh(13, 120), letterSpacing: 0.8 },
+  menu15: { ...din, fontSize: 15, lineHeight: lh(15, 120), letterSpacing: 0.6 },
+  badge11: { ...din, fontSize: 11, lineHeight: lh(11, 120), letterSpacing: 0.6 },
+  body14: { fontFamily: fonts.body, fontSize: 14, lineHeight: lh(14, 150), letterSpacing: 0, textTransform: 'none' },
+  bodyLight14: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: lh(14, 155), letterSpacing: 0.2, textTransform: 'none' },
+  strong14: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: lh(14, 140), letterSpacing: 0, textTransform: 'none' },
+  caption12: { fontFamily: fonts.body, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
+  captionStrong12: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
+} as const satisfies Record<string, TextStyle>;
 
 export const type = {
   screenTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.primary, textTransform: 'uppercase' },

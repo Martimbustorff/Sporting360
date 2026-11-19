@@ -8,7 +8,7 @@ const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const RULES = [
   [/#[0-9a-fA-F]{3,8}\b/, 'hex colour'],
   [/rgba?\(/, 'rgb(a) colour'],
-  [/\b(DinCondensedBold|Poppins\w*|Barlow\w*|D-DIN\w*)\b/, 'font name'],
+  [/\b(Din(Condensed\w*)?|Poppins\w*|Barlow\w*|D-DIN\w*)\b/, 'font name'],
 ];
 
 function walk(dir) {

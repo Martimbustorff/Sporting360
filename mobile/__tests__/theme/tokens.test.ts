@@ -28,6 +28,17 @@ const MAP: Record<string, string> = {
   sheetLabel: 'sheetLabel',
   dotInactive: 'dotInactive',
   scrim: 'scrim',
+  bgRaised: 'bgRaised',
+  bgTint: 'bgTint',
+  primaryOnDark: 'primaryOnDark',
+  textSubtle: 'textSubtle',
+  separator: 'separator',
+  surface06: 'surface06',
+  ink: 'ink',
+  inkMuted: 'inkMuted',
+  inkSeparator: 'inkSeparator',
+  danger: 'danger',
+  scrimV71: 'scrimV71',
 };
 
 describe('tokens <-> tailwind', () => {
@@ -56,13 +67,15 @@ describe('tokens <-> tailwind', () => {
 
   it('FONT_ASSETS keys are exactly the token font names', () => {
     expect(Object.keys(FONT_ASSETS)).toEqual([
-      'DinCondensedBold',
+      'DinCondensed',
+      'DinCondensedLight',
+      'Din',
       'Poppins',
       'PoppinsLight',
       'PoppinsMedium',
       'PoppinsSemiBold',
     ]);
-    expect(Object.keys(FONT_ASSETS).sort()).toEqual(Object.values(fonts).sort());
+    expect(Object.keys(FONT_ASSETS).sort()).toEqual([...new Set(Object.values(fonts))].sort());
   });
 });
 
