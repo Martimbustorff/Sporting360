@@ -50,12 +50,15 @@ describe('app.config.ts share link (Plano 5, Task 6)', () => {
     expect(build().ios.associatedDomains).toEqual([`applinks:${HOST}`]);
   });
 
-  it('verifies the Hosting domain for Android app links on /j', () => {
+  it('verifies the Hosting domain for Android app links on /j and /e/ (Plano 8, Task 7)', () => {
     expect(build().android.intentFilters).toEqual([
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: 'https', host: HOST, pathPrefix: '/j' }],
+        data: [
+          { scheme: 'https', host: HOST, pathPrefix: '/j' },
+          { scheme: 'https', host: HOST, pathPrefix: '/e/' },
+        ],
         category: ['BROWSABLE', 'DEFAULT'],
       },
     ]);
@@ -73,7 +76,9 @@ describe('app.config.ts share link (Plano 5, Task 6)', () => {
     expect(cfg.ios.associatedDomains).toEqual(['applinks:s360-download.app', 'applinks:scp360-37a74.web.app']);
     expect(cfg.android.intentFilters[0].data).toEqual([
       { scheme: 'https', host: 's360-download.app', pathPrefix: '/j' },
+      { scheme: 'https', host: 's360-download.app', pathPrefix: '/e/' },
       { scheme: 'https', host: 'scp360-37a74.web.app', pathPrefix: '/j' },
+      { scheme: 'https', host: 'scp360-37a74.web.app', pathPrefix: '/e/' },
     ]);
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     expect(require('../../src/lib/shareLink').shareLink('1001')).toBe('https://s360-download.app/j?src=share&game=1001');

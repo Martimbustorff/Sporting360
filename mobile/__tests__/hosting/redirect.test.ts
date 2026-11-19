@@ -52,9 +52,9 @@ describe('hosting/public', () => {
     expect(html).toContain('https://play.google.com/store/apps/details?id=com.scp360');
   });
 
-  it('apple-app-site-association associa /j* à app iOS', () => {
+  it('apple-app-site-association associa /j* e /e/* à app iOS', () => {
     expect(JSON.parse(read('.well-known/apple-app-site-association'))).toEqual({
-      applinks: { details: [{ appIDs: ['5U6HWPNTZ3.com.scp360'], components: [{ '/': '/j*' }] }] },
+      applinks: { details: [{ appIDs: ['5U6HWPNTZ3.com.scp360'], components: [{ '/': '/j*' }, { '/': '/e/*' }] }] },
     });
   });
 
@@ -116,6 +116,10 @@ describe('firebase.json hosting', () => {
   it('serve o apple-app-site-association como application/json', () => {
     const rule = fb.hosting.headers.find((h: { source: string }) => h.source === '/.well-known/apple-app-site-association');
     expect(rule.headers).toEqual([{ key: 'Content-Type', value: 'application/json' }]);
+  });
+
+  it('reencaminha /e/** para a função loanRedirect (europe-west1), sem página web', () => {
+    expect(fb.hosting.rewrites).toEqual([{ source: '/e/**', function: { functionId: 'loanRedirect', region: 'europe-west1' } }]);
   });
 
   it('mantém functions, firestore e emuladores', () => {

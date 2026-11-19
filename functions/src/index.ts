@@ -35,6 +35,8 @@ export { updateProfile } from "./callables/updateProfile";
 export { deleteAccount } from "./callables/deleteAccount";
 export { linkProviderByEmail } from "./callables/linkProviderByEmail";
 export { createLoan, claimLoan, cancelLoan } from "./callables/loans";
+// Link /e/{id} (Hosting rewrite): reencaminha para a loja certa; sem Firestore nem logs.
+export { loanRedirect } from "./http/loanRedirect";
 
 // Empréstimos de GameBox (Plano 8): validade recalculada e números apagados de 10 em 10 minutos.
 export const loansMaintenance = onSchedule(

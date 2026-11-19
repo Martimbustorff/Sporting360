@@ -9,6 +9,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { SessionProvider, useSession } from '@/providers/SessionProvider';
+import { LoanReferrerGate } from '@/components/LoanReferrerGate';
 import { UpdateGate } from '@/providers/UpdateGate';
 import { initFirebase } from '@/services/firebase';
 import { legacyCleanup } from '@/services/legacyCleanup';
@@ -41,7 +42,12 @@ function RootStack({ fontsReady }: { fontsReady: boolean }) {
   }, [ready]);
 
   if (!ready) return null;
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }} />
+      <LoanReferrerGate />
+    </>
+  );
 }
 
 export default function RootLayout() {

@@ -23,6 +23,7 @@
     "ignore": ["**/node_modules/**"],
     "cleanUrls": true,
     "trailingSlash": false,
+    "rewrites": [{ "source": "/e/**", "function": { "functionId": "loanRedirect", "region": "europe-west1" } }],
     "headers": [
       {
         "source": "/.well-known/apple-app-site-association",

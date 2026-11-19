@@ -18,6 +18,7 @@ type Endpoint = {
   region?: string[];
   scheduleTrigger?: { schedule: string; timeZone?: string };
   callableTrigger?: object;
+  httpsTrigger?: object;
   eventTrigger?: { retry?: boolean };
   secretEnvironmentVariables?: { key: string }[];
 };
@@ -31,6 +32,7 @@ const endpoint = (name: string): Endpoint => {
 };
 
 const TRIGGERS = ["onGameboxDeleted"];
+const HTTP_FUNCTIONS = ["loanRedirect"];
 const PLAN3_CALLABLES = ["updateProfile", "deleteAccount", "linkProviderByEmail"];
 
 const DEPLOYED = [...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS, ...DEPLOY_ENGINE_FUNCTIONS, ...DEPLOY_PUSH_FUNCTIONS] as string[];
@@ -50,7 +52,7 @@ describe("listas de publicação", () => {
   it("tamanhos e nomes sem repetições", () => {
     expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
-    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan", "loansMaintenance", "onGameboxDeleted"]);
+    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan", "loansMaintenance", "onGameboxDeleted", "loanRedirect"]);
     expect(DEPLOY_PUSH_FUNCTIONS).toEqual(["predictionReminderPush"]);
     expect(LEGACY_FUNCTIONS).toHaveLength(13);
     expect(new Set(DEPLOYED).size).toBe(DEPLOYED.length);
@@ -80,6 +82,11 @@ describe("configuração de cada function exportada", () => {
     expect(endpoint(name).scheduleTrigger?.timeZone).toBe("Europe/Lisbon");
   });
 
+  it("loanRedirect é HTTP (sem segredos), em europe-west1", () => {
+    expect(endpoint("loanRedirect").httpsTrigger).toBeDefined();
+    expect(endpoint("loanRedirect").region).toEqual(["europe-west1"]);
+  });
+
   it("onGameboxDeleted tem retry (idempotente)", () => {
     expect(endpoint("onGameboxDeleted").eventTrigger?.retry).toBe(true);
   });
@@ -87,7 +94,7 @@ describe("configuração de cada function exportada", () => {
   it("as callables do motor são onCall e as restantes são agendadas ou gatilhos", () => {
     const callables = exported.filter((n) => endpoint(n).callableTrigger);
     expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PLAN3_CALLABLES, "createLoan", "claimLoan", "cancelLoan"].includes(n)).sort());
-    expect(scheduled.length + callables.length + TRIGGERS.length).toBe(exported.length);
+    expect(scheduled.length + callables.length + TRIGGERS.length + HTTP_FUNCTIONS.length).toBe(exported.length);
   });
 
   // Uma function que lê um segredo sem o declarar recebe um valor vazio em produção (C11).
@@ -117,6 +124,7 @@ describe("configuração de cada function exportada", () => {
     cancelLoan: [],
     loansMaintenance: [],
     onGameboxDeleted: [],
+    loanRedirect: [],
     predictionReminderPush: [],
   };
   it("todas as functions publicadas têm a lista de segredos verificada", () => {

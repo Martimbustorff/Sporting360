@@ -28,7 +28,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           action: 'VIEW',
           autoVerify: true,
-          data: hosts.map((host) => ({ scheme: 'https', host, pathPrefix: '/j' })),
+          data: hosts.flatMap((host) => [
+            { scheme: 'https', host, pathPrefix: '/j' },
+            { scheme: 'https', host, pathPrefix: '/e/' },
+          ]),
           category: ['BROWSABLE', 'DEFAULT'],
         },
       ],

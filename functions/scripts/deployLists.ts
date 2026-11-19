@@ -34,6 +34,7 @@ export const DEPLOY_ENGINE_FUNCTIONS = [
   "cancelLoan",
   "loansMaintenance",
   "onGameboxDeleted",
+  "loanRedirect",
 ] as const;
 
 /** Push do Plano 6 que não existiam antes (o ticker e o newsSync já estão nas listas de dados). */
