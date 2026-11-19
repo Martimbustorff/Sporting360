@@ -48,3 +48,48 @@ Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = difer
 | 33 | `VideoPlayer.tsx` | Duração do vídeo escondida | intencional: o servidor não grava `duration` (pendente Martim) |
 | 34 Outra modalidade | `GameHeader.tsx`, `app/(app)/jogo/[id].tsx` | Chip do canal de TV não aparece; sem separadores, como no frame | intencional |
 | (todos do jogo) | `GameHeader.tsx` | `headerScoreRing` #1AB27D | intencional: é o valor do Figma |
+
+## Grupo B
+
+Frames: 02, 03, 04, 05, 13 a 27 (com 21b), 48 e 49. Método e legenda como no Grupo A. Ícones Feather/Ionicons onde o frame usa vetores próprios são aproximações decididas (não repetidas linha a linha).
+
+| Frame | Ecrã/componente (ficheiro) | Diferença | Decisão |
+|---|---|---|---|
+| 02 Definições | `app/(app)/definicoes/index.tsx` | Rodapé da versão com espaço de 4 (frame 2) | corrigido em 393141c (token `settingsFooterGap`) |
+| 02 | `definicoes/index.tsx` | Linha "Ligar conta Apple" só em iOS sem conta Apple ligada; o frame mostra-a sempre | intencional: sem conta por ligar ou fora do iOS a linha não tem função |
+| 02 | `definicoes/index.tsx` | "Apagar conta" com texto e ícone danger, sem destaque extra | intencional: encarnado fica fora do botão Branco do ecrã de apagar; frases de ajuda mantêm-se |
+| 02 | `definicoes/index.tsx` | "Termos e privacidade" com seta externa mas abre `/definicoes/termos` dentro da app | pendente Martim (URL externo ou página interna) |
+| 02 | `definicoes/index.tsx` | Ícones Feather (link, bar-chart-2, file-text, log-out, trash-2) em vez dos vetores do frame | intencional: equivalentes nativos |
+| 03 Sites do clube | `app/(app)/sites.tsx` | Linha "Gameback" do frame não existe | pendente Martim (sem URL, não se inventa) |
+| 03 | `sites.tsx` | Resto igual (intro Body Light, linhas L externas, nota com seta 14) | sem diferenças |
+| 04 Estádio | `app/(app)/estadio.tsx` | Legenda "Portas 1 a 12": círculo branco vazio; o frame tem círculo primary 20 com "1" em Badge 11 | corrigido em a8f339b |
+| 04 | `estadio.tsx` | Marcador do Museu desenhado no PNG do mapa e entrada "Museu" na legenda, sem ligação; zoom mantém o mapa inteiro | intencional (decisão do Martim) |
+| 04 | `estadio.tsx` | Legenda em linha que quebra em ecrãs estreitos; luz do relvado e mapa iguais | intencional: 320 pt |
+| 05 Consentimento | `AnalyticsConsentSheet.tsx` | Vistos dos 3 pontos em círculo primary com visto branco e espaço 12; o frame tem o visto primary de 20 sem círculo, espaço 8, alinhado ao topo | corrigido em 2b92dba (`tintColor` primary no mesmo `check-big.svg`) |
+| 05 | `AnalyticsConsentSheet.tsx` | Ícone do círculo Feather bar-chart-2 em vez do vetor do frame | intencional: equivalente nativo |
+| 05 | `AnalyticsConsentSheet.tsx` | Ligação "Ler a política de privacidade" com alvo de 44 pt | intencional: alvo mínimo |
+| 13 Welcome | `app/(auth)/welcome.tsx` | Grupo S360 + frase centrado no espaço livre (no frame fica a 280 pt fixos) | intencional: evita sobrepor os botões no iPhone SE |
+| 13 | `welcome.tsx`, `SocialButtons.tsx` | Resto igual (anéis a 22 %, Title L 28, Branco, Contorno, Google e Apple a 12) | sem diferenças |
+| 14 Entrar | `app/(auth)/entrar.tsx` | Sem diferenças (Branco, Google/Apple, ligações Caption 12, erro por baixo da password) | sem diferenças |
+| 15 Criar conta | `app/(auth)/criar-conta.tsx` | Sem diferenças (botões Google/Apple e "Pelo menos 6 caracteres." presentes; nota dos termos toda ligação) | sem diferenças (decisão do Martim) |
+| 16 Recuperar password | `app/(auth)/recuperar-password.tsx` | Título abreviado "Recuperar Pass"; o frame diz "RECUPERAR PASSWORD" | corrigido em cd72fef |
+| 17 Termos e condições | `TermsView.tsx`, `definicoes/termos.tsx`, `(auth)/termos.tsx` | Sem diferenças de estilo (Label 16 primary-on-dark, Body Light 14); o corpo vem de `content/termos.ts` (o frame tem texto de exemplo) | sem diferenças |
+| 18 Ligar Apple | `app/(app)/ligar-apple.tsx` | Sem diferenças (texto, botão oficial, caixa com visto "Conta Apple ligada.") | sem diferenças |
+| 19 Conta S360 | `app/(app)/definicoes/conta.tsx` | Sem diferenças (Nome público com chevron e linha 2 pt, Email 1 pt, "Mudar password" sublinhado) | sem diferenças |
+| 20 Mudar password | `app/(app)/definicoes/password.tsx` | Sem diferenças (campos a 32, Guardar Branco logo por baixo) | sem diferenças |
+| 21 Apagar conta | `app/(app)/apagar-conta.tsx` | Botão Branco com texto primary (frame tem esse estilo) | intencional (decisão do Martim; encarnado só noutros sítios) |
+| 21b Confirmar password | `apagar-conta.tsx`, `ModalSheet.tsx` | Copy igual ao frame; contas só com password veem sempre a folha | intencional (copy aprovada; reautenticação mantida) |
+| 22 Perfil | `app/(app)/perfil/index.tsx` | Histórico: pontos a zero apareciam como "+0 PTS"; o frame mostra "0 PTS" | corrigido em 186a308 (teste novo) |
+| 22 | `perfil/index.tsx` | Título do histórico "data · Final x-y" em vez de "Sporting 2-1 FC Porto" | pendente Martim (os dados do prognóstico não guardam as equipas) |
+| 22 | `perfil/index.tsx` | Acerto como "75 %" (espaço, PT-PT) e o frame "62%" | intencional: formato PT-PT já testado |
+| 22 | `perfil/index.tsx` | Ícones Feather (bell, trash-2) nas duas linhas finais | intencional: equivalentes nativos |
+| 23 Editar perfil | `app/(app)/perfil/editar.tsx` | Sem diferenças de estrutura (campos, pílulas, jogador com PlayerPhoto, Guardar Branco) | sem diferenças |
+| 24 Nome público | `app/(app)/perfil/nome.tsx` | Bloco "Nome atual" que o frame não tem; etiqueta "Novo nome" igual | intencional (Tarefa 14: mostra o nome automático quando não há nome escolhido); copy aprovada verbatim |
+| 25 Notificações | `app/(app)/perfil/notificacoes.tsx` | Sem diferenças (2 interruptores, nota, caixa de permissão com "Abrir definições") | intencional: só 2 interruptores (push só para prognóstico e MVP) |
+| 26 Ranking | `ranking.tsx`, `RankingRow.tsx` | Nota extra "Contam os pontos de prognósticos e votos MVP, na data do jogo." que o frame não tem | intencional: texto de regra existente mantido |
+| 26 | `RankingRow.tsx` | Sem avatar, só nome público | intencional (decisão) |
+| 27 Notícias | `noticias.tsx`, `NewsCard.tsx` | Sem diferenças (Tabs sem linha, imagem 96x72, título 2 linhas, "fonte · quando") | sem diferenças |
+| 48 Bloqueio | `BiometricGate.tsx`, `LionBackdrop.tsx` | Sem diferenças (logótipo, "A S360 está bloqueada.", Branco e Contorno); estado de falha reutiliza a mesma frase | sem diferenças (estado de falha sem Figma) |
+| 49 Terminar sessão (alerta) | `definicoes/index.tsx` | Alerta nativo, título, frase, Cancelar e Terminar sessão destrutivo iguais | sem diferenças |
+
+Resumo do Grupo B: 5 correções (a8f339b, 393141c, 2b92dba, cd72fef, 186a308), 3 pendentes Martim (Gameback, "Termos e privacidade" externo ou interno, título do histórico com equipas). Verificação visual em dispositivo continua pendente.
