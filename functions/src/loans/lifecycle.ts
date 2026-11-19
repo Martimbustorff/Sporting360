@@ -1,8 +1,7 @@
 import { Timestamp, type Firestore, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { fromFirestore } from "../store/writer";
 import type { MatchDoc } from "../model/types";
-import { isLoanActive, type LoanDoc } from "./model";
-import { loanExpiryOf } from "../callables/loans";
+import { isLoanActive, loanExpiryOf, type LoanDoc } from "./model";
 
 // Ciclo de vida dos empréstimos de GameBox (Plano 8). Nada aqui regista uid, email, nomes, ids de empréstimo ou números.
 
@@ -19,7 +18,13 @@ const secretRef = (db: Firestore, id: string) => db.doc(`loans/${id}/secret/numb
  * Cancela (cancelledAt = now, se ainda não estava) e apaga o número de cada empréstimo. Idempotente.
  * Só marca como cancelados os ativos; os já expirados ficam como estão, mas perdem o número se ainda o tivessem.
  */
-async function cancelDocs(db: Firestore, docs: QueryDocumentSnapshot[], now: Date): Promise<number> {
+async function cancelDocs(
+  db: Firestore,
+  docs: QueryDocumentSnapshot[],
+  now: Date,
+  /** Campos pessoais a limpar em cada empréstimo (apagar conta), mesmo nos já cancelados ou expirados. */
+  scrub?: (l: LoanDoc) => Record<string, unknown>,
+): Promise<number> {
   const byId = new Map(docs.map((d) => [d.id, d]));
   let cancelled = 0;
   const writer = db.bulkWriter();
@@ -30,10 +35,12 @@ async function cancelDocs(db: Firestore, docs: QueryDocumentSnapshot[], now: Dat
   });
   for (const d of byId.values()) {
     const l = d.data() as LoanDoc;
+    const update: Record<string, unknown> = scrub ? scrub(l) : {};
     if (l.cancelledAt === null && isLoanActive(l, now)) {
-      void writer.update(d.ref, { cancelledAt: Timestamp.fromDate(now) }).catch(() => undefined);
+      update.cancelledAt = Timestamp.fromDate(now);
       cancelled++;
     }
+    if (Object.keys(update).length > 0) void writer.update(d.ref, update).catch(() => undefined);
     void writer.delete(secretRef(db, d.id)).catch(() => undefined);
   }
   await writer.close();
@@ -47,13 +54,18 @@ export async function cancelLoansForGamebox(db: Firestore, gameboxId: string, no
   return cancelDocs(db, snap.docs, now);
 }
 
-/** Cancela os empréstimos em que o uid é dono ou destinatário e apaga os números (apagar conta). Devolve os cancelados. */
+/**
+ * Apagar conta: cancela os empréstimos em que o uid é dono ou destinatário, apaga os números e limpa os dados pessoais
+ * do utilizador (uid e nome, no papel que teve) em todos eles, também nos já cancelados ou expirados. Devolve os cancelados.
+ */
 export async function cancelLoansForUser(db: Firestore, uid: string, now: Date = new Date()): Promise<number> {
   const [owned, received] = await Promise.all([
     db.collection("loans").where("ownerUid", "==", uid).get(),
     db.collection("loans").where("recipientUid", "==", uid).get(),
   ]);
-  return cancelDocs(db, [...owned.docs, ...received.docs], now);
+  return cancelDocs(db, [...owned.docs, ...received.docs], now, (l) =>
+    l.ownerUid === uid ? { ownerUid: null, ownerName: null } : l.recipientUid === uid ? { recipientUid: null, recipientName: null } : {},
+  );
 }
 
 /**

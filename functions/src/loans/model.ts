@@ -1,6 +1,7 @@
 // Modelo dos empréstimos de GameBox (Plano 8). Só o servidor escreve em `loans`; o cliente lê.
 import { randomBytes } from "node:crypto";
 import type { Timestamp } from "firebase-admin/firestore";
+import type { MatchDoc } from "../model/types";
 
 export type LoanMatch = {
   homeName: string;
@@ -21,8 +22,9 @@ export type LoanSeat = {
 
 // O número da GameBox fica em `loans/{id}/secret/number` = { number: string }, fora deste documento.
 export type LoanDoc = {
-  ownerUid: string;
-  ownerName: string;
+  // null depois de o dono apagar a conta (os dados pessoais saem; o empréstimo fica como registo).
+  ownerUid: string | null;
+  ownerName: string | null;
   gameboxId: string;
   matchId: string;
   sport: string;
@@ -59,6 +61,20 @@ export function computeExpiresAt(m: {
     return new Date(m.kickoff.getTime() + 2 * HORA);
   }
   return new Date(m.kickoff.getTime() + 4 * HORA);
+}
+
+/**
+ * Validade de um empréstimo a partir do jogo (datas já convertidas). Partilhada com a manutenção (loans/lifecycle.ts).
+ * Só PST com o jogo por começar encurta; SUSP e INTR chegam como PST a meio do jogo e não encurtam o empréstimo.
+ */
+export function loanExpiryOf(m: Pick<MatchDoc, "kickoff" | "status" | "finishedAt">, now: Date): Date {
+  const kickoff = m.kickoff as unknown as Date;
+  return computeExpiresAt({
+    kickoff,
+    status: m.status,
+    finishedAt: (m.finishedAt as unknown as Date | null) ?? null,
+    postponedWithoutDate: m.status === "PST" && kickoff.getTime() > now.getTime(),
+  });
 }
 
 /** Ativo: não cancelado e ainda dentro da validade (expiresAt > now). */

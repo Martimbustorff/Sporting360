@@ -23,6 +23,8 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await clearAll(db);
+  // O emulador corre onGameboxDeleted para as GameBoxes apagadas pelo clearAll; esperar que acabe para não tocar nos empréstimos do teste seguinte.
+  await new Promise((r) => setTimeout(r, 700));
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc("gamebox/g1").set({ userid: "alice", gameboxNumber: "cifrado", gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7" });
@@ -108,7 +110,9 @@ describe("cancelamentos", () => {
     expect(await cancelLoansForGamebox(db, "g1", NOW)).toBe(1);
     expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
     expect(await hasSecret(id)).toBe(false);
+    const before = await loanOf(id);
     expect(await cancelLoansForGamebox(db, "g1", NOW)).toBe(0);
+    expect(await loanOf(id)).toEqual(before);
   });
 
   it("apagar conta do dono e do destinatário: cancelados e segredos apagados", async () => {
@@ -122,6 +126,30 @@ describe("cancelamentos", () => {
     await db.doc(`loans/${a}/secret/number`).set({ number: NUM });
     expect(await cancelLoansForUser(db, "alice", NOW)).toBe(1);
     expect(await hasSecret(a)).toBe(false);
+    expect(await cancelLoansForUser(db, "alice", NOW)).toBe(0);
+  });
+
+  it("apagar conta limpa os dados pessoais no papel de destinatário, também em empréstimo já cancelado", async () => {
+    const id = await create();
+    await handleClaimLoan(db, bob, { loanId: id }, NOW);
+    await db.doc(`loans/${id}`).update({ cancelledAt: Timestamp.fromDate(NOW) });
+    await cancelLoansForUser(db, "bob", NOW);
+    const l = await loanOf(id);
+    expect(l.recipientUid).toBeNull();
+    expect(l.recipientName).toBeNull();
+    expect(l.ownerUid).toBe("alice");
+    expect(await hasSecret(id)).toBe(false);
+  });
+
+  it("apagar conta limpa os dados pessoais no papel de dono, também em empréstimo expirado", async () => {
+    const id = await create();
+    await db.doc(`loans/${id}`).update({ expiresAt: Timestamp.fromMillis(NOW.getTime() - H) });
+    await cancelLoansForUser(db, "alice", NOW);
+    const l = await loanOf(id);
+    expect(l.ownerUid).toBeNull();
+    expect(l.ownerName).toBeNull();
+    expect(l.cancelledAt).toBeNull();
+    expect(await hasSecret(id)).toBe(false);
     expect(await cancelLoansForUser(db, "alice", NOW)).toBe(0);
   });
 });

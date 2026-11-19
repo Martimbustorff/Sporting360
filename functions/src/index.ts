@@ -44,8 +44,8 @@ export const loansMaintenance = onSchedule(
   },
 );
 
-// GameBox apagada (V2: campo `userid`): cancela os empréstimos ativos e apaga os números.
-export const onGameboxDeleted = onDocumentDeleted({ document: "gamebox/{id}", region: "europe-west1" }, async (event) => {
+// GameBox apagada (V2: campo `userid`): cancela os empréstimos ativos e apaga os números. Idempotente, por isso com retry.
+export const onGameboxDeleted = onDocumentDeleted({ document: "gamebox/{id}", region: "europe-west1", retry: true }, async (event) => {
   await cancelLoansForGamebox(getFirestore(), event.params.id, new Date());
 });
 

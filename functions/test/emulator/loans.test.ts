@@ -25,6 +25,8 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   await clearAll(db);
+  // O emulador corre onGameboxDeleted para as GameBoxes apagadas pelo clearAll; esperar que acabe para não tocar nos empréstimos do teste seguinte.
+  await new Promise((r) => setTimeout(r, 700));
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc("gamebox/g1").set({

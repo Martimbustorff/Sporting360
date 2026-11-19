@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, Timestamp, type Firestore } from "firebase-admin/firestore";
-import { computeExpiresAt, isLoanActive, newLoanId, type LoanDoc, type LoanSeat } from "../loans/model";
+import { isLoanActive, loanExpiryOf, newLoanId, type LoanDoc, type LoanSeat } from "../loans/model";
 import { normalizeGameboxNumber } from "../loans/number";
 import { publicName } from "../data/profiles";
 import { fromFirestore } from "../store/writer";
@@ -68,20 +68,6 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
     }
   }
   return best?.id ?? null;
-}
-
-/**
- * Validade de um empréstimo a partir do jogo (datas já convertidas). Partilhada com a manutenção (loans/lifecycle.ts).
- * Só PST com o jogo por começar encurta; SUSP e INTR chegam como PST a meio do jogo e não encurtam o empréstimo.
- */
-export function loanExpiryOf(m: Pick<MatchDoc, "kickoff" | "status" | "finishedAt">, now: Date): Date {
-  const kickoff = m.kickoff as unknown as Date;
-  return computeExpiresAt({
-    kickoff,
-    status: m.status,
-    finishedAt: (m.finishedAt as unknown as Date | null) ?? null,
-    postponedWithoutDate: m.status === "PST" && kickoff.getTime() > now.getTime(),
-  });
 }
 
 /** Erros que não são HttpsError (Firestore: caminhos com o loanId) nunca chegam ao cliente nem ao log do onCall. */

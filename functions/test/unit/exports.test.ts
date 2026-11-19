@@ -18,6 +18,7 @@ type Endpoint = {
   region?: string[];
   scheduleTrigger?: { schedule: string; timeZone?: string };
   callableTrigger?: object;
+  eventTrigger?: { retry?: boolean };
   secretEnvironmentVariables?: { key: string }[];
 };
 
@@ -77,6 +78,10 @@ describe("configuração de cada function exportada", () => {
   const scheduled = exported.filter((n) => endpoint(n).scheduleTrigger);
   it.each(scheduled)("%s: agendada com timeZone Europe/Lisbon", (name) => {
     expect(endpoint(name).scheduleTrigger?.timeZone).toBe("Europe/Lisbon");
+  });
+
+  it("onGameboxDeleted tem retry (idempotente)", () => {
+    expect(endpoint("onGameboxDeleted").eventTrigger?.retry).toBe(true);
   });
 
   it("as callables do motor são onCall e as restantes são agendadas ou gatilhos", () => {
