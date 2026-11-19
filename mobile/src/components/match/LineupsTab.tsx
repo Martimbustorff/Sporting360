@@ -1,57 +1,75 @@
-// Figma: nós 498:28089 (ao vivo: campo 498:28129 com os dois onzes, jogador 498:28140, em `Pitch`) e 500:29521
-// (jogo futuro: o mesmo campo vazio).
-// SEM FIGMA: a barra de cada equipa com a tática ("4-3-3") e a linha "Treinador" (SectionBar e InfoRow do 655:31905 /
-// 655:31960), a lista de suplentes (número, nome, nota), o texto sobre quando saem os onzes, o esqueleto em branco,
-// o estado de erro, "Sem formações para este jogo." e o aviso de cache.
+// Figma V7.1: 4947:8323 (32 Jogo · Formações): alternador de equipa "SPORTING · 3-4-3 / ADVERSÁRIO · 4-3-3", campo com
+// uma equipa de cada vez (`Pitch`, jogador 4947:8538), "SUPLENTES" em Eyebrow 13 text-subtle e linhas de suplente
+// (número Label 16 text-subtle, nome Body 14, à direita "entrou aos 90+2'" ou "não jogou" em Caption 12 text-muted).
+// "entrou aos" vem dos lances de substituição (`events`, o mesmo documento do Sumário: quem entra é `assistId`);
+// "não jogou" só com o jogo terminado e sem entrada nem minutos; nos outros casos a coluna fica vazia.
+// SEM FIGMA: a linha "Treinador", o texto sobre quando saem os onzes, o esqueleto em branco, o estado de erro,
+// "Sem formações para este jogo." e o aviso de cache.
 import { router } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Pitch } from '@/components/Pitch';
-import { InfoRow, SectionBar } from '@/components/SectionBar';
-import type { LineupPlayer, LineupsDoc, Match } from '@/data/schemas';
+import { InfoRow } from '@/components/SectionBar';
+import { Segmented } from '@/components/Segmented';
+import { Touchable } from '@/components/Touchable';
+import type { EventsDoc, LineupPlayer, LineupsDoc, Match, PlayersDoc } from '@/data/schemas';
 import { useMatchDetail } from '@/data/sports';
 import { uiState } from '@/lib/matchVM';
-import { pitchRows, ratingsMap } from '@/lib/pitch';
-import { Body, Display } from '@/theme/typography';
+import { enteredText, photosMap, pitchRows, ratingNumbers, ratingsMap } from '@/lib/pitch';
+import { Text71 } from '@/theme/typography';
 import { layout, spacing } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const LINEUPS_ERROR = 'Não foi possível carregar os dados.';
 const LINEUPS_SOON = 'Os onzes são conhecidos cerca de uma hora antes do jogo.';
 const NO_LINEUPS = 'Sem formações para este jogo.';
+const DID_NOT_PLAY = 'não jogou';
 
 type TeamLineup = LineupsDoc['teams'][number];
+type Side = 'home' | 'away';
 
-function TeamBar({ name, team }: { name: string; team: TeamLineup | null }) {
-  return (
-    <View style={{ gap: spacing.xs }}>
-      <SectionBar label={name} right={team?.formation ?? undefined} />
-      {team?.coach ? <InfoRow label="Treinador" value={team.coach.name} /> : null}
-    </View>
-  );
+/** Minuto de entrada por `playerId` (substituições: `assistId` entra, `playerId` sai). */
+function entryTexts(events: EventsDoc | null, teamId: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const e of events?.items ?? []) {
+    if (e.type === 'subst' && e.teamId === teamId && e.assistId && !(e.assistId in out)) {
+      out[e.assistId] = enteredText(e.minute, e.extra);
+    }
+  }
+  return out;
 }
 
-function SubRow({ p, rating, onPress }: { p: LineupPlayer; rating?: string; onPress?: () => void }) {
+function playedMinutes(players: PlayersDoc | null, playerId: string): number {
+  for (const t of players?.teams ?? []) {
+    const line = t.players.find((p) => p.playerId === playerId);
+    if (line) return line.minutes ?? 0;
+  }
+  return 0;
+}
+
+function SubRow({ p, note, onPress }: { p: LineupPlayer; note: string | null; onPress?: () => void }) {
   const content = (
     <>
-      <Display variant="minute" style={{ width: layout.subNumberWidth }}>{p.number != null ? String(p.number) : ''}</Display>
-      <Body variant="body" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{p.name}</Body>
-      {rating ? <Body variant="badge">{rating}</Body> : null}
+      <Text71 variant="label16" color="textSubtle" style={{ minWidth: layout.subNumberWidth }}>
+        {p.number != null ? String(p.number) : ''}
+      </Text71>
+      <Text71 variant="body14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{p.name}</Text71>
+      {note ? <Text71 variant="caption12" color="textMuted" numberOfLines={1} testID="sub-note">{note}</Text71> : null}
     </>
   );
   const style = {
     minHeight: layout.minTouch,
-    paddingHorizontal: spacing.md,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.sm,
+    gap: layout.subRowGap,
   };
   const label = `Suplente ${p.name}`;
   return onPress ? (
-    <Pressable testID="sub-row" accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={style}>
+    <Touchable testID="sub-row" accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={style}>
       {content}
-    </Pressable>
+    </Touchable>
   ) : (
     <View testID="sub-row" accessible accessibilityLabel={label} style={style}>
       {content}
@@ -62,63 +80,88 @@ function SubRow({ p, rating, onPress }: { p: LineupPlayer; rating?: string; onPr
 export function LineupsTab({ match }: { match: Match }) {
   const lineups = useMatchDetail(match.id, 'lineups');
   const players = useMatchDetail(match.id, 'players');
+  const events = useMatchDetail(match.id, 'events');
+  const [selected, setSelected] = useState<'sporting' | 'opponent'>('sporting');
   const state = uiState(match.status);
   if (lineups.status === 'loading') return <View testID="lineups-loading" />;
   if (lineups.status === 'error') return <EmptyState icon="info" text={LINEUPS_ERROR} />;
 
   const doc = lineups.status === 'ready' ? lineups.data : null;
   const find = (id: string) => doc?.teams.find((t) => t.teamId === id) ?? null;
-  const home = find(match.home.id);
-  const away = find(match.away.id);
-  const none = !home && !away;
+  const none = !find(match.home.id) && !find(match.away.id);
   const beforeOrDuring = state === 'scheduled' || state === 'live' || state === 'halftime';
   if (none && !beforeOrDuring) return <EmptyState icon="info" text={NO_LINEUPS} />;
 
-  // Uma leitura falhada das notas não esconde os onzes: só ficam sem nota.
-  const ratings = ratingsMap(players.status === 'ready' ? players.data : null);
+  // Uma leitura falhada das notas, das fotos ou dos lances não esconde os onzes: só ficam sem nota, foto ou entrada.
+  const playersDoc = players.status === 'ready' ? players.data : null;
+  const eventsDoc = events.status === 'ready' ? events.data : null;
+  const ratings = ratingsMap(playersDoc);
+  const ratingValues = ratingNumbers(playersDoc);
+  const photos = photosMap(playersDoc);
   const openPlayer = (id: string) => router.push(`/equipa/jogador/${id}`);
-  const sides = [
-    { side: 'home' as const, info: match.home, team: home },
-    { side: 'away' as const, info: match.away, team: away },
-  ];
+
+  const sportingSide: Side = match.sportingSide;
+  const opponentSide: Side = sportingSide === 'home' ? 'away' : 'home';
+  const sides = {
+    sporting: { info: match[sportingSide], team: find(match[sportingSide].id) as TeamLineup | null },
+    opponent: { info: match[opponentSide], team: find(match[opponentSide].id) as TeamLineup | null },
+  };
+  const current = sides[selected];
+  const team = current.team;
+  const toggleLabel = (k: 'sporting' | 'opponent') => {
+    const s = sides[k];
+    return [s.info.name, s.team?.formation].filter(Boolean).join(' · ');
+  };
+  const entries = entryTexts(eventsDoc, current.info.id);
+  const finished = state === 'finished';
+  const subNote = (p: LineupPlayer): string | null => {
+    const entered = entries[p.playerId];
+    if (entered) return entered;
+    if (finished && playedMinutes(playersDoc, p.playerId) === 0) return DID_NOT_PLAY;
+    return null;
+  };
 
   return (
     <MatchScrollView
       testID="lineups-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
+      contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: layout.lineupBlockGap }}
     >
       <OfflineBanner visible={lineups.status === 'ready' && lineups.fromCache === true} />
       {none ? (
-        <Body variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>{LINEUPS_SOON}</Body>
+        <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>{LINEUPS_SOON}</Text71>
       ) : (
-        <TeamBar name={match.home.name} team={home} />
+        <Segmented
+          testID="team-selector"
+          items={[
+            { key: 'sporting', label: toggleLabel('sporting') },
+            { key: 'opponent', label: toggleLabel('opponent') },
+          ]}
+          value={selected}
+          onChange={setSelected}
+        />
       )}
       <Pitch
-        home={home ? pitchRows(home.startXI) : []}
-        away={away ? pitchRows(away.startXI) : []}
+        rows={team ? pitchRows(team.startXI) : []}
         ratings={ratings}
-        sportingSide={match.sportingSide}
-        onPlayer={openPlayer}
+        ratingValues={ratingValues}
+        photos={photos}
+        missing={!none && !team}
+        onPlayer={selected === 'sporting' ? openPlayer : undefined}
       />
-      {none ? null : <TeamBar name={match.away.name} team={away} />}
-      {sides.some((s) => (s.team?.substitutes.length ?? 0) > 0) ? <SectionBar label="Suplentes" /> : null}
-      {sides.map(({ side, info, team }) =>
-        team && team.substitutes.length > 0 ? (
-          <View key={side}>
-            <Body variant="tab" numberOfLines={1} style={{ paddingHorizontal: spacing.md, opacity: layout.mutedOpacity }}>
-              {info.name}
-            </Body>
-            {team.substitutes.map((p, i) => (
-              <SubRow
-                key={`${p.playerId}-${i}`}
-                p={p}
-                rating={ratings[p.playerId]}
-                onPress={side === match.sportingSide ? () => openPlayer(p.playerId) : undefined}
-              />
-            ))}
-          </View>
-        ) : null,
-      )}
+      {team && team.substitutes.length > 0 ? (
+        <View testID="subs">
+          <Text71 variant="eyebrow13" color="textSubtle">Suplentes</Text71>
+          {team.substitutes.map((p, i) => (
+            <SubRow
+              key={`${p.playerId}-${i}`}
+              p={p}
+              note={subNote(p)}
+              onPress={selected === 'sporting' ? () => openPlayer(p.playerId) : undefined}
+            />
+          ))}
+        </View>
+      ) : null}
+      {team?.coach ? <InfoRow label="Treinador" value={team.coach.name} /> : null}
     </MatchScrollView>
   );
 }

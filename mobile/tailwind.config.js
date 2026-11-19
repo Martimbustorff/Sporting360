@@ -43,6 +43,7 @@ module.exports = {
           formLoss: '#E53836',
           yellow71: '#FACC2E',
           yellow71Bg: 'rgba(250, 204, 46, 0.18)',
+          pitchField: '#006B4A',
         },
       },
       fontFamily: {

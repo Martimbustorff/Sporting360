@@ -62,3 +62,29 @@ export function pitchName(name: string): string {
   if (firstReal > 0) return words.slice(firstReal).join(' ');
   return words[words.length - 1] ?? name;
 }
+
+/** Nota como número (7,25 vira 7.3 por arredondamento a uma casa); sem nota válida não há entrada. */
+export function ratingNumbers(players: PlayersDoc | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const t of players?.teams ?? []) {
+    for (const p of t.players) {
+      if (p.rating != null && Number.isFinite(p.rating)) out[p.playerId] = Math.round(p.rating * 10) / 10;
+    }
+  }
+  return out;
+}
+
+/** Fotos da API por `playerId` (campo `photo` do documento `players`). */
+export function photosMap(players: PlayersDoc | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const t of players?.teams ?? []) for (const p of t.players) if (p.photo) out[p.playerId] = p.photo;
+  return out;
+}
+
+/** Nota a partir da qual o selo fica a `primary` (Figma 4947:8598). */
+export const TOP_RATING = 8;
+
+/** Texto "entrou aos 67'" / "entrou aos 90+2'". */
+export function enteredText(minute: number, extra: number | null): string {
+  return `entrou aos ${minute}${extra ? `+${extra}` : ''}'`;
+}

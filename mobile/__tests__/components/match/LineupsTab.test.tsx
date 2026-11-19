@@ -1,5 +1,7 @@
 // Task 11: tab Formações. Hooks de dados e router mockados (sem rede).
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { colors } from '@/theme/tokens';
 import type { GameStatus, LineupPlayer, Match } from '@/data/schemas';
 
 type L =
@@ -77,32 +79,107 @@ beforeEach(() => {
   mockPush.mockClear();
 });
 
+const bgOf = (n: { props: Record<string, any> }) => (StyleSheet.flatten(n.props.style as object) as { backgroundColor: string }).backgroundColor;
+
 describe('Formações', () => {
-  it('dois onzes: tática, treinador, 22 jogadores no campo, suplentes e notas', async () => {
+  it('Sporting primeiro: tática no alternador, 11 jogadores no campo, treinador, suplentes e notas', async () => {
     mockDetails.current = { lineups: lineups(), players };
     await render(<LineupsTab match={match('LIVE')} />);
-    expect(screen.getByText('4-3-3')).toBeTruthy();
-    expect(screen.getByText('4-4-2')).toBeTruthy();
+    expect(screen.getByText('Sporting CP · 4-3-3')).toBeTruthy();
+    expect(screen.getByText('SC Braga · 4-4-2')).toBeTruthy();
     expect(screen.getByText('Rui Borges')).toBeTruthy();
-    expect(screen.getByText('Carlos Vicens')).toBeTruthy();
-    expect(screen.getAllByTestId('pitch-player')).toHaveLength(22);
+    expect(screen.queryByText('Carlos Vicens')).toBeNull();
+    expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
     expect(screen.getByText('7,3')).toBeTruthy();
-    expect(screen.getByText('6,0')).toBeTruthy();
     expect(screen.getByText('B. Suplente100')).toBeTruthy();
-    expect(screen.getByText('6,8')).toBeTruthy();
-    expect(screen.getAllByTestId('sub-row')).toHaveLength(2);
+    expect(screen.getAllByTestId('sub-row')).toHaveLength(1);
   });
 
-  it('casa na metade de cima a começar no guarda-redes; fora na de baixo, guarda-redes no fim', async () => {
+  it('alternador: o adversário mostra o seu onze, treinador e suplentes', async () => {
+    mockDetails.current = { lineups: lineups(), players };
+    await render(<LineupsTab match={match('LIVE')} />);
+    await fireEvent.press(screen.getByText('SC Braga · 4-4-2'));
+    expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
+    expect(screen.getByText('Carlos Vicens')).toBeTruthy();
+    expect(screen.getByText('B. Suplente200')).toBeTruthy();
+    expect(screen.queryByText('B. Suplente100')).toBeNull();
+    expect(screen.getByText('6,0')).toBeTruthy();
+  });
+
+  it('guarda-redes em baixo: a última linha do campo tem o guarda-redes', async () => {
     mockDetails.current = { lineups: lineups() };
     await render(<LineupsTab match={match('LIVE')} />);
-    const home = screen.getAllByTestId('pitch-row-home');
-    const away = screen.getAllByTestId('pitch-row-away');
-    expect(home).toHaveLength(4);
-    expect(away).toHaveLength(4);
+    const rowsOnPitch = screen.getAllByTestId('pitch-row');
+    expect(rowsOnPitch).toHaveLength(4);
     const names = screen.getAllByTestId('pitch-name').map((n) => n.props.children);
-    expect(names[0]).toBe('Jogador100');
-    expect(names[names.length - 1]).toBe('Jogador200');
+    expect(names[names.length - 1]).toBe('Jogador100');
+  });
+
+  it('sem notas no documento: nenhum selo de nota', async () => {
+    mockDetails.current = { lineups: lineups() };
+    await render(<LineupsTab match={match('LIVE')} />);
+    expect(screen.queryAllByTestId('pitch-rating')).toHaveLength(0);
+  });
+
+  it('só os jogadores com nota têm selo; primary a partir de 8,0 e escuro abaixo', async () => {
+    const ps = {
+      status: 'ready' as const,
+      data: { teams: [{ teamId: '228', players: [
+        { playerId: '100', rating: 8.04 },
+        { playerId: '101', rating: 7.94 },
+        { playerId: '102', rating: 6.2 },
+        { playerId: '103', rating: null },
+      ] }] },
+    };
+    mockDetails.current = { lineups: lineups(), players: ps };
+    await render(<LineupsTab match={match('LIVE')} />);
+    const chips = screen.getAllByTestId('pitch-rating');
+    expect(chips).toHaveLength(3);
+    const byText = (t: string) => chips.find((c) => within(c).queryByText(t))!;
+    expect(bgOf(byText('8,0'))).toBe(colors.primary);
+    expect(bgOf(byText('7,9'))).toBe(colors.bg);
+    expect(bgOf(byText('6,2'))).toBe(colors.bg);
+  });
+
+  it('foto do documento de jogadores e silhueta sem foto', async () => {
+    const ps = { status: 'ready' as const, data: { teams: [{ teamId: '228', players: [{ playerId: '100', photo: 'https://x/p.png', rating: 7 }] }] } };
+    mockDetails.current = { lineups: lineups(), players: ps };
+    await render(<LineupsTab match={match('LIVE')} />);
+    expect(screen.getAllByTestId('player-photo-image', { includeHiddenElements: true })).toHaveLength(1);
+    expect(screen.getAllByTestId('player-silhouette')).toHaveLength(10);
+  });
+
+  it('número da camisola no distintivo da foto', async () => {
+    mockDetails.current = { lineups: lineups() };
+    await render(<LineupsTab match={match('LIVE')} />);
+    expect(screen.getAllByTestId('player-number')).toHaveLength(11);
+  });
+
+  it('suplentes: "entrou aos X\'" pelos lances e "não jogou" só com o jogo terminado', async () => {
+    const t = team('228', 100, '4-3-3', 'Rui Borges');
+    t.substitutes = [
+      { playerId: '150', name: 'B. Entrou', number: 11, pos: 'F', grid: null },
+      { playerId: '151', name: 'C. Extra', number: 12, pos: 'F', grid: null },
+      { playerId: '152', name: 'D. Ficou', number: 9, pos: 'F', grid: null },
+    ];
+    const ev = {
+      status: 'ready' as const,
+      data: { items: [
+        { minute: 67, extra: null, teamId: '228', playerId: '1', assistId: '150', type: 'subst', detail: '' },
+        { minute: 90, extra: 2, teamId: '228', playerId: '2', assistId: '151', type: 'subst', detail: '' },
+      ] },
+    };
+    mockDetails.current = { lineups: lineups([t, team('217', 200, '4-4-2', 'X')]), events: ev };
+    await render(<LineupsTab match={match('FT')} />);
+    expect(screen.getByText("entrou aos 67'")).toBeTruthy();
+    expect(screen.getByText("entrou aos 90+2'")).toBeTruthy();
+    expect(screen.getByText('não jogou')).toBeTruthy();
+  });
+
+  it('jogo em curso: sem "não jogou"', async () => {
+    mockDetails.current = { lineups: lineups() };
+    await render(<LineupsTab match={match('LIVE')} />);
+    expect(screen.queryByText('não jogou')).toBeNull();
   });
 
   it('tocar num jogador do Sporting abre /equipa/jogador/{id}; os do adversário não são botões', async () => {
@@ -112,12 +189,13 @@ describe('Formações', () => {
     expect(mockPush).toHaveBeenCalledWith('/equipa/jogador/100');
     await fireEvent.press(screen.getByLabelText('Suplente B. Suplente100'));
     expect(mockPush).toHaveBeenLastCalledWith('/equipa/jogador/150');
+    await fireEvent.press(screen.getByText('SC Braga · 4-4-2'));
     expect(screen.getByLabelText('1 A. Jogador200').props.accessibilityRole).not.toBe('button');
     await fireEvent.press(screen.getByLabelText('1 A. Jogador200'));
     expect(mockPush).toHaveBeenCalledTimes(2);
   });
 
-  it('Sporting fora: a equipa tocável é a de fora', async () => {
+  it('Sporting fora: o primeiro separador é o Sporting e é o tocável', async () => {
     mockDetails.current = { lineups: lineups([team('217', 200, '4-4-2', 'X'), team('228', 100, '4-3-3', 'Y')]) };
     await render(<LineupsTab match={match('LIVE', 'away')} />);
     await fireEvent.press(screen.getByLabelText('1 A. Jogador100'));
@@ -145,10 +223,12 @@ describe('Formações', () => {
   it('só uma equipa (Review Focus 1): mostra essa e "Onze ainda não disponível." na outra', async () => {
     mockDetails.current = { lineups: lineups([team('228', 100, '4-3-3', 'Rui Borges')]), players };
     await render(<LineupsTab match={match('LIVE')} />);
-    expect(screen.getByText('4-3-3')).toBeTruthy();
+    expect(screen.getByText('Sporting CP · 4-3-3')).toBeTruthy();
     expect(screen.getAllByTestId('pitch-player')).toHaveLength(11);
+    expect(screen.queryByText('Onze ainda não disponível.')).toBeNull();
+    await fireEvent.press(screen.getByText('SC Braga'));
+    expect(screen.queryAllByTestId('pitch-player')).toHaveLength(0);
     expect(screen.getAllByText('Onze ainda não disponível.')).toHaveLength(1);
-    expect(screen.getByText('SC Braga')).toBeTruthy();
   });
 
   it('nome longo com três apelidos (Review Focus 4): uma linha com reticências', async () => {

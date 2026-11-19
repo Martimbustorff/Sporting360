@@ -1,14 +1,15 @@
-// SEM FIGMA: tab Vídeos sem frame vetorial; referência na imagem "Appstore S360" 818:20891 (get_design_context):
-// lista vertical de vídeos a toda a largura (margens de 14 px), miniatura e título. Composto com tokens: o rótulo do
-// tipo ("Golo", "Resumo", ...) a primary por cima de cada vídeo, o esqueleto em branco, os vazios e o aviso de cache.
+// Figma V7.1: 4947:8624 (33 Jogo · Vídeos): o primeiro vídeo (o resumo) em destaque 16:9 com a duração e o rótulo do tipo
+// em Eyebrow 13 primary-on-dark; os outros em linhas com miniatura 132x74, rótulo e título. A duração só aparece se o
+// vídeo a tiver (`duration`, ainda não gravada pelo servidor). O leitor (`VideoPlayer`) mantém o comportamento.
+// Decisão: o destaque é o vídeo do tipo `resumo`; sem resumo, o primeiro da lista. Os restantes seguem por minuto.
+// SEM FIGMA: o esqueleto em branco, o estado de erro, os vazios e o aviso de cache.
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { isAllowedEmbed, VideoPlayer } from '@/components/VideoPlayer';
 import type { Match, Video } from '@/data/schemas';
 import { useMatchVideos } from '@/data/sports';
-import { Body } from '@/theme/typography';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const VIDEOS_ERROR = 'Não foi possível carregar os dados.';
@@ -36,12 +37,20 @@ function byMinute(vs: Video[]): Video[] {
     .map((x) => x.v);
 }
 
+/** Destaque primeiro (o resumo, ou o primeiro da lista); os restantes mantêm a ordem recebida. */
+export function featuredFirst(vs: Video[]): Video[] {
+  const i = vs.findIndex((v) => v.type === 'resumo');
+  const at = i < 0 ? 0 : i;
+  const first = vs[at];
+  return first ? [first, ...vs.slice(0, at), ...vs.slice(at + 1)] : vs;
+}
+
 export function VideosTab({ match }: { match: Match }) {
   const videos = useMatchVideos(match.id);
   if (videos.status === 'loading') return <View testID="videos-loading" />;
   if (videos.status === 'error') return <EmptyState icon="info" text={VIDEOS_ERROR} />;
 
-  const list = videos.status === 'ready' ? byMinute(videos.data.filter((v) => isAllowedEmbed(v.embedSrc))) : [];
+  const list = videos.status === 'ready' ? featuredFirst(byMinute(videos.data.filter((v) => isAllowedEmbed(v.embedSrc)))) : [];
   const offline = videos.status === 'ready' && videos.fromCache === true;
   if (list.length === 0) {
     return (
@@ -55,15 +64,12 @@ export function VideosTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="videos-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: layout.videoListGap }}
+      contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
     >
       <OfflineBanner visible={offline} />
-      {list.map((v) => (
-        <View key={v.id} testID={`video-row-${v.id}`} style={{ gap: layout.videoGap }}>
-          <Body testID="video-type" variant="badgeSmall" style={{ color: colors.primary }}>
-            {TYPE_LABEL[v.type]}
-          </Body>
-          <VideoPlayer video={v} />
+      {list.map((v, i) => (
+        <View key={v.id} testID={`video-row-${v.id}`}>
+          <VideoPlayer video={v} variant={i === 0 ? 'featured' : 'row'} kind={TYPE_LABEL[v.type]} />
         </View>
       ))}
     </MatchScrollView>

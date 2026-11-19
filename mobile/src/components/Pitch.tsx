@@ -1,100 +1,78 @@
-// Figma: nós 498:28129 (campo "Union", 347x533.14, linhas brancas a 20 %) e 498:28140 (jogador: camisola "Subtract"
-// 30x28 com o número em DIN 14 a 7 px do topo e, por baixo, o apelido em `pitchName` (corpo SemiBold 10, preto) numa caixa branca
-// de raio 4). Camisolas: Sporting verde 498:28142 e guarda-redes amarelo 498:28347 (número preto); adversário azul
-// 498:28183 e guarda-redes laranja 498:28357. Casa na metade de cima a partir do guarda-redes (498:28345 sobe 7 px
-// sobre a linha), fora na de baixo, espelhada, com o guarda-redes junto à baliza de baixo (498:28355).
-// SEM FIGMA: a etiqueta da nota ao lado da camisola, as reticências do apelido longo e "Onze ainda não disponível."
-// na metade de uma equipa sem onze.
-import { Image } from 'expo-image';
-import { Pressable, View } from 'react-native';
+// Figma V7.1: 4947:8531 (Campo: 354x430, raio 16, relva `pitchField`, linhas surface-20) e os jogadores 4947:8538 (foto
+// `PlayerPhoto` 34 com o número, selo da nota no canto de cima à direita a 20 pt da esquerda do bloco de 36, apelido em
+// Caption Strong 12 por baixo). Mostra uma equipa de cada vez, com o guarda-redes em baixo e o ataque para cima
+// (o alternador de equipa está em `LineupsTab`). Posições: `pitchRows` (grelha ou posição), colunas espelhadas como no
+// campo antigo da equipa de fora, que passa a ser a vista única.
+// Decisões: o selo da nota fica sobre a foto, como no frame (a nota "por cima" do nome); primary a partir de 8,0 e
+// `bg` nas outras; sem nota não há selo. SEM FIGMA: as linhas do campo são Views (sem imagem) e "Onze ainda não
+// disponível." quando a equipa não tem onze.
+import { View } from 'react-native';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
+import { Touchable } from '@/components/Touchable';
 import type { LineupPlayer } from '@/data/schemas';
-import { pitchName } from '@/lib/pitch';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
-
-/* eslint-disable @typescript-eslint/no-require-imports */
-const PITCH = require('../../assets/images/pitch.svg');
-const SHIRTS = {
-  sporting: require('../../assets/icons/shirt-sporting.svg'),
-  sportingGk: require('../../assets/icons/shirt-sporting-gk.svg'),
-  opponent: require('../../assets/icons/shirt-opponent.svg'),
-  opponentGk: require('../../assets/icons/shirt-opponent-gk.svg'),
-};
-/* eslint-enable @typescript-eslint/no-require-imports */
+import { pitchName, TOP_RATING } from '@/lib/pitch';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const NO_XI = 'Onze ainda não disponível.';
 
-type Side = 'home' | 'away';
-
 export type PitchProps = {
-  home: LineupPlayer[][];
-  away: LineupPlayer[][];
+  /** Linhas do onze, do guarda-redes para a frente (`pitchRows`). Vazio: campo sem jogadores. */
+  rows: LineupPlayer[][];
+  /** Notas formatadas por `playerId` ("7,3"). */
   ratings: Record<string, string>;
-  /** Lado do Sporting: camisola verde e jogadores tocáveis. */
-  sportingSide: Side;
-  /** Toque num jogador do Sporting (os do adversário não são botões). */
+  /** Notas numéricas por `playerId` (decidem a cor do selo). */
+  ratingValues: Record<string, number>;
+  photos: Record<string, string>;
+  /** Mostra "Onze ainda não disponível." (equipa sem onze no documento). */
+  missing?: boolean;
+  /** Toque num jogador (só passado para o Sporting). */
   onPlayer?: (id: string) => void;
 };
 
-function Player({ p, gk, sporting, rating, onPress }: {
+function Player({ p, rating, value, photo, onPress }: {
   p: LineupPlayer;
-  gk: boolean;
-  sporting: boolean;
   rating?: string;
+  value?: number;
+  photo?: string;
   onPress?: () => void;
 }) {
-  const shirt = sporting ? (gk ? SHIRTS.sportingGk : SHIRTS.sporting) : gk ? SHIRTS.opponentGk : SHIRTS.opponent;
   const label = [p.number != null ? `${p.number} ${p.name}` : p.name, rating ? `nota ${rating}` : null]
     .filter(Boolean)
     .join(', ');
   const body = (
     <>
-      <View style={{ width: layout.shirt.width, height: layout.shirt.height, alignItems: 'center' }}>
-        <Image source={shirt} accessible={false} style={{ width: layout.shirt.width, height: layout.shirt.height }} />
-        {p.number != null ? (
-          <Display
-            variant="pitchNumber"
-            style={{ position: 'absolute', top: layout.shirtNumberTop, color: sporting && gk ? colors.black : colors.white }}
-          >
-            {String(p.number)}
-          </Display>
-        ) : null}
+      <View style={{ width: layout.lineupPhotoBox, height: layout.lineupPhotoBox }}>
+        <View style={{ position: 'absolute', left: 0, top: space.s4 / 2 }}>
+          <PlayerPhoto photo={photo ?? null} size={layout.lineupPhoto} number={p.number} />
+        </View>
         {rating ? (
           <View
             testID="pitch-rating"
             style={{
               position: 'absolute',
               top: 0,
-              left: '100%',
-              backgroundColor: colors.primary,
-              borderRadius: radius.sm,
-              paddingHorizontal: layout.pitchRatingPadX,
+              left: layout.lineupChipLeft,
+              paddingHorizontal: space.s4,
+              paddingVertical: 1,
+              borderRadius: layout.lineupChipRadius,
+              backgroundColor: value != null && value >= TOP_RATING ? colors.primary : colors.bg,
             }}
           >
-            <Body variant="pitchRating">{rating}</Body>
+            <Text71 variant="badge11">{rating}</Text71>
           </View>
         ) : null}
       </View>
-      <View
-        style={{
-          backgroundColor: colors.white,
-          borderRadius: radius.sm,
-          paddingHorizontal: layout.pitchNamePadX,
-          paddingVertical: layout.pitchNamePadY,
-          maxWidth: layout.pitchNameMaxWidth,
-        }}
-      >
-        <Body variant="pitchName" testID="pitch-name" numberOfLines={1} ellipsizeMode="tail">
-          {pitchName(p.name)}
-        </Body>
-      </View>
+      <Text71 variant="captionStrong12" testID="pitch-name" numberOfLines={1} ellipsizeMode="tail" style={{ maxWidth: '100%', textAlign: 'center' }}>
+        {pitchName(p.name)}
+      </Text71>
     </>
   );
-  const style = { alignItems: 'center' as const };
+  const style = { alignItems: 'center' as const, gap: layout.lineupNameGap, maxWidth: '100%' as const };
   return onPress ? (
-    <Pressable testID="pitch-player" accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={style}>
+    <Touchable testID="pitch-player" accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={style}>
       {body}
-    </Pressable>
+    </Touchable>
   ) : (
     <View testID="pitch-player" accessible accessibilityLabel={label} style={style}>
       {body}
@@ -102,75 +80,72 @@ function Player({ p, gk, sporting, rating, onPress }: {
   );
 }
 
-function Half({ side, rows, ratings, sporting, onPlayer, showMissing }: {
-  side: Side;
-  rows: LineupPlayer[][];
-  ratings: Record<string, string>;
-  sporting: boolean;
-  onPlayer?: (id: string) => void;
-  showMissing: boolean;
-}) {
-  // A de fora vê o campo ao contrário: guarda-redes em baixo e colunas espelhadas.
-  const shown = side === 'home' ? rows : [...rows].reverse().map((r) => [...r].reverse());
-  const gkRow = side === 'home' ? 0 : shown.length - 1;
+function Lines() {
+  const line = { borderWidth: 1, borderColor: colors.surface20 } as const;
   return (
-    <View
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        height: '50%',
-        ...(side === 'home'
-          ? { top: -layout.pitchGkOverlap, paddingBottom: layout.pitchMidGap }
-          : { bottom: -layout.pitchGkOverlap, paddingTop: layout.pitchMidGap }),
-        justifyContent: showMissing ? 'center' : 'space-between',
-      }}
-    >
-      {showMissing ? (
-        <Body variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>{NO_XI}</Body>
-      ) : (
-        shown.map((row, i) => (
-          <View
-            key={`${side}-${i}`}
-            testID={`pitch-row-${side}`}
-            style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start', gap: spacing.xs }}
-          >
-            {row.map((p, j) => (
-              <Player
-                key={`${p.playerId}-${j}`}
-                p={p}
-                gk={i === gkRow}
-                sporting={sporting}
-                rating={ratings[p.playerId]}
-                onPress={sporting && onPlayer ? () => onPlayer(p.playerId) : undefined}
-              />
-            ))}
-          </View>
-        ))
-      )}
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <View style={{ position: 'absolute', top: layout.pitchLinePad, left: layout.pitchLinePad, right: layout.pitchLinePad, bottom: layout.pitchLinePad, ...line }} />
+      <View style={{ position: 'absolute', left: layout.pitchLinePad, right: layout.pitchLinePad, top: '50%', height: 1, backgroundColor: colors.surface20 }} />
+      <View
+        style={{
+          position: 'absolute',
+          alignSelf: 'center',
+          top: '50%',
+          marginTop: -layout.pitchCircle / 2,
+          width: layout.pitchCircle,
+          height: layout.pitchCircle,
+          borderRadius: layout.pitchCircle / 2,
+          ...line,
+        }}
+      />
+      <View style={{ position: 'absolute', alignSelf: 'center', top: layout.pitchLinePad, width: layout.pitchBox.width, height: layout.pitchBox.height, ...line }} />
+      <View style={{ position: 'absolute', alignSelf: 'center', bottom: layout.pitchLinePad, width: layout.pitchBox.width, height: layout.pitchBox.height, ...line }} />
     </View>
   );
 }
 
-export function Pitch({ home, away, ratings, sportingSide, onPlayer }: PitchProps) {
-  const any = home.length > 0 || away.length > 0;
+export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer }: PitchProps) {
+  // Guarda-redes em baixo: as linhas ao contrário e as colunas espelhadas.
+  const shown = [...rows].reverse().map((r) => [...r].reverse());
   return (
     <View
       testID="pitch"
-      style={{ width: '100%', aspectRatio: layout.pitch.width / layout.pitch.height, marginVertical: layout.pitchGkOverlap }}
+      style={{
+        width: '100%',
+        aspectRatio: layout.pitchField.width / layout.pitchField.height,
+        borderRadius: radii.r16,
+        overflow: 'hidden',
+        backgroundColor: colors.pitchField,
+      }}
     >
-      <Image source={PITCH} accessible={false} contentFit="contain" style={{ width: '100%', height: '100%' }} />
-      {(['home', 'away'] as const).map((side) => (
-        <Half
-          key={side}
-          side={side}
-          rows={side === 'home' ? home : away}
-          ratings={ratings}
-          sporting={side === sportingSide}
-          onPlayer={onPlayer}
-          showMissing={any && (side === 'home' ? home : away).length === 0}
-        />
-      ))}
+      <Lines />
+      {missing ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: space.s16 }}>
+          <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>{NO_XI}</Text71>
+        </View>
+      ) : (
+        <View style={{ flex: 1, justifyContent: 'space-between', padding: layout.pitchFieldPad }}>
+          {shown.map((row, i) => (
+            <View
+              key={i}
+              testID="pitch-row"
+              style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start' }}
+            >
+              {row.map((p, j) => (
+                <View key={`${p.playerId}-${j}`} style={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
+                  <Player
+                    p={p}
+                    rating={ratings[p.playerId]}
+                    value={ratingValues[p.playerId]}
+                    photo={photos[p.playerId]}
+                    onPress={onPlayer ? () => onPlayer(p.playerId) : undefined}
+                  />
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

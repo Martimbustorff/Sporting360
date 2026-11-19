@@ -1,6 +1,6 @@
 // Task 11: funções puras do campo (Formações).
 import type { LineupPlayer, PlayersDoc } from '@/data/schemas';
-import { pitchName, pitchRows, ratingOf } from '@/lib/pitch';
+import { enteredText, photosMap, pitchName, pitchRows, ratingNumbers, ratingOf } from '@/lib/pitch';
 
 const p = (playerId: string, grid: string | null, pos: string | null = null): LineupPlayer => ({
   playerId,
@@ -76,5 +76,24 @@ describe('pitchName', () => {
 
   it('com iniciais e vários apelidos fica com os apelidos todos (o campo corta com reticências)', () => {
     expect(pitchName('P. Gonçalves dos Santos Silva')).toBe('Gonçalves dos Santos Silva');
+  });
+});
+
+describe('ratingNumbers, photosMap e enteredText', () => {
+  const doc = { teams: [{ teamId: '1', players: [
+    { playerId: 'a', rating: 7.96, photo: 'https://x/a.png' },
+    { playerId: 'b', rating: null, photo: null },
+    { playerId: 'c', rating: Number.NaN, photo: '' },
+  ] }] } as never;
+  it('só jogadores com nota válida, arredondada a uma casa', () => {
+    expect(ratingNumbers(doc)).toEqual({ a: 8 });
+    expect(ratingNumbers(null)).toEqual({});
+  });
+  it('só jogadores com foto', () => {
+    expect(photosMap(doc)).toEqual({ a: 'https://x/a.png' });
+  });
+  it('"entrou aos X\'" com descontos', () => {
+    expect(enteredText(67, null)).toBe("entrou aos 67'");
+    expect(enteredText(90, 2)).toBe("entrou aos 90+2'");
   });
 });

@@ -28,7 +28,7 @@ import { Sheet } from '@/components/Sheet';
 import { Switch } from '@/components/Switch';
 import { SocialButtons } from '@/components/SocialButtons';
 import { StandingsTable } from '@/components/StandingsTable';
-import { StatRow } from '@/components/StatRow';
+import { CardsRow, StatRow } from '@/components/StatRow';
 import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
 import { ToggleRow } from '@/components/ToggleRow';
@@ -251,16 +251,17 @@ function Gallery() {
 
         <Section title="StatRow">
           <StatRow label="Posse de bola" home="58%" away="42%" />
-          <StatRow label="Cartões amarelos" home="2" away="1" card="yellow" />
+          <StatRow label="Faltas" home="9" away="13" />
+          <CardsRow home={{ yellow: '1', red: '0' }} away={{ yellow: '3', red: '0' }} />
           <StatRow label="Antes do jogo" home="0" away="0" muted />
         </Section>
 
         <Section title="Pitch">
           <Pitch
-            home={pitchRows(LINEUPS[0]?.startXI ?? [])}
-            away={pitchRows(LINEUPS[1]?.startXI ?? [])}
-            ratings={{ '1001': '8.1', '1002': '7.4' }}
-            sportingSide="home"
+            rows={pitchRows(LINEUPS[0]?.startXI ?? [])}
+            ratings={{ '1001': '8,1', '1002': '7,4' }}
+            ratingValues={{ '1001': 8.1, '1002': 7.4 }}
+            photos={{}}
           />
         </Section>
 

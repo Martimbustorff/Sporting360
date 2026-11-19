@@ -1,5 +1,7 @@
 // Task 10: tab Estatísticas. Hooks de dados mockados (sem rede).
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { colors } from '@/theme/tokens';
 import type { GameStatus, Match } from '@/data/schemas';
 
 type L =
@@ -59,11 +61,76 @@ describe('Estatísticas', () => {
   it('ao vivo com documento: valores, posse tal como vem e xG com vírgula', async () => {
     mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
     await render(<StatsTab match={match('LIVE')} />);
-    expect(screen.getAllByTestId('stat-row')).toHaveLength(10);
+    expect(screen.getAllByTestId('stat-row')).toHaveLength(8);
     expect(texts('stat-home').slice(0, 2)).toEqual(['55%', '1,4']);
     expect(texts('stat-away').slice(0, 2)).toEqual(['45%', '0,6']);
-    expect(screen.getByText('Cartão amarelo')).toBeTruthy();
-    expect(screen.getAllByTestId('stat-card')).toHaveLength(2);
+    expect(screen.getByText('Posse de bola (%)')).toBeTruthy();
+  });
+
+  it('cartões: uma linha no fim com amarelos e vermelhos de cada equipa', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
+    await render(<StatsTab match={match('LIVE')} />);
+    expect(screen.getByText('Cartões')).toBeTruthy();
+    expect(screen.getByTestId('cards-home-yellow').props.children).toBe('1');
+    expect(screen.getByTestId('cards-home-red').props.children).toBe('0');
+    expect(screen.getByTestId('cards-away-yellow').props.children).toBe('0');
+    expect(screen.getByTestId('cards-away-red').props.children).toBe('1');
+    const all = screen.getAllByTestId(/^stat-row$|^cards-row$/);
+    expect(all[all.length - 1]?.props.testID).toBe('cards-row');
+  });
+
+  it('a barra da equipa com o valor maior é primary-on-dark e a menor surface-20', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
+    await render(<StatsTab match={match('LIVE')} />);
+    const bg = (n: { props: Record<string, any> }) => (StyleSheet.flatten(n.props.style as object) as { backgroundColor: string }).backgroundColor;
+    // Posse 55% contra 45%: casa lidera; remates 12 contra 4: casa lidera; defesas 0 contra 0: ninguém.
+    const home = screen.getAllByTestId('stat-bar-home').map(bg);
+    const away = screen.getAllByTestId('stat-bar-away').map(bg);
+    expect(home[0]).toBe(colors.primaryOnDark);
+    expect(away[0]).toBe(colors.surface20);
+    expect(home[2]).toBe(colors.primaryOnDark);
+    expect(away[2]).toBe(colors.surface20);
+    expect(home[4]).toBe(colors.surface20);
+    expect(away[4]).toBe(colors.surface20);
+  });
+
+  it('visitante com o valor maior: a barra de fora é a primary-on-dark', async () => {
+    const doc = statsDoc();
+    doc.teams[0]!.items['Total Shots'] = 2;
+    mockDetails.current = { statistics: { status: 'ready', data: doc } };
+    await render(<StatsTab match={match('LIVE')} />);
+    const bg = (n: { props: Record<string, any> }) => (StyleSheet.flatten(n.props.style as object) as { backgroundColor: string }).backgroundColor;
+    expect(bg(screen.getAllByTestId('stat-bar-home')[2]!)).toBe(colors.surface20);
+    expect(bg(screen.getAllByTestId('stat-bar-away')[2]!)).toBe(colors.primaryOnDark);
+  });
+
+  it('sem as partes no documento: sem alternador Jogo / 1.ª parte / 2.ª parte', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: statsDoc() } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.queryByTestId('period-selector')).toBeNull();
+    expect(screen.queryByText('1.ª parte')).toBeNull();
+  });
+
+  it('com as partes: alternador e valores da parte escolhida', async () => {
+    const first = { teams: [{ teamId: '228', items: { 'Total Shots': 5 } }, { teamId: '217', items: { 'Total Shots': 1 } }], xg: null };
+    const second = { teams: [{ teamId: '228', items: { 'Total Shots': 7 } }, { teamId: '217', items: { 'Total Shots': 3 } }], xg: null };
+    mockDetails.current = { statistics: { status: 'ready', data: { ...statsDoc(), periods: { first, second } } } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.getByTestId('period-selector')).toBeTruthy();
+    expect(texts('stat-home')[2]).toBe('12');
+    await fireEvent.press(screen.getByText('1.ª parte'));
+    expect(texts('stat-home')[2]).toBe('5');
+    await fireEvent.press(screen.getByText('2.ª parte'));
+    expect(texts('stat-home')[2]).toBe('7');
+    await fireEvent.press(screen.getByText('Jogo'));
+    expect(texts('stat-home')[2]).toBe('12');
+  });
+
+  it('só uma parte no documento: sem alternador', async () => {
+    const first = { teams: [], xg: null };
+    mockDetails.current = { statistics: { status: 'ready', data: { ...statsDoc(), periods: { first, second: null } } } };
+    await render(<StatsTab match={match('FT')} />);
+    expect(screen.queryByTestId('period-selector')).toBeNull();
   });
 
   it('casa e fora pelo teamId mesmo com teams[0] a ser a de fora', async () => {
@@ -75,17 +142,18 @@ describe('Estatísticas', () => {
 
   it('antes do jogo sem documento (Review Focus 1): 10 linhas a zero, esbatidas, sem rebentar', async () => {
     await render(<StatsTab match={match('NS')} />);
-    expect(screen.getAllByTestId('stat-row')).toHaveLength(10);
-    expect(texts('stat-home')).toEqual(['0%', ...Array(9).fill('0')]);
+    expect(screen.getAllByTestId('stat-row')).toHaveLength(8);
+    expect(screen.getByTestId('cards-row')).toBeTruthy();
+    expect(texts('stat-home')).toEqual(['0%', ...Array(7).fill('0')]);
     expect(screen.getByText('Golos esperados (xG)')).toBeTruthy();
-    expect(screen.getAllByTestId('stat-home')[0]?.props.style).toEqual(
-      expect.arrayContaining([expect.objectContaining({ opacity: 0.3 })]),
+    expect(StyleSheet.flatten(screen.getAllByTestId('stat-row')[0]?.props.style as object)).toEqual(
+      expect.objectContaining({ opacity: 0.3 }),
     );
   });
 
   it('ao vivo ainda sem documento: linhas a zero', async () => {
     await render(<StatsTab match={match('LIVE')} />);
-    expect(screen.getAllByTestId('stat-row')).toHaveLength(10);
+    expect(screen.getAllByTestId('stat-row')).toHaveLength(8);
   });
 
   it('terminado sem documento: mensagem', async () => {

@@ -191,11 +191,20 @@ export type EventItem = z.infer<typeof EventItemSchema>;
 export const EventsDocSchema = z.looseObject({ items: z.array(EventItemSchema) });
 export type EventsDoc = z.infer<typeof EventsDocSchema>;
 
+const StatisticsTeamsSchema = z.array(
+  z.looseObject({ teamId: str, items: z.record(z.string(), z.union([z.string(), z.number(), z.null()])) }),
+);
+/** Estatísticas de uma parte (1.ª ou 2.ª): só existem se o servidor as gravar em `periods` (hoje não grava). */
+export const StatisticsPeriodSchema = z.looseObject({ teams: StatisticsTeamsSchema, xg: nullable(PairSchema) });
+export type StatisticsPeriod = z.infer<typeof StatisticsPeriodSchema>;
 export const StatisticsDocSchema = z.looseObject({
-  teams: z.array(
-    z.looseObject({ teamId: str, items: z.record(z.string(), z.union([z.string(), z.number(), z.null()])) }),
-  ),
+  teams: StatisticsTeamsSchema,
   xg: nullable(PairSchema),
+  periods: z
+    .looseObject({ first: nullable(StatisticsPeriodSchema), second: nullable(StatisticsPeriodSchema) })
+    .nullable()
+    .optional()
+    .catch(null),
 });
 export type StatisticsDoc = z.infer<typeof StatisticsDocSchema>;
 
@@ -301,6 +310,8 @@ export const VideoSchema = z.looseObject({
   minute: nullable(str),
   type: z.enum(['golo', 'resumo', 'flash_interview', 'outro']).catch('outro'),
   thumbnail: nullable(str),
+  /** Duração em segundos; o servidor ainda não a grava (a duração só aparece se existir). */
+  duration: nullable(num).optional(),
   embedSrc: str,
   publishedAt: nullable(ts),
 });

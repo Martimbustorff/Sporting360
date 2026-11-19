@@ -1,5 +1,6 @@
 // Task 15: tab Vídeos. useMatchVideos mockado (sem rede); o leitor real com os mocks de WebView e orientação.
 import { render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { CompetitionType, Match, Video } from '@/data/schemas';
 
 type L =
@@ -87,14 +88,39 @@ describe('Vídeos', () => {
       v('flash', { type: 'flash_interview', minute: null }),
     ]);
     await render(<VideosTab match={match()} />);
+    // O resumo vai para o destaque; os restantes seguem por minuto.
     expect(rows()).toEqual([
+      'video-row-resumo',
       'video-row-g12',
       'video-row-g45',
       'video-row-g45x3',
       'video-row-g64',
-      'video-row-resumo',
       'video-row-flash',
     ]);
+  });
+
+  it('o primeiro (o resumo) em destaque 16:9 e os outros em linha com miniatura', async () => {
+    mockVideos.current = ready([v('g1', { minute: '5' }), v('resumo', { type: 'resumo' })]);
+    await render(<VideosTab match={match()} />);
+    const frame = (id: string) => {
+      const open = within(screen.getByTestId(`video-row-${id}`)).getByTestId('video-open');
+      return StyleSheet.flatten(open.props.style as object) as { flexDirection?: string } | undefined;
+    };
+    expect(frame('g1')?.flexDirection).toBe('row');
+    expect(frame('resumo')?.flexDirection).toBeUndefined();
+  });
+
+  it('sem resumo, o primeiro da lista é o destaque', async () => {
+    mockVideos.current = ready([v('g9', { minute: '9' }), v('g3', { minute: '3' })]);
+    await render(<VideosTab match={match()} />);
+    expect(rows()).toEqual(['video-row-g3', 'video-row-g9']);
+  });
+
+  it('duração só aparece quando o vídeo a tem', async () => {
+    mockVideos.current = ready([v('resumo', { type: 'resumo', duration: 252 }), v('g1', { minute: '5' })]);
+    await render(<VideosTab match={match()} />);
+    expect(screen.getAllByTestId('video-duration')).toHaveLength(1);
+    expect(within(screen.getByTestId('video-row-resumo')).getByText('4:12')).toBeTruthy();
   });
 
   it('rótulos por tipo em pt-PT', async () => {

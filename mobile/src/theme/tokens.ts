@@ -59,6 +59,8 @@ export const colors = {
   formLoss: '#E53836',
   yellow71: '#FACC2E',
   yellow71Bg: 'rgba(250, 204, 46, 0.18)',
+  // Formações V7.1 (4947:8531): relva do campo
+  pitchField: '#006B4A',
 } as const;
 
 export const fonts = {
@@ -194,6 +196,38 @@ export const radius = {
 } as const;
 
 export const layout = {
+  // V7.1 Estatísticas, Formações e Vídeos (4947:8037, 4947:8323, 4947:8624)
+  segmentedRadius: 10, // alternador Jogo / partes e Sporting / adversário (4947:8240)
+  segmentedPad: 4,
+  segmentedGap: 4,
+  segmentedItemPadY: 7,
+  statBlockGap: 14, // entre blocos de estatística (4947:8239)
+  statBarHeight: 4,
+  statBarGap: 4,
+  statLabelGap: 6, // valores à barra
+  statCardW: 10, // cartão na linha "Cartões" (4947:8313)
+  statCardH: 14,
+  statCardRadius: 2,
+  statCardCountGap: 6,
+  pitchField: { width: 354, height: 430 }, // 4947:8531
+  pitchFieldPad: 12, // SEM FIGMA: folga do campo às linhas dos jogadores
+  pitchLinePad: 8, // linha de jogo a 8 pt da borda do campo
+  pitchBox: { width: 120, height: 44 }, // grande área
+  pitchCircle: 64,
+  lineupPhoto: 34, // 4947:8539
+  lineupPhotoBox: 36,
+  lineupChipLeft: 20, // nota: left 20, top 0 (4947:8542)
+  lineupChipRadius: 4,
+  lineupNameGap: 2,
+  lineupBlockGap: 14,
+  subRowGap: 12,
+  videoRowThumb: { width: 132, height: 74 }, // 4947:8624, miniatura das linhas
+  videoPlayCircle: 44, // botão de play 16:9 (a miniatura grande tem o círculo a 44)
+  videoPlayCircleSmall: 32,
+  videoDurationInset: 8,
+  videoDurationRadius: 4,
+  videoRowRadius: 8, // miniatura das linhas (4947:8624)
+  videoLabelGap: 4, // rótulo do tipo ao título
   headerHeight: 96,
   headerRow: 52, // V7.1 Header (4918:5132), sem área segura
   headerBlur: 15,

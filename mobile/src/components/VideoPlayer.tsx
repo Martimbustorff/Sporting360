@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import type { Video } from '@/data/schemas';
 import { playerUri } from '@/lib/vsports';
-import { Body, Display } from '@/theme/typography';
+import { Body, Display, Text71 } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
 
 export const VIDEO_ERROR = 'Não foi possível abrir o vídeo.';
@@ -47,17 +47,27 @@ export function shouldLoad(req: { url: string; isTopFrame?: boolean }): boolean 
   return isAllowedEmbed(req.url);
 }
 
+/** Duração em segundos para "4:12"; sem valor válido não há duração. */
+export function formatDuration(seconds: number | null | undefined): string | null {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return null;
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const sec = String(total % 60).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
 function lock(o: ScreenOrientation.OrientationLock) {
   ScreenOrientation.lockAsync(o).catch(() => {});
 }
 
-function Frame({ children }: { children?: React.ReactNode }) {
+function Frame({ children, row }: { children?: React.ReactNode; row?: boolean }) {
   return (
     <View
       style={{
-        width: '100%',
-        aspectRatio: layout.videoAspect,
-        borderRadius: layout.videoRadius,
+        ...(row
+          ? { width: layout.videoRowThumb.width, height: layout.videoRowThumb.height, flexShrink: 0 }
+          : { width: '100%', aspectRatio: layout.videoAspect }),
+        borderRadius: row ? layout.videoRowRadius : layout.videoRadius,
         overflow: 'hidden',
         backgroundColor: colors.surface10,
         alignItems: 'center',
@@ -69,7 +79,12 @@ function Frame({ children }: { children?: React.ReactNode }) {
   );
 }
 
-export function VideoPlayer({ video }: { video: Video }) {
+/**
+ * `variant`: 'default' (miniatura a toda a largura, minuto e título) ou, no Figma V7.1 4947:8624, 'featured' (16:9 com
+ * duração, rótulo do tipo em Eyebrow 13 e título em Body 14 por baixo) e 'row' (miniatura 132x74 à esquerda, rótulo e
+ * título à direita). `kind` é o rótulo do tipo; a duração só aparece se `video.duration` existir.
+ */
+export function VideoPlayer({ video, variant = 'default', kind }: { video: Video; variant?: 'default' | 'featured' | 'row'; kind?: string }) {
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
   const uri = playerUri(video.embedSrc);
@@ -97,7 +112,61 @@ export function VideoPlayer({ video }: { video: Video }) {
     </View>
   );
 
+  const duration = formatDuration(video.duration);
+  const v71 = variant !== 'default';
+  const row = variant === 'row';
+  const label = v71 ? (
+    <View style={{ flex: row ? 1 : undefined, minWidth: 0, gap: layout.videoLabelGap, marginTop: row ? 0 : layout.videoGap }}>
+      {kind ? (
+        <Text71 testID="video-type" variant="eyebrow13" color="primaryOnDark" numberOfLines={1}>{kind}</Text71>
+      ) : null}
+      <Text71 variant="body14" numberOfLines={row ? 2 : 3}>{video.title}</Text71>
+    </View>
+  ) : null;
+  const durationChip = duration ? (
+    <View
+      testID="video-duration"
+      style={{
+        position: 'absolute',
+        right: layout.videoDurationInset,
+        bottom: layout.videoDurationInset,
+        paddingHorizontal: spacing.xs,
+        paddingVertical: 1,
+        borderRadius: layout.videoDurationRadius,
+        backgroundColor: colors.bg,
+      }}
+    >
+      <Text71 variant="badge11">{duration}</Text71>
+    </View>
+  ) : null;
+  const playSize = row ? layout.videoPlayCircleSmall : layout.videoPlayCircle;
+  const playBadge = (
+    <View
+      testID="video-play-icon"
+      style={{
+        width: playSize,
+        height: playSize,
+        borderRadius: playSize / 2,
+        backgroundColor: colors.scrimV71,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <Feather name="play" size={playSize / 2} color={colors.white} />
+    </View>
+  );
+
   if (!allowed) {
+    if (v71) {
+      return (
+        <View testID="video-error" style={row ? { flexDirection: 'row', gap: spacing.sm } : undefined}>
+          <Frame row={row}>
+            <Text71 variant="caption12" style={{ textAlign: 'center' }}>{VIDEO_ERROR}</Text71>
+          </Frame>
+          {label}
+        </View>
+      );
+    }
     return (
       <View testID="video-error">
         <Frame>
@@ -115,8 +184,9 @@ export function VideoPlayer({ video }: { video: Video }) {
         accessibilityRole="button"
         accessibilityLabel={`Ver vídeo: ${video.title}`}
         onPress={show}
+        style={row ? { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' } : undefined}
       >
-        <Frame>
+        <Frame row={row}>
           {video.thumbnail ? (
             <Image
               testID="video-thumbnail"
@@ -126,9 +196,12 @@ export function VideoPlayer({ video }: { video: Video }) {
               accessible={false}
             />
           ) : null}
-          <Feather testID="video-play-icon" name="play-circle" size={layout.videoPlayIcon} color={colors.white} />
+          {v71 ? playBadge : (
+            <Feather testID="video-play-icon" name="play-circle" size={layout.videoPlayIcon} color={colors.white} />
+          )}
+          {v71 ? durationChip : null}
         </Frame>
-        {caption}
+        {v71 ? label : caption}
       </Touchable>
       {open ? (
         <Modal

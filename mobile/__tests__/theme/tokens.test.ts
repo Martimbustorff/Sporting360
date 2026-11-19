@@ -42,6 +42,7 @@ const MAP: Record<string, string> = {
   formLoss: 'formLoss',
   yellow71: 'yellow71',
   yellow71Bg: 'yellow71Bg',
+  pitchField: 'pitchField',
 };
 
 describe('tokens <-> tailwind', () => {
