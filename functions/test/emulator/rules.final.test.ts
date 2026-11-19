@@ -49,7 +49,7 @@ describe("public-read data collections (old and new data model)", () => {
   });
   const readable = [
     "matches/1001", "matches/1001/details/events", "matches/1001/videos/v1",
-    "competitions/football_94_2026", "competitions/football_94_2026/data/standings",
+    "competitions/football_94_2026", "competitions/football_94_2026/data/standings", "competitions/football_94_2026/data/liveFixtures",
     "teams/football_228", "teams/football_228/data/squad", "venues/1", "config/app",
     "leaderboards/a", "leaderboards/a/entries/b", "settlements/x",
   ];

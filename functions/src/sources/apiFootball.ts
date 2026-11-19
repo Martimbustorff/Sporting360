@@ -25,6 +25,8 @@ export interface ApiFootballClient {
   readonly remaining: number | null;
   fixturesByTeamSeason(team: number, season: string): Promise<AfFixtureCore[]>;
   fixturesByIds(ids: string[]): Promise<AfFixture[]>;
+  /** Jogos ao vivo de uma liga (`fixtures?live=all&league=`): 1 pedido, conta na quota como os outros. */
+  liveFixtures(league: number): Promise<AfFixtureCore[]>;
   rounds(league: number, season: string): Promise<string[]>;
   fixturesByLeague(league: number, season: string): Promise<AfFixtureCore[]>;
   standings(league: number, season: string): Promise<AfStandingsResponse[]>;
@@ -74,6 +76,7 @@ export function apiFootball(o: { key: string; fetch?: FetchFn; host?: string; ti
       if (ids.length > MAX_IDS) return Promise.reject(new Error(`fixturesByIds: máximo ${MAX_IDS} ids por pedido (recebeu ${ids.length})`));
       return get("fixtures", [["ids", ids.join("-")]]);
     },
+    liveFixtures: (league) => get("fixtures", [["live", "all"], ["league", league]]),
     rounds: (league, season) => get("fixtures/rounds", [["league", league], ["season", season]]),
     fixturesByLeague: (league, season) => get("fixtures", [["league", league], ["season", season]]),
     standings: (league, season) => get("standings", [["league", league], ["season", season]]),

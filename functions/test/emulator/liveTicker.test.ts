@@ -35,12 +35,21 @@ beforeEach(async () => {
   clock = KO;
   fetchMs = 0;
   sleeps = [];
+  liveCalls = [];
 });
 
 type Fake = ReturnType<typeof fakeFetch>;
-function deps(f: Fake): TickDeps {
+const liveUrl = /fixtures\?live=all&league=/;
+/** Pedidos `liveFixtures` do ticker (1 por minuto com um jogo do Sporting em liga em direto), à parte de `f.calls`. */
+let liveCalls: string[] = [];
+function deps(f: Fake, o: { liveResponse?: unknown } = {}): TickDeps {
   const timed = (async (input: string | URL | Request, init?: RequestInit) => {
     clock += fetchMs;
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    if (liveUrl.test(url)) {
+      liveCalls.push(url);
+      return new Response(JSON.stringify(o.liveResponse ?? envelope([])), { status: 200 });
+    }
     return f(input, init);
   }) as typeof fetch;
   return {
@@ -120,7 +129,8 @@ describe("tick: jogo a decorrer", () => {
     await seedFrom(fx("fixture-live-2h.json"), clock);
     const f = fakeFetch([[byIds, (_u, n) => envelope([fx("fixture-live-2h.json", { elapsed: 67 + n })])]]);
     const r = await tick(deps(f));
-    expect(r.calls).toBe(4);
+    expect(r.calls).toBe(4 + 1); // 4 fixtures + 1 liveFixtures (jogo do Sporting em liga)
+    expect(liveCalls).toHaveLength(1);
     expect(r.ids).toEqual([ID]);
     expect(only(f, byIds)).toHaveLength(4);
     expect(f.calls.every((u) => u.includes(`ids=${ID}`))).toBe(true);
@@ -135,7 +145,7 @@ describe("tick: jogo a decorrer", () => {
     await seedFrom(fx("fixture-live-2h.json"), clock);
     const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
     const r = await tick(deps(f));
-    expect(r.calls).toBe(4);
+    expect(r.calls).toBe(4 + 1);
     expect(sleeps).toEqual([14_000, 14_000, 14_000]);
   });
 
@@ -246,7 +256,7 @@ describe("tick: jogo a decorrer", () => {
     await liveTickerJob(deps(fakeFetch([[byIds, envelope([fx("fixture-live-2h.json", { elapsed: 70 })])]])));
     const h2 = (await db.doc("ingestHealth/football_live").get()).data()!;
     expect(h2.consecutiveFailures).toBe(0);
-    expect(h2.lastCount).toBe(4);
+    expect(h2.lastCount).toBe(4 + 1);
   });
 
   it("minuto :15 com jogo live da liga 94 → 1 chamada extra de standings; minuto :16 não", async () => {
@@ -254,13 +264,13 @@ describe("tick: jogo a decorrer", () => {
     await seedFrom(fx("fixture-live-2h.json"), clock);
     const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])], ...competitionRoutes(94)]);
     const r = await tick(deps(f));
-    expect(r.calls).toBe(5);
+    expect(r.calls).toBe(5 + 1);
     expect(only(f, /standings\?league=94&season=2026/)).toHaveLength(1);
     expect((await db.doc("competitions/football_94_2026/data/standings").get()).exists).toBe(true);
 
     clock = KO + 76 * MIN;
     const f2 = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
-    expect((await tick(deps(f2))).calls).toBe(4);
+    expect((await tick(deps(f2))).calls).toBe(4 + 1);
   });
 
   it("particular ao minuto :15 → sem standings", async () => {
@@ -303,7 +313,7 @@ describe("tick: antes do jogo", () => {
     int.fixture.status.short = "INT";
     await seedFrom(int, KO + 60 * MIN);
     const f = fakeFetch([[byIds, envelope([int])]]);
-    expect((await tick(deps(f))).calls).toBe(1);
+    expect((await tick(deps(f))).calls).toBe(1 + 1); // 1 fixture + 1 liveFixtures
     expect(sleeps).toEqual([]);
   });
 
@@ -477,7 +487,7 @@ describe("tick: fim de jogo", () => {
     const r = await tick(deps(f));
     expect(f.calls[0]).toMatch(byIds);
     expect(sleeps).toEqual([15_000, 15_000, 15_000]);
-    expect(r.calls).toBe(4);
+    expect(r.calls).toBe(4 + 1);
     expect(r.deferred).toEqual(["1500009"]);
 
     // sem jogo ao vivo, o refresco corre (depois da única iteração)
@@ -540,5 +550,121 @@ describe("tick: push", () => {
     const r = await tick({ ...deps(f), push: s.sender });
     expect(r.failed).toBe(0);
     expect(s.topics).toEqual([]);
+  });
+});
+
+describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)", () => {
+  const LIVE_DOC = "competitions/football_94_2026/data/liveFixtures";
+  const liveResponse = () => {
+    const a = fx("fixture-live-2h.json", { elapsed: 67 });
+    const b = fx("fixture-live-2h.json", { elapsed: 66 });
+    b.fixture.id = 1500100;
+    b.teams.home = { ...b.teams.home, id: 212, name: "FC Porto" };
+    b.teams.away = { ...b.teams.away, id: 217, name: "Benfica" };
+    b.goals = { home: 0, away: null as unknown as number };
+    return envelope([a, b]);
+  };
+
+  it("jogo do Sporting em liga em direto: 1 pedido fixtures?live=all&league=94 por minuto, conta na quota e escreve o formato exato", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    const r = await tick(deps(f, { liveResponse: liveResponse() }));
+    expect(liveCalls).toEqual([expect.stringMatching(/\/fixtures\?live=all&league=94$/)]);
+    expect(r.calls).toBe(4 + 1);
+    expect(r.failed).toBe(0);
+    const doc = (await db.doc(LIVE_DOC).get()).data()!;
+    expect(Object.keys(doc).sort()).toEqual(["fixtures", "updatedAt"]);
+    expect(doc.updatedAt.toMillis()).toBeGreaterThan(0);
+    expect(doc.fixtures).toEqual([
+      { homeId: "228", awayId: "211", homeGoals: 2, awayGoals: 1, elapsed: 67, status: "2H" },
+      { homeId: "212", awayId: "217", homeGoals: 0, awayGoals: 0, elapsed: 66, status: "2H" },
+    ]);
+  });
+
+  it("o updatedAt avança em cada minuto, mesmo com o conteúdo igual", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    await tick(deps(f, { liveResponse: liveResponse() }));
+    const t1 = (await db.doc(LIVE_DOC).get()).get("updatedAt").toMillis();
+    await new Promise((r) => setTimeout(r, 15));
+    clock += MIN;
+    await tick(deps(f, { liveResponse: liveResponse() }));
+    expect((await db.doc(LIVE_DOC).get()).get("updatedAt").toMillis()).toBeGreaterThan(t1);
+    expect(liveCalls).toHaveLength(2);
+  });
+
+  it("particular, taça ou eliminatória em direto: não pede nem escreve", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json", { league: 667 }), clock);
+    let f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json", { league: 667 })])]]);
+    expect((await tick(deps(f))).calls).toBe(4);
+    await clearAll(db);
+    await seedFrom(fx("fixture-live-2h.json", { league: 96 }), clock);
+    f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json", { league: 96 })])]]);
+    expect((await tick(deps(f))).calls).toBe(4);
+    await clearAll(db);
+    const ko = fx("fixture-live-2h.json");
+    ko.league.round = "Round of 16";
+    await seedFrom(ko, clock);
+    f = fakeFetch([[byIds, envelope([ko])]]);
+    expect((await tick(deps(f))).calls).toBe(4);
+    expect(liveCalls).toHaveLength(0);
+  });
+
+  it("liga em direto sem o Sporting: não pede", async () => {
+    clock = KO + 67 * MIN;
+    const other = fx("fixture-live-2h.json");
+    other.teams.home = { ...other.teams.home, id: 212, name: "FC Porto" };
+    await seedFrom(other, clock);
+    const f = fakeFetch([[byIds, envelope([other])]]);
+    expect((await tick(deps(f))).calls).toBe(4);
+    expect(liveCalls).toHaveLength(0);
+  });
+
+  it("jogo do Sporting ainda por começar ou já terminado: não pede", async () => {
+    clock = KO - 60 * MIN;
+    await seedFrom(fx("fixture-ns.json"), clock);
+    let f = fakeFetch([[byIds, "api-football/fixture-ns-lineups.json"]]);
+    expect((await tick(deps(f))).calls).toBe(1);
+    expect(liveCalls).toHaveLength(0);
+    await clearAll(db);
+    clock = KO + 30 * MIN;
+    f = fakeFetch([]);
+    expect((await tick(deps(f))).calls).toBe(0);
+    expect(liveCalls).toHaveLength(0);
+  });
+
+  it("o pedido a falhar conta como falha do tick e não impede o resto", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    const r = await tick(deps(f, { liveResponse: { errors: { rateLimit: "Too many requests" }, response: [] } }));
+    expect(r.failed).toBe(1);
+    expect(r.errors[0]).toMatch(/liveFixtures 94/);
+    expect((await db.doc(`matches/${ID}`).get()).get("elapsed")).toBe(67);
+    expect((await db.doc(LIVE_DOC).get()).exists).toBe(false);
+  });
+
+  it("o jogo acaba: o documento fica com fixtures vazio (sem pedido à API) para a app não somar o resultado duas vezes", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    await db.doc(LIVE_DOC).set({ updatedAt: new Date(clock), fixtures: [{ homeId: "228", awayId: "211", homeGoals: 2, awayGoals: 1, elapsed: 90, status: "2H" }] });
+    // jogo terminado há 2 min
+    const ft = fx("fixture-live-2h.json");
+    ft.fixture.status = { long: "Match Finished", short: "FT", elapsed: 90, extra: null };
+    const finishedAt = KO + 112 * MIN;
+    await seedFrom(ft, finishedAt);
+    await db.doc(`matches/${ID}`).set({ finishedAt: new Date(finishedAt), finishedAtSource: "observed" }, { merge: true });
+    await db.doc(`ingestState/match_${ID}`).set({ ticker: { endRefresh: true, postRefresh: true } }, { merge: true });
+    clock = finishedAt + 2 * MIN;
+    const f = fakeFetch([[byIds, envelope([ft])]]);
+    const r = await tick(deps(f));
+    expect(r.failed).toBe(0);
+    expect(r.calls).toBe(1); // só o fixture do jogo (postmatch); nenhum liveFixtures
+    expect(liveCalls).toHaveLength(0);
+    const doc = (await db.doc(LIVE_DOC).get()).data()!;
+    expect(doc.fixtures).toEqual([]);
   });
 });

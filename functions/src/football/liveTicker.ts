@@ -8,6 +8,7 @@ import { MAX_IDS } from "../sources/apiFootball";
 import { runJob } from "../store/health";
 import { saveMatch } from "../store/writer";
 import { refreshCompetition, refreshStandings } from "./competitionSync";
+import { clearLiveFixtures, isLiveSportingLeagueMatch, isRecentlyFinishedSportingLeagueMatch, refreshLiveFixtures } from "./liveFixtures";
 import { LIVE_OWNERSHIP_MS, listFootballWindow, type FootballDeps } from "./fixturesSync";
 import { mapFixture } from "./mapFixture";
 import { POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, phaseFor, ratingsSlot, type Phase } from "./phase";
@@ -98,7 +99,7 @@ const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
  * Um minuto do ticker. Lê os jogos com kickoff em `[now - 6 h, now + 75 min]`; sem nenhum fora de
  * `idle` (nem refresco pendente) não faz pedidos. Com algum `live` rápido, até 4 iterações alinhadas a
  * 0/15/30/45 s desde o início, cada uma com um só `fixturesByIds`; senão uma iteração. Nenhuma
- * iteração começa se puder acabar depois dos 60 s; os refrescos de fim de jogo depois dos 30 s ficam
+ * iteração começa se puder acabar depois dos 60 s; no fim, 1 pedido `liveFixtures` por liga com jogo do Sporting em direto; os refrescos de fim de jogo depois dos 30 s ficam
  * para o minuto seguinte. Os erros contam-se em `failed` e a iteração seguinte continua.
  */
 export async function tick(d: TickDeps): Promise<TickResult> {
@@ -254,6 +255,30 @@ export async function tick(d: TickDeps): Promise<TickResult> {
           fail(`standings ${m.competition.id} (minuto ${startNow.getUTCMinutes()})`, e);
         }
       }
+    }
+  }
+
+  // Classificação ao vivo: 1 pedido por minuto e por liga, só com um jogo do Sporting em direto numa liga.
+  const liveLeagues = new Map<string, MatchDoc>();
+  for (const m of state.values()) if (isLiveSportingLeagueMatch(m) && !liveLeagues.has(m.competition.key)) liveLeagues.set(m.competition.key, m);
+  for (const [key, m] of liveLeagues) {
+    if (elapsed() + LIVE_REQUEST_TIMEOUT_MS > TICK_DEADLINE_MS) break;
+    try {
+      await refreshLiveFixtures(d, Number(m.competition.id), key);
+    } catch (e) {
+      fail(`liveFixtures ${m.competition.id}`, e);
+    }
+  }
+  // Jogo do Sporting acabado há pouco (e nenhum em direto nessa liga): esvazia o documento, sem pedidos.
+  const cleared = new Set<string>();
+  for (const m of state.values()) {
+    const key = m.competition.key;
+    if (liveLeagues.has(key) || cleared.has(key) || !isRecentlyFinishedSportingLeagueMatch(m, d.now(), POSTMATCH_TAIL_MS)) continue;
+    cleared.add(key);
+    try {
+      await clearLiveFixtures(d, key);
+    } catch (e) {
+      fail(`liveFixtures ${m.competition.id} (limpeza)`, e);
     }
   }
 

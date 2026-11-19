@@ -346,7 +346,7 @@ describe("new data model (Plan 2)", () => {
   const readable = [
     "matches/1001", "matches/1001/details/events", "matches/1001/videos/v1",
     "competitions/football_94_2026", "competitions/football_94_2026/data/standings",
-    "competitions/football_94_2026/data/bracket", "teams/football_228", "teams/football_228/data/squad",
+    "competitions/football_94_2026/data/bracket", "competitions/football_94_2026/data/liveFixtures", "teams/football_228", "teams/football_228/data/squad",
     "venues/1", "config/app",
   ];
   it.each(readable)("anonymous can read %s", async (p) => {
