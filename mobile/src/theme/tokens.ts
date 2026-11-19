@@ -757,6 +757,7 @@ export const layout = {
   trophyGap: 10,
   formBox: 28, // forma V / E / D (4949:8491)
   formBoxGap: 6,
+  formBoxRadius: 6,
   splitCardPadX: 14, // Casa / Fora / Total (4949:8502)
   splitCardPadY: 10,
   splitCardGap: 8,

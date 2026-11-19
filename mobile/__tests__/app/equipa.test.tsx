@@ -1,4 +1,5 @@
 // Task 14: ecrãs da equipa (/equipa) e do jogador (/equipa/jogador/[id]). Hooks de dados mockados (sem rede).
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { PlayerSeasonStats, SquadPlayer, TeamStatsDoc } from '@/data/schemas';
@@ -129,12 +130,13 @@ describe('/equipa: Plantel', () => {
   it('nacionalidade do treinador em pt-PT; desconhecida fica escondida, nunca em inglês', async () => {
     mockTeam.coach = ready({ ...coach, nationality: 'Netherlands' });
     await render(wrap(<Equipa />));
-    expect(screen.getByText('Países Baixos')).toBeTruthy();
+    expect(screen.getByText('Países Baixos · desde 26 Dez 2024')).toBeTruthy();
     expect(screen.queryByText('Netherlands')).toBeNull();
     mockTeam.coach = ready({ ...coach, nationality: 'Ivory Coast' });
     await render(wrap(<Equipa />));
     expect(screen.getByText('Rui Borges')).toBeTruthy();
-    expect(screen.queryByText('Ivory Coast')).toBeNull();
+    expect(screen.queryByText(/Ivory Coast/)).toBeNull();
+    expect(screen.getByText('desde 26 Dez 2024')).toBeTruthy();
   });
 
   it('toque num jogador abre /equipa/jogador/{id}; nome longo numa linha com reticências', async () => {
@@ -164,6 +166,93 @@ describe('/equipa: Plantel', () => {
     mockTeam.squad = { status: 'missing' };
     await rerender(wrap(<Equipa />));
     expect(screen.getByText('Plantel ainda não disponível.')).toBeTruthy();
+  });
+});
+
+describe('/equipa: PlayerPhoto, etiquetas e 44 pt (V7.1)', () => {
+  const photos = (el: Parameters<typeof within>[0]) => within(el).getAllByTestId('player-photo-image', { includeHiddenElements: true });
+
+  it('Plantel: cada linha tem PlayerPhoto de 36 com o número; treinador sem número; indisponível com etiqueta Lesão', async () => {
+    mockTeam.coach = ready({ ...coach, photo: 'https://media.api-sports.io/football/coachs/900.png' });
+    await render(wrap(<Equipa />));
+    const row = screen.getByTestId('squad-row-9');
+    expect(photos(row)).toHaveLength(1);
+    expect(within(row).getByTestId('player-number', { includeHiddenElements: true })).toBeTruthy();
+    expect(within(screen.getByLabelText('Treinador: Rui Borges')).queryByTestId('player-number', { includeHiddenElements: true })).toBeNull();
+    const out = screen.getByLabelText('Ousmane Diomande, Fora, Lesão no joelho');
+    expect(within(out).getByText('Lesão')).toBeTruthy();
+    expect(within(out).queryByText('Dúvida')).toBeNull();
+  });
+
+  it('indisponível "Questionable": etiqueta Dúvida', async () => {
+    mockTeam.injuries = ready({ items: [{ playerId: '26', name: 'Ousmane Diomande', photo: null, type: 'Questionable', reason: 'Knee Injury', fixtureId: '1', date: null }] });
+    await render(wrap(<Equipa />));
+    expect(screen.getByText('Dúvida')).toBeTruthy();
+    expect(screen.queryByText('Lesão')).toBeNull();
+  });
+
+  it('a linha do plantel e a do jogador nas estatísticas têm pelo menos 44 pt de altura mínima', async () => {
+    await render(wrap(<Equipa />));
+    await openTab('Estatísticas');
+    expect(StyleSheet.flatten(screen.getByTestId('stats-row-9').props.style).minHeight).toBeGreaterThanOrEqual(44);
+    expect(StyleSheet.flatten(screen.getByTestId('link-marcadores').props.style).minHeight).toBeGreaterThanOrEqual(44);
+  });
+
+  it('Estatísticas: tabela de jogadores com PlayerPhoto de 24 em cada linha (silhueta sem foto)', async () => {
+    mockStats.current = ready({
+      players: [line('9', 'Viktor Gyökeres', { goals: 15, photo: 'https://media.api-sports.io/football/players/9.png' }), line('5', 'Hidemasa Morita', { goals: 2 })],
+    });
+    await render(wrap(<Equipa />));
+    await openTab('Estatísticas');
+    const withPhoto = within(screen.getByTestId('stats-row-9')).getByTestId('player-photo-image', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(withPhoto.props.style)).toMatchObject({ width: 24, height: 24 });
+    expect(within(screen.getByTestId('stats-row-5')).getByTestId('player-silhouette', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('Estatísticas: barras por período proporcionais ao máximo (63 pt) e cartão Casa/Fora/Total', async () => {
+    await render(wrap(<Equipa />));
+    await openTab('Estatísticas');
+    expect(StyleSheet.flatten(screen.getByTestId('period-bar-76-90').props.style).height).toBe(63);
+    expect(StyleSheet.flatten(screen.getByTestId('period-bar-0-15').props.style).height).toBe(8);
+    expect(within(screen.getByTestId('split-card')).getByText('Casa', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('Estatísticas a 320 pt: nome muito longo na tabela de jogadores numa linha com reticências e as colunas não encolhem', async () => {
+    mockStats.current = ready({ players: [line('17', LONG, { goals: 4, assists: 12, minutes: 12345, appearances: 33 })] });
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 20, left: 0, right: 0, bottom: 0 } }}>
+        <Equipa />
+      </SafeAreaProvider>,
+    );
+    await openTab('Estatísticas');
+    const row = screen.getByTestId('stats-row-17');
+    const name = within(row).getByText(LONG);
+    expect(name.props.numberOfLines).toBe(1);
+    expect(name.props.ellipsizeMode).toBe('tail');
+    for (const v of ['33', '12345', '4', '12', '7,0']) {
+      expect(StyleSheet.flatten(within(row).getByText(v).props.style)).toMatchObject({ flexShrink: 0 });
+    }
+  });
+
+  it('Troféus: jogadores com PlayerPhoto e número; treinador com o ícone do troféu', async () => {
+    const t = (league: string, season: string) => ({ league, country: 'Portugal', season, place: 'Winner' });
+    mockTeam.trophies = ready({ coach: [t('Primeira Liga', '2024/2025')], byPlayer: { '9': [t('Primeira Liga', '2023/2024')] } });
+    await render(wrap(<Equipa />));
+    await openTab('Troféus');
+    expect(photos(screen.getByTestId('trophy-player-9'))).toHaveLength(1);
+    expect(within(screen.getByTestId('trophy-player-9')).getByTestId('player-number', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('trophy-icon', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('Transferências: sem emblema do outro clube, etiqueta de direção e data à direita', async () => {
+    mockTeam.transfers = ready({
+      items: [{ playerId: '1', name: 'Jogador Novo', date: '2026-07-01', type: 'Loan', direction: 'in', in: { id: '228', name: 'Sporting CP', logo: null }, out: { id: '217', name: 'SC Braga', logo: 'https://x/217.png' } }],
+    });
+    await render(wrap(<Equipa />));
+    await openTab('Transferências');
+    const row = screen.getByTestId('transfer-row-0');
+    expect(within(row).getByText('Entrada')).toBeTruthy();
+    expect(within(row).queryByTestId('player-photo-image', { includeHiddenElements: true })).toBeNull();
   });
 });
 
@@ -276,8 +365,8 @@ describe('/equipa: Troféus', () => {
     });
     await render(wrap(<Equipa />));
     await openTab('Troféus');
-    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
-    expect(screen.getByLabelText('Taça de Portugal 2024/2025: 2.º lugar')).toBeTruthy();
+    expect(screen.getByLabelText('Primeira Liga · 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByLabelText('Taça de Portugal · 2024/2025: 2.º lugar')).toBeTruthy();
     const rows = screen.getAllByTestId(/^trophy-player-/).map((r) => r.props.testID);
     expect(rows).toEqual(['trophy-player-9', 'trophy-player-5']);
     expect(within(screen.getByTestId('trophy-player-9')).getByText('2 troféus')).toBeTruthy();
@@ -293,7 +382,7 @@ describe('/equipa: Troféus', () => {
     await render(wrap(<Equipa />));
     await openTab('Troféus');
     expect(screen.getByText('Treinador')).toBeTruthy();
-    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByLabelText('Primeira Liga · 2024/2025: Vencedor')).toBeTruthy();
     expect(screen.getByTestId('trophy-player-9')).toBeTruthy();
     expect(screen.queryByText(ERROR)).toBeNull();
   });
@@ -304,7 +393,7 @@ describe('/equipa: Troféus', () => {
     mockTeam.squad = { status: 'error', error: new Error('x') };
     await render(wrap(<Equipa />));
     await openTab('Troféus');
-    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByLabelText('Primeira Liga · 2024/2025: Vencedor')).toBeTruthy();
     expect(screen.getByText('Jogadores')).toBeTruthy();
     expect(screen.getByText(SECTION_ERROR)).toBeTruthy();
   });
@@ -336,15 +425,21 @@ describe('/equipa/jogador/[id]', () => {
   it('foto, número, posição, números da época, troféus e lesões ("em curso" sem fim)', async () => {
     await render(wrap(<Jogador />));
     expect(usePlayerStats).toHaveBeenLastCalledWith('2026');
-    expect(screen.getByTestId('player-photo').props.source).toEqual({ uri: 'https://media.api-sports.io/football/players/9.png' });
+    expect(screen.getByTestId('player-photo-image', { includeHiddenElements: true }).props.source).toEqual({
+      uri: 'https://media.api-sports.io/football/players/9.png',
+    });
+    // PlayerPhoto partilhado a 84 pt no cabeçalho (V7.1 4950:8462).
+    expect(StyleSheet.flatten(screen.getByTestId('player-photo').props.style)).toMatchObject({ width: 84, height: 84 });
     expect(screen.getByText('Viktor Gyökeres')).toBeTruthy();
-    expect(screen.getByText('N.º 9, Avançado, 24 anos')).toBeTruthy();
+    expect(screen.getByTestId('player-shirt').props.children).toBe('9');
+    expect(screen.getByText('Avançado · 24 anos')).toBeTruthy();
+    expect(screen.getByLabelText('Jogos: 12')).toBeTruthy();
     expect(screen.getByText('Época 2026/27')).toBeTruthy();
     expect(screen.getByLabelText('Golos: 15')).toBeTruthy();
     expect(screen.getByLabelText('Assistências: 3')).toBeTruthy();
     expect(screen.getByLabelText('Minutos: 1 010')).toBeTruthy();
     expect(screen.getByLabelText('Nota média: 7,0')).toBeTruthy();
-    expect(screen.getByLabelText('Primeira Liga 2024/2025: Vencedor')).toBeTruthy();
+    expect(screen.getByLabelText('Primeira Liga · 2024/2025: Vencedor')).toBeTruthy();
     expect(screen.getByLabelText('Lesão nos isquiotibiais: Desde 20 Out 2026, em curso')).toBeTruthy();
     expect(screen.getByLabelText('Castigo: 1 Mar 2026 a 8 Mar 2026')).toBeTruthy();
   });
@@ -374,7 +469,7 @@ describe('/equipa/jogador/[id]', () => {
     mockTeam.trophies = { status: 'error', error: new Error('x') };
     await render(wrap(<Jogador />));
     expect(screen.getByText('Viktor Gyökeres')).toBeTruthy();
-    expect(screen.getByText('N.º 9, Avançado, 24 anos')).toBeTruthy();
+    expect(screen.getByText('Avançado · 24 anos')).toBeTruthy();
     expect(screen.getByLabelText('Golos: 15')).toBeTruthy();
     expect(screen.getByText('Histórico de lesões')).toBeTruthy();
     expect(screen.getAllByText(SECTION_ERROR)).toHaveLength(2);

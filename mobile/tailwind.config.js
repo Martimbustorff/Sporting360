@@ -44,6 +44,7 @@ module.exports = {
           formLoss: '#E53836',
           yellow71: '#FACC2E',
           yellow71Bg: 'rgba(250, 204, 46, 0.18)',
+          injuryBg: 'rgba(229, 56, 54, 0.25)',
           pitchField: '#006B4A',
           zoneChampions: '#1F73F2',
           zoneEurope: '#FA8C26',

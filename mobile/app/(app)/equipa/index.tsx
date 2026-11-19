@@ -1,27 +1,27 @@
-// SEM FIGMA: o Figma não tem frame da equipa (Mapa do Figma do Plano 4). Compõe Header, `Tabs` (500:28814 /
-// 500:28976, modo 'scroll'), `SectionBar` (655:31905) e as linhas de `TeamRows` (como os tops da competição, Task 13):
-// - Plantel: treinador no topo, "Indisponíveis" (`injuries`, um por jogador) e grupos por posição (guarda-redes,
-//   defesas, médios, avançados), por número; cada jogador abre `/equipa/jogador/{id}` (id da API-Football).
-// - Estatísticas: competições da época (`Tabs` 'scroll', liga, taças, europeias); forma em quadrados V/E/D como no
-//   pré-jogo (Task 9); golos marcados e sofridos em casa e fora e jogos sem sofrer numa grelha Casa/Fora/Total;
-//   golos por período de 0-15 a 76-90; tabela de jogadores da época por golos (J, Min, G, A, Nota), com a cabeça
-//   em DIN 18 a 60 % como a Classificação (500:29409).
-// - Transferências: etiqueta "Entrada" (primary) ou "Saída" (surface20) como o selo pequeno (500:28830), emblema e
-//   nome do outro clube, data pt-PT e tipo à direita.
-// - Troféus: os do treinador e os jogadores com troféus (com o total), ligados ao detalhe.
+// Figma V7.1: frames 38 a 41 (4949:8312 Plantel, 4949:8429 Estatísticas, 4949:8565 Transferências, 4949:8654 Troféus). Header
+// "Sporting", separadores com scroll, secções em Eyebrow (`SectionBar`) e as linhas de `TeamRows` (`PlayerPhoto` de 36 com o número,
+// etiquetas LESÃO/DÚVIDA, seta de 18). Estatísticas: pílulas das competições, forma em quadrados de 28, cartão Casa/Fora/Total
+// (surface-06, raio 12, colunas de 56), golos por período em barras verticais (até 63 pt) e tabela de jogadores com
+// `PlayerPhoto` de 24 (J, Min, G, A, Nota). Transferências: etiqueta Entrada/Saída, nome, "de/para clube", data e tipo à direita.
+// Troféus: ícone e texto para o treinador; jogadores com a contagem e a seta.
+// SEM FIGMA: os erros e vazios de cada secção, o aviso de cache, a ligação "Ver marcadores", "Jogos sem sofrer" no cartão (o frame mostra
+// Marcados e Sofridos), os golos sofridos por período (só se mostram os marcados, como no frame; os sofridos ficam no rótulo de
+// acessibilidade da barra), a linha "Treinador" dos troféus com o nome do treinador no título da secção, e o treinador sem seta
+// (não há ecrã do treinador). O frame de transferências não tem emblemas: o emblema do outro clube deixou de se mostrar.
 // Cada tab lê só os seus documentos e depende só do principal (Plantel: plantel; Troféus: troféus). Uma leitura
 // principal falhada mostra o erro, nunca o vazio; uma secundária (treinador, indisponíveis) só a sua secção.
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
+import { Chips } from '@/components/Chips';
 import { EmptyState } from '@/components/EmptyState';
-import { TeamCrest } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
-import { Loading, PersonRow, RowSeparator, SectionError, TextRow } from '@/components/TeamRows';
+import { Loading, PersonRow, SectionError, Tag, TextRow } from '@/components/TeamRows';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
@@ -29,7 +29,7 @@ import type { Transfer } from '@/data/schemas';
 import { usePlayerStats, useSeasonFootballCompetitions, useTeamData, useTeamStats } from '@/data/sports';
 import { countryNamePt } from '@/lib/countryName';
 import { footballSeason } from '@/lib/periods';
-import { injuryText, type FormLetter } from '@/lib/prematch';
+import { injuryText, isDoubtful, type FormLetter } from '@/lib/prematch';
 import {
   calendarDateText,
   groupSquad,
@@ -43,8 +43,8 @@ import {
   unavailablePlayers,
   type Split,
 } from '@/lib/team';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 type TabKey = 'plantel' | 'estatisticas' | 'transferencias' | 'trofeus';
 const TABS: { key: TabKey; label: string }[] = [
@@ -62,7 +62,7 @@ const NO_PLAYER_STATS = 'Sem estatísticas de jogadores nesta época.';
 const NO_TRANSFERS = 'Sem transferências registadas.';
 const NO_TROPHIES = 'Sem troféus registados.';
 
-const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.cardRed };
+const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.formLoss };
 
 type Reads = Loadable<unknown>[];
 const anyCache = (rs: Reads) => rs.some((r) => r.status === 'ready' && r.fromCache === true);
@@ -71,22 +71,9 @@ const openPlayer = (id: string) => router.push(`/equipa/jogador/${id}`);
 
 function TabScroll({ children }: { children: ReactNode }) {
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32, gap: space.s12 }}>
       {children}
     </ScrollView>
-  );
-}
-
-function List<T>({ items, keyOf, render }: { items: T[]; keyOf: (t: T, i: number) => string; render: (t: T) => ReactNode }) {
-  return (
-    <View>
-      {items.map((it, i) => (
-        <View key={keyOf(it, i)} style={{ gap: layout.tableRowGap, paddingBottom: layout.tableRowGap }}>
-          {i > 0 ? <RowSeparator /> : null}
-          {render(it)}
-        </View>
-      ))}
-    </View>
   );
 }
 
@@ -103,6 +90,7 @@ function SquadTab() {
   if (players.length === 0) return <EmptyState icon="info" text={NO_SQUAD} />;
   const c = dataOf(coach);
   const out = injuries.status === 'ready' ? unavailablePlayers(injuries.data) : [];
+  const coachDetail = c ? [countryNamePt(c.nationality), c.since ? `desde ${calendarDateText(c.since)}` : null].filter(Boolean).join(' · ') : '';
   return (
     <TabScroll>
       <OfflineBanner visible={anyCache([squad, coach, injuries])} />
@@ -112,10 +100,10 @@ function SquadTab() {
           <SectionError />
         </>
       ) : c ? (
-        <>
+        <View>
           <SectionBar label="Treinador" />
-          <PersonRow label={`Treinador: ${c.name}`} photo={c.photo} name={c.name} detail={countryNamePt(c.nationality) ?? undefined} />
-        </>
+          <PersonRow label={`Treinador: ${c.name}`} photo={c.photo} name={c.name} detail={coachDetail || undefined} />
+        </View>
       ) : null}
       {injuries.status === 'error' ? (
         <>
@@ -123,44 +111,40 @@ function SquadTab() {
           <SectionError />
         </>
       ) : out.length > 0 ? (
-        <>
+        <View>
           <SectionBar label="Indisponíveis" />
-          <List
-            items={out}
-            keyOf={(i) => i.playerId}
-            render={(i) => {
-              const why = injuryText(i.type ?? '', i.reason ?? '');
-              return (
-                <PersonRow
-                  label={why ? `${i.name}, ${why}` : i.name}
-                  photo={i.photo}
-                  name={i.name}
-                  detail={why}
-                  onPress={() => openPlayer(i.playerId)}
-                />
-              );
-            }}
-          />
-        </>
+          {out.map((i) => {
+            const why = injuryText(i.type ?? '', i.reason ?? '');
+            const doubt = isDoubtful(i.type ?? null);
+            return (
+              <PersonRow
+                key={i.playerId}
+                label={why ? `${i.name}, ${why}` : i.name}
+                photo={i.photo}
+                name={i.name}
+                detail={why || undefined}
+                tag={<Tag kind={doubt ? 'doubt' : 'injury'} text={doubt ? 'Dúvida' : 'Lesão'} />}
+                onPress={() => openPlayer(i.playerId)}
+              />
+            );
+          })}
+        </View>
       ) : null}
       {groupSquad(players).map((g) => (
-        <View key={g.label} style={{ gap: spacing.md }}>
+        <View key={g.label}>
           <SectionBar label={g.label} />
-          <List
-            items={g.players}
-            keyOf={(p) => p.id}
-            render={(p) => (
-              <PersonRow
-                testID={`squad-row-${p.id}`}
-                label={p.number === null ? p.name : `${p.number}, ${p.name}`}
-                number={p.number}
-                photo={p.photo}
-                name={p.name}
-                detail={p.age === null ? undefined : `${p.age} anos`}
-                onPress={() => openPlayer(p.id)}
-              />
-            )}
-          />
+          {g.players.map((p) => (
+            <PersonRow
+              key={p.id}
+              testID={`squad-row-${p.id}`}
+              label={p.number === null ? p.name : `${p.number}, ${p.name}`}
+              number={p.number}
+              photo={p.photo}
+              name={p.name}
+              detail={p.age === null ? undefined : `${p.age} anos`}
+              onPress={() => openPlayer(p.id)}
+            />
+          ))}
         </View>
       ))}
     </TabScroll>
@@ -169,73 +153,97 @@ function SquadTab() {
 
 // --- Estatísticas ----------------------------------------------------------------------------
 
-const head = { opacity: layout.tableHeadOpacity } as const;
-
-/** Grelha: rótulo à esquerda e colunas de largura fixa (DIN 20). Com `isHead`, a cabeça em DIN 18 a 60 %. */
-function GridRow({ label, values, widths, isHead, a11y }: { label: string; values: string[]; widths: number[]; isHead?: boolean; a11y?: string }) {
+function FormBoxes({ letters }: { letters: FormLetter[] }) {
   return (
-    <View
-      accessible={!!a11y}
-      accessibilityLabel={a11y}
-      accessibilityElementsHidden={isHead}
-      importantForAccessibility={isHead ? 'no-hide-descendants' : 'auto'}
-      style={{ flexDirection: 'row', alignItems: 'center', minHeight: isHead ? undefined : layout.tableRowHeight, gap: layout.tableNameGap }}
-    >
-      {isHead ? (
-        <Display variant="tableHead" numberOfLines={1} style={[head, { flex: 1 }]}>{label}</Display>
-      ) : (
-        <Body variant="tableTeam" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{label}</Body>
-      )}
-      {values.map((v, i) => (
-        <Display
-          key={i}
-          variant={isHead ? 'tableHead' : 'tableValue'}
-          numberOfLines={1}
-          style={[isHead ? head : null, { width: widths[i], flexShrink: 0, textAlign: 'center' }]}
-        >
-          {v}
-        </Display>
-      ))}
-    </View>
-  );
-}
-
-function FormChips({ letters }: { letters: FormLetter[] }) {
-  return (
-    <View
-      accessible
-      accessibilityLabel={`Forma: ${letters.join(' ')}`}
-      style={{ flexDirection: 'row', gap: layout.formChipGap, paddingHorizontal: spacing.md }}
-    >
+    <View accessible accessibilityLabel={`Forma: ${letters.join(' ')}`} style={{ flexDirection: 'row', gap: layout.formBoxGap }}>
       {letters.map((l, i) => (
         <View
           key={i}
           style={{
-            width: layout.formChip,
-            height: layout.formChip,
-            borderRadius: radius.sm,
+            width: layout.formBox,
+            height: layout.formBox,
+            borderRadius: layout.formBoxRadius,
             backgroundColor: LETTER_BG[l],
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Body variant="badge">{l}</Body>
+          <Text71 variant="label16">{l}</Text71>
         </View>
       ))}
     </View>
   );
 }
 
-const SPLIT_W = [layout.statValueWidth, layout.statValueWidth, layout.statValueWidth];
-const splitRow = (label: string, s: Split) => (
-  <GridRow
-    key={label}
-    label={label}
-    values={[String(s.home), String(s.away), String(s.total)]}
-    widths={SPLIT_W}
-    a11y={`${label}: casa ${s.home}, fora ${s.away}, total ${s.total}`}
-  />
-);
+function SplitRow({ label, s }: { label: string; s: Split }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${label}: casa ${s.home}, fora ${s.away}, total ${s.total}`}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: layout.splitCardGap }}
+    >
+      <Text71 variant="body14" color="textMuted" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{label}</Text71>
+      {[s.home, s.away, s.total].map((v, i) => (
+        <Text71 key={i} variant="label16" numberOfLines={1} style={{ width: layout.splitCol, flexShrink: 0, textAlign: 'right' }}>{String(v)}</Text71>
+      ))}
+    </View>
+  );
+}
+
+function SplitCard({ rows }: { rows: [string, Split][] }) {
+  return (
+    <View
+      testID="split-card"
+      style={{
+        backgroundColor: colors.surface06,
+        borderRadius: layout.tieCardRadius,
+        paddingHorizontal: layout.splitCardPadX,
+        paddingVertical: layout.splitCardPadY,
+        gap: layout.splitCardGap,
+      }}
+    >
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ flexDirection: 'row', gap: layout.splitCardGap }}>
+        <View style={{ flex: 1 }} />
+        {['Casa', 'Fora', 'Total'].map((h) => (
+          <Text71 key={h} variant="eyebrow13" color="textSubtle" numberOfLines={1} style={{ width: layout.splitCol, flexShrink: 0, textAlign: 'right' }}>{h}</Text71>
+        ))}
+      </View>
+      {rows.map(([label, s]) => (
+        <SplitRow key={label} label={label} s={s} />
+      ))}
+    </View>
+  );
+}
+
+/** Barras verticais por período: altura proporcional ao máximo (até `periodBarMax`), valor por cima, intervalo por baixo. */
+function PeriodBars({ periods }: { periods: { label: string; for: number; against: number }[] }) {
+  const max = Math.max(1, ...periods.map((p) => p.for));
+  return (
+    <View testID="period-bars" style={{ flexDirection: 'row', alignItems: 'flex-end', gap: layout.periodBarGap }}>
+      {periods.map((p) => (
+        <View
+          key={p.label}
+          testID={`period-${p.label}`}
+          accessible
+          accessibilityLabel={`${p.label}: marcados ${p.for}, sofridos ${p.against}`}
+          style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: layout.periodColGap }}
+        >
+          <Text71 variant="label16" numberOfLines={1}>{String(p.for)}</Text71>
+          <View
+            testID={`period-bar-${p.label}`}
+            style={{
+              width: '100%',
+              height: Math.max(layout.periodBarMin, Math.round((layout.periodBarMax * p.for) / max)),
+              borderRadius: layout.periodBarRadius,
+              backgroundColor: colors.primaryOnDark,
+            }}
+          />
+          <Text71 variant="badge11" color="textSubtle" numberOfLines={1}>{p.label}</Text71>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 function TeamStatsBlock({ leagueId, season }: { leagueId: string; season: string }) {
   const stats = useTeamStats(leagueId, season);
@@ -253,42 +261,28 @@ function TeamStatsBlock({ leagueId, season }: { leagueId: string; season: string
     <>
       <OfflineBanner visible={stats.status === 'ready' && stats.fromCache === true} />
       {vm.form.length > 0 ? (
-        <>
+        <View style={{ gap: layout.blockGap }}>
           <SectionBar label="Forma" />
-          <FormChips letters={vm.form} />
-        </>
+          <FormBoxes letters={vm.form} />
+        </View>
       ) : null}
       {shown.length > 0 ? (
-        <>
+        <View style={{ gap: layout.blockGap }}>
           <SectionBar label="Golos" />
-          <View style={{ paddingHorizontal: spacing.md, gap: layout.tableRowGap }}>
-            <GridRow label="" values={['Casa', 'Fora', 'Total']} widths={SPLIT_W} isHead />
-            {shown.map(([label, s]) => splitRow(label, s))}
-          </View>
-        </>
+          <SplitCard rows={shown} />
+        </View>
       ) : null}
       {vm.periods.length > 0 ? (
-        <>
+        <View style={{ gap: layout.statsBlockGap }}>
           <SectionBar label="Golos por período" />
-          <View style={{ paddingHorizontal: spacing.md, gap: layout.tableRowGap }}>
-            <GridRow label="Minutos" values={['Marcados', 'Sofridos']} widths={SPLIT_W.slice(0, 2)} isHead />
-            {vm.periods.map((p) => (
-              <GridRow
-                key={p.label}
-                label={p.label}
-                values={[String(p.for), String(p.against)]}
-                widths={SPLIT_W.slice(0, 2)}
-                a11y={`${p.label}: marcados ${p.for}, sofridos ${p.against}`}
-              />
-            ))}
-          </View>
-        </>
+          <PeriodBars periods={vm.periods} />
+        </View>
       ) : null}
     </>
   );
 }
 
-const PLAYER_W = [layout.tableColWidth, layout.tableGoalsWidth, layout.tableColWidth, layout.tableColWidth, layout.tableGoalsWidth];
+const PT_COLS = [layout.ptColGames, layout.ptColMinutes, layout.ptColGoals, layout.ptColAssists, layout.ptColRating];
 
 function PlayerTable({ season }: { season: string }) {
   const stats = usePlayerStats(season);
@@ -297,8 +291,17 @@ function PlayerTable({ season }: { season: string }) {
   const players = stats.status === 'ready' ? playersByGoals(stats.data) : [];
   if (players.length === 0) return <EmptyState icon="info" text={NO_PLAYER_STATS} />;
   return (
-    <View style={{ paddingHorizontal: spacing.md, gap: layout.tableRowGap }}>
-      <GridRow label="Jogador" values={['J', 'Min', 'G', 'A', 'Nota']} widths={PLAYER_W} isHead />
+    <View>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: layout.periodColGap, paddingBottom: layout.ptRowPadY }}
+      >
+        <Text71 variant="eyebrow13" color="textSubtle" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>Jogador</Text71>
+        {['J', 'Min', 'G', 'A', 'Nota'].map((h, i) => (
+          <Text71 key={h} variant="eyebrow13" color="textSubtle" numberOfLines={1} style={{ width: PT_COLS[i], flexShrink: 0, textAlign: 'right' }}>{h}</Text71>
+        ))}
+      </View>
       {players.map((p) => {
         const rating = ratingText(p.rating);
         const values = [String(p.appearances), String(p.minutes), String(p.goals), String(p.assists), rating];
@@ -309,8 +312,31 @@ function PlayerTable({ season }: { season: string }) {
             accessibilityRole="button"
             accessibilityLabel={`${p.name}: ${p.appearances} jogos, ${p.minutes} minutos, ${p.goals} golos, ${p.assists} assistências, nota ${rating}`}
             onPress={() => openPlayer(p.id)}
+            style={{
+              minHeight: layout.minTouch,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: layout.periodColGap,
+              paddingVertical: layout.ptRowPadY,
+              borderBottomWidth: layout.separator,
+              borderBottomColor: colors.separator,
+            }}
           >
-            <GridRow label={p.name} values={values} widths={PLAYER_W} />
+            <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: layout.ptPhotoGap }}>
+              <PlayerPhoto photo={p.photo} size={layout.ptPhoto} />
+              <Text71 variant="body14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{p.name}</Text71>
+            </View>
+            {values.map((v, i) => (
+              <Text71
+                key={i}
+                variant="label16"
+                color={i === 4 ? 'white' : 'textMuted'}
+                numberOfLines={1}
+                style={{ width: PT_COLS[i], flexShrink: 0, textAlign: 'right' }}
+              >
+                {v}
+              </Text71>
+            ))}
           </Touchable>
         );
       })}
@@ -328,11 +354,17 @@ function StatsTab({ season }: { season: string }) {
   if (!current) return <EmptyState icon="info" text={NO_COMPETITIONS} />;
   return (
     <TabScroll>
-      <Tabs mode="scroll" items={list.map((c) => ({ key: c.key, label: c.name }))} value={current.key} onChange={setPicked} />
+      <Chips items={list.map((c) => ({ key: c.key, label: c.name }))} value={current.key} onChange={setPicked} testIDPrefix="comp" />
       <TeamStatsBlock key={current.key} leagueId={current.leagueId} season={season} />
       <SectionBar label={`Jogadores, época ${seasonLabel(season)}`} />
-      <Touchable testID="link-marcadores" accessibilityRole="link" accessibilityLabel="Ver marcadores" onPress={() => router.push('/equipa/marcadores')} style={{ alignSelf: 'flex-start', paddingVertical: spacing.sm }}>
-        <Body variant="tab" style={{ color: colors.primaryOnDark }}>Ver marcadores</Body>
+      <Touchable
+        testID="link-marcadores"
+        accessibilityRole="link"
+        accessibilityLabel="Ver marcadores"
+        onPress={() => router.push('/equipa/marcadores')}
+        style={{ alignSelf: 'flex-start', minHeight: layout.minTouch, justifyContent: 'center' }}
+      >
+        <Text71 variant="label16" color="primaryOnDark">Ver marcadores</Text71>
       </Touchable>
       <PlayerTable season={season} />
     </TabScroll>
@@ -340,22 +372,6 @@ function StatsTab({ season }: { season: string }) {
 }
 
 // --- Transferências --------------------------------------------------------------------------
-
-function DirectionChip({ direction }: { direction: Transfer['direction'] }) {
-  return (
-    <View
-      style={{
-        flexShrink: 0,
-        backgroundColor: direction === 'in' ? colors.primary : colors.surface20,
-        borderRadius: radius.sm,
-        paddingHorizontal: layout.badgeSmallPadX,
-        paddingVertical: layout.badgeSmallPadY,
-      }}
-    >
-      <Body variant="badgeSmall">{direction === 'in' ? 'Entrada' : 'Saída'}</Body>
-    </View>
-  );
-}
 
 function TransferRow({ t, testID }: { t: Transfer; testID: string }) {
   const other = t.direction === 'in' ? t.out : t.in;
@@ -367,17 +383,23 @@ function TransferRow({ t, testID }: { t: Transfer; testID: string }) {
       testID={testID}
       accessible
       accessibilityLabel={[t.direction === 'in' ? 'Entrada' : 'Saída', t.name, where, date, type].filter(Boolean).join(', ')}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: layout.tableNameGap, minHeight: layout.rankingRowMinHeight }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: layout.transferRowGap,
+        paddingVertical: layout.transferRowPadY,
+        borderBottomWidth: layout.separator,
+        borderBottomColor: colors.separator,
+      }}
     >
-      <DirectionChip direction={t.direction} />
-      <TeamCrest team={{ id: null, name: other.name, crestUrl: other.logo }} size="sm" />
-      <View style={{ flex: 1 }}>
-        <Body variant="tableTeam" numberOfLines={1} ellipsizeMode="tail">{t.name}</Body>
-        <Body variant="rowTeam" numberOfLines={1} ellipsizeMode="tail" style={{ opacity: layout.mutedOpacity }}>{where}</Body>
+      <Tag kind={t.direction === 'in' ? 'in' : 'out'} text={t.direction === 'in' ? 'Entrada' : 'Saída'} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail">{t.name}</Text71>
+        <Text71 variant="caption12" color="textSubtle" numberOfLines={1} ellipsizeMode="tail">{where}</Text71>
       </View>
       <View style={{ flexShrink: 0, alignItems: 'flex-end' }}>
-        <Body variant="rowTeam">{date}</Body>
-        {type ? <Body variant="rowTeam" style={{ opacity: layout.mutedOpacity }}>{type}</Body> : null}
+        <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{date}</Text71>
+        {type ? <Text71 variant="badge11" color="textSubtle" numberOfLines={1}>{type}</Text71> : null}
       </View>
     </View>
   );
@@ -393,11 +415,11 @@ function TransfersTab() {
     <TabScroll>
       <OfflineBanner visible={anyCache([transfers])} />
       {/* O servidor já ordena da mais recente para a mais antiga. */}
-      <List
-        items={items.map((t, i) => ({ t, i }))}
-        keyOf={({ t, i }) => `${t.playerId}-${t.date}-${i}`}
-        render={({ t, i }) => <TransferRow t={t} testID={`transfer-row-${i}`} />}
-      />
+      <View>
+        {items.map((t, i) => (
+          <TransferRow key={`${t.playerId}-${t.date}-${i}`} t={t} testID={`transfer-row-${i}`} />
+        ))}
+      </View>
     </TabScroll>
   );
 }
@@ -427,40 +449,37 @@ function TrophiesTab() {
     <TabScroll>
       <OfflineBanner visible={anyCache([trophies, squad, coach])} />
       {coachTrophies.length > 0 ? (
-        <>
+        <View>
           <SectionBar label={coachName ? `Treinador, ${coachName}` : 'Treinador'} />
-          <View>
-            {coachTrophies.map((x, i) => (
-              <TextRow key={`${x.league}-${x.season}-${i}`} left={`${x.league} ${x.season}`} right={trophyPlaceText(x.place)} />
-            ))}
-          </View>
-        </>
+          {coachTrophies.map((x, i) => (
+            <TextRow key={`${x.league}-${x.season}-${i}`} left={`${x.league} · ${x.season}`} right={trophyPlaceText(x.place)} />
+          ))}
+        </View>
       ) : null}
       {showPlayers ? (
-        <>
+        <View>
           <SectionBar label="Jogadores" />
           {squadFailed ? (
             <SectionError />
           ) : (
-            <List
-              items={players}
-              keyOf={(x) => x.player.id}
-              render={({ player, count }) => {
-                const total = count === 1 ? '1 troféu' : `${count} troféus`;
-                return (
-                  <PersonRow
-                    testID={`trophy-player-${player.id}`}
-                    label={`${player.name}, ${total}`}
-                    photo={player.photo}
-                    name={player.name}
-                    right={<Display variant="tableValue" style={{ flexShrink: 0 }}>{total}</Display>}
-                    onPress={() => openPlayer(player.id)}
-                  />
-                );
-              }}
-            />
+            players.map(({ player, count }) => {
+              const total = count === 1 ? '1 troféu' : `${count} troféus`;
+              return (
+                <PersonRow
+                  key={player.id}
+                  testID={`trophy-player-${player.id}`}
+                  label={`${player.name}, ${total}`}
+                  number={player.number}
+                  photo={player.photo}
+                  name={player.name}
+                  detail={total}
+                  tag={<Tag kind="count" text={String(count)} />}
+                  onPress={() => openPlayer(player.id)}
+                />
+              );
+            })
           )}
-        </>
+        </View>
       ) : null}
     </TabScroll>
   );
@@ -475,9 +494,9 @@ export default function Equipa() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   return (
     <Screen padded="none">
-      <Header title="Equipa" onBack={back} />
-      <View style={{ flex: 1, paddingTop: spacing.md, gap: spacing.md }}>
-        <View style={{ paddingHorizontal: spacing.screenX }}>
+      <Header title="SPORTING" onBack={back} />
+      <View style={{ flex: 1, paddingTop: space.s12, gap: space.s12 }}>
+        <View style={{ paddingHorizontal: space.s24 }}>
           <Tabs mode="scroll" items={TABS} value={tab} onChange={setTab} />
         </View>
         <View style={{ flex: 1 }}>
