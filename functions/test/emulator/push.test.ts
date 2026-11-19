@@ -359,6 +359,30 @@ describe("runPredictionReminder", () => {
     expect(f.tokens[0].tokens.sort()).toEqual(["ana-t1", "ana-t2", "eva-t1"]);
   });
 
+  it("o mesmo token em várias contas: conta só o documento com o updatedAt mais recente", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    // ana-t1 passou para a eva (sessão mais recente neste telemóvel); a eva tem o lembrete desligado.
+    await db.doc("users/eva/devices/ana-t1").set({ token: "ana-t1", platform: "ios", updatedAt: Timestamp.fromDate(new Date(NOW_R.getTime() + MIN)) });
+    // rui-t1 (o rui tem o lembrete desligado) é agora da conta nova "ines", sem preferências: recebe.
+    await db.doc("users/ines").set({ email: "ines@exemplo.pt" });
+    await db.doc("users/ines/devices/rui-t1").set({ token: "rui-t1", platform: "android", updatedAt: Timestamp.fromDate(new Date(NOW_R.getTime() + MIN)) });
+    const f = fakeSender();
+    const r = await runPredictionReminder(db, f.sender, NOW_R);
+    expect(f.tokens[0].tokens.sort()).toEqual(["ana-t2", "rui-t1"]);
+    expect(r.count).toBe(2);
+  });
+
+  it("token inválido apaga o documento em todas as contas onde aparece", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    await db.doc("users/rui/devices/ana-t2").set({ token: "ana-t2", platform: "android", updatedAt: Timestamp.fromDate(new Date(NOW_R.getTime() - MIN)) });
+    const f = fakeSender({ invalid: ["ana-t2"] });
+    await runPredictionReminder(db, f.sender, NOW_R);
+    expect((await db.doc("users/ana/devices/ana-t2").get()).exists).toBe(false);
+    expect((await db.doc("users/rui/devices/ana-t2").get()).exists).toBe(false);
+  });
+
   it("FCM falha em todos os tokens: marca libertada e a execução seguinte tenta outra vez", async () => {
     await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
     await seedUsers();

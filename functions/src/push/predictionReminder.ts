@@ -1,4 +1,4 @@
-import type { DocumentReference, Firestore } from "firebase-admin/firestore";
+import { Timestamp, type DocumentReference, type Firestore } from "firebase-admin/firestore";
 import { gameStateOf } from "../data/gamesRepo";
 import { listFootballWindow } from "../football/fixturesSync";
 import { predictionOpen } from "../game/windows";
@@ -31,18 +31,33 @@ async function getAllBatched(db: Firestore, refs: DocumentReference[]) {
   return out;
 }
 
-/** Dispositivos por utilizador, a partir de `users/{uid}/devices/{token}`. */
-async function devicesByUser(db: Firestore): Promise<Map<string, { token: string; ref: DocumentReference }[]>> {
+function millis(v: unknown): number {
+  return v instanceof Timestamp ? v.toMillis() : v instanceof Date ? v.getTime() : 0;
+}
+
+/**
+ * Dispositivos por utilizador, a partir de `users/{uid}/devices/{token}`. O mesmo token em várias contas
+ * (sair e entrar com outra sem o desregisto chegar) conta só na do `updatedAt` mais recente: é a sessão atual
+ * desse telemóvel. `refsByToken` guarda todos os documentos de cada token, para apagar os inválidos.
+ */
+async function loadDevices(db: Firestore): Promise<{
+  byUser: Map<string, { token: string; ref: DocumentReference }[]>;
+  refsByToken: Map<string, DocumentReference[]>;
+}> {
   const snap = await db.collectionGroup("devices").get();
-  const out = new Map<string, { token: string; ref: DocumentReference }[]>();
+  const latest = new Map<string, { uid: string; ref: DocumentReference; at: number }>();
+  const refsByToken = new Map<string, DocumentReference[]>();
   for (const d of snap.docs) {
     const user = d.ref.parent.parent;
     if (!user || user.parent.id !== "users") continue;
-    const list = out.get(user.id) ?? [];
-    list.push({ token: d.id, ref: d.ref });
-    out.set(user.id, list);
+    refsByToken.set(d.id, [...(refsByToken.get(d.id) ?? []), d.ref]);
+    const at = millis(d.get("updatedAt"));
+    const cur = latest.get(d.id);
+    if (!cur || at > cur.at) latest.set(d.id, { uid: user.id, ref: d.ref, at });
   }
-  return out;
+  const byUser = new Map<string, { token: string; ref: DocumentReference }[]>();
+  for (const [token, { uid, ref }] of latest) byUser.set(uid, [...(byUser.get(uid) ?? []), { token, ref }]);
+  return { byUser, refsByToken };
 }
 
 /**
@@ -64,7 +79,7 @@ export async function runPredictionReminder(db: Firestore, sender: PushSender, n
   }
   if (pending.length === 0) return { count: 0 };
 
-  const devices = await devicesByUser(db);
+  const { byUser: devices, refsByToken } = await loadDevices(db);
   if (devices.size === 0) return { count: 0 };
   const uids = [...devices.keys()];
   const users = await getAllBatched(db, uids.map((u) => db.doc(`users/${u}`)));
@@ -88,8 +103,7 @@ export async function runPredictionReminder(db: Firestore, sender: PushSender, n
     if (!result) continue;
     const r: { sent: number; invalid: string[] } = result;
     count += r.sent;
-    const invalid = new Set(r.invalid);
-    await Promise.all(targets.filter((t) => invalid.has(t.token)).map((t) => t.ref.delete()));
+    await Promise.all(r.invalid.flatMap((t) => refsByToken.get(t) ?? []).map((ref) => ref.delete()));
   }
   return { count };
 }
