@@ -7,6 +7,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { SocialButtons } from '@/components/SocialButtons';
 import { Touchable } from '@/components/Touchable';
 import { TextField } from '@/components/TextField';
+import { MIN_PASSWORD_LENGTH } from '@/services/account';
 import { signUpEmail } from '@/services/auth';
 import { Text71 } from '@/theme/typography';
 
@@ -96,6 +97,7 @@ export default function CriarConta() {
         onChangeText={setPassword}
         secure
         error={error ?? undefined}
+        helper={`Pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`}
         autoComplete="new-password"
         textContentType="newPassword"
       />

@@ -144,7 +144,6 @@ export const type = {
   fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
   // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)
   welcomeLogo: { fontFamily: fonts.display, fontSize: 155, lineHeight: 155, color: colors.white, textTransform: 'uppercase' }, // V7.1 13 Welcome (4940:7278): DIN Condensed 155
-  welcomeTagline: { fontFamily: fonts.display, fontSize: 30, color: colors.white, textTransform: 'uppercase', textAlign: 'center' }, // 564:7256
   // Lock screen (Figma 310:9622, frame 348:37997): logo 565:21545, hint 348:38277
   lockLogo: { fontFamily: fonts.display, fontSize: 68, lineHeight: 68, color: colors.white, textTransform: 'uppercase' }, // V7.1 48 Bloqueio: logo a 67,76 (DIN Condensed)
   // Home (Figma 1561:5056): name 1561:5135, "Sócio desde" label and value 1561:5136 (line height 27)
@@ -246,6 +245,7 @@ export const layout = {
   tabGapEqual: 10,
   tabTopScroll: 15, // V7.1 tabs com scroll (4935:7128)
   tabGapScroll: 11,
+  settingsChevron: 20, // V7.1 19 Conta S360: seta do nome (4941:7546)
   fieldEye: 22, // V7.1 Campo de texto: olho (4939:7192)
   fieldLineWidth: 1, // empty text field underline (Figma 564:6913)
   fieldLineWidthActive: 2, // filled text field underline (Figma 564:6942)

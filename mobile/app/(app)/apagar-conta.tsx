@@ -31,7 +31,9 @@ export default function ApagarConta() {
   const router = useRouter();
   const session = useSession();
   const providers = session.status === 'signedIn' ? session.user.providers : [];
-  // Só password (sem Google nem Apple): a folha da password abre sempre antes de apagar.
+  // Só password (sem Google nem Apple): a folha da password abre sempre antes de apagar. Lê session.user.providers (o que o
+  // ecrã já tem); o serviço lê providerData do utilizador do Firebase. Se divergirem, o pior caso é aparecer uma folha a mais
+  // (nunca uma a menos: o serviço continua a reautenticar pelo seu lado).
   const passwordOnly = providers.includes('password') && !providers.includes('google.com') && !providers.includes('apple.com');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);

@@ -124,7 +124,7 @@ describe('Welcome', () => {
     expect(screen.getAllByTestId('welcome-rings')).toHaveLength(1);
   });
 
-  it('V7.1: "Entrar" é Branco, "Criar uma conta" é Contorno, tagline com Verde e Branco', async () => {
+  it('V7.1: "Entrar" é Branco, "Criar uma conta" é Contorno', async () => {
     await renderRouter(ROUTES, { initialUrl: '/welcome' });
     const entrar = StyleSheet.flatten(screen.getByRole('button', { name: 'Entrar' }).props.style);
     expect(entrar.backgroundColor).toBe(colors.white);
@@ -328,6 +328,21 @@ describe('V7.1: botões e erros', () => {
     await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
     expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Criar conta' }).props.style).backgroundColor).toBe(colors.white);
     expect(screen.getByRole('button', { name: 'Continuar com o Google' })).toBeTruthy();
+  });
+});
+
+describe('V7.1: dica da password', () => {
+  it('Criar conta mostra "Pelo menos 6 caracteres." por baixo da password; um erro substitui-a', async () => {
+    (signUpEmail as jest.Mock).mockRejectedValue(new Error('Password fraca.'));
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    expect(screen.getByText('Pelo menos 6 caracteres.')).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText('Nome'), 'Zé');
+    await fireEvent.changeText(screen.getByLabelText('Email'), 'z@x.pt');
+    await fireEvent.changeText(screen.getByLabelText('Password'), '123');
+    await fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
+    await act(async () => {});
+    expect(screen.getByText('Password fraca.')).toBeTruthy();
+    expect(screen.queryByText('Pelo menos 6 caracteres.')).toBeNull();
   });
 });
 

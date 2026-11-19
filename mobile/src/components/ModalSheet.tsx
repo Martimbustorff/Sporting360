@@ -20,7 +20,7 @@ export function ModalSheet({
   const { bottom } = useSafeAreaInsets();
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrimV71 }}>
         <View
           testID="modal-sheet"
           accessibilityViewIsModal

@@ -21,6 +21,7 @@ export function TextField({
   autoCorrect = false,
   accessory,
   placeholder,
+  helper,
 }: {
   label: string;
   value: string;
@@ -35,6 +36,8 @@ export function TextField({
   /** Ação à direita do valor (ex.: leitor da GameBox, Figma 327:15144). */
   accessory?: ReactNode;
   placeholder?: string;
+  /** Dica por baixo da linha (Caption 12 text-subtle); um erro visível substitui-a. */
+  helper?: string;
 }) {
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -86,6 +89,10 @@ export function TextField({
       {error ? (
         <Text71 variant="caption12" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
           {error}
+        </Text71>
+      ) : helper ? (
+        <Text71 variant="caption12" color="textSubtle">
+          {helper}
         </Text71>
       ) : null}
     </View>

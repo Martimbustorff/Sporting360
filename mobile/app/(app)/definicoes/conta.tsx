@@ -31,7 +31,7 @@ function Field({ label, value, onPress, a11y }: { label: string; value: string; 
           {value}
         </Text71>
         {onPress ? (
-          <Feather name="chevron-right" size={layout.fieldEye} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
+          <Feather name="chevron-right" size={layout.settingsChevron} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
         ) : null}
       </View>
       <View
@@ -89,8 +89,8 @@ export default function Conta() {
             accessibilityRole="button"
             accessibilityLabel="Mudar password"
             onPress={() => router.push('/definicoes/password')}
-            hitSlop={space.s8}
-            style={{ minHeight: layout.minTouch, justifyContent: 'center', alignSelf: 'flex-start', marginTop: -space.s12 }}
+            hitSlop={space.s12}
+            style={{ alignSelf: 'flex-start' }}
           >
             <Text71 variant="captionStrong12" style={{ textDecorationLine: 'underline' }}>
               Mudar password

@@ -332,7 +332,7 @@ function LockScreen({
   onOtherAccount: () => void;
 }) {
   const { top, bottom } = useSafeAreaInsets();
-  const paddingTop = top + layout.lockLogoOffset;
+  const paddingTop = Math.max(top, layout.statusBarHeight) + layout.lockLogoOffset;
   const paddingBottom = Math.max(bottom, layout.homeIndicator) + layout.lockActionsBottom;
   return (
     <View testID="lock-screen" accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: colors.black }]}>

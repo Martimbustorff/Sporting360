@@ -85,6 +85,7 @@ import { reauthenticateWithCredential } from '@react-native-firebase/auth';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { clearSignOutNotice } from '@/lib/signOutNotice';
 import { signOut } from '@/services/auth';
+import { reauthenticateWithGoogle } from '@/services/social';
 import { colors } from '@/theme/tokens';
 import { setBiometricEnabled } from '@/services/biometrics';
 
@@ -253,6 +254,20 @@ describe('21b: conta só com password', () => {
     expect(mockDelete).toHaveBeenCalledTimes(2);
     expect(r.getPathname()).toBe('/welcome');
   });
+});
+
+it('conta password + Google: sem folha antecipada; o REAUTH_REQUIRED antigo usa a reautenticação Google', async () => {
+  mockStore.value = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password', 'google.com'] } };
+  mockAuth.currentUser = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'password' }, { providerId: 'google.com' }] };
+  mockDelete.mockRejectedValueOnce(REAUTH).mockResolvedValueOnce({ data: { ok: true, deleted: 1 } });
+  (reauthenticateWithGoogle as jest.Mock).mockResolvedValue({ status: 'ok' });
+  await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+  await fireEvent.changeText(confirmField(), 'APAGAR');
+  await fireEvent.press(deleteBtn());
+  await act(async () => {});
+  expect(screen.queryByText('Confirma a tua password')).toBeNull();
+  expect(reauthenticateWithGoogle).toHaveBeenCalledTimes(1);
+  expect(mockDelete).toHaveBeenCalledTimes(2);
 });
 
 it('conta Google: sem folha da password, apaga direto (a reautenticação social mantém-se no serviço)', async () => {
