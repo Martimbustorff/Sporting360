@@ -4,6 +4,8 @@ import type { EventItem } from "../../src/football/mapFixture";
 import type { MatchDoc } from "../../src/model/types";
 import { sendOnce } from "../../src/push/markers";
 import { dispatchMatchPushes } from "../../src/push/matchPush";
+import { REMINDER_LATEST_MS, REMINDER_LEAD_MS, remindersOn, runPredictionReminder } from "../../src/push/predictionReminder";
+import { seedFootballMatch } from "../helpers/seedMatch";
 import { fakeSender } from "../helpers/fakeSender";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 
@@ -212,5 +214,136 @@ describe("dispatchMatchPushes", () => {
     const r2 = await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 25 })], at(32));
     expect(r2.sent).toEqual(["goal:9002_25_7"]);
     expect(f.topics).toHaveLength(1);
+  });
+});
+
+describe("runPredictionReminder", () => {
+  const NOW_R = new Date("2026-11-22T18:00:00Z");
+  const KO_R = new Date(NOW_R.getTime() + 2 * 60 * MIN);
+  const NS = { status: "NS" as const, statusRaw: "NS", elapsed: null, finishedAt: null, finishedAtSource: null, score: { home: null, away: null, halftime: null, extratime: null, penalty: null } };
+
+  async function seedUsers() {
+    const user = (uid: string, name: string, extra: Record<string, unknown> = {}) =>
+      db.doc(`users/${uid}`).set({ email: `${uid}@exemplo.pt`, displayName: name, ...extra });
+    const device = (uid: string, token: string, platform = "ios") =>
+      db.doc(`users/${uid}/devices/${token}`).set({ token, platform, updatedAt: Timestamp.fromDate(NOW_R) });
+    await user("ana", "Ana Silva");
+    await device("ana", "ana-t1");
+    await device("ana", "ana-t2", "android");
+    await user("rui", "Rui Costa", { notificationPrefs: { matchStart: true, goals: true, predictionReminder: false, mvpOpen: true, news: true } });
+    await device("rui", "rui-t1");
+    await user("eva", "Eva Lopes", { notificationPrefs: { matchStart: true, goals: true, mvpOpen: true, news: true } });
+    await device("eva", "eva-t1");
+    await user("teo", "Teo Reis");
+    await device("teo", "teo-t1");
+    await db.doc("matchPredictions/9002_teo").set({ gameId: "9002", userId: "teo", home: 2, away: 0 });
+  }
+
+  it("constantes e remindersOn", () => {
+    expect(REMINDER_LEAD_MS).toBe(2 * 60 * MIN);
+    expect(REMINDER_LATEST_MS).toBe(90 * MIN);
+    expect(remindersOn(undefined)).toBe(true);
+    expect(remindersOn({ email: "x" })).toBe(true);
+    expect(remindersOn({ notificationPrefs: { predictionReminder: true } })).toBe(true);
+    expect(remindersOn({ notificationPrefs: { predictionReminder: false } })).toBe(false);
+    expect(remindersOn({ notificationPrefs: {} })).toBe(false);
+    expect(remindersOn({ notificationPrefs: null })).toBe(true);
+  });
+
+  it("só os tokens da ana, uma mensagem com rota de prognóstico", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    const f = fakeSender();
+    const r = await runPredictionReminder(db, f.sender, NOW_R);
+    expect(r.count).toBe(2);
+    expect(f.tokens).toHaveLength(1);
+    expect(f.tokens[0].tokens.sort()).toEqual(["ana-t1", "ana-t2"]);
+    expect(f.tokens[0].msg.route).toBe("/jogo/9002?tab=prognostico");
+    expect(f.tokens[0].msg.body).toBe("Sporting CP vs Benfica começa às 20:00.");
+    expect((await db.doc("ingestState/match_9002").get()).get("push.reminderSentAt")).toBeInstanceOf(Timestamp);
+  });
+
+  it("o payload não tem email, nome nem uid", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    const f = fakeSender();
+    await runPredictionReminder(db, f.sender, NOW_R);
+    const msgs = JSON.stringify(f.tokens.map((t) => t.msg));
+    expect(msgs).not.toContain("ana@");
+    expect(msgs).not.toContain("Ana Silva");
+    expect(msgs).not.toMatch(/\bana\b/);
+  });
+
+  it("segunda execução não envia", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    const f = fakeSender();
+    await runPredictionReminder(db, f.sender, NOW_R);
+    expect((await runPredictionReminder(db, f.sender, new Date(NOW_R.getTime() + 5 * MIN))).count).toBe(0);
+    expect(f.tokens).toHaveLength(1);
+  });
+
+  it("kickoff a 80 min (já passou a janela) ou a 3 h: não envia", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: new Date(NOW_R.getTime() + 80 * MIN), ...NS });
+    await seedFootballMatch(db, { id: "9004", kickoff: new Date(NOW_R.getTime() + 180 * MIN), ...NS });
+    await seedUsers();
+    const f = fakeSender();
+    expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
+    expect(f.tokens).toEqual([]);
+  });
+
+  it("jogo PST ou CANC: não envia", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS, status: "PST", statusRaw: "PST" });
+    await seedFootballMatch(db, { id: "9004", kickoff: KO_R, ...NS, status: "CANC", statusRaw: "CANC" });
+    await seedUsers();
+    const f = fakeSender();
+    expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
+    expect(f.tokens).toEqual([]);
+  });
+
+  it("outra modalidade: não envia", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS, sport: "futsal" });
+    await seedUsers();
+    const f = fakeSender();
+    expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
+  });
+
+  it("token inválido apaga users/{uid}/devices/{token}", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    const f = fakeSender({ invalid: ["ana-t2"] });
+    const r = await runPredictionReminder(db, f.sender, NOW_R);
+    expect(r.count).toBe(1);
+    expect((await db.doc("users/ana/devices/ana-t2").get()).exists).toBe(false);
+    expect((await db.doc("users/ana/devices/ana-t1").get()).exists).toBe(true);
+  });
+
+  it("o mesmo token em duas contas sai uma vez", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    await db.doc("users/eva/devices/ana-t1").set({ token: "ana-t1", platform: "ios", updatedAt: Timestamp.fromDate(NOW_R) });
+    await db.doc("users/eva").set({ email: "eva@exemplo.pt", displayName: "Eva Lopes" });
+    const f = fakeSender();
+    await runPredictionReminder(db, f.sender, NOW_R);
+    expect(f.tokens[0].tokens.sort()).toEqual(["ana-t1", "ana-t2", "eva-t1"]);
+  });
+
+  it("FCM falha em todos os tokens: marca libertada e a execução seguinte tenta outra vez", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await seedUsers();
+    const f = fakeSender();
+    f.failNext(1);
+    expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
+    expect((await db.doc("ingestState/match_9002").get()).get("push.reminderSentAt")).toBeUndefined();
+    expect((await runPredictionReminder(db, f.sender, new Date(NOW_R.getTime() + 5 * MIN))).count).toBe(2);
+  });
+
+  it("sem dispositivos: marca não fica gravada e count 0", async () => {
+    await seedFootballMatch(db, { id: "9002", kickoff: KO_R, ...NS });
+    await db.doc("users/ana").set({ email: "ana@exemplo.pt" });
+    const f = fakeSender();
+    expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
+    expect(f.tokens).toEqual([]);
+    expect((await db.doc("ingestState/match_9002").get()).get("push.reminderSentAt")).toBeUndefined();
   });
 });

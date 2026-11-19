@@ -11,6 +11,7 @@ import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixtu
 import { runApiSportsJob } from "./modalities/apiSportsSync";
 import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
+import { runPredictionReminder } from "./push/predictionReminder";
 import { fcmSender } from "./push/sender";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
@@ -36,6 +37,25 @@ export const settleScheduler = onSchedule(
   { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 540, memory: "512MiB" },
   async () => {
     await runJob(getFirestore(), "settle", () => settleRun(getFirestore(), new Date()));
+  },
+);
+
+// Lembrete de prognóstico (Plano 6): 2 h antes do kickoff, por token, só a quem ainda não prognosticou.
+// Com PUSH_ENABLED falso sai logo, sem ler nem escrever nada.
+export const predictionReminderPush = onSchedule(
+  {
+    schedule: "every 5 minutes",
+    region: "europe-west1",
+    timeZone: "Europe/Lisbon",
+    timeoutSeconds: 300,
+    maxInstances: 1,
+    concurrency: 1,
+    retryCount: 0,
+  },
+  async () => {
+    if (!PUSH_ENABLED.value()) return;
+    const db = getFirestore();
+    await runJob(db, "push_prediction_reminder", () => runPredictionReminder(db, fcmSender(getMessaging()), new Date()));
   },
 );
 

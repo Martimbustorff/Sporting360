@@ -31,6 +31,9 @@ export const DEPLOY_ENGINE_FUNCTIONS = [
   "linkProviderByEmail",
 ] as const;
 
+/** Push do Plano 6 que não existiam antes (o ticker e o newsSync já estão nas listas de dados). */
+export const DEPLOY_PUSH_FUNCTIONS = ["predictionReminderPush"] as const;
+
 /** Functions antigas da V2 (codebase por omissão, `us-central1`), apagadas por nome no corte. */
 export const LEGACY_FUNCTIONS = [
   "gamesSheduler",
@@ -53,7 +56,12 @@ export const V2027_REGION = "europe-west1";
 export const V2027_CODEBASE = "v2027";
 
 /** Todas as functions do codebase v2027. */
-export const V2027_FUNCTIONS: readonly string[] = [...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS, ...DEPLOY_ENGINE_FUNCTIONS];
+export const V2027_FUNCTIONS: readonly string[] = [
+  ...DEPLOY_DATA_FUNCTIONS,
+  ...DEPLOY_CUTOVER_FUNCTIONS,
+  ...DEPLOY_ENGINE_FUNCTIONS,
+  ...DEPLOY_PUSH_FUNCTIONS,
+];
 
 /** Argumento de `firebase deploy --only`: `functions:v2027:a,functions:v2027:b`. Nunca vazio. */
 export function deployArg(names: readonly string[]): string {
@@ -67,5 +75,6 @@ if (require.main === module) {
   console.log(`dados (sombra):        ${deployArg(DEPLOY_DATA_FUNCTIONS)}`);
   console.log(`corte:                 ${deployArg([...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS])}`);
   console.log(`motor:                 ${deployArg(DEPLOY_ENGINE_FUNCTIONS)}`);
+  console.log(`push:                  ${deployArg(DEPLOY_PUSH_FUNCTIONS)}`);
   console.log(`apagar (${LEGACY_REGION}): ${LEGACY_FUNCTIONS.join(" ")}`);
 }

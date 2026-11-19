@@ -2,6 +2,7 @@ import {
   DEPLOY_CUTOVER_FUNCTIONS,
   DEPLOY_DATA_FUNCTIONS,
   DEPLOY_ENGINE_FUNCTIONS,
+  DEPLOY_PUSH_FUNCTIONS,
   LEGACY_FUNCTIONS,
   V2027_FUNCTIONS,
   deployArg,
@@ -30,10 +31,10 @@ const endpoint = (name: string): Endpoint => {
 
 const PLAN3_CALLABLES = ["updateProfile", "deleteAccount", "linkProviderByEmail"];
 
-const DEPLOYED = [...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS, ...DEPLOY_ENGINE_FUNCTIONS] as string[];
+const DEPLOYED = [...DEPLOY_DATA_FUNCTIONS, ...DEPLOY_CUTOVER_FUNCTIONS, ...DEPLOY_ENGINE_FUNCTIONS, ...DEPLOY_PUSH_FUNCTIONS] as string[];
 
 describe("listas de publicação", () => {
-  it("os exports do index são exatamente as três listas", () => {
+  it("os exports do index são exatamente as quatro listas", () => {
     expect(exported).toEqual([...DEPLOYED].sort());
   });
 
@@ -48,6 +49,7 @@ describe("listas de publicação", () => {
     expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
     expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail"]);
+    expect(DEPLOY_PUSH_FUNCTIONS).toEqual(["predictionReminderPush"]);
     expect(LEGACY_FUNCTIONS).toHaveLength(13);
     expect(new Set(DEPLOYED).size).toBe(DEPLOYED.length);
     expect([...V2027_FUNCTIONS].sort()).toEqual([...DEPLOYED].sort());
@@ -104,6 +106,7 @@ describe("configuração de cada function exportada", () => {
     updateProfile: [],
     deleteAccount: [],
     linkProviderByEmail: [],
+    predictionReminderPush: [],
   };
   it("todas as functions publicadas têm a lista de segredos verificada", () => {
     expect(Object.keys(SECRETS).sort()).toEqual([...DEPLOYED].sort());
