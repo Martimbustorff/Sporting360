@@ -184,3 +184,32 @@ describe('toque na notificação', () => {
     expect(typeof unsub).toBe('function');
   });
 });
+
+describe('módulo nativo em falta', () => {
+  it('getMessaging a lançar: nenhuma função lança nem derruba quem a chama', async () => {
+    const boom = () => {
+      throw Object.assign(new Error('native module missing'), { code: 'messaging/native' });
+    };
+    m.getMessaging.mockImplementation(boom as never);
+    try {
+      await expect(syncTopics(DEFAULT_NOTIFICATION_PREFS)).resolves.toBeUndefined();
+      await expect(unregisterPush('alice')).resolves.toBeUndefined();
+      let stopOpen: (() => void) | undefined;
+      expect(() => {
+        stopOpen = onPushOpen(jest.fn());
+      }).not.toThrow();
+      expect(() => stopOpen!()).not.toThrow();
+      let stopRefresh: (() => void) | undefined;
+      expect(() => {
+        stopRefresh = onPushTokenRefresh('alice');
+      }).not.toThrow();
+      expect(() => stopRefresh!()).not.toThrow();
+      expect(await requestPushPermission()).toBe(false);
+      expect(await pushPermissionGranted()).toBe(false);
+      expect(await registerDevice('alice')).toBeNull();
+      expect(jest.mocked(recordError)).toHaveBeenCalled();
+    } finally {
+      m.getMessaging.mockImplementation((() => ({ __mock: 'messaging' })) as never);
+    }
+  });
+});

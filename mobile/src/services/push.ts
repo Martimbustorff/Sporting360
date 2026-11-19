@@ -109,16 +109,27 @@ export async function registerDevice(uid: string): Promise<string | null> {
 
 /** Token novo do FCM: grava-o para o mesmo utilizador. */
 export function onPushTokenRefresh(uid: string): () => void {
-  return onTokenRefresh(messaging(), (token: string) => {
-    lastToken = token;
-    saveDevice(uid, token).catch((e) => reportCode('push.refresh', e));
-  });
+  try {
+    return onTokenRefresh(messaging(), (token: string) => {
+      lastToken = token;
+      saveDevice(uid, token).catch((e) => reportCode('push.refresh', e));
+    });
+  } catch (e) {
+    reportCode('push.refresh', e);
+    return () => undefined;
+  }
 }
 
 /** Subscreve e tira os tópicos para seguir as preferências. Nunca lança. */
 export async function syncTopics(prefs: NotificationPrefs | null): Promise<void> {
   const plan = topicPlan(prefs);
-  const m = messaging();
+  let m: ReturnType<typeof getMessaging>;
+  try {
+    m = messaging();
+  } catch (e) {
+    reportCode('push.topic', e);
+    return;
+  }
   const results = await Promise.allSettled([
     ...plan.subscribe.map((t) => subscribeToTopic(m, t)),
     ...plan.unsubscribe.map((t) => unsubscribeFromTopic(m, t)),
@@ -128,7 +139,14 @@ export async function syncTopics(prefs: NotificationPrefs | null): Promise<void>
 
 /** Ao sair: tira os 4 tópicos e apaga o dispositivo deste utilizador. Nunca lança nem fica preso. */
 export async function unregisterPush(uid: string): Promise<void> {
-  const m = messaging();
+  let m: ReturnType<typeof getMessaging>;
+  try {
+    m = messaging();
+  } catch (e) {
+    reportCode('push.unregister', e);
+    lastToken = null;
+    return;
+  }
   const topics = topicPlan(null).unsubscribe.map((t) =>
     withTimeout(unsubscribeFromTopic(m, t)).catch((e) => reportCode('push.unsubscribe', e)),
   );
@@ -149,19 +167,25 @@ export async function unregisterPush(uid: string): Promise<void> {
  * (`getInitialNotification`, tratado uma vez por processo). Só rotas validadas chegam ao handler.
  */
 export function onPushOpen(handler: (route: string) => void): () => void {
-  const m = messaging();
   const open = (msg: unknown) => {
     const route = routeFromData((msg as { data?: unknown } | null | undefined)?.data);
     if (route) handler(route);
   };
-  const unsubscribe = onNotificationOpenedApp(m, open);
-  if (!initialHandled) {
-    initialHandled = true;
-    getInitialNotification(m)
-      .then(open)
-      .catch((e) => reportCode('push.initial', e));
+  // Uma falha do módulo nativo nunca derruba a árvore de (app): sem ouvinte, o toque só abre a app.
+  try {
+    const m = messaging();
+    const unsubscribe = onNotificationOpenedApp(m, open);
+    if (!initialHandled) {
+      initialHandled = true;
+      getInitialNotification(m)
+        .then(open)
+        .catch((e) => reportCode('push.initial', e));
+    }
+    return unsubscribe;
+  } catch (e) {
+    reportCode('push.open', e);
+    return () => undefined;
   }
-  return unsubscribe;
 }
 
 /** Só para testes: volta ao estado de um processo novo. */
