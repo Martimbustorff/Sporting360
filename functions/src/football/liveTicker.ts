@@ -11,6 +11,7 @@ import { refreshCompetition, refreshStandings } from "./competitionSync";
 import { isLiveSportingLeagueMatch, isRecentlyFinishedSportingLeagueMatch, pruneLiveFixtures, refreshLiveFixtures } from "./liveFixtures";
 import { LIVE_OWNERSHIP_MS, listFootballWindow, type FootballDeps } from "./fixturesSync";
 import { mapFixture } from "./mapFixture";
+import { loadTvOverrides } from "./tvChannel";
 import { POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, phaseFor, ratingsSlot, type Phase } from "./phase";
 
 export { LATE_START_MS, POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, RATINGS_REFRESH_MIN, RATINGS_WINDOW_MS, phaseFor, ratingsSlot } from "./phase";
@@ -138,6 +139,8 @@ export async function tick(d: TickDeps): Promise<TickResult> {
     (await flagsOf(id))[flag] = true;
   };
   const standingsDone = new Set<string>();
+  // Exceções de canal de TV: lidas uma vez por execução, só quando há jogo a gravar.
+  let tvOverrides: Record<string, string> | undefined;
 
   /** Refresco de fim de jogo (standings + competição), uma vez por marca; a marca só fica com sucesso. */
   const endRefresh = async (m: MatchDoc) => {
@@ -224,7 +227,8 @@ export async function tick(d: TickDeps): Promise<TickResult> {
         try {
           const previous = state.get(id) ?? null;
           const observedLive = previous !== null && phaseNow(previous) === "live";
-          const { match, details } = mapFixture(f, { now, previous, observedLive });
+          tvOverrides ??= await loadTvOverrides(d.db);
+          const { match, details } = mapFixture(f, { now, previous, observedLive, tvOverrides });
           const legacy = legacyFromFixture(f, match, null);
           const r = await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix, halftimeSnapshot: true });
           written += r.written;

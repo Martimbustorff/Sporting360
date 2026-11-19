@@ -134,3 +134,17 @@ describe('mobile/server parity (normalizeGameboxNumber)', () => {
     }
   });
 });
+
+// Plano 9: a frase-passe do número da GameBox é a mesma no servidor (decifra) e na app (cifra). Se divergirem, o servidor
+// deixa de ler o que a app grava. O valor nunca aparece na mensagem de falha.
+describe('mobile/server parity (frase-passe do número da GameBox)', () => {
+  const passphraseOf = (src: string): string | null => src.match(/const PASSPHRASE_PREFIX = (['"])(.*?)\1;/)?.[2] ?? null;
+  it('a frase-passe é igual nos dois lados', () => {
+    const app = passphraseOf(readFileSync(join(__dirname, '..', '..', 'src', 'lib', 'gameboxCrypto.ts'), 'utf8'));
+    const server = passphraseOf(read('functions/src/loans/gameboxNumber.ts'));
+    expect(app !== null && app.length > 8).toBe(true);
+    expect(server !== null && server.length > 8).toBe(true);
+    // Compara-se só o resultado (booleano): se falhar, a mensagem não leva o valor.
+    expect(app === server).toBe(true);
+  });
+});

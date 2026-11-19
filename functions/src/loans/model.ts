@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import type { Timestamp } from "firebase-admin/firestore";
 import type { MatchDoc } from "../model/types";
 
+export type LoanCancelReason = "owner" | "gamebox-edited" | "gamebox-deleted" | "recipient-left" | "owner-left";
+
 export type LoanMatch = {
   homeName: string;
   awayName: string;
@@ -36,6 +38,8 @@ export type LoanDoc = {
   recipientName: string | null;
   openedAt: Timestamp | null;
   cancelledAt: Timestamp | null;
+  // Porquê foi cancelado; null enquanto ativo e nos documentos antigos (anteriores a este campo).
+  cancelReason: LoanCancelReason | null;
 };
 
 /** Campos do lugar em `gamebox/{id}` (V2), por recinto: porta, sector, fila, lugar. Os mesmos que o `createLoan` copia. */

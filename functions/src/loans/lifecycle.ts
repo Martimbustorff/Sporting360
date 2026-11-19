@@ -2,7 +2,7 @@ import { Timestamp, type Firestore, type QueryDocumentSnapshot } from "firebase-
 import { fromFirestore } from "../store/writer";
 import type { MatchDoc } from "../model/types";
 import { readGameboxNumber } from "./gameboxNumber";
-import { isLoanActive, loanExpiryOf, SEAT_FIELDS, type LoanDoc } from "./model";
+import { isLoanActive, loanExpiryOf, SEAT_FIELDS, type LoanCancelReason, type LoanDoc } from "./model";
 
 // Ciclo de vida dos empréstimos de GameBox (Plano 8). Nada aqui regista uid, email, nomes, ids de empréstimo ou números.
 
@@ -12,6 +12,9 @@ import { isLoanActive, loanExpiryOf, SEAT_FIELDS, type LoanDoc } from "./model";
  * único, sem índice composto) e o custo não cresce com o histórico. `cancelledAt` filtra-se em memória.
  */
 export const MAINTENANCE_LOOKBACK_MS = 24 * 3600_000;
+
+/** Um empréstimo apaga-se (com o número) 7 dias depois do primeiro de expiresAt e cancelledAt. */
+export const LOAN_RETENTION_MS = 7 * 24 * 3600_000;
 
 const secretRef = (db: Firestore, id: string) => db.doc(`loans/${id}/secret/number`);
 
@@ -23,6 +26,8 @@ async function cancelDocs(
   db: Firestore,
   docs: QueryDocumentSnapshot[],
   now: Date,
+  /** Motivo gravado em cada empréstimo que este passo cancela (por empréstimo, para o apagar conta distinguir os papéis). */
+  reason: LoanCancelReason | ((l: LoanDoc) => LoanCancelReason),
   /** Campos pessoais a limpar em cada empréstimo (apagar conta), mesmo nos já cancelados ou expirados. */
   scrub?: (l: LoanDoc) => Record<string, unknown>,
 ): Promise<number> {
@@ -39,6 +44,7 @@ async function cancelDocs(
     const update: Record<string, unknown> = scrub ? scrub(l) : {};
     if (l.cancelledAt === null && isLoanActive(l, now)) {
       update.cancelledAt = Timestamp.fromDate(now);
+      update.cancelReason = typeof reason === "function" ? reason(l) : reason;
       cancelled++;
     }
     if (Object.keys(update).length > 0) void writer.update(d.ref, update).catch(() => undefined);
@@ -50,9 +56,14 @@ async function cancelDocs(
 }
 
 /** Cancela os empréstimos ativos de uma GameBox e apaga os números (GameBox apagada). */
-export async function cancelLoansForGamebox(db: Firestore, gameboxId: string, now: Date): Promise<number> {
+export async function cancelLoansForGamebox(
+  db: Firestore,
+  gameboxId: string,
+  now: Date,
+  reason: Extract<LoanCancelReason, "gamebox-edited" | "gamebox-deleted"> = "gamebox-deleted",
+): Promise<number> {
   const snap = await db.collection("loans").where("gameboxId", "==", gameboxId).where("cancelledAt", "==", null).get();
-  return cancelDocs(db, snap.docs, now);
+  return cancelDocs(db, snap.docs, now, reason);
 }
 
 const seatText = (v: unknown): string => (typeof v === "string" || typeof v === "number" ? String(v).trim() : "");
@@ -81,7 +92,7 @@ export async function cancelLoansOnGameboxEdit(
   now: Date,
 ): Promise<number> {
   if (!before || !after || !gameboxLoanFieldsChanged(before, after)) return 0;
-  return cancelLoansForGamebox(db, gameboxId, now);
+  return cancelLoansForGamebox(db, gameboxId, now, "gamebox-edited");
 }
 
 /**
@@ -93,7 +104,7 @@ export async function cancelLoansForUser(db: Firestore, uid: string, now: Date =
     db.collection("loans").where("ownerUid", "==", uid).get(),
     db.collection("loans").where("recipientUid", "==", uid).get(),
   ]);
-  return cancelDocs(db, [...owned.docs, ...received.docs], now, (l) =>
+  return cancelDocs(db, [...owned.docs, ...received.docs], now, (l) => (l.ownerUid === uid ? "owner-left" : "recipient-left"), (l) =>
     l.ownerUid === uid ? { ownerUid: null, ownerName: null } : l.recipientUid === uid ? { recipientUid: null, recipientName: null } : {},
   );
 }
@@ -101,7 +112,8 @@ export async function cancelLoansForUser(db: Firestore, uid: string, now: Date =
 /**
  * Relê o jogo de cada empréstimo não cancelado e atualiza `expiresAt`; apaga o número dos que deixaram de estar ativos.
  * Um empréstimo já expirado não é recalculado (um jogo remarcado depois não o ressuscita, o número já se foi). Se o jogo
- * já não existe, mantém-se a validade guardada. O documento do empréstimo nunca é apagado. Idempotente.
+ * já não existe, mantém-se a validade guardada. O documento só se apaga 7 dias depois de expirar ou de ser cancelado
+ * (o que vier primeiro), com o número. Idempotente.
  */
 export async function maintainLoans(db: Firestore, now: Date): Promise<{ count: number; failed: number }> {
   const from = Timestamp.fromMillis(now.getTime() - MAINTENANCE_LOOKBACK_MS);
@@ -149,5 +161,30 @@ export async function maintainLoans(db: Firestore, now: Date): Promise<{ count: 
       failed++;
     }
   }
-  return { count: changed, failed };
+  const purged = await purgeOldLoans(db, now);
+  return { count: changed + purged.deleted, failed: failed + purged.failed };
+}
+
+/** Apaga os empréstimos com now >= min(expiresAt, cancelledAt ?? expiresAt) + 7 dias, e o número. Duas consultas de campo único. */
+async function purgeOldLoans(db: Firestore, now: Date): Promise<{ deleted: number; failed: number }> {
+  const cutoff = Timestamp.fromMillis(now.getTime() - LOAN_RETENTION_MS);
+  const [expired, cancelled] = await Promise.all([
+    db.collection("loans").where("expiresAt", "<=", cutoff).get(),
+    db.collection("loans").where("cancelledAt", "<=", cutoff).get(),
+  ]);
+  const byId = new Map([...expired.docs, ...cancelled.docs].map((d) => [d.id, d]));
+  let deleted = 0;
+  let failed = 0;
+  for (const d of byId.values()) {
+    try {
+      const batch = db.batch();
+      batch.delete(secretRef(db, d.id));
+      batch.delete(d.ref);
+      await batch.commit();
+      deleted++;
+    } catch {
+      failed++;
+    }
+  }
+  return { deleted, failed };
 }

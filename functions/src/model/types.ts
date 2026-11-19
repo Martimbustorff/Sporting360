@@ -28,6 +28,8 @@ export interface MatchDoc {
   home: TeamRef;
   away: TeamRef;
   sportingSide: "home" | "away";
+  /** Canal de TV (só futebol, escrito por mapFixture); null sem canal conhecido. */
+  tv?: string | null;
   kickoff: Date;
   status: GameStatus;
   statusRaw: string;

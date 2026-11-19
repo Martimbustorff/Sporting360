@@ -3,6 +3,7 @@ import { SPORTING_TEAM_ID, crestFor } from "../config/brand";
 import { competitionKey, competitionLabel, roundLabel } from "../model/labels";
 import { FINAL_STATUSES, LIVE_STATUSES, footballStatus } from "../model/status";
 import type { MatchDoc, Pair, TeamRef } from "../model/types";
+import { tvForFixture } from "./tvChannel";
 import type { AfEvent, AfFixture, AfFixturePlayers, AfLineup, AfLineupPlayer, AfTeamRef } from "../sources/apiFootball.types";
 
 export interface EventItem {
@@ -65,6 +66,8 @@ export interface MapContext {
   previous: Pick<MatchDoc, "status" | "finishedAt" | "finishedAtSource"> | null;
   /** O ticker viu o jogo a decorrer (estado LIVE/HT) antes deste fim. */
   observedLive: boolean;
+  /** Exceções de canal de TV (`config/tvChannels`), lidas uma vez por execução por quem chama. Omitido: nenhuma. */
+  tvOverrides?: Record<string, string>;
 }
 
 const MIN = 60_000;
@@ -274,6 +277,7 @@ export function mapFixture(f: AfFixture, ctx: MapContext): { match: MatchDoc; de
     home: teamRef(f.teams.home),
     away: teamRef(f.teams.away),
     sportingSide: f.teams.home.id === SPORTING_TEAM_ID ? "home" : "away",
+    tv: tvForFixture(f, ctx.tvOverrides ?? {}),
     kickoff: kickoffOf(f),
     status,
     statusRaw: f.fixture.status.short,

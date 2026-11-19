@@ -327,3 +327,20 @@ describe("listFootballWindow", () => {
     expect(list[0].kickoff).toBeInstanceOf(Date);
   });
 });
+
+describe("syncFixtures: canal de TV", () => {
+  it("grava tv em cada jogo (regra e exceção) e lê config/tvChannels uma só vez, sem pedidos novos à API", async () => {
+    await db.doc("config/tvChannels").set({ overrides: { "1500003": "Canal 11" } });
+    const f = fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]]);
+    const readSpy = jest.spyOn(db, "doc");
+    await syncFixtures(deps(f));
+    expect(f.calls).toHaveLength(1);
+    expect(readSpy.mock.calls.filter(([p]) => p === "config/tvChannels")).toHaveLength(1);
+    readSpy.mockRestore();
+    expect((await db.doc("matches/1500003").get()).get("tv")).toBe("Canal 11");
+    for (const d of (await db.collection("matches").get()).docs) {
+      if (d.id !== "1500003") expect(["SPORT TV", "BTV", "TVI / V+", null]).toContain(d.get("tv"));
+      expect(d.data()).toHaveProperty("tv");
+    }
+  });
+});

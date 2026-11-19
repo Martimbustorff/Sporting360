@@ -9,6 +9,7 @@ import { MAX_IDS, type ApiFootballClient } from "../sources/apiFootball";
 import type { AfFixture, AfFixtureCore } from "../sources/apiFootball.types";
 import { fromFirestore, getMatch, saveMatch } from "../store/writer";
 import { mapFixture } from "./mapFixture";
+import { loadTvOverrides } from "./tvChannel";
 import { phaseFor } from "./phase";
 
 export interface FootballDeps {
@@ -69,6 +70,7 @@ export async function syncFixtures(d: FootballDeps): Promise<SyncResult> {
     for (const f of await d.api.fixturesByTeamSeason(SPORTING_TEAM_ID, season)) byId.set(String(f.fixture.id), f);
   }
 
+  const tvOverrides = await loadTvOverrides(d.db);
   let count = 0;
   let failed = 0;
   const alerts: string[] = [];
@@ -77,7 +79,7 @@ export async function syncFixtures(d: FootballDeps): Promise<SyncResult> {
       const previous = await getMatch(d.db, id);
       if (previous && ownedByTicker(previous, now)) continue;
       const full = asFull(core);
-      const { match } = mapFixture(full, { now, previous, observedLive: false });
+      const { match } = mapFixture(full, { now, previous, observedLive: false, tvOverrides });
       if (previous && FINAL_STATUSES.has(previous.status) && !FINAL_STATUSES.has(match.status)) {
         alerts.push(`jogo ${id}: o calendário traz ${match.statusRaw} sobre o final ${previous.statusRaw}; mantido o final`);
         logger.warn(`syncFixtures: jogo ${id} guardado como ${previous.status}, calendário com ${match.status}: não escrito`);
@@ -102,12 +104,13 @@ async function saveFull(
   o: { newModelOnly: boolean; force: boolean },
 ): Promise<{ count: number; failed: number }> {
   const now = d.now();
+  const tvOverrides = await loadTvOverrides(d.db);
   let count = 0;
   let failed = 0;
   for (const f of fixtures) {
     try {
       const previous = await getMatch(d.db, String(f.fixture.id));
-      const { match, details } = mapFixture(f, { now, previous, observedLive: false });
+      const { match, details } = mapFixture(f, { now, previous, observedLive: false, tvOverrides });
       const legacy = o.newModelOnly ? null : legacyFromFixture(f, match, null);
       await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix, force: o.force });
       count++;

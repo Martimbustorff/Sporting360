@@ -130,6 +130,7 @@ describe("cancelamentos", () => {
     await db.doc(`gamebox/${G1}`).delete();
     expect(await cancelLoansForGamebox(db, G1, NOW)).toBe(1);
     expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
+    expect((await loanOf(id)).cancelReason).toBe("gamebox-deleted");
     expect(await hasSecret(id)).toBe(false);
     const before = await loanOf(id);
     expect(await cancelLoansForGamebox(db, G1, NOW)).toBe(0);
@@ -141,11 +142,13 @@ describe("cancelamentos", () => {
     await handleClaimLoan(db, bob, { loanId: a }, NOW);
     expect(await cancelLoansForUser(db, "bob", NOW)).toBe(1);
     expect((await loanOf(a)).cancelledAt?.toDate()).toEqual(NOW);
+    expect((await loanOf(a)).cancelReason).toBe("recipient-left");
     expect(await hasSecret(a)).toBe(false);
 
     await db.doc(`loans/${a}`).update({ cancelledAt: null });
     await db.doc(`loans/${a}/secret/number`).set({ number: NUM });
     expect(await cancelLoansForUser(db, "alice", NOW)).toBe(1);
+    expect((await loanOf(a)).cancelReason).toBe("owner-left");
     expect(await hasSecret(a)).toBe(false);
     expect(await cancelLoansForUser(db, "alice", NOW)).toBe(0);
   });
@@ -198,6 +201,7 @@ describe("GameBox editada (onGameboxUpdated)", () => {
     const id = await create();
     expect(await edit({ [field]: value })).toBe(1);
     expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
+    expect((await loanOf(id)).cancelReason).toBe("gamebox-edited");
     expect(await hasSecret(id)).toBe(false);
   });
 
@@ -230,5 +234,59 @@ describe("GameBox editada (onGameboxUpdated)", () => {
     const before = await loanOf(id);
     expect(await cancelLoansOnGameboxEdit(db, G1, { gameboxSeat: "7" }, { gameboxSeat: "9" }, new Date(NOW.getTime() + 5000))).toBe(0);
     expect(await loanOf(id)).toEqual(before);
+  });
+});
+
+describe("limpeza dos empréstimos (7 dias)", () => {
+  const D = 24 * H;
+  const exists = async (id: string) => (await db.doc(`loans/${id}`).get()).exists;
+  const age = async (id: string, expiresAgo: number, cancelledAgo: number | null) => {
+    await db.doc(`loans/${id}`).update({
+      expiresAt: Timestamp.fromMillis(NOW.getTime() - expiresAgo),
+      cancelledAt: cancelledAgo === null ? null : Timestamp.fromMillis(NOW.getTime() - cancelledAgo),
+    });
+    await db.doc(`loans/${id}/secret/number`).set({ number: NUM });
+  };
+
+  it("7 dias depois de expirar: apagado; antes: mantido", async () => {
+    const a = await create();
+    await age(a, 7 * D, null);
+    const r = await maintainLoans(db, NOW);
+    expect(await exists(a)).toBe(false);
+    expect(await hasSecret(a)).toBe(false);
+    expect(r.failed).toBe(0);
+    expect(r.count).toBeGreaterThanOrEqual(1);
+
+    const b = await create();
+    await age(b, 7 * D - 60_000, null);
+    await maintainLoans(db, NOW);
+    expect(await exists(b)).toBe(true);
+  });
+
+  it("cancelado há 7 dias: apagado, mesmo com a validade no futuro; cancelado há menos: mantido", async () => {
+    const a = await create();
+    await db.doc(`loans/${a}`).update({ cancelledAt: Timestamp.fromMillis(NOW.getTime() - 7 * D), cancelReason: "owner" });
+    await maintainLoans(db, NOW);
+    expect(await exists(a)).toBe(false);
+    expect(await hasSecret(a)).toBe(false);
+
+    const b = await create();
+    await db.doc(`loans/${b}`).update({ cancelledAt: Timestamp.fromMillis(NOW.getTime() - 7 * D + 60_000), cancelReason: "owner" });
+    await maintainLoans(db, NOW);
+    expect(await exists(b)).toBe(true);
+  });
+
+  it("expirado há muito mas cancelado há pouco: conta o que vier primeiro (a expiração)", async () => {
+    const a = await create();
+    await age(a, 8 * D, 1 * D);
+    await maintainLoans(db, NOW);
+    expect(await exists(a)).toBe(false);
+  });
+
+  it("idempotente e sem erro quando já não há nada", async () => {
+    const a = await create();
+    await age(a, 9 * D, null);
+    await maintainLoans(db, NOW);
+    expect(await maintainLoans(db, NOW)).toEqual({ count: 0, failed: 0 });
   });
 });

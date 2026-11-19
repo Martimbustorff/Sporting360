@@ -71,16 +71,30 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
   return best?.id ?? null;
 }
 
+/** Só o nome da função e o código do erro: nada de mensagem, caminho, uid nem ids (a mensagem do Firestore leva o loanId). */
+function logLoanInternal(fn: string, e: unknown): void {
+  const code = (e as { code?: unknown } | null)?.code;
+  logger.error("LOAN_INTERNAL", { fn, ...(typeof code === "string" || typeof code === "number" ? { code } : {}) });
+}
+
 /** Erros que não são HttpsError (Firestore: caminhos com o loanId) nunca chegam ao cliente nem ao log do onCall. */
 export async function safely<T>(fn: "createLoan" | "claimLoan" | "cancelLoan", run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (e) {
     if (e instanceof HttpsError) throw e;
-    // Só o nome da callable e o código do erro: nada de mensagem, caminho, uid nem ids (a mensagem do Firestore leva o loanId).
-    const code = (e as { code?: unknown } | null)?.code;
-    logger.error("LOAN_INTERNAL", { fn, ...(typeof code === "string" || typeof code === "number" ? { code } : {}) });
+    logLoanInternal(fn, e);
     throw new HttpsError("internal", "Algo correu mal. Tenta outra vez.");
+  }
+}
+
+/** Triggers com retry: regista só função e código e volta a lançar um erro sem caminho, id nem uid, para a plataforma tentar de novo. */
+export async function safelyTrigger<T>(fn: "onGameboxUpdated" | "onGameboxDeleted", run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (e) {
+    logLoanInternal(fn, e);
+    throw new Error("loan trigger failed");
   }
 }
 
@@ -135,6 +149,7 @@ export async function handleCreateLoan(
     recipientName: null,
     openedAt: null,
     cancelledAt: null,
+    cancelReason: null,
   };
 
   await db.runTransaction(async (tx) => {
@@ -180,7 +195,7 @@ export async function handleCancelLoan(db: Firestore, auth: Auth, data: unknown,
     if (!snap.exists) throw new HttpsError("not-found", "Empréstimo não encontrado.");
     const l = snap.data() as LoanDoc;
     if (l.ownerUid !== uid) throw new HttpsError("permission-denied", "Só o dono cancela.");
-    if (l.cancelledAt === null) tx.update(ref, { cancelledAt: Timestamp.fromDate(now) });
+    if (l.cancelledAt === null) tx.update(ref, { cancelledAt: Timestamp.fromDate(now), cancelReason: "owner" });
     tx.delete(db.doc(`loans/${loanId}/secret/number`));
   });
   return { ok: true };

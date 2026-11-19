@@ -4,7 +4,7 @@ import { logger } from "firebase-functions";
 import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import type { MatchDoc } from "../../src/model/types";
-import { handleCreateLoan, handleClaimLoan, handleCancelLoan, safely } from "../../src/callables/loans";
+import { handleCreateLoan, handleClaimLoan, handleCancelLoan, safely, safelyTrigger } from "../../src/callables/loans";
 
 let db: Firestore;
 const NOW = new Date("2026-11-19T12:00:00Z");
@@ -143,7 +143,7 @@ describe("createLoan: sucesso", () => {
     const l = await loanOf(r.loanId);
     expect(l).toMatchObject({
       ownerUid: "alice", ownerName: "Alice A.", gameboxId: G1, matchId: "m1", sport: "football",
-      recipientUid: null, recipientName: null, openedAt: null, cancelledAt: null,
+      recipientUid: null, recipientName: null, openedAt: null, cancelledAt: null, cancelReason: null,
       seat: { gate: "10", sector: "A", row: "3", seat: "7" },
       match: { homeName: "Sporting CP", awayName: "Benfica", homeLogo: null, awayLogo: null, competition: "Primeira Liga", venue: "stadium" },
     });
@@ -243,6 +243,7 @@ describe("cancelLoan", () => {
     expect(await secretOf(loanId)).toBeDefined();
     expect(await handleCancelLoan(db, alice, { loanId }, NOW)).toEqual({ ok: true });
     expect((await loanOf(loanId)).cancelledAt.toDate()).toEqual(NOW);
+    expect((await loanOf(loanId)).cancelReason).toBe("owner");
     expect(await secretOf(loanId)).toBeUndefined();
     // repetir é inofensivo e não mexe na hora
     await handleCancelLoan(db, alice, { loanId }, new Date(NOW.getTime() + 1000));
@@ -260,6 +261,31 @@ describe("erros internos", () => {
     expect((r as { message: string }).message).not.toContain("documents");
     // HttpsError passa tal como está
     expect((await code(safely("cancelLoan", () => handleCancelLoan(db, bob, { loanId }, NOW))))?.code).toBe("permission-denied");
+  });
+});
+
+describe("claimLoan: empréstimo apagado", () => {
+  it("um empréstimo já apagado (limpeza dos 7 dias) dá not-found", async () => {
+    const { loanId } = await create(alice);
+    await db.doc(`loans/${loanId}/secret/number`).delete();
+    await db.doc(`loans/${loanId}`).delete();
+    expect((await code(handleClaimLoan(db, bob, { loanId }, NOW)))?.code).toBe("not-found");
+  });
+});
+
+describe("safelyTrigger: triggers com retry", () => {
+  it("regista só função e código e volta a lançar um erro sem caminho, id nem uid", async () => {
+    const err = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    const { loanId } = await create(alice);
+    const boom = Object.assign(new Error(`5 NOT_FOUND: projects/demo/databases/(default)/documents/loans/${loanId} alice`), { code: 5 });
+    const thrown = await safelyTrigger("onGameboxUpdated", () => Promise.reject(boom)).catch((e) => e as Error);
+    expect(thrown).toBeInstanceOf(Error);
+    for (const x of [loanId, "documents", "alice", "NOT_FOUND"]) expect(thrown.message).not.toContain(x);
+    await safelyTrigger("onGameboxDeleted", () => Promise.reject(new Error("sem código"))).catch(() => undefined);
+    expect(err.mock.calls).toEqual([["LOAN_INTERNAL", { fn: "onGameboxUpdated", code: 5 }], ["LOAN_INTERNAL", { fn: "onGameboxDeleted" }]]);
+    expect(JSON.stringify(err.mock.calls)).not.toContain(loanId);
+    expect(await safelyTrigger("onGameboxDeleted", async () => 42)).toBe(42);
+    err.mockRestore();
   });
 });
 
