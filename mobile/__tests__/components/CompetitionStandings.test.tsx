@@ -423,6 +423,19 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     expect(rank('228')).toBe(2);
   });
 
+  it('o calendário só se subscreve com a vista ao vivo disponível (documento recente com jogos)', async () => {
+    const { useCompetitionData } = jest.requireMock('@/data/sports') as { useCompetitionData: jest.Mock };
+    const fixturesKeys = () => useCompetitionData.mock.calls.filter((c) => c[1] === 'fixtures').map((c) => c[0]);
+    useCompetitionData.mockClear();
+    mockData.liveFixtures = liveDoc(6 * 60_000); // velho
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(fixturesKeys().every((k) => k === null)).toBe(true);
+    useCompetitionData.mockClear();
+    mockData.liveFixtures = liveDoc(30_000); // recente
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(fixturesKeys()).toContain(LIGA);
+  });
+
   it('calendário em erro ou em falta: não bloqueia, desempata por diferença de golos', async () => {
     mockData.liveFixtures = liveDoc(30_000);
     mockData.fixtures = { status: 'error', error: new Error('x') };

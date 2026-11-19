@@ -64,9 +64,11 @@ export function CompetitionStandings({
   const standings = useCompetitionData(competitionKey, 'standings');
   const bracket = useCompetitionData(competitionKey, 'bracket');
   const liveDoc = useCompetitionData(competitionKey, 'liveFixtures');
-  // Confronto direto do desempate ao vivo: só se lê o calendário quando há jogos ao vivo. Nunca bloqueia a vista.
-  const fixtures = useCompetitionData(liveDoc.status === 'ready' && liveDoc.data.fixtures.length > 0 ? competitionKey : null, 'fixtures');
   const now = useNow(LIVE_CHECK_MS);
+  // Confronto direto do desempate ao vivo: o calendário só se lê com a vista ao vivo disponível (jogos e documento recente).
+  // Nunca bloqueia a vista.
+  const liveAvailable = liveDoc.status === 'ready' && liveStandingsAvailable(liveDoc.data, now);
+  const fixtures = useCompetitionData(liveAvailable ? competitionKey : null, 'fixtures');
   const [mode, setMode] = useState<Mode>('live');
   // A escolha vive no módulo (sessão da app); isto só volta a desenhar depois de a gravar.
   const [, rerender] = useReducer((n: number) => n + 1, 0);
