@@ -69,7 +69,7 @@ export async function dispatchMatchPushes(
     if (r === "failed") out.failed.push(label);
   };
 
-  if (m.status === "LIVE" && (m.elapsed ?? 0) <= MATCH_START_MAX_ELAPSED) {
+  if (m.status === "LIVE" && m.elapsed !== null && m.elapsed <= MATCH_START_MAX_ELAPSED) {
     record("matchStart", await sendOnce(db, docPath, ["push", "matchStartSentAt"], now, () => sender.toTopic("push_matchStart", matchStartMessage(m))));
   }
 

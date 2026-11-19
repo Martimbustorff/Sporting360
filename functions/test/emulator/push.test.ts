@@ -187,6 +187,12 @@ describe("dispatchMatchPushes", () => {
     expect(r.sent).toEqual(["goal:9002_22_2", "goal:9002_27_3"]);
   });
 
+  it("LIVE com elapsed nulo: não decide o início do jogo", async () => {
+    const f = fakeSender();
+    await dispatchMatchPushes(db, f.sender, liveMatch({ elapsed: null }), [], at(40));
+    expect(f.topics).toEqual([]);
+  });
+
   it("golo com mais de 15 min de jogo não sai (elapsed 70, golo aos 20)", async () => {
     const f = fakeSender();
     const m = liveMatch({ elapsed: 70, statusRaw: "2H", score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
