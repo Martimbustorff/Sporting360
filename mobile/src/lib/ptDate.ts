@@ -50,3 +50,10 @@ export function formatDayMonth(d: Date): string {
   const p = lisbonParts(d);
   return `${p.day} ${MONTHS_LONG[p.month - 1]}`;
 }
+
+/** "SÁB 21 DEZ": dia da semana e mês abreviados, dia civil em Lisboa (cartão do próximo jogo, Figma 4920:5101). */
+export function formatCardDate(d: Date): string {
+  const p = lisbonParts(d);
+  const weekday = (WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()] ?? '').slice(0, 3);
+  return `${weekday} ${p.day} ${MONTHS_SHORT[p.month - 1]}`.toUpperCase();
+}

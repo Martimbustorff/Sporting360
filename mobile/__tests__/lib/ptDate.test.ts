@@ -1,4 +1,4 @@
-import { formatDayMonth, formatKickoffDate, formatTime } from '@/lib/ptDate';
+import { formatCardDate, formatDayMonth, formatKickoffDate, formatTime } from '@/lib/ptDate';
 
 describe('ptDate', () => {
   it('formats the hour in Europe/Lisbon (summer, UTC+1)', () => {
@@ -24,5 +24,14 @@ describe('ptDate', () => {
     expect(formatDayMonth(new Date('2027-04-16T19:15:00Z'))).toBe('16 abril');
     expect(formatDayMonth(new Date('2026-09-14T23:30:00Z'))).toBe('15 setembro');
     expect(formatDayMonth(new Date('2026-03-01T00:30:00Z'))).toBe('1 março');
+  });
+});
+
+describe('formatCardDate', () => {
+  it('dia da semana, dia e mês abreviados em maiúsculas, no dia civil de Lisboa', () => {
+    expect(formatCardDate(new Date('2026-12-21T18:00:00Z'))).toBe('SEG 21 DEZ');
+    expect(formatCardDate(new Date('2026-12-26T18:00:00Z'))).toBe('SÁB 26 DEZ');
+    // 23:30 UTC no verão já é o dia seguinte em Lisboa
+    expect(formatCardDate(new Date('2026-07-14T23:30:00Z'))).toBe('QUA 15 JUL');
   });
 });

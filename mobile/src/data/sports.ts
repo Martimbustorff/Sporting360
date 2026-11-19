@@ -62,6 +62,8 @@ const LIST_LIMIT = 40;
 const NEXT_LIMIT = 3;
 /** A game started up to 4 h ago still counts as "upcoming" (it may be live). */
 const UPCOMING_GRACE_MS = 4 * HOUR;
+const HOME_LOOKBACK_MS = 24 * HOUR;
+const HOME_LIMIT = 6;
 const DONE: ReadonlySet<GameStatus> = new Set<GameStatus>(['FT', 'AET', 'PEN', 'CANC']);
 const TEAM = 'teams/football_228';
 
@@ -156,6 +158,29 @@ export function useNextFootballMatch(now: Date): Loadable<Match | null> {
   const block = blockOf(now);
   const q = useMemo(() => upcomingQuery('football', block, NEXT_LIMIT), [block]);
   return useMapped(useCollection(q, MatchSchema), firstOpen);
+}
+
+/**
+ * Jogos de futebol desde 24 h antes, por apito (6): a Home escolhe o do cartão com lib/homeMatchMoment.pickHomeMatch
+ * (ao vivo, por abrir ou terminado hoje em Lisboa), ao minuto. Mesma coleção e campos de sempre; só a janela é maior.
+ * `attempt` muda a query para tentar outra vez depois de um erro.
+ */
+export function useHomeMatches(now: Date, attempt = 0): Loadable<Match[]> {
+  const block = blockOf(now);
+  const q = useMemo(
+    () =>
+      query(
+        collection(db(), 'matches'),
+        where('sport', '==', 'football'),
+        where('kickoff', '>=', new Date(block - HOME_LOOKBACK_MS)),
+        orderBy('kickoff', 'asc'),
+        limit(HOME_LIMIT),
+      ),
+    // `attempt` só serve para reconstruir a query.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [block, attempt],
+  );
+  return useCollection(q, MatchSchema);
 }
 
 // --- Competitions ----------------------------------------------------------------------------

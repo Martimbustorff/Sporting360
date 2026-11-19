@@ -43,3 +43,34 @@ export function useNow(stepMs: number = BLOCK_MS): Date {
 
   return now;
 }
+
+/**
+ * Relógio ao segundo, só enquanto `enabled` (ecrã visível e com contagem) e a app está em primeiro plano.
+ * Sem `enabled` devolve `fallback` sem criar intervalo. Alinha-se ao segundo do relógio real.
+ */
+export function useSecondNow(enabled: boolean, fallback: Date): Date {
+  const [tick, setTick] = useState<Date | null>(null);
+  useEffect(() => {
+    if (!enabled) {
+      setTick(null);
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const stop = () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+    };
+    const run = () => {
+      stop();
+      setTick(new Date());
+      timer = setTimeout(run, 1000 - (Date.now() % 1000));
+    };
+    if (AppState.currentState !== 'background' && AppState.currentState !== 'inactive') run();
+    const sub = AppState.addEventListener('change', (s) => (s === 'active' ? run() : stop()));
+    return () => {
+      stop();
+      sub.remove();
+    };
+  }, [enabled]);
+  return enabled && tick ? tick : fallback;
+}

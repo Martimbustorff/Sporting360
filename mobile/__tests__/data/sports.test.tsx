@@ -6,6 +6,7 @@ import {
   useMatch,
   useMatchDetail,
   useMatchVideos,
+  useHomeMatches,
   useNextFootballMatch,
   useResultMatches,
   useSeasonFootballCompetitions,
@@ -162,6 +163,29 @@ describe('match lists', () => {
     await render(<P />);
     await act(async () => lastNext()(qSnap([{ id: '1', data: matchData('1', '2026-11-18T09:00:00Z', 'AET') }])));
     expect(out()).toBeNull();
+  });
+});
+
+describe('useHomeMatches', () => {
+  it('lê o futebol desde 24 h antes, por apito, e só reconstrói a query com outra tentativa', async () => {
+    function P({ attempt }: { attempt: number }) {
+      return <Out v={useHomeMatches(NOW, attempt)} pick={(ms) => ms.map((m) => m.id)} />;
+    }
+    const view = await render(<P attempt={0} />);
+    expect(where).toHaveBeenCalledWith('sport', '==', 'football');
+    expect(where).toHaveBeenCalledWith('kickoff', '>=', new Date('2026-11-17T12:00:00Z'));
+    expect(limit).toHaveBeenCalledWith(6);
+    await act(async () =>
+      lastNext()(qSnap([
+        { id: '1', data: matchData('1', '2026-11-18T09:00:00Z', 'FT') },
+        { id: '3', data: matchData('3', '2026-11-20T20:30:00Z', 'NS') },
+      ])),
+    );
+    expect(out()).toEqual(['1', '3']);
+    await view.rerender(<P attempt={0} />);
+    expect(snapMock).toHaveBeenCalledTimes(1);
+    await view.rerender(<P attempt={1} />);
+    expect(snapMock).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -1,7 +1,7 @@
 // Fix round 1 (Task 5): relógio que anda para ecrãs que ficam montados (Home, Agenda).
 import { act, renderHook } from '@testing-library/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
-import { BLOCK_MS, useNow } from '@/data/clock';
+import { BLOCK_MS, useNow, useSecondNow } from '@/data/clock';
 
 const T0 = new Date('2026-11-18T12:03:00Z').getTime(); // 3 min depois do bloco das 12:00
 
@@ -115,4 +115,52 @@ it('desmontar antes da primeira fronteira limpa o temporizador e não marca mais
   });
   expect(ours()).toBe(1);
   expect(remove).toHaveBeenCalledTimes(1);
+});
+
+describe('useSecondNow', () => {
+  const fallback = new Date('2026-11-18T12:00:00Z');
+
+  it('desligado devolve o valor de reserva e não anda', async () => {
+    const { result } = await renderHook(() => useSecondNow(false, fallback));
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect(result.current).toBe(fallback);
+  });
+
+  it('ligado anda ao segundo; ao desligar volta à reserva e deixa de andar', async () => {
+    const { result, rerender } = await renderHook(({ on }: { on: boolean }) => useSecondNow(on, fallback), { initialProps: { on: true } });
+    expect(result.current.getTime()).toBe(T0);
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
+    expect(result.current.getTime()).toBe(T0 + 3000);
+    await rerender({ on: false });
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+    });
+    expect(result.current).toBe(fallback);
+  });
+
+  it('em segundo plano pára; ao voltar a active retoma logo', async () => {
+    const { result } = await renderHook(() => useSecondNow(true, fallback));
+    await act(async () => listener?.('background'));
+    const frozen = result.current.getTime();
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect(result.current.getTime()).toBe(frozen);
+    await act(async () => listener?.('active'));
+    expect(result.current.getTime()).toBe(T0 + 5000);
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(result.current.getTime()).toBe(T0 + 6000);
+  });
+
+  it('limpa a subscrição do AppState ao desmontar', async () => {
+    const view = await renderHook(() => useSecondNow(true, fallback));
+    await view.unmount();
+    expect(remove).toHaveBeenCalled();
+  });
 });
