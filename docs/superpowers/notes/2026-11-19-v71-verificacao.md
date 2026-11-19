@@ -134,6 +134,43 @@ Frames: 11, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46. Método e legenda como n
 
 Resumo do Grupo C: 9 correções (todas em 74428ce), 1 pendente Martim (atribuição API-Football no Calendário).
 
+## Empréstimo
+
+Plan 8, 19/11. Frames 45La a 45Le, 44L, 12L, 50, 50b e 50c (Task 1) verificados contra o código, mais seis estados que só existiam no código e foram desenhados nesta tarefa (ids entre parênteses na tabela, cada um com nota a +426 do frame). Mesma legenda do Grupo A.
+
+| Frame | Ecrã/componente (ficheiro) | Diferença | Decisão |
+|---|---|---|---|
+| 45La Editar GameBox · Emprestar | `gamebox/[id].tsx` (LoanSection) | Sem diferenças (botão "Emprestar para o próximo jogo", ajuda "O link só abre na app S360 e expira no fim deste jogo." em caption 12 textMuted) | sem diferenças |
+| 45Lb Emprestar · Próximo jogo | `LoanConfirmSheet.tsx` | Cartão do jogo com o emblema real do adversário (o frame tem um escudo genérico neutro) | intencional: o emblema vem dos dados do jogo |
+| 45Lb | `LoanConfirmSheet.tsx`, `ModalSheet.tsx` | Folha com espaço de 16 entre elementos e título 5 pt mais abaixo (grabber em fluxo); o frame tem espaço de 14 e título a 28 pt | pendente Martim (o `ModalSheet` é partilhado com 48b e 21b; mexer nele afeta outras folhas) |
+| 45Lb | `LoanConfirmSheet.tsx` | Cartão (surface-10, raio 16, padding 14/12, espaço 12, Label 16 e Caption 12) e botão "Emprestar" iguais; a app acrescenta a linha do recinto, que o frame também tem | sem diferenças |
+| 45Lbv Sem jogos em casa | `LoanConfirmSheet.tsx` | Sem diferenças (título, "Sem jogos em casa marcados para esta GameBox.", "Fechar" a contorno) | sem diferenças |
+| 45Lc Emprestada · Ainda não aberto | `gamebox/[id].tsx` | Texto "Ainda não aberto" em textMuted; o frame usa branco (Caption Strong 12) | corrigido (branco; aberto continua a primary-on-dark como em 45Ld) |
+| 45Lc | `gamebox/[id].tsx` | Ponto de estado é uma View de 8 pt (o frame usa o SVG Ponto) | intencional: equivalente nativo, mesma cor e tamanho |
+| 45Lc | `gamebox/[id].tsx` | Botão "Partilhar link outra vez" (contorno) por cima de "Cancelar empréstimo", sem frame | corrigido no Figma: 45Lc passou a mostrá-lo (botão novo 4989:11988 e nota); 45Ld fica sem ele |
+| 45Ld Emprestada · Aberto | `gamebox/[id].tsx` | Sem diferenças ("Aberto por {nome} às {HH:MM}" a primary-on-dark, só "Cancelar empréstimo") | sem diferenças |
+| 45Le Cancelar empréstimo | `LoanConfirmSheet.tsx` (CancelLoanSheet) | Mesmo espaçamento da folha que em 45Lb (16 contra 14, título 5 pt abaixo); copy, Primário e Contorno iguais | pendente Martim (ver 45Lb, é o mesmo `ModalSheet`) |
+| 45Lbc Emprestar · A carregar (novo) | `LoanConfirmSheet.tsx` | Estado sem frame: a folha espera por todas as listas de jogos do recinto; só título e "Fechar". Desenhado agora (4990:11989) a partir de 45Lbv, sem o texto | corrigido no Figma (frame novo, copy igual ao código) |
+| 45Lbe Emprestar · Erro ao carregar (novo) | `LoanConfirmSheet.tsx` | Estado sem frame: lista em erro. "Não foi possível concluir. Tenta outra vez." a vermelho (body 14, centrado) e "Fechar". Desenhado agora (4990:12085) | corrigido no Figma (frame novo) |
+| 45Lbm Emprestar · Erro ao emprestar (novo) | `LoanConfirmSheet.tsx` | Estado sem frame: a mensagem do dono depois de "Emprestar" (por exemplo "Já tens um empréstimo ativo para este jogo.") aparece a vermelho, centrada, entre o cartão e o botão. Desenhado agora (4990:12181); a nota lista as outras mensagens | corrigido no Figma (frame novo) |
+| 44L Gestão de GameBox · Emprestada a mim | `gamebox/index.tsx` (LentRow) | Sem diferenças (padding 14, Title S 20, "Emprestada por {nome}" a primary-on-dark Caption Strong 12, seta de 20, sem pega) | sem diferenças |
+| 44L | `gamebox/index.tsx` | As linhas emprestadas ficam a seguir às GameBox e antes do bloco "Principal" próprio da app; no frame "Principal" é uma linha normal | intencional: o bloco "Principal" já existia e não se mexe |
+| 12L Modo bilhete · Emprestada | `gamebox/bilhete.tsx` | Sem diferenças (bloco do QR com padding 32/24, Title 24 ink e Caption 12 ink-muted, espaço 8, botão "Cancelar empréstimo" a contorno) | sem diferenças |
+| 12L | `gamebox/bilhete.tsx` | O bloco "Sócio" mantém nome e número de sócio da app; o frame mostra um nome de exemplo | intencional: dados reais do utilizador |
+| 12Lc Modo bilhete · A carregar empréstimo (novo) | `gamebox/bilhete.tsx` | Estado sem frame: enquanto o estado do empréstimo não chega, nem QR nem aviso, só o espaço de 220 pt; o aviso de brilho mantém-se. Desenhado agora (4990:12676) | corrigido no Figma (frame novo) |
+| 50 Empréstimo · Ecrã do destinatário | `emprestimo/[id].tsx`, `MatchCard.tsx` | O destinatário nunca vê o número, só o QR (o frame também não o mostra); QR real em vez do ilustrativo; sem selo nem rodapé do frame 30 | intencional (decisão do Martim de 19/11) |
+| 50 | `emprestimo/[id].tsx` | Colunas do lugar com `flex:1` e só as preenchidas (o frame tem 4 colunas de 64 pt) | intencional: a 320 pt as 4 colunas de 64 não cabem |
+| 50 | `emprestimo/[id].tsx` | Brilho máximo e ecrã sempre ligado só enquanto o cartão está à vista; o aviso do frame mantém-se sempre no cartão | intencional (decisão do Martim) |
+| 50 | `emprestimo/[id].tsx` | Barra de estado e indicador de início são do sistema | intencional |
+| 50b Já aberto noutra conta | `emprestimo/[id].tsx` (Notice), `EmptyState.tsx` | `EmptyState` com padding vertical 32; o frame tem 8 em cima e 24 até ao botão | pendente Martim (o componente é partilhado; mudar afeta os outros estados vazios) |
+| 50c Já não está ativo | `emprestimo/[id].tsx` | Mesmo layout e a mesma diferença que 50b, com o outro texto | pendente Martim (ver 50b) |
+| 50d Empréstimo · A abrir (novo) | `emprestimo/[id].tsx` | Estado sem frame: enquanto o claim corre, só o cabeçalho "GameBox", sem texto nem cartão. Desenhado agora (4990:12290) | corrigido no Figma (frame novo) |
+| 50e Empréstimo · Sem ligação (novo) | `emprestimo/[id].tsx` | Estado sem frame: "Sem ligação. Tenta outra vez quando houver rede.", "Tentar outra vez" (primário) e "Fechar". O erro desconhecido usa o mesmo desenho com "Não foi possível concluir. Tenta outra vez.". Desenhado agora (4990:12638) | corrigido no Figma (frame novo) |
+| Novos 45Lc, 45Lbc, 45Lbe, 45Lbm, 50d, 50e, 12Lc | Figma | Copy acrescentado pelo código: "Partilhar link outra vez", "Tentar outra vez", as mensagens de erro e o estado a carregar | pendente Martim (aprovar os frames novos e esta copy) |
+| Todos | Folha de partilha | A folha de partilha é a nativa do sistema (o texto está na nota do 45La) | intencional |
+
+Resumo do Empréstimo: 17 frames verificados (11 do Task 1 e 6 novos), 1 correção no código (45Lc), 6 frames novos e 1 atualizado no Figma, 3 pendentes Martim.
+
 ## Resumo
 
 Método: leitura do código contra o frame, sem build nem simulador; a verificação visual em dispositivo continua pendente.
@@ -143,11 +180,12 @@ Método: leitura do código contra o frame, sem build nem simulador; a verifica�
 | Grupo A | 22 | 9 | 5 |
 | Grupo B | 22 | 6 | 1 |
 | Grupo C | 12 | 9 | 1 |
-| Total | 56 | 24 | 7 |
+| Empréstimo | 17 | 1 | 3 |
+| Total | 73 | 25 | 10 |
 
-Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Um dos pendentes (09) está dentro de uma linha marcada como intencional: a diferença é intencional hoje, mas a decisão de produto fica por tomar. Decididos a 19/11: 03 Gameback (corrigido), 02 "Termos e privacidade" (mantém-se como no design), 10 desempate (corrigido com confronto direto), 31 alternador de partes (corrigido com o instantâneo do intervalo), 33 duração do vídeo (fora).
+Diferenças intencionais registadas: 61 (decididas pelo Martim ou equivalentes nativos, não se mudam). Um dos pendentes (09) está dentro de uma linha marcada como intencional: a diferença é intencional hoje, mas a decisão de produto fica por tomar. Decididos a 19/11: 03 Gameback (corrigido), 02 "Termos e privacidade" (mantém-se como no design), 10 desempate (corrigido com confronto direto), 31 alternador de partes (corrigido com o instantâneo do intervalo), 33 duração do vídeo (fora).
 
-Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
+Testes finais: mobile npx jest 143 suites, 2220 ok; tsc limpo; check:tokens ok (173 ficheiros); functions npm test 31 suites, 596 ok; lint e build limpos; emulador 26 suites, 813 ok.
 
 ### Pendentes Martim
 
@@ -159,3 +197,6 @@ Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
 6. Estatísticas do jogo (31): o servidor não grava as partes (alternador Jogo / 1.ª parte / 2.ª parte).
 7. Perfil (22): título do histórico com as equipas ("Sporting 2-1 FC Porto"); o prognóstico não guarda as equipas.
 8. Calendário (35): mostrar "Fonte: API-Football" por baixo da lista de futebol, como no frame.
+9. Empréstimo (45Lb, 45Le): espaçamento da folha (`ModalSheet` com 16 entre elementos e título 5 pt abaixo, contra 14 e 28 do Figma); partilhado com 48b e 21b.
+10. Empréstimo (50b, 50c): padding vertical do `EmptyState` (32 contra 8 em cima e 24 até ao botão).
+11. Empréstimo (frames novos): aprovar os seis frames novos (45Lbc, 45Lbe, 45Lbm, 50d, 50e, 12Lc), o botão "Partilhar link outra vez" no 45Lc e a copy de erro e de "Tentar outra vez".

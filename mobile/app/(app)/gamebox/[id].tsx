@@ -99,7 +99,7 @@ function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: 
                   backgroundColor: active.openedAt ? colors.primaryOnDark : colors.textSubtle,
                 }}
               />
-              <Text71 variant="captionStrong12" color={active.openedAt ? 'primaryOnDark' : 'textMuted'} style={{ flexShrink: 1 }}>
+              <Text71 variant="captionStrong12" color={active.openedAt ? 'primaryOnDark' : 'white'} style={{ flexShrink: 1 }}>
                 {active.openedAt && active.recipientName
                   ? `Aberto por ${active.recipientName} às ${formatTime(active.openedAt)}`
                   : LOAN_TEXT.notOpened}
