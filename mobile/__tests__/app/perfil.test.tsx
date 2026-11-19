@@ -14,6 +14,7 @@ const mockEvents: { current: L } = { current: { status: 'loading' } };
 const mockPredictions: { current: L } = { current: { status: 'loading' } };
 const mockSettlements: { current: L } = { current: { status: 'loading' } };
 const mockEntry: { current: L } = { current: { status: 'missing' } };
+const mockSquad: { current: L } = { current: { status: 'loading' } };
 const mockPosition = jest.fn();
 const mockPush = jest.fn();
 
@@ -27,6 +28,7 @@ jest.mock('@/data/hooks', () => ({
   useMyUser: jest.fn(() => mockUser.current),
   usePublicProfile: jest.fn(() => mockProfile.current),
 }));
+jest.mock('@/data/sports', () => ({ useTeamData: jest.fn(() => mockSquad.current) }));
 jest.mock('@/data/user', () => ({
   useMyPointEvents: jest.fn(() => mockEvents.current),
   useMyPredictions: jest.fn(() => mockPredictions.current),
@@ -66,6 +68,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUser.current = ready(USER);
   mockProfile.current = ready({ displayName: 'Maria C.', avatarId: null });
+  mockSquad.current = ready({ players: [{ id: '9', name: 'Francisco Trincão', number: 17, photo: 'https://x/y.jpg' }] });
   mockPredictions.current = ready([pred('g5', 1, 0), pred('g4', 2, 1), pred('g3', 3, 0), pred('g2', 0, 0), pred('g1', 1, 1)]);
   mockSettlements.current = ready({
     g4: { finalHome: 2, finalAway: 1, officialMvp: [] },
@@ -120,6 +123,21 @@ describe('Perfil: identidade', () => {
       expect(t.props.numberOfLines).toBe(1);
       expect(t.props.ellipsizeMode).toBe('tail');
     }
+  });
+
+  it('jogador favorito mostra o PlayerPhoto com a foto e o número do plantel', async () => {
+    await renderScreen();
+    expect(screen.getByTestId('favorite-player-photo')).toBeTruthy();
+    expect(screen.getByTestId('player-photo-image', { hidden: true }).props.source).toEqual([{ uri: 'https://x/y.jpg' }]);
+    expect(screen.getByText('17')).toBeTruthy();
+  });
+
+  it('jogador favorito fora do plantel mostra a silhueta (sem foto) e continua com o nome', async () => {
+    mockSquad.current = ready({ players: [] });
+    await renderScreen();
+    expect(screen.getByTestId('favorite-player-photo')).toBeTruthy();
+    expect(screen.queryByTestId('player-photo-image', { hidden: true })).toBeNull();
+    expect(screen.getByText('Francisco Trincão')).toBeTruthy();
   });
 
   it('o email (users e sessão) nunca aparece', async () => {

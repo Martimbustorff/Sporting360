@@ -40,6 +40,7 @@ module.exports = {
           inkSeparator: 'rgba(0, 27, 19, 0.12)',
           danger: '#F74C66',
           scrimV71: 'rgba(0, 13, 9, 0.72)',
+          stadiumSector: '#339E80',
           formLoss: '#E53836',
           yellow71: '#FACC2E',
           yellow71Bg: 'rgba(250, 204, 46, 0.18)',

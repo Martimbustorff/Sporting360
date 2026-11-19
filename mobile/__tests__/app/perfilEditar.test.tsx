@@ -51,7 +51,7 @@ describe('Editar perfil', () => {
     expect(screen.getByLabelText('Número de sócio').props.value).toBe('123');
     expect(screen.getByLabelText('Sócio desde (MM/AAAA)').props.value).toBe('03/2008');
     expect(screen.getByLabelText('Lugar anual').props.value).toBe('A1');
-    expect(screen.getByRole('tab', { name: /Futsal/ }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByRole('radio', { name: 'Futsal' }).props.accessibilityState.selected).toBe(true);
     expect(screen.queryByText('a@b.pt')).toBeNull();
     expect(save().props.accessibilityState.disabled).toBe(true);
   });
@@ -59,7 +59,8 @@ describe('Editar perfil', () => {
   it('o payload é só o que mudou e só chaves da lista', async () => {
     await render(wrap(<EditarPerfil />));
     await fireEvent.changeText(screen.getByLabelText('Lugar anual'), 'B2');
-    await fireEvent.press(screen.getByRole('tab', { name: /Futebol/ }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Futebol' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Escolher jogador favorito' }));
     await fireEvent.press(screen.getByRole('radio', { name: 'Morita' }));
     await fireEvent.press(save());
     expect(updateMyProfileFields).toHaveBeenCalledWith('u1', {
@@ -110,7 +111,16 @@ describe('Editar perfil', () => {
   it('plantel com erro mostra o erro do plantel', async () => {
     mockSquad.current = { status: 'error', error: new Error('x') };
     await render(wrap(<EditarPerfil />));
+    await fireEvent.press(screen.getByRole('button', { name: 'Escolher jogador favorito' }));
     expect(screen.getByText('Não foi possível carregar o plantel.')).toBeTruthy();
+  });
+
+  it('jogador favorito atual mostra PlayerPhoto, o nome e "Mudar"', async () => {
+    mockUser.current = { status: 'ready', data: { name: 'Maria Costa', favoritePlayer: { id: '2', name: 'Morita' } } };
+    await render(wrap(<EditarPerfil />));
+    expect(screen.getByTestId('favorite-player-photo')).toBeTruthy();
+    expect(screen.getByText('Morita')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Jogador favorito: Morita. Mudar' })).toBeTruthy();
   });
 
   it('documento inexistente abre o formulário vazio', async () => {

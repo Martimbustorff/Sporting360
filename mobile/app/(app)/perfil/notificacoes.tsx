@@ -1,11 +1,11 @@
-// Figma: nós 323:11630 / 323:11790 (linha "Notificações" com interruptor, via ToggleRow). SEM FIGMA: a lista de dois
-// interruptores e o aviso por baixo não estão desenhados; compõe Header, ToggleRow e Body, só com tokens.
+// Figma V7.1 25 Notificações (4942:7895): dois ToggleRow M (52) a 26 do Header, nota Caption 12 text-subtle e, com a
+// permissão do telemóvel recusada, caixa surface-06 com o aviso e "Abrir definições" em Contorno. Só com tokens.
 // Task 22: guarda as preferências em users/{uid}.notificationPrefs. Cada interruptor grava o objeto completo. Sem
 // preferências guardadas, tudo ligado. Leitura falhada: erro, nunca valores por omissão.
 // Push só para ações na app (2026-11-19): lembrete de prognóstico e abertura do MVP. As chaves antigas
 // (matchStart, goals, news) ficam no documento, sem interruptor e sem efeito.
 // Plano 6: o PushSetup segue o documento e acerta os tópicos; este ecrã não chama o push. Com a permissão do
-// telemóvel recusada, um aviso e o botão para as definições (SEM FIGMA: PrimaryButton secundário, só tokens).
+// telemóvel recusada, um aviso e o botão para as definições (frame 25).
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, ScrollView, View } from 'react-native';
@@ -21,8 +21,8 @@ import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
 import { useSession } from '@/providers/SessionProvider';
 import { pushPermissionGranted } from '@/services/push';
 import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
-import { Body } from '@/theme/typography';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const NOTIFICACOES_TEXT = {
   loadError: 'Não foi possível carregar as tuas preferências.',
@@ -35,7 +35,7 @@ export const NOTIFICACOES_TEXT = {
 } as const;
 
 const ROWS: { key: keyof NotificationPrefs; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { key: 'predictionReminder', label: 'Lembrete de prognóstico', icon: 'edit-3' },
+  { key: 'predictionReminder', label: 'Lembrete de prognóstico', icon: 'clock' },
   { key: 'mvpOpen', label: 'Abertura do MVP', icon: 'award' },
 ];
 
@@ -110,7 +110,9 @@ export default function Notificacoes() {
       {user.status === 'error' ? (
         <EmptyState icon="info" text={NOTIFICACOES_TEXT.loadError} />
       ) : (
-        <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.xl, gap: spacing.md }}>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.editFieldsTop, paddingBottom: space.s24, gap: space.s16 }}
+        >
           {user.status === 'loading' ? (
             <View testID="notificacoes-loading" style={{ minHeight: layout.skeletonRowHeight }} />
           ) : (
@@ -118,6 +120,7 @@ export default function Notificacoes() {
               {ROWS.map((r) => (
                 <ToggleRow
                   key={r.key}
+                  size="M"
                   icon={<Feather name={r.icon} size={layout.menuRowIcon} color={colors.white} />}
                   label={r.label}
                   value={prefs[r.key]}
@@ -127,21 +130,29 @@ export default function Notificacoes() {
             </View>
           )}
           {message ? (
-            <Body variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.cardRed }}>
+            <Text71 variant="body14" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
               {message}
-            </Body>
+            </Text71>
           ) : null}
+          <Text71 variant="caption12" color="textSubtle">{NOTIFICACOES_TEXT.notice}</Text71>
           {permission === false ? (
-            <>
-              <Body variant="body" style={{ color: colors.white }}>{NOTIFICACOES_TEXT.permissionOff}</Body>
+            <View
+              style={{
+                gap: space.s12,
+                paddingHorizontal: space.s16,
+                paddingVertical: layout.statTilePadY,
+                borderRadius: radii.r12,
+                backgroundColor: colors.surface06,
+              }}
+            >
+              <Text71 variant="body14">{NOTIFICACOES_TEXT.permissionOff}</Text71>
               <PrimaryButton
-                variant="secondary"
+                variant="outline"
                 label={NOTIFICACOES_TEXT.openSettings}
                 onPress={() => void Linking.openSettings().catch(() => undefined)}
               />
-            </>
+            </View>
           ) : null}
-          <Body variant="body" style={{ color: colors.textMuted }}>{NOTIFICACOES_TEXT.notice}</Body>
         </ScrollView>
       )}
     </Screen>

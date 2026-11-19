@@ -11,7 +11,7 @@ jest.mock('@/services/profile', () => ({ updateDisplayName: jest.fn() }));
 
 import { usePublicProfile } from '@/data/hooks';
 import { updateDisplayName } from '@/services/profile';
-import Nome from '../../app/(app)/perfil/nome';
+import Nome, { NOME_HELPER } from '../../app/(app)/perfil/nome';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 const ui = () => (
@@ -36,6 +36,12 @@ it('sem perfil publicado mostra o nome automático Sportinguista + fim do uid', 
   mockProfile.current = { status: 'missing' };
   await render(ui());
   expect(screen.getByText(`Sportinguista #${'1234'}`)).toBeTruthy();
+});
+
+it('mostra a ajuda do frame 24, tal e qual', async () => {
+  await render(ui());
+  expect(NOME_HELPER).toBe('É o nome que aparece no Ranking. O nome completo e o email nunca aparecem.');
+  expect(screen.getByText(NOME_HELPER)).toBeTruthy();
 });
 
 it('"Guardar" desativado com o campo vazio', async () => {

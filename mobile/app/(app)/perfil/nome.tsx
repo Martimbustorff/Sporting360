@@ -1,9 +1,9 @@
-// SEM FIGMA: ecrã não desenhado. Compõe AuthScaffold (Header + rodapé acima do teclado), TextField, PrimaryButton
-// e FormMessage, só com tokens.
+// Figma V7.1 24 Nome público (4942:7843): texto Body Light 70 % (copy aprovada), campo "Novo nome" e botão Branco logo
+// por baixo (AuthScaffold com `footerInline`, espaço de 20). Mantém o bloco "Nome atual" (não está no frame).
 // Task 16: mostra o nome público atual (ou o automático "Sportinguista #<fim do uid>") e grava um novo pela
 // callable updateProfile. A validação é a do servidor (displayName.ts reexporta a cópia de functions).
 import { useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { TextField } from '@/components/TextField';
@@ -12,7 +12,10 @@ import { displayNameErrorMessage, displayNameMessage, validateDisplayName } from
 import { publicName } from '@/lib/publicName';
 import { useSession } from '@/providers/SessionProvider';
 import { updateDisplayName } from '@/services/profile';
-import { layout, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { layout, space } from '@/theme/tokens';
+
+export const NOME_HELPER = 'É o nome que aparece no Ranking. O nome completo e o email nunca aparecem.';
 
 type Message = { text: string; tone: 'error' | 'info' };
 
@@ -59,21 +62,23 @@ export default function Nome() {
     <AuthScaffold
       title="Nome público"
       fallbackHref="/"
+      fieldsGap={layout.authStackGap}
+      footerInline
       footer={
         <>
           {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
-          <PrimaryButton label="Guardar" onPress={() => void submit()} loading={loading} disabled={!check.ok} />
+          <PrimaryButton variant="white" label="Guardar" onPress={() => void submit()} loading={loading} disabled={!check.ok} />
         </>
       }
     >
-      <View style={{ gap: spacing.sm }}>
-        <Text style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity }]}>Nome atual</Text>
-        <Text style={type.fieldValue} testID="current-name">
+      <Text71 variant="bodyLight14" color="textMuted">
+        {NOME_HELPER}
+      </Text71>
+      <View style={{ gap: space.s8 }}>
+        <Text71 variant="eyebrow13" color="textSubtle">Nome atual</Text71>
+        <Text71 variant="strong14" testID="current-name">
           {current}
-        </Text>
-        <Text style={[type.authNote, { textAlign: 'left', opacity: layout.authMutedOpacity }]}>
-          É o nome que aparece nos rankings. Nunca mostramos o teu email.
-        </Text>
+        </Text71>
       </View>
       <TextField
         label="Novo nome"

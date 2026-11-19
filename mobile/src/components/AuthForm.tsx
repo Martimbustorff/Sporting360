@@ -19,6 +19,7 @@ export function AuthScaffold({
   bottom = layout.authBottom,
   fieldsGap = layout.authFieldsGap,
   fallbackHref = '/welcome',
+  footerInline = false,
 }: {
   title: string;
   children: ReactNode;
@@ -29,6 +30,8 @@ export function AuthScaffold({
   fieldsGap?: number;
   /** Para onde "Voltar" leva quando não há histórico (ecrãs de (app) usam '/'). */
   fallbackHref?: '/welcome' | '/';
+  /** O rodapé segue logo os campos (com `fieldsGap`) em vez de ficar encostado em baixo (24 Nome público, 4942:7882). */
+  footerInline?: boolean;
 }) {
   const router = useRouter();
   const back = () => (router.canGoBack() ? router.back() : router.replace(fallbackHref));
@@ -47,9 +50,16 @@ export function AuthScaffold({
             paddingBottom: bottom,
           }}
         >
-          <View style={{ gap: fieldsGap }}>{children}</View>
-          <View className="flex-1" style={{ minHeight: layout.authFieldsGap }} />
-          <View style={{ gap: layout.authButtonGap }}>{footer}</View>
+          <View style={{ gap: fieldsGap }}>
+            {children}
+            {footerInline ? <View style={{ gap: layout.authButtonGap }}>{footer}</View> : null}
+          </View>
+          {footerInline ? null : (
+            <>
+              <View className="flex-1" style={{ minHeight: layout.authFieldsGap }} />
+              <View style={{ gap: layout.authButtonGap }}>{footer}</View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>

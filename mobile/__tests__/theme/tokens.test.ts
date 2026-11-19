@@ -39,6 +39,7 @@ const MAP: Record<string, string> = {
   inkSeparator: 'inkSeparator',
   danger: 'danger',
   scrimV71: 'scrimV71',
+  stadiumSector: 'stadiumSector',
   formLoss: 'formLoss',
   yellow71: 'yellow71',
   yellow71Bg: 'yellow71Bg',

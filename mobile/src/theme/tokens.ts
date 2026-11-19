@@ -68,6 +68,8 @@ export const colors = {
   // Cartão S360 MATCHDAY V7.1 (4946:8197): degradê do topo (#00543b) ao bg e linha do rodapé (branco a 15 %)
   shareCardTop: '#00543B',
   shareCardRule: 'rgba(255, 255, 255, 0.15)',
+  // Estádio V7.1 (4923:6136): faixa "Sectores A e B" da legenda
+  stadiumSector: '#339E80',
 } as const;
 
 export const fonts = {
@@ -297,26 +299,14 @@ export const layout = {
   sheetGrabberTopOpen: 10, // folha GameBox aberta (4951:8674)
   grabberOpacity: 0.18,
   sheetVelocity: 500, // px/s: a flick is enough to toggle
-  consentSheetHeight: 380, // SEM FIGMA: analytics consent sheet (title, 5 lines of text, two buttons) above the home indicator
-  consentGap: 16,
   // Mapa do estádio (Figma 450:5254 normal, 450:5095 ampliado: mapa 359 -> 585 de largura) e ligações em baixo (450:5379)
   stadiumMap: { width: 359, height: 383.698 },
   stadiumZoomScale: 585 / 359,
   stadiumZoomMs: 250, // SEM FIGMA: duração da animação de ampliar/reduzir
-  stadiumLinksX: 28,
-  stadiumLinksBottom: 30, // 812 - 695 - 87.5 (três linhas de 21.17 e duas folgas de 12)
-  stadiumLinksGap: 12,
-  stadiumLinkIcon: 21.17,
-  stadiumLinkIconGap: 15,
   // Sites do clube e Comunidade Leonina (Figma 348:44569 / 406:13212)
   lionBlur: 11, // "image 2" 348:44570, desfocado a 11
-  sitesRowGap: 28, // linhas a 72 px de passo: MenuRow (44) mais 28
-  sitesListTop: 24, // texto (termina em 148) a primeira linha (centro em 190)
   communityGap: 24, // 406:13221
   communityBottom: 24, // SEM FIGMA: folga no fim da lista
-  settingsListTop: 32, // Definições 323:11630: fim do Header (96) à primeira linha (128)
-  settingsRowGap: 28, // linhas a 72 px de passo, como nos Sites
-  settingsFooterGap: 16, // SEM FIGMA: "Terminar sessão", "Apagar conta" e a versão empilhados
   settingsFooterBottom: 24, // "Log Out" (733) acima do indicador de início; o Screen já aplica a safe area
   settingsFormGap: 32, // Mudar password 348:26562: campos a 32 entre si
   sheetShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
@@ -336,7 +326,7 @@ export const layout = {
   rankingRowMinHeight: 44,
   avatarSize: 32,
   // SEM FIGMA: Perfil (Task 21), composto com tokens
-  profileAvatar: 72, // círculo com a inicial do nome público
+  profileAvatar: 64, // V7.1 22 Perfil: círculo com a inicial do nome público (4942:7650)
   profileHeaderGap: 16, // avatar ao nome
   statTileMinWidth: 140, // dois mosaicos por linha em 347 pt
   playerBadgeOffsetX: 4, // V7.1 Foto do jogador: distintivo a -4 / -2 (4959:9555)
@@ -689,4 +679,51 @@ export const layout = {
   leaderBarRadius: 2,
   leaderTextGap: 2,
   leaderNameGap: 6, // nome / posição e barra (4935:7490)
+  // V7.1 Perfil, Editar perfil, Ranking, Notícias, Definições, Estádio e Consentimento (frames 22 a 27, 02, 04, 05)
+  statTilePadX: 16, // 22: PONTOS / POSIÇÃO (4942:7687)
+  statTilePadY: 14,
+  statTileRadius: 16,
+  numberTileRadius: 12, // 22: ACERTO / EXATOS / SÉRIE / MVP (4942:7694)
+  numberTileGap: 8,
+  historyBadgePadX: 8, // 22: selo de pontos (4942:7712)
+  historyBadgePadY: 4,
+  historyBadgeRadius: 6,
+  editFieldsTop: 26, // 23: do Header ao primeiro campo (4942:7790)
+  editFieldsGap: 28,
+  chipsLabelGap: 10, // 23: etiqueta e opções (4942:7818)
+  chipsGap: 8,
+  playerChoiceGap: 10, // 23: Escolha do jogador favorito (4942:7835)
+  playerChoicePhoto: 32,
+  rankCircle: 32, // 26: posição (4943:7813)
+  rankRowPadY: 10,
+  rankPinnedRadius: 20, // 26: "A tua posição" fixa em baixo (4943:7862)
+  rankPinnedPadTop: 12,
+  rankPinnedPadBottom: 12, // 46 no frame, com o indicador de início (34) já dado pela área segura do Screen
+  newsImageRadius: 10, // 27: imagem (4943:7926)
+  newsTextGap: 6,
+  newsRowPadY: 12,
+  settingsCardPadLeft: 16, // 02: cartão da conta (4922:5872)
+  settingsCardPadRight: 12,
+  settingsCardAvatar: 48,
+  settingsCardGap: 2,
+  stadiumLuz: 520, // 04: luz do relvado (4923:5984)
+  stadiumLuzLeft: -59,
+  stadiumLuzTop: 68,
+  stadiumLegendDoor: 20, // 04: legenda (4923:6131)
+  stadiumLegendSectorWidth: 20,
+  stadiumLegendSectorHeight: 12,
+  stadiumLegendSectorRadius: 3,
+  stadiumLegendMuseumPad: 2,
+  stadiumLegendMuseumRadius: 4,
+  stadiumLegendMuseumIcon: 12,
+  stadiumLegendGap: 6,
+  stadiumBelowTop: 8, // 04: legenda e ligações a 8
+  consentIcon: 48, // 05: folha de consentimento (4923:6368)
+  consentCheck: 20,
+  consentPadTop: 8,
+  consentContentTop: 20,
+  consentBottom: 42,
+  consentItemGap: 8,
+  linkNoteIcon: 14, // 03: nota "Abre no navegador" (4922:6039)
+  linkNoteGap: 6,
 } as const;

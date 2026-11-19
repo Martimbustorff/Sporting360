@@ -1,19 +1,18 @@
-// SEM FIGMA: ecrã não desenhado (o V2 tem os campos em definitions.tsx, sem frame). Compõe AuthScaffold (Header +
-// rodapé acima do teclado), TextField (564:6907 / 564:6938), Tabs 'scroll' (500:28976), PrimaryButton e FormMessage,
-// só com tokens.
+// Figma V7.1 23 Editar perfil (4942:7751): campos a 28 (primeiro a 26 do Header), modalidade em pílulas, jogador favorito
+// numa linha "Escolha" com PlayerPhoto (a lista do plantel abre ao tocar), Guardar Branco em baixo. Compõe AuthScaffold.
 // Task 22: campos privados do próprio (nunca públicos): Número de sócio (`memberNumber`), Sócio desde (`partnerNumber`,
 // MM/AAAA), Lugar anual, Modalidade favorita e Jogador favorito (plantel). Grava só o que mudou, só chaves permitidas
 // pelas regras (services/userProfile). O nome público tem o seu ecrã (/perfil/nome). O email não aparece aqui.
 // Leitura falhada: erro, nunca o formulário vazio. Sem rede: mensagem clara e o formulário fica como está.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
-import { Tabs } from '@/components/Tabs';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { TextField } from '@/components/TextField';
 import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
@@ -23,8 +22,8 @@ import { diffForm, formFromUser, SEASON_SEAT_MAX, type ProfileForm } from '@/lib
 import { SPORTS } from '@/lib/sports';
 import { useSession } from '@/providers/SessionProvider';
 import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const EDITAR_TEXT = {
   loadError: 'Não foi possível carregar o teu perfil.',
@@ -38,41 +37,111 @@ export const EDITAR_TEXT = {
 
 type Message = { text: string; tone: 'error' | 'info' };
 
-function PlayerPicker({
-  selectedId,
+/** Frame 23 (4942:7835): linha "Escolha" com a foto, o nome e "Mudar"; ao tocar abre a lista do plantel. */
+function PlayerField({
+  selected,
   onSelect,
 }: {
-  selectedId: string | null;
+  selected: { id: string; name: string } | null;
   onSelect: (p: { id: string; name: string }) => void;
 }) {
   const squad = useTeamData('squad');
-  if (squad.status === 'loading') return <View testID="squad-loading" style={{ minHeight: layout.skeletonRowHeight }} />;
-  if (squad.status === 'error') return <Body variant="body" style={{ color: colors.cardRed }}>{EDITAR_TEXT.squadError}</Body>;
+  const [open, setOpen] = useState(false);
   const players = squad.status === 'ready' ? squad.data.players : [];
-  if (players.length === 0) return <Body variant="body" style={{ color: colors.textMuted }}>{EDITAR_TEXT.noSquad}</Body>;
+  const current = selected ? players.find((p) => p.id === selected.id) : undefined;
   return (
-    <View accessibilityRole="radiogroup">
-      {players.map((p) => {
-        const selected = p.id === selectedId;
+    <View style={{ gap: space.s8 }}>
+      <Touchable
+        accessibilityRole="button"
+        accessibilityLabel={selected ? `Jogador favorito: ${selected.name}. ${open ? 'Fechar lista' : 'Mudar'}` : 'Escolher jogador favorito'}
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((o) => !o)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: layout.playerChoiceGap,
+          paddingHorizontal: layout.leaderChipPadX,
+          paddingVertical: space.s12,
+          borderRadius: radii.r12,
+          backgroundColor: colors.surface06,
+        }}
+      >
+        <PlayerPhoto testID="favorite-player-photo" photo={current?.photo ?? null} size={layout.playerChoicePhoto} number={current?.number ?? null} />
+        <Text71
+          variant="strong14"
+          color={selected ? 'white' : 'textMuted'}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{ flex: 1, minWidth: 0 }}
+        >
+          {selected ? selected.name : 'Não indicado'}
+        </Text71>
+        <Text71 variant="captionStrong12" color="primaryOnDark">{selected ? 'Mudar' : 'Escolher'}</Text71>
+      </Touchable>
+      {open ? (
+        squad.status === 'loading' ? (
+          <View testID="squad-loading" style={{ minHeight: layout.skeletonRowHeight }} />
+        ) : squad.status === 'error' ? (
+          <Text71 variant="body14" color="danger">{EDITAR_TEXT.squadError}</Text71>
+        ) : players.length === 0 ? (
+          <Text71 variant="body14" color="textMuted">{EDITAR_TEXT.noSquad}</Text71>
+        ) : (
+          <View accessibilityRole="radiogroup">
+            {players.map((p) => {
+              const isSelected = p.id === selected?.id;
+              return (
+                <Touchable
+                  key={p.id}
+                  accessibilityRole="radio"
+                  accessibilityLabel={p.name}
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => {
+                    onSelect({ id: p.id, name: p.name });
+                    setOpen(false);
+                  }}
+                  style={{
+                    minHeight: layout.minTouch,
+                    paddingHorizontal: layout.leaderChipPadX,
+                    borderRadius: radii.r12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: layout.playerChoiceGap,
+                    backgroundColor: isSelected ? colors.surface10 : undefined,
+                  }}
+                >
+                  <PlayerPhoto photo={p.photo} size={layout.playerChoicePhoto} number={p.number} />
+                  <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{p.name}</Text71>
+                </Touchable>
+              );
+            })}
+          </View>
+        )
+      ) : null}
+    </View>
+  );
+}
+
+/** Frame 23 (4942:7821): opções em pílulas; a escolhida em branco com texto bg, as outras surface-10. */
+function SportChips({ value, onChange }: { value: Sport | null; onChange: (s: Sport) => void }) {
+  return (
+    <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: layout.chipsGap }}>
+      {SPORTS.map((sp) => {
+        const active = sp.key === value;
         return (
           <Touchable
-            key={p.id}
+            key={sp.key}
             accessibilityRole="radio"
-            accessibilityLabel={p.name}
-            accessibilityState={{ selected }}
-            onPress={() => onSelect({ id: p.id, name: p.name })}
+            accessibilityLabel={sp.label}
+            accessibilityState={{ selected: active }}
+            onPress={() => onChange(sp.key)}
             style={{
-              minHeight: layout.minTouch,
-              paddingHorizontal: spacing.md,
-              borderRadius: radius.md,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: spacing.md,
-              backgroundColor: selected ? colors.surface20 : undefined,
+              paddingHorizontal: layout.leaderChipPadX,
+              paddingVertical: layout.leaderChipPadY,
+              borderRadius: layout.leaderChipRadius,
+              backgroundColor: active ? colors.white : colors.surface10,
             }}
           >
-            <Text style={[type.menuRow, { minWidth: spacing.xl }]}>{p.number ?? ''}</Text>
-            <Text style={[type.fieldValue, { flexShrink: 1 }]} numberOfLines={1}>{p.name}</Text>
+            <Text71 variant="captionStrong12" color={active ? 'bg' : 'white'} numberOfLines={1}>{sp.label}</Text71>
           </Touchable>
         );
       })}
@@ -117,10 +186,12 @@ function Form({ uid, initial }: { uid: string; initial: ProfileForm }) {
     <AuthScaffold
       title="Editar perfil"
       fallbackHref="/"
+      contentTop={layout.editFieldsTop}
+      fieldsGap={layout.editFieldsGap}
       footer={
         <>
           {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
-          <PrimaryButton label="Guardar" onPress={() => void submit()} loading={loading} disabled={!changed || invalid} />
+          <PrimaryButton variant="white" label="Guardar" onPress={() => void submit()} loading={loading} disabled={!changed || invalid} />
         </>
       }
     >
@@ -145,18 +216,13 @@ function Form({ uid, initial }: { uid: string; initial: ProfileForm }) {
         error={errors.seasonSeat}
         autoCapitalize="characters"
       />
-      <View style={{ gap: spacing.sm }}>
-        <Text style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity }]}>Modalidade favorita</Text>
-        <Tabs<Sport | ''>
-          mode="scroll"
-          items={SPORTS.map((s) => ({ key: s.key, label: s.label }))}
-          value={form.favoriteSport ?? ''}
-          onChange={(k) => k !== '' && set('favoriteSport', k)}
-        />
+      <View style={{ gap: layout.chipsLabelGap }}>
+        <Text71 variant="eyebrow13" color="textSubtle">Modalidade favorita</Text71>
+        <SportChips value={form.favoriteSport ?? null} onChange={(k) => set('favoriteSport', k)} />
       </View>
-      <View style={{ gap: spacing.sm }}>
-        <Text style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity }]}>Jogador favorito</Text>
-        <PlayerPicker selectedId={form.favoritePlayer?.id ?? null} onSelect={(p) => set('favoritePlayer', p)} />
+      <View style={{ gap: layout.chipsLabelGap }}>
+        <Text71 variant="eyebrow13" color="textSubtle">Jogador favorito</Text71>
+        <PlayerField selected={form.favoritePlayer} onSelect={(p) => set('favoritePlayer', p)} />
       </View>
     </AuthScaffold>
   );
