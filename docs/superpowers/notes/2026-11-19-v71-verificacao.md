@@ -93,3 +93,71 @@ Frames: 02, 03, 04, 05, 13 a 27 (com 21b), 48 e 49. Método e legenda como no Gr
 | 49 Terminar sessão (alerta) | `definicoes/index.tsx` | Alerta nativo, título, frase, Cancelar e Terminar sessão destrutivo iguais | sem diferenças |
 
 Resumo do Grupo B: 5 correções (a8f339b, 393141c, 2b92dba, cd72fef, 186a308), 3 pendentes Martim (Gameback, "Termos e privacidade" externo ou interno, título do histórico com equipas). Verificação visual em dispositivo continua pendente.
+
+## Grupo C
+
+Frames: 11, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46. Método e legenda como nos grupos anteriores; correções em 74428ce.
+
+| Frame | Ecrã/componente (ficheiro) | Diferença | Decisão |
+|---|---|---|---|
+| 11 Marcadores e assistências | `equipa/marcadores.tsx` | Foto do líder (56) em círculo; o frame usa quadrado de cantos de 20 (componente Foto do jogador escalado) | corrigido em 74428ce (`shape="rounded"`, teste novo) |
+| 11 | `marcadores.tsx`, `squadLeaders.ts` | Chip "Champions" agrega as competições europeias; posições GR/DEF/MED/AV em vez de PL/EXT/DD; `byLeague` só depois da próxima sincronização | intencional (decidido na Tarefa 12) |
+| 11 | `marcadores.tsx`, `LeaderRows.tsx` | Resto igual (chips, alternador, cartão em degradé, linhas com barra, nota de rodapé) | sem diferenças |
+| 35 Calendário | `agenda.tsx`, `MatchRow.tsx` | Estrutura, pílulas, separadores e linhas iguais; pílulas a 24 pt e visíveis em carregamento e erro | intencional (decidido) |
+| 35 | `agenda.tsx` | Ícone Users do cabeçalho em Feather em vez do vetor do frame | intencional: equivalente nativo, como nos grupos A e B |
+| 35 | `agenda.tsx` | O frame mostra "Fonte: API-Football" por baixo da lista de futebol; a app só mostra "Fonte:" quando há fonte gratuita (teste existente exige a ausência no futebol) | pendente Martim (mostrar a atribuição da API-Football no futebol) |
+| 35 | `NextMatchCard.tsx` | Chip do canal de TV (SPORT TV1) não aparece | intencional: o `Match` não tem canal (como no frame 01) |
+| 36 Competição · Jornadas | `competicao/[key].tsx` | Setas do seletor de jornada centradas a 34 pt do bordo; o frame centra-as a 46 pt (margem de 24) | corrigido em 74428ce (margem de 24) |
+| 36 | `competicao/[key].tsx`, `MatchRow.tsx` | Resto igual (separadores com scroll, rótulo Title S 20, linhas de jogo, só os jogos do Sporting abrem) | sem diferenças |
+| 37 Taça (quadro) | `BracketView.tsx`, `competicao/[key].tsx` | Sem diferenças (separador "Quadro", pílulas por ronda, cartão do Sporting com contorno, penáltis "1 (4-2 g.p.)"); duas mãos e agregado são extra sem frame | sem diferenças |
+| 38 Equipa · Plantel | `equipa/index.tsx` | Os indisponíveis não levavam o número no distintivo (o frame mostra 8 e 3) | corrigido em 74428ce (número vindo do plantel) |
+| 38 | `equipa/index.tsx` | Linha do treinador sem seta; texto "desde {data}" em vez de "desde 2024-25" | intencional: não há ecrã do treinador; a data vem do documento |
+| 39 Equipa · Estatísticas | `equipa/index.tsx` | Terceira linha do cartão "Jogos sem sofrer"; o frame diz "Sem sofrer" | corrigido em 74428ce (teste atualizado) |
+| 39 | `equipa/index.tsx` | Título "Jogadores, época 2026/27"; o frame diz "Jogadores da época" | corrigido em 74428ce |
+| 39 | `equipa/index.tsx` | Ligação "Ver marcadores" por cima da tabela, que o frame não tem | intencional: é a entrada para o ecrã do frame 11 |
+| 39 | `equipa/index.tsx` | Golos sofridos por período só no rótulo de acessibilidade | intencional (como no frame, só marcados) |
+| 40 Equipa · Transferências | `equipa/index.tsx` | Sem diferenças (etiqueta Entrada/Saída, nome, "de/para", data e tipo); sem emblema do outro clube | intencional (decidido: o frame não tem emblema) |
+| 41 Equipa · Troféus | `equipa/index.tsx`, `TeamRows.tsx` | Título da secção "Treinador, {nome}"; o frame diz só "Treinador" | corrigido em 74428ce |
+| 41 | `equipa/index.tsx` | Contagem "N troféus" mais etiqueta com o número, como no frame | intencional (decidido) |
+| 41 | `TeamRows.tsx` | Troféu do treinador com "Vencedor/Finalista" à direita, que o frame não mostra | intencional: informação do documento |
+| 42 Jogador | `equipa/jogador/[id].tsx` | Título "Época 2026/27" antes dos quatro quadrados; o frame não tem | corrigido em 74428ce (teste atualizado) |
+| 42 | `jogador/[id].tsx` | Foto de 84 em quadrado arredondado (já como no frame) | intencional (decidido; a foto do jogador usa `shape="rounded"`) |
+| 42 | `jogador/[id].tsx` | Sem remates à baliza, passes-chave, dribles certos e nacionalidade; cartões amarelos e vermelhos em duas linhas | intencional (sem dados) |
+| 44 Gestão de Gamebox | `gamebox/index.tsx` | Sem diferenças (pega a 24, nome Title S 20, seta 20, "+" branco de 60); reordenar com arrastar | intencional (decidido: arrastar) |
+| 44 | `gamebox/index.tsx` | Bloco "Principal" da GameBox antiga da V2 | intencional: sem frame, regra de dados existente |
+| 45 Editar Gamebox | `gamebox/[id].tsx` | Sem diferenças (número com botão de ler 48, nome, cartão com Estádio/Pavilhão e Porta, Sector, Fila, Lugar, "Apagar Gamebox" a danger); folha de criação "Nova Gamebox" | intencional (decidido: porta, sector, fila e lugar; vermelho fica) |
+| 46 Ler código | `gamebox/ler.tsx` | Título do cabeçalho "Ler GameBox"; o frame diz "LER CÓDIGO" | corrigido em 74428ce (teste novo) |
+| 46 | `gamebox/ler.tsx` | Com o número lido ainda aparecia "Inserir manualmente" por baixo de Corrigir; o frame só tem Confirmar e Corrigir | corrigido em 74428ce (só antes da leitura; teste novo) |
+| 46 | `gamebox/ler.tsx` | Estado antes da leitura (dica e "Inserir manualmente") e ecrã sem acesso à câmara | intencional: sem frame (nota 46); número agrupado de 4 em 4 como no frame |
+
+Resumo do Grupo C: 9 correções (todas em 74428ce), 1 pendente Martim (atribuição API-Football no Calendário).
+
+## Resumo
+
+Método: leitura do código contra o frame, sem build nem simulador; a verificação visual em dispositivo continua pendente.
+
+| | Frames verificados | Correções | Pendentes Martim |
+|---|---|---|---|
+| Grupo A | 22 | 7 | 8 |
+| Grupo B | 22 | 5 | 3 |
+| Grupo C | 12 | 9 | 1 |
+| Total | 56 | 21 | 12 |
+
+Diferenças intencionais registadas: 53 (decididas pelo Martim ou equivalentes nativos, não se mudam).
+
+Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
+
+### Pendentes Martim
+
+1. Home sem jogo (01b): copy do estado de erro "JOGO INDISPONÍVEL" / "TENTAR OUTRA VEZ", que o Figma não tem.
+2. GameBox aberta (43): número em grupos de 4 ("0012 3456 7890") só no ecrã, o que afeta o texto copiável.
+3. Estados de carregamento (47): generalizar o `SkeletonRows` aos restantes ecrãs (Agenda, competição, perfil, etc.).
+4. Sumário do jogo (06 e 08): os dois frames mostram Sumários diferentes ("Números do jogo" e lances com comentário contra a cronologia).
+5. MVP (09): ordem alfabética da lista de jogadores.
+6. Classificação (10): critério de desempate.
+7. Estatísticas do jogo (31): o servidor não grava as partes (alternador Jogo / 1.ª parte / 2.ª parte).
+8. Vídeos (33): o servidor não grava `duration` (duração do vídeo escondida).
+9. Sites do clube (03): linha "Gameback" sem URL.
+10. Definições (02): "Termos e privacidade" abre a página interna; o frame mostra seta externa.
+11. Perfil (22): título do histórico com as equipas ("Sporting 2-1 FC Porto"); o prognóstico não guarda as equipas.
+12. Calendário (35): mostrar "Fonte: API-Football" por baixo da lista de futebol, como no frame.
