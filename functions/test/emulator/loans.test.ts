@@ -23,18 +23,23 @@ beforeAll(() => {
 afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
+// Ids de GameBox únicos por teste: o onGameboxDeleted do emulador (disparado pelo clearAll) nunca toca nos empréstimos do teste seguinte.
+let seq = 0;
+let G1 = "g1";
+let G2 = "g2";
 beforeEach(async () => {
+  seq++;
+  G1 = `g1_${seq}_${Date.now()}`;
+  G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
-  // O emulador corre onGameboxDeleted para as GameBoxes apagadas pelo clearAll; esperar que acabe para não tocar nos empréstimos do teste seguinte.
-  await new Promise((r) => setTimeout(r, 700));
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
-  await db.doc("gamebox/g1").set({
+  await db.doc(`gamebox/${G1}`).set({
     userid: "alice", gameboxNumber: "cifrado", gameboxName: "Minha",
     gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7",
     pavilionPort: "P1", pavilionSector: "", pavilionLine: "2", pavilionSeat: "9",
   });
-  await db.doc("gamebox/g2").set({ userid: "bob", gameboxNumber: "x", gameboxPort: "", gameboxSector: "", gameboxLine: "", gameboxSeat: "" });
+  await db.doc(`gamebox/${G2}`).set({ userid: "bob", gameboxNumber: "x", gameboxPort: "", gameboxSector: "", gameboxLine: "", gameboxSeat: "" });
   await seedNs("m1", K1);
   await seedNs("m2", K2);
 });
@@ -56,7 +61,7 @@ const code = async (p: Promise<unknown>) => {
   return null;
 };
 const create = (auth: { uid: string } | undefined, over: Record<string, unknown> = {}) =>
-  handleCreateLoan(db, auth, { gameboxId: "g1", matchId: "m1", number: NUM, ...over }, NOW);
+  handleCreateLoan(db, auth, { gameboxId: G1, matchId: "m1", number: NUM, ...over }, NOW);
 const loanOf = async (id: string) => (await db.doc(`loans/${id}`).get()).data()!;
 const secretOf = async (id: string) => (await db.doc(`loans/${id}/secret/number`).get()).data();
 
@@ -65,7 +70,7 @@ describe("createLoan: validação", () => {
     expect((await code(create(undefined)))?.code).toBe("unauthenticated");
   });
   it("GameBox de outro dono: permission-denied; inexistente: not-found", async () => {
-    expect((await code(create(alice, { gameboxId: "g2" })))?.code).toBe("permission-denied");
+    expect((await code(create(alice, { gameboxId: G2 })))?.code).toBe("permission-denied");
     expect((await code(create(alice, { gameboxId: "nope" })))?.code).toBe("not-found");
   });
   it("jogo inexistente: not-found", async () => {
@@ -137,7 +142,7 @@ describe("createLoan: sucesso", () => {
     expect(r.url).toBe(`https://s360-prognostico-download.web.app/e/${r.loanId}`);
     const l = await loanOf(r.loanId);
     expect(l).toMatchObject({
-      ownerUid: "alice", ownerName: "Alice A.", gameboxId: "g1", matchId: "m1", sport: "football",
+      ownerUid: "alice", ownerName: "Alice A.", gameboxId: G1, matchId: "m1", sport: "football",
       recipientUid: null, recipientName: null, openedAt: null, cancelledAt: null,
       seat: { gate: "10", sector: "A", row: "3", seat: "7" },
       match: { homeName: "Sporting CP", awayName: "Benfica", homeLogo: null, awayLogo: null, competition: "Primeira Liga", venue: "stadium" },
@@ -167,9 +172,9 @@ describe("createLoan: sucesso", () => {
     expect((await loanOf(r.loanId)).expiresAt.toDate()).toEqual(new Date(K1.getTime() + 2 * 3600_000));
   });
   it("não escreve nos documentos gamebox", async () => {
-    const before = (await db.doc("gamebox/g1").get()).updateTime;
+    const before = (await db.doc(`gamebox/${G1}`).get()).updateTime;
     await create(alice);
-    expect((await db.doc("gamebox/g1").get()).updateTime).toEqual(before);
+    expect((await db.doc(`gamebox/${G1}`).get()).updateTime).toEqual(before);
   });
   it("segundo createLoan com um ativo: already-exists; depois de cancelar cria outro", async () => {
     const r = await create(alice);

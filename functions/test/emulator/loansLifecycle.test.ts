@@ -21,13 +21,18 @@ beforeAll(() => {
 afterAll(async () => {
   await Promise.all(getApps().map((a) => deleteApp(a)));
 });
+// Ids de GameBox únicos por teste: o onGameboxDeleted do emulador (disparado pelo clearAll) nunca toca nos empréstimos do teste seguinte.
+let seq = 0;
+let G1 = "g1";
+let G2 = "g2";
 beforeEach(async () => {
+  seq++;
+  G1 = `g1_${seq}_${Date.now()}`;
+  G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
-  // O emulador corre onGameboxDeleted para as GameBoxes apagadas pelo clearAll; esperar que acabe para não tocar nos empréstimos do teste seguinte.
-  await new Promise((r) => setTimeout(r, 700));
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
-  await db.doc("gamebox/g1").set({ userid: "alice", gameboxNumber: "cifrado", gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7" });
+  await db.doc(`gamebox/${G1}`).set({ userid: "alice", gameboxNumber: "cifrado", gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7" });
   await seedNs("m1", K1);
 });
 
@@ -38,7 +43,7 @@ function seedNs(id: string, kickoff: Date, over: Partial<MatchDoc> = {}) {
     finishedAt: null, finishedAtSource: null, ...over,
   });
 }
-const create = async () => (await handleCreateLoan(db, alice, { gameboxId: "g1", matchId: "m1", number: NUM }, NOW)).loanId;
+const create = async () => (await handleCreateLoan(db, alice, { gameboxId: G1, matchId: "m1", number: NUM }, NOW)).loanId;
 const loanOf = async (id: string) => (await db.doc(`loans/${id}`).get()).data()!;
 const hasSecret = async (id: string) => (await db.doc(`loans/${id}/secret/number`).get()).exists;
 const expiry = async (id: string) => (await loanOf(id)).expiresAt.toDate() as Date;
@@ -106,12 +111,12 @@ describe("maintainLoans", () => {
 describe("cancelamentos", () => {
   it("GameBox apagada: empréstimo cancelado e segredo apagado", async () => {
     const id = await create();
-    await db.doc("gamebox/g1").delete();
-    expect(await cancelLoansForGamebox(db, "g1", NOW)).toBe(1);
+    await db.doc(`gamebox/${G1}`).delete();
+    expect(await cancelLoansForGamebox(db, G1, NOW)).toBe(1);
     expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
     expect(await hasSecret(id)).toBe(false);
     const before = await loanOf(id);
-    expect(await cancelLoansForGamebox(db, "g1", NOW)).toBe(0);
+    expect(await cancelLoansForGamebox(db, G1, NOW)).toBe(0);
     expect(await loanOf(id)).toEqual(before);
   });
 
