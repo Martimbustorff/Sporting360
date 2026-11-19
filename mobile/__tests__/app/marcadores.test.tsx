@@ -92,6 +92,29 @@ describe('/equipa/marcadores', () => {
     expect(screen.getByText('Sem estatísticas de jogadores nesta época.')).toBeTruthy();
   });
 
+  it('sem golos em "Todas": mensagem da época; com filtro: mensagem da competição', async () => {
+    ready([pl('1', 'X', { '94': lg(2, 100, 0, 1), '2': lg(1, 50, 0, 0) })]);
+    await render(wrap());
+    expect(screen.getByText('Ainda sem golos esta época.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('metric-ga'));
+    expect(screen.queryByText('Ainda sem golos esta época.')).toBeNull();
+    await fireEvent.press(screen.getByTestId('chip-champions'));
+    expect(screen.getByText('Sem registos nesta competição.')).toBeTruthy();
+  });
+
+  it('sem assistências em "Todas": mensagem própria', async () => {
+    ready([pl('1', 'X', { '94': lg(2, 100, 3, 0) })]);
+    await render(wrap());
+    await fireEvent.press(screen.getByTestId('metric-assists'));
+    expect(screen.getByText('Ainda sem assistências esta época.')).toBeTruthy();
+  });
+
+  it('a carregar mostra o estado de loading', async () => {
+    mockStats.current = { status: 'loading' };
+    await render(wrap());
+    expect(screen.getByTestId('leaders-loading')).toBeTruthy();
+  });
+
   it('toque na linha abre o jogador', async () => {
     ready(players);
     await render(wrap());

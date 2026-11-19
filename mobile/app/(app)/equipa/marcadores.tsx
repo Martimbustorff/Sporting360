@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
+import { Loading } from '@/components/TeamRows';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
@@ -35,6 +36,9 @@ const EYEBROW: Record<LeaderMetric, string> = { goals: 'Melhor marcador', assist
 const UNIT: Record<LeaderMetric, string> = { goals: 'Golos', assists: 'Assistências', ga: 'G+A' };
 const POSITION_ABBR: Record<string, string> = { Goalkeeper: 'GR', Defender: 'DEF', Midfielder: 'MED', Attacker: 'AV' };
 
+/** Sem líder: competição ativa sem registos, ou a época ainda sem golos / assistências. */
+const emptyText = (f: LeaderFilter, m: LeaderMetric) =>
+  f !== 'all' ? 'Sem registos nesta competição.' : m === 'assists' ? 'Ainda sem assistências esta época.' : 'Ainda sem golos esta época.';
 const goalsText = (n: number) => `${n} ${n === 1 ? 'golo' : 'golos'}`;
 const gamesText = (n: number) => `${n} ${n === 1 ? 'jogo' : 'jogos'}`;
 
@@ -203,7 +207,7 @@ export default function Marcadores() {
   const { leader, rest } = useMemo(() => (players ? squadLeaders(players, active, metric) : { leader: null, rest: [] }), [players, active, metric]);
 
   let body;
-  if (stats.status === 'loading') body = <View testID="leaders-loading" />;
+  if (stats.status === 'loading') body = <Loading testID="leaders-loading" />;
   else if (stats.status === 'error') body = <EmptyState icon="info" text={ERROR_TEXT} />;
   else if (!players || players.length === 0) body = <EmptyState icon="info" text={NO_DATA} />;
   else
@@ -222,7 +226,7 @@ export default function Marcadores() {
             </View>
           </>
         ) : (
-          <EmptyState icon="info" text="Sem registos nesta competição." />
+          <EmptyState icon="info" text={emptyText(active, metric)} />
         )}
         <Text71 variant="caption12" color="textSubtle">{FOOTNOTE}</Text71>
       </ScrollView>

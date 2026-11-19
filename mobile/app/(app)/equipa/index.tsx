@@ -21,7 +21,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
-import { PersonRow, RowSeparator, SectionError, TextRow } from '@/components/TeamRows';
+import { Loading, PersonRow, RowSeparator, SectionError, TextRow } from '@/components/TeamRows';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
@@ -68,9 +68,6 @@ type Reads = Loadable<unknown>[];
 const anyCache = (rs: Reads) => rs.some((r) => r.status === 'ready' && r.fromCache === true);
 const dataOf = <T,>(l: Loadable<T>): T | null => (l.status === 'ready' ? l.data : null);
 const openPlayer = (id: string) => router.push(`/equipa/jogador/${id}`);
-
-/** SEM FIGMA: enquanto os dados não chegam, um espaço em branco (como na competição). */
-const Loading = ({ testID }: { testID: string }) => <View testID={testID} />;
 
 function TabScroll({ children }: { children: ReactNode }) {
   return (

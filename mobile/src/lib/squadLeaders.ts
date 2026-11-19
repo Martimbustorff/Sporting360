@@ -8,6 +8,8 @@ export type LeaderMetric = 'goals' | 'assists' | 'ga';
  * Ids de liga da API-Football por filtro. Fonte: `functions/src/model/labels.ts` (FOOTBALL_BY_ID):
  * 94 Liga Portugal; Taça de Portugal 96, Taça da Liga 97, Supertaça 550; competições europeias (tipo `europe`)
  * 2 Liga dos Campeões, 3 Liga Europa, 848 Liga Conferência, 531 Supertaça Europeia. Um único sítio para o mapa.
+ * O agregado europeu sob a chave 'champions' é intencional: o Sporting joga uma só competição europeia por época (o chip
+ * chama-se "Champions" como no frame 4935:7464). `__tests__/lib/serverParity.test.ts` garante a paridade com labels.ts.
  */
 export const LEAGUE_IDS: Record<Exclude<LeaderFilter, 'all'>, readonly string[]> = {
   league: ['94'],

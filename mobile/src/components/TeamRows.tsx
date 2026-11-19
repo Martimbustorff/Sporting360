@@ -121,3 +121,6 @@ export function SectionError() {
     </Body>
   );
 }
+
+/** SEM FIGMA: enquanto os dados não chegam, um espaço em branco (como na competição). */
+export const Loading = ({ testID }: { testID: string }) => <View testID={testID} />;

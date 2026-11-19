@@ -103,3 +103,18 @@ describe('mobile/server parity (mvpCandidates, linha duplicada)', () => {
     expect(a).toEqual(s);
   });
 });
+
+// Task 12: os ids de liga dos filtros de marcadores batem com functions/src/model/labels.ts (FOOTBALL_BY_ID).
+describe('mobile/server parity (LEAGUE_IDS)', () => {
+  it('liga, taças e europeias iguais aos tipos do servidor', () => {
+    const { LEAGUE_IDS } = require('@/lib/squadLeaders') as typeof import('@/lib/squadLeaders');
+    const src = read('functions/src/model/labels.ts');
+    const block = src.slice(src.indexOf('FOOTBALL_BY_ID'), src.indexOf('};', src.indexOf('FOOTBALL_BY_ID')));
+    const byType: Record<string, string[]> = {};
+    for (const m of block.matchAll(/(\d+):\s*\{[^}]*type:\s*"(\w+)"/g)) (byType[m[2]!] ??= []).push(m[1]!);
+    const sorted = (a: readonly string[] = []) => [...a].sort();
+    expect(sorted(LEAGUE_IDS.league)).toEqual(sorted(byType.league));
+    expect(sorted(LEAGUE_IDS.cups)).toEqual(sorted([...(byType.cup ?? []), ...(byType.supercup ?? [])]));
+    expect(sorted(LEAGUE_IDS.champions)).toEqual(sorted(byType.europe));
+  });
+});
