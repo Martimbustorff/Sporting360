@@ -8,7 +8,8 @@
 // é `shouldLoad`: o topo fica em vsports.pt, os subframes do iOS só https/about/blob/data; o resto é recusado. Orientação (preflight P3): abrir trava em horizontal; fechar, desmontar ou erro voltam sempre a
 // PORTRAIT_UP (a raiz trava PORTRAIT_UP no arranque).
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, StatusBar, View } from 'react-native';
+import { Modal, StatusBar, View } from 'react-native';
+import { Touchable } from './Touchable';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -109,12 +110,11 @@ export function VideoPlayer({ video }: { video: Video }) {
 
   return (
     <View>
-      <Pressable
+      <Touchable
         testID="video-open"
         accessibilityRole="button"
         accessibilityLabel={`Ver vídeo: ${video.title}`}
         onPress={show}
-        style={({ pressed }) => ({ opacity: pressed ? layout.pressedOpacity : 1 })}
       >
         <Frame>
           {video.thumbnail ? (
@@ -129,7 +129,7 @@ export function VideoPlayer({ video }: { video: Video }) {
           <Feather testID="video-play-icon" name="play-circle" size={layout.videoPlayIcon} color={colors.white} />
         </Frame>
         {caption}
-      </Pressable>
+      </Touchable>
       {open ? (
         <Modal
           testID="video-modal"
@@ -143,14 +143,14 @@ export function VideoPlayer({ video }: { video: Video }) {
           <StatusBar hidden />
           <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
             <View style={{ height: layout.videoCloseBarHeight, justifyContent: 'center', paddingHorizontal: spacing.md }}>
-              <Pressable
+              <Touchable
                 accessibilityRole="button"
                 onPress={close}
                 hitSlop={spacing.sm}
                 style={{ alignSelf: 'flex-start', minHeight: layout.minTouch, justifyContent: 'center' }}
               >
                 <Body variant="strip">Fechar</Body>
-              </Pressable>
+              </Touchable>
             </View>
             {failed ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl }}>

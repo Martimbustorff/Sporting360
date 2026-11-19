@@ -10,7 +10,8 @@
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
 import Feather from '@expo/vector-icons/Feather';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { MenuRow } from '@/components/MenuRow';
@@ -82,15 +83,15 @@ function Note({ text: t, testID }: { text: string; testID?: string }) {
 
 function LinkText({ label, a11y, onPress }: { label: string; a11y: string; onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={a11y}
       onPress={onPress}
       hitSlop={spacing.sm}
-      style={({ pressed }) => ({ minHeight: layout.minTouch, justifyContent: 'center', opacity: pressed ? layout.pressedOpacity : 1 })}
+      style={{ minHeight: layout.minTouch, justifyContent: 'center' }}
     >
       <Body variant="badge" style={{ color: colors.primary }}>{label}</Body>
-    </Pressable>
+    </Touchable>
   );
 }
 

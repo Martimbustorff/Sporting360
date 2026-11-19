@@ -10,7 +10,8 @@
 // Só os jogos do Sporting abrem o detalhe (só esses têm `matches/{id}`, preflight F9). Tops só em ligas e europeias
 // (competitionSync escreve-os só aí; taças e supertaça não têm essas tabs).
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, View } from 'react-native';
+import { FlatList, ScrollView, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
@@ -74,26 +75,25 @@ function Separator() {
 
 function Arrow({ dir, disabled, onPress }: { dir: 'left' | 'right'; disabled: boolean; onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={dir === 'left' ? 'Ronda anterior' : 'Ronda seguinte'}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         width: layout.minTouch,
         height: layout.minTouch,
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: pressed ? layout.pressedOpacity : 1,
-      })}
+      }}
     >
       <Feather
         name={dir === 'left' ? 'chevron-left' : 'chevron-right'}
         size={layout.headerIcon}
         color={disabled ? colors.textDisabled : colors.white}
       />
-    </Pressable>
+    </Touchable>
   );
 }
 

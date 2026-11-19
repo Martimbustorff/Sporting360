@@ -4,7 +4,8 @@
 // flag a false, em erro de leitura ou sem ela, vai para a Home. Enquanto a config carrega: Header com voltar e o estado a
 // carregar (SEM FIGMA), sem redirecionar. Não apagar.
 // Uma ligação ausente ou que não seja https não gera linha. `description` e `image` da entrada não existem no frame.
-import { ActivityIndicator, ScrollView, Text, View, Pressable } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
@@ -37,24 +38,23 @@ function Entry({ entry }: { entry: CommunityEntry }) {
       <View style={{ height: layout.separator, backgroundColor: colors.divider }} />
       <Text style={type.communityName}>{entry.name}</Text>
       {links.map((l) => (
-        <Pressable
+        <Touchable
           key={l.key}
           accessibilityRole="link"
           accessibilityLabel={l.label}
           onPress={() => void openLink(l.url)}
-          style={({ pressed }) => ({
+          style={{
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            opacity: pressed ? layout.pressedOpacity : 1,
-          })}
+          }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.menuRowGap }}>
             <Image source={l.icon} style={{ width: layout.menuRowIcon, height: layout.menuRowIcon }} accessible={false} />
             <Text style={type.authIntro}>{l.label}</Text>
           </View>
           <Feather name="arrow-up-right" size={layout.menuRowIcon} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
-        </Pressable>
+        </Touchable>
       ))}
     </View>
   );

@@ -2,20 +2,21 @@
 // Composto com tokens: nome da equipa (body, uma linha com reticências), a caixa de resultado branca do GameHeader
 // (Figma 655:31868) e botões redondos "-" e "+" com a área mínima de toque. Não passa de `max` nem desce de `min`.
 import Feather from '@expo/vector-icons/Feather';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Touchable } from './Touchable';
 import { ScoreBox } from '@/components/GameHeader';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
 
 function StepButton({ icon, label, disabled, onPress }: { icon: 'minus' | 'plus'; label: string; disabled: boolean; onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         width: layout.minTouch,
         height: layout.minTouch,
         borderRadius: layout.minTouch / 2,
@@ -23,11 +24,11 @@ function StepButton({ icon, label, disabled, onPress }: { icon: 'minus' | 'plus'
         borderColor: colors.white,
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: disabled ? layout.disabledOpacity : pressed ? layout.pressedOpacity : 1,
-      })}
+        opacity: disabled ? layout.disabledOpacity : undefined,
+      }}
     >
       <Feather name={icon} size={layout.headerIcon} color={colors.white} />
-    </Pressable>
+    </Touchable>
   );
 }
 

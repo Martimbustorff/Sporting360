@@ -1,6 +1,7 @@
 // SEM FIGMA (Plano 6): aviso de uma notificação recebida com a app aberta no Android (no iOS o sistema mostra-a).
 // Faixa no topo, por cima do ecrã, só com tokens: título e corpo; tocar abre a rota (se houver) e fecha.
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Touchable } from './Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ForegroundPush } from '@/services/push';
 import { Body } from '@/theme/typography';
@@ -22,14 +23,14 @@ export function PushBanner({ push, onPress }: { push: ForegroundPush; onPress: (
       pointerEvents="box-none"
       style={{ position: 'absolute', top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }}
     >
-      <Pressable
+      <Touchable
         testID="push-banner"
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityHint={push.route ? PUSH_BANNER_TEXT.openHint : PUSH_BANNER_TEXT.closeHint}
         accessibilityLiveRegion="polite"
         onPress={onPress}
-        style={({ pressed }) => ({
+        style={{
           minHeight: layout.minTouch,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
@@ -38,15 +39,14 @@ export function PushBanner({ push, onPress }: { push: ForegroundPush; onPress: (
           backgroundColor: colors.bg,
           borderWidth: layout.separator,
           borderColor: colors.primary,
-          opacity: pressed ? layout.pressedOpacity : 1,
           ...layout.sheetShadow,
-        })}
+        }}
       >
         <Body variant="strip" numberOfLines={1}>{push.title}</Body>
         {push.body ? (
           <Body variant="body" numberOfLines={2}>{push.body}</Body>
         ) : null}
-      </Pressable>
+      </Touchable>
     </View>
   );
 }

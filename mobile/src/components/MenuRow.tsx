@@ -2,7 +2,8 @@
 // (variante externa, seta diagonal). Separador `divider` abaixo (SEM FIGMA: linha não está no nó).
 import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Touchable } from './Touchable';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
 export function MenuRow({
@@ -17,17 +18,16 @@ export function MenuRow({
   external?: boolean;
 }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole={external ? 'link' : 'button'}
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         minHeight: layout.minTouch,
         paddingVertical: spacing.sm,
         borderBottomWidth: layout.fieldLineWidth,
         borderBottomColor: colors.divider,
-        opacity: pressed ? layout.pressedOpacity : 1,
-      })}
+      }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.menuRowGap, flexShrink: 1 }}>
@@ -42,6 +42,6 @@ export function MenuRow({
           importantForAccessibility="no"
         />
       </View>
-    </Pressable>
+    </Touchable>
   );
 }

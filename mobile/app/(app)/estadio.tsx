@@ -4,7 +4,8 @@
 // SEM FIGMA: a animação entre os dois estados (escala em `layout.stadiumZoomMs`). O Museu saiu da lista (decisão do Martim).
 // Usa o `Animated` do React Native (não o Reanimated) para as rotas continuarem a montar no teste de rotas.
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, View } from 'react-native';
+import { Animated, Easing, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
@@ -47,13 +48,13 @@ export default function Estadio() {
         title="Estádio"
         onBack={back}
         right={
-          <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => setZoomed((z) => !z)} hitSlop={12}>
+          <Touchable accessibilityRole="button" accessibilityLabel={label} onPress={() => setZoomed((z) => !z)} hitSlop={12}>
             <Image
               source={zoomed ? ICONS.shrink : ICONS.expand}
               style={{ width: layout.headerIcon, height: layout.headerIcon }}
               accessible={false}
             />
-          </Pressable>
+          </Touchable>
         }
       />
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
@@ -69,18 +70,17 @@ export default function Estadio() {
       </View>
       <View style={{ position: 'absolute', left: layout.stadiumLinksX, bottom: layout.stadiumLinksBottom, gap: layout.stadiumLinksGap }}>
         {STADIUM_LINKS.map((l) => (
-          <Pressable
+          <Touchable
             key={l.id}
             accessibilityRole="link"
             accessibilityLabel={l.label}
             onPress={() => void openLink(l.url)}
             hitSlop={8}
-            style={({ pressed }) => ({
+            style={{
               flexDirection: 'row',
               alignItems: 'center',
               gap: layout.stadiumLinkIconGap,
-              opacity: pressed ? layout.pressedOpacity : 1,
-            })}
+            }}
           >
             <Image
               source={ICONS[l.id]}
@@ -88,7 +88,7 @@ export default function Estadio() {
               accessible={false}
             />
             <Display variant="menuItem" style={type.menuRow}>{l.label}</Display>
-          </Pressable>
+          </Touchable>
         ))}
       </View>
     </Screen>

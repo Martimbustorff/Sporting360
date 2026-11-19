@@ -4,7 +4,8 @@
 // as linhas RANKING (ícone Feather "award") e COMUNIDADE LEONINA (Feather "users") não estão no menu 1561:5307;
 // "News" do Figma passa a "NOTÍCIAS" (pt-PT). O ecrã faz scroll quando não cabe; o menu fica encostado à folha.
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import { Link, router, type Href } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -92,21 +93,21 @@ export default function Home() {
           <Text style={type.lockLogo} accessibilityRole="header" accessibilityLabel="S360">
             <Text style={{ color: colors.primary }}>S</Text>360
           </Text>
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel="Definições"
             hitSlop={(layout.minTouch - layout.menuRowIcon) / 2}
             onPress={() => router.push('/definicoes')}
           >
             {svgIcon(ICONS.settings)}
-          </Pressable>
+          </Touchable>
         </View>
 
-        <Pressable
+        <Touchable
           accessibilityRole="button"
           accessibilityHint="Abre o perfil"
           onPress={() => router.push('/perfil')}
-          style={({ pressed }) => ({ marginTop: layout.homeNameGap, opacity: pressed ? layout.pressedOpacity : 1 })}
+          style={{ marginTop: layout.homeNameGap }}
         >
           <Text style={type.homeName} numberOfLines={1}>
             {name}
@@ -117,21 +118,20 @@ export default function Home() {
               <Text style={type.homeSinceValue}>{since}</Text>
             </View>
           ) : null}
-        </Pressable>
+        </Touchable>
 
         {match ? (
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel="Próximo jogo"
             onPress={() => router.push(`/jogo/${match.id}`)}
-            style={({ pressed }) => ({
+            style={{
               marginTop: layout.homeBlockGap,
               marginHorizontal: spacing.screenX - spacing.screenXWide,
-              opacity: pressed ? layout.pressedOpacity : 1,
-            })}
+            }}
           >
             <GameHeader game={toGameHeaderVM(match)} now={now} />
-          </Pressable>
+          </Touchable>
         ) : null}
 
         <View style={{ flexGrow: 1, minHeight: layout.homeBlockGap }} />

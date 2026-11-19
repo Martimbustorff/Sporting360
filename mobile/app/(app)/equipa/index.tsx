@@ -12,7 +12,8 @@
 // Cada tab lê só os seus documentos e depende só do principal (Plantel: plantel; Troféus: troféus). Uma leitura
 // principal falhada mostra o erro, nunca o vazio; uma secundária (treinador, indisponíveis) só a sua secção.
 import { useMemo, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { router } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
 import { TeamCrest } from '@/components/GameHeader';
@@ -305,16 +306,15 @@ function PlayerTable({ season }: { season: string }) {
         const rating = ratingText(p.rating);
         const values = [String(p.appearances), String(p.minutes), String(p.goals), String(p.assists), rating];
         return (
-          <Pressable
+          <Touchable
             key={p.id}
             testID={`stats-row-${p.id}`}
             accessibilityRole="button"
             accessibilityLabel={`${p.name}: ${p.appearances} jogos, ${p.minutes} minutos, ${p.goals} golos, ${p.assists} assistências, nota ${rating}`}
             onPress={() => openPlayer(p.id)}
-            style={({ pressed }) => ({ opacity: pressed ? layout.pressedOpacity : 1 })}
           >
             <GridRow label={p.name} values={values} widths={PLAYER_W} />
-          </Pressable>
+          </Touchable>
         );
       })}
     </View>

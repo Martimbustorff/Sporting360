@@ -3,7 +3,8 @@
 // SEM FIGMA (estado desligado e sombra do botão): trilho surface20, botão à esquerda; sem sombra (só tokens).
 // Separador `divider` abaixo, como em MenuRow.
 import type { ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Touchable } from './Touchable';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
 export function ToggleRow({
@@ -20,13 +21,13 @@ export function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityState={{ checked: value, disabled }}
       disabled={disabled}
       onPress={() => onChange(!value)}
-      style={({ pressed }) => ({
+      style={{
         minHeight: layout.minTouch,
         paddingVertical: spacing.sm,
         borderBottomWidth: layout.fieldLineWidth,
@@ -34,8 +35,8 @@ export function ToggleRow({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        opacity: disabled ? layout.disabledOpacity : pressed ? layout.pressedOpacity : 1,
-      })}
+        opacity: disabled ? layout.disabledOpacity : undefined,
+      }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.menuRowGap, flexShrink: 1 }}>
         <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>{icon}</View>
@@ -62,6 +63,6 @@ export function ToggleRow({
           }}
         />
       </View>
-    </Pressable>
+    </Touchable>
   );
 }

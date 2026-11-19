@@ -7,7 +7,8 @@
 // Diferença deliberada: o Figma mostra no cartão o próximo jogo e começa a lista no jogo seguinte;
 // aqui a lista traz todos os jogos, para o primeiro não desaparecer da lista que o utilizador percorre.
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, View } from 'react-native';
+import { FlatList, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { EmptyState } from '@/components/EmptyState';
@@ -98,14 +99,13 @@ export default function Agenda() {
   const header = (
     <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
       {next ? (
-        <Pressable
+        <Touchable
           accessibilityRole="button"
           accessibilityLabel="Próximo jogo"
           onPress={() => router.push(`/jogo/${next.id}`)}
-          style={({ pressed }) => ({ opacity: pressed ? layout.pressedOpacity : 1 })}
         >
           <GameHeader game={toGameHeaderVM(next)} now={now} />
-        </Pressable>
+        </Touchable>
       ) : null}
       <View style={{ paddingHorizontal: spacing.screenX }}>
         <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
@@ -132,14 +132,14 @@ export default function Agenda() {
         title="AGENDA"
         onBack={back}
         right={
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel="Plantel"
             hitSlop={(layout.minTouch - layout.headerIcon) / 2}
             onPress={() => router.push('/equipa')}
           >
             <Feather name="users" size={layout.headerIcon} color={colors.white} />
-          </Pressable>
+          </Touchable>
         }
       />
       <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />

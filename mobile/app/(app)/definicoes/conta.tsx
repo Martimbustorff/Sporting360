@@ -6,7 +6,8 @@
 // Este é o único ecrã onde o email aparece.
 import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
@@ -41,14 +42,14 @@ function Field({ label, value, onPress, a11y }: { label: string; value: string; 
   );
   if (!onPress) return <View accessible accessibilityLabel={`${label}: ${value}`}>{body}</View>;
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={a11y ?? `${label}: ${value}`}
       onPress={onPress}
-      style={({ pressed }) => ({ minHeight: layout.minTouch, opacity: pressed ? layout.pressedOpacity : 1 })}
+      style={{ minHeight: layout.minTouch }}
     >
       {body}
-    </Pressable>
+    </Touchable>
   );
 }
 
@@ -82,15 +83,15 @@ export default function Conta() {
         <Field label="Nome" value={name} a11y={`Nome público: ${name}. Mudar`} onPress={() => router.push('/perfil/nome')} />
         <Field label="Email" value={user?.email ?? CONTA_TEXT.noEmail} />
         {user?.providers.includes('password') ? (
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel="Mudar password"
             onPress={() => router.push('/definicoes/password')}
             hitSlop={spacing.sm}
-            style={({ pressed }) => ({ minHeight: layout.minTouch, justifyContent: 'center', alignSelf: 'flex-start', opacity: pressed ? layout.pressedOpacity : 1 })}
+            style={{ minHeight: layout.minTouch, justifyContent: 'center', alignSelf: 'flex-start' }}
           >
             <Body variant="badgeSmall" style={{ textDecorationLine: 'underline' }}>Mudar password</Body>
-          </Pressable>
+          </Touchable>
         ) : null}
       </ScrollView>
     </Screen>

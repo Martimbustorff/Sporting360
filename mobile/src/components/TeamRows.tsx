@@ -4,7 +4,8 @@
 // 1 px a 20 % entre linhas. `TextRow`: texto à esquerda com reticências e valor à direita que não encolhe.
 // `SectionError`: erro compacto de uma secção secundária (body a muted, centrado), sem esconder o resto do ecrã.
 import type { ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Touchable } from './Touchable';
 import { Image } from 'expo-image';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -84,15 +85,15 @@ export function PersonRow({
     );
   }
   return (
-    <Pressable
+    <Touchable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => ({ ...style, opacity: pressed ? layout.pressedOpacity : 1 })}
+      style={{ ...style }}
     >
       {content}
-    </Pressable>
+    </Touchable>
   );
 }
 

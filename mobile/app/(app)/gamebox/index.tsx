@@ -7,7 +7,8 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
@@ -125,19 +126,18 @@ export default function Gamebox() {
     <Screen padded="none">
       <Header title={GAMEBOX_TEXT.title} onBack={back} />
       {body}
-      <Pressable
+      <Touchable
         accessibilityRole="button"
         accessibilityLabel={GAMEBOX_TEXT.add}
         onPress={() => router.push('/gamebox/nova')}
-        style={({ pressed }) => ({
+        style={{
           position: 'absolute',
           right: layout.gameboxFabRight,
           bottom: layout.gameboxFabBottom,
-          opacity: pressed ? layout.pressedOpacity : 1,
-        })}
+        }}
       >
         <Image source={FAB_PLUS} style={{ width: layout.gameboxFab, height: layout.gameboxFab }} accessible={false} />
-      </Pressable>
+      </Touchable>
     </Screen>
   );
 }

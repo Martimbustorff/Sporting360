@@ -8,7 +8,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { ScrollView, Text, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Touchable } from './Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CARD_TEXT, GameboxCard } from '@/components/GameboxCard';
 import { Sheet } from '@/components/Sheet';
@@ -41,11 +42,11 @@ function Empty() {
   const router = useRouter();
   return (
     <View style={{ gap: layout.gameboxSheetEmptyGap, alignItems: 'stretch' }}>
-      <Pressable
+      <Touchable
         accessibilityRole="button"
         accessibilityLabel={SHEET_TEXT.scan}
         onPress={() => router.push('/gamebox/ler')}
-        style={({ pressed }) => ({
+        style={{
           height: layout.buttonHeight,
           borderRadius: radius.button,
           backgroundColor: colors.primary,
@@ -53,14 +54,13 @@ function Empty() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: spacing.sm,
-          opacity: pressed ? layout.pressedOpacity : 1,
-        })}
+        }}
       >
         <Image source={CAMERA} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
         <Display variant="screenTitle" style={{ color: colors.white }}>
           {SHEET_TEXT.scan}
         </Display>
-      </Pressable>
+      </Touchable>
       <Text style={type.gameboxEmpty}>
         {SHEET_TEXT.emptyBefore}
         <Text

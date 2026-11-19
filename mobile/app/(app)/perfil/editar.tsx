@@ -7,7 +7,8 @@
 // Leitura falhada: erro, nunca o formulário vazio. Sem rede: mensagem clara e o formulário fica como está.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
@@ -54,13 +55,13 @@ function PlayerPicker({
       {players.map((p) => {
         const selected = p.id === selectedId;
         return (
-          <Pressable
+          <Touchable
             key={p.id}
             accessibilityRole="radio"
             accessibilityLabel={p.name}
             accessibilityState={{ selected }}
             onPress={() => onSelect({ id: p.id, name: p.name })}
-            style={({ pressed }) => ({
+            style={{
               minHeight: layout.minTouch,
               paddingHorizontal: spacing.md,
               borderRadius: radius.md,
@@ -68,12 +69,11 @@ function PlayerPicker({
               alignItems: 'center',
               gap: spacing.md,
               backgroundColor: selected ? colors.surface20 : undefined,
-              opacity: pressed ? layout.pressedOpacity : 1,
-            })}
+            }}
           >
             <Text style={[type.menuRow, { minWidth: spacing.xl }]}>{p.number ?? ''}</Text>
             <Text style={[type.fieldValue, { flexShrink: 1 }]} numberOfLines={1}>{p.name}</Text>
-          </Pressable>
+          </Touchable>
         );
       })}
     </View>

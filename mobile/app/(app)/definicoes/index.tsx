@@ -15,7 +15,8 @@ import * as Application from 'expo-application';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Alert, Platform, ScrollView, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
 import { FormMessage } from '@/components/AuthForm';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
@@ -53,15 +54,15 @@ const svg = (source: number) => <Image source={source} style={iconStyle} accessi
 
 function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
       hitSlop={spacing.sm}
-      style={({ pressed }) => ({ minHeight: layout.minTouch, justifyContent: 'center', opacity: pressed ? layout.pressedOpacity : 1 })}
+      style={{ minHeight: layout.minTouch, justifyContent: 'center' }}
     >
       <Body variant="badgeSmall" style={{ color: colors.primary, textAlign: 'center' }}>{label}</Body>
-    </Pressable>
+    </Touchable>
   );
 }
 

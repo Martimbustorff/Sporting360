@@ -1,6 +1,7 @@
 // SEM FIGMA: composto com a `Sheet` (564:6981 / 564:7119) e os tokens; botões no estilo do PrimaryButton (564:7259)
 // mas em verde, porque a folha é branca. A validar com o Martim.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Touchable } from './Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sheet } from '@/components/Sheet';
 import { type Consent, setAnalyticsConsent } from '@/services/analytics';
@@ -27,37 +28,35 @@ export function AnalyticsConsentSheet({ onDone }: { onDone: () => void }) {
     <Sheet title={CONSENT_TITLE} collapsedHeight={height} expandedHeight={height} open toggleable={false} onOpenChange={() => {}}>
       <View style={{ flex: 1, gap: layout.consentGap, paddingTop: layout.consentGap }}>
         <Text style={[type.authIntro, { color: colors.black }]}>{CONSENT_TEXT}</Text>
-        <Pressable
+        <Touchable
           accessibilityRole="button"
           accessibilityLabel="Aceitar"
           onPress={() => choose('granted')}
-          style={({ pressed }) => ({
+          style={{
             height: layout.buttonHeight,
             borderRadius: radius.button,
             backgroundColor: colors.primary,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? layout.pressedOpacity : 1,
-          })}
+          }}
         >
           <Text style={[type.sheetTitleOpen, { color: colors.white }]}>Aceitar</Text>
-        </Pressable>
-        <Pressable
+        </Touchable>
+        <Touchable
           accessibilityRole="button"
           accessibilityLabel="Agora não"
           onPress={() => choose('denied')}
-          style={({ pressed }) => ({
+          style={{
             height: layout.buttonHeight,
             borderRadius: radius.button,
             borderWidth: layout.fieldLineWidthActive,
             borderColor: colors.primary,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? layout.pressedOpacity : 1,
-          })}
+          }}
         >
           <Text style={type.sheetTitleOpen}>Agora não</Text>
-        </Pressable>
+        </Touchable>
       </View>
     </Sheet>
   );

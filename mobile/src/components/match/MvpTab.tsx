@@ -9,7 +9,8 @@
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Touchable } from '../Touchable';
 import Feather from '@expo/vector-icons/Feather';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
@@ -119,13 +120,13 @@ function Info({ text }: { text: string }) {
 
 function CandidateRow({ candidate, selected, onPress }: { candidate: MvpCandidate; selected: boolean; onPress: () => void }) {
   return (
-    <Pressable
+    <Touchable
       testID={`mvp-candidate-${candidate.playerId}`}
       accessibilityRole="button"
       accessibilityLabel={`Votar em ${candidate.name}`}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={({ pressed }) => ({
+      style={{
         minHeight: layout.mvpRowHeight,
         flexDirection: 'row',
         alignItems: 'center',
@@ -135,14 +136,13 @@ function CandidateRow({ candidate, selected, onPress }: { candidate: MvpCandidat
         borderWidth: layout.separator,
         borderColor: selected ? colors.primary : colors.textDisabled,
         backgroundColor: selected ? colors.primary : undefined,
-        opacity: pressed ? layout.pressedOpacity : 1,
-      })}
+      }}
     >
       <Body variant="body" numberOfLines={1} style={{ flex: 1 }}>
         {candidate.name}
       </Body>
       {selected ? <Feather name="check-circle" size={layout.eventGlyph} color={colors.white} /> : null}
-    </Pressable>
+    </Touchable>
   );
 }
 

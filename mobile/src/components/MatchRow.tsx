@@ -10,7 +10,8 @@
 // A linha só é botão quando recebe `onPress`: na Task 13 as jornadas têm jogos sem Sporting, que não
 // têm documento em `matches/{id}` e portanto não abrem o detalhe.
 import Feather from '@expo/vector-icons/Feather';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Touchable } from './Touchable';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import type { Match } from '@/data/schemas';
@@ -146,15 +147,14 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
     );
   }
   return (
-    <Pressable
+    <Touchable
       testID={`match-row-${match.id}`}
       accessible
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={() => onPress(match.id)}
-      style={({ pressed }) => ({ opacity: pressed ? layout.pressedOpacity : 1 })}
     >
       {content}
-    </Pressable>
+    </Touchable>
   );
 }

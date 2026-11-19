@@ -6,7 +6,8 @@
 // `table` para `bracket` a meio da época, Review Focus 5). A escolha guarda-se por competição até a app reiniciar
 // (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
 import { useReducer } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { Touchable } from './Touchable';
 import { router } from 'expo-router';
 import { BracketView } from '@/components/BracketView';
 import { EmptyState } from '@/components/EmptyState';
@@ -87,19 +88,18 @@ export function CompetitionStandings({
       {shown === 'table' && table ? <StandingsTable groups={table.groups} highlightTeamId={SPORTING} sport={sport} /> : null}
       {shown === 'bracket' && knockout ? <BracketView bracket={knockout} highlightTeamId={SPORTING} /> : null}
       {showCompetitionLink ? (
-        <Pressable
+        <Touchable
           accessibilityRole="link"
           accessibilityLabel="Ver competição"
           onPress={() => router.push(`/competicao/${competitionKey}`)}
-          style={({ pressed }) => ({
+          style={{
             minHeight: layout.minTouch,
             alignItems: 'center',
             justifyContent: 'center',
-            opacity: pressed ? layout.pressedOpacity : 1,
-          })}
+          }}
         >
           <Body variant="tab" style={{ color: colors.primary }}>Ver competição</Body>
-        </Pressable>
+        </Touchable>
       ) : null}
     </ScrollView>
   );

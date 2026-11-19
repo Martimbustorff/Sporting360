@@ -35,11 +35,15 @@ exports[`PrimaryButton snapshots (primary, secondary): primary 1`] = `
   onResponderTerminationRequest={[Function]}
   onStartShouldSetResponder={[Function]}
   style={
-    {
-      "borderRadius": 52,
-      "height": 51,
-      "opacity": 1,
-    }
+    [
+      {
+        "borderRadius": 52,
+        "height": 51,
+        "opacity": undefined,
+      },
+      null,
+      null,
+    ]
   }
 >
   <Text
@@ -98,11 +102,15 @@ exports[`PrimaryButton snapshots (primary, secondary): secondary 1`] = `
   onResponderTerminationRequest={[Function]}
   onStartShouldSetResponder={[Function]}
   style={
-    {
-      "borderRadius": 52,
-      "height": 51,
-      "opacity": 1,
-    }
+    [
+      {
+        "borderRadius": 52,
+        "height": 51,
+        "opacity": undefined,
+      },
+      null,
+      null,
+    ]
   }
 >
   <Text
