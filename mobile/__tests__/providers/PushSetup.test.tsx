@@ -1,10 +1,12 @@
 import React from 'react';
 import { act, render } from '@testing-library/react-native';
+import { AppState } from 'react-native';
 import { router } from 'expo-router';
 
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn() }));
 jest.mock('@/services/push', () => ({
   requestPushPermission: jest.fn(() => Promise.resolve(true)),
+  pushPermissionGranted: jest.fn(() => Promise.resolve(false)),
   registerDevice: jest.fn(() => Promise.resolve('tok-1')),
   onPushTokenRefresh: jest.fn(() => jest.fn()),
   syncTopics: jest.fn(() => Promise.resolve()),
@@ -135,5 +137,56 @@ describe('PushSetup', () => {
     await view.unmount();
     expect(stopRefresh).toHaveBeenCalled();
     expect(stopOpen).toHaveBeenCalled();
+  });
+});
+
+describe('PushSetup: permissão ligada mais tarde nas definições', () => {
+  const original = AppState.addEventListener;
+  let listeners: ((s: string) => void)[] = [];
+  const remove = jest.fn();
+  beforeEach(() => {
+    listeners = [];
+    AppState.addEventListener = jest.fn((_t: string, l: (s: string) => void) => {
+      listeners.push(l);
+      return { remove };
+    }) as never;
+  });
+  afterEach(() => {
+    AppState.addEventListener = original;
+  });
+  const emit = (s: string) => act(async () => {
+    listeners.forEach((l) => l(s));
+    await new Promise((r) => setImmediate(r));
+  });
+
+  it('recusada ao entrar, ligada depois: ao voltar ao primeiro plano regista o dispositivo', async () => {
+    p.requestPushPermission.mockResolvedValue(false);
+    const view = await render(<PushSetup uid="alice" ready />);
+    await flush();
+    expect(p.registerDevice).not.toHaveBeenCalled();
+    p.pushPermissionGranted.mockResolvedValue(false);
+    await emit('active');
+    expect(p.registerDevice).not.toHaveBeenCalled();
+    p.pushPermissionGranted.mockResolvedValue(true);
+    await emit('background');
+    expect(p.registerDevice).not.toHaveBeenCalled();
+    await emit('active');
+    expect(p.registerDevice).toHaveBeenCalledTimes(1);
+    expect(p.registerDevice).toHaveBeenCalledWith('alice');
+    expect(p.onPushTokenRefresh).toHaveBeenCalledWith('alice');
+    // Já registado: voltar outra vez não regista de novo.
+    await emit('active');
+    expect(p.registerDevice).toHaveBeenCalledTimes(1);
+    await view.unmount();
+    expect(remove).toHaveBeenCalled();
+  });
+
+  it('ready false: voltar ao primeiro plano não faz nada', async () => {
+    p.pushPermissionGranted.mockResolvedValue(true);
+    await render(<PushSetup uid="alice" ready={false} />);
+    await flush();
+    await emit('active');
+    expect(p.registerDevice).not.toHaveBeenCalled();
+    expect(p.pushPermissionGranted).not.toHaveBeenCalled();
   });
 });

@@ -2,9 +2,17 @@
 // dispositivo e mantém os tópicos FCM iguais às preferências de users/{uid}. O toque abre a rota da notificação.
 import { router, type Href } from 'expo-router';
 import { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { useMyUser } from '@/data/hooks';
 import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
-import { onPushOpen, onPushTokenRefresh, registerDevice, requestPushPermission, syncTopics } from '@/services/push';
+import {
+  onPushOpen,
+  onPushTokenRefresh,
+  pushPermissionGranted,
+  registerDevice,
+  requestPushPermission,
+  syncTopics,
+} from '@/services/push';
 
 export function PushSetup({ uid, ready }: { uid: string; ready: boolean }): null {
   const user = useMyUser(uid);
@@ -12,15 +20,27 @@ export function PushSetup({ uid, ready }: { uid: string; ready: boolean }): null
   useEffect(() => {
     if (!ready) return undefined;
     let alive = true;
+    let registered = false;
     let stopRefresh: (() => void) | null = null;
-    (async () => {
-      const granted = await requestPushPermission();
-      if (!alive || !granted) return;
+    const register = async () => {
+      registered = true;
       await registerDevice(uid);
       if (alive) stopRefresh = onPushTokenRefresh(uid);
+    };
+    (async () => {
+      const granted = await requestPushPermission();
+      if (alive && granted && !registered) await register();
     })();
+    // Permissão ligada mais tarde nas definições do telemóvel: regista ao voltar, sem arranque a frio.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || registered) return;
+      pushPermissionGranted().then((granted) => {
+        if (alive && granted && !registered) void register();
+      });
+    });
     return () => {
       alive = false;
+      sub.remove();
       stopRefresh?.();
     };
   }, [uid, ready]);
