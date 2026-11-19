@@ -101,6 +101,24 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 - O destinatário precisa de conta S360. É isso que permite prender o empréstimo a uma pessoa.
 - O nome mostrado ao destinatário é o nome público do Ranking, nunca o nome completo nem o email.
 
+## Como ficou construído (19/11, plano 8 fechado)
+
+Onde este texto e as secções acima divergem, vale esta secção.
+
+- Botão "Emprestar para o próximo jogo"; folha de confirmação com um só jogo; um empréstimo ativo no máximo por GameBox; mensagem "Esta GameBox já está emprestada."
+- "Próximo jogo" igual na app e no servidor: jogos em casa do recinto (Estádio: futebol; Pavilhão: as outras), com início há menos de 4 h, em curso ou por começar.
+- A validade é recalculada por uma tarefa a cada 10 minutos, que também copia a nova hora de um jogo remarcado para o cartão. Cancelado: hora marcada + 2 h.
+- `createLoan` recebe o número já decifrado pela app. O servidor só valida o formato.
+- Botão "Partilhar link outra vez" enquanto o empréstimo não foi aberto.
+- Editar o número ou o lugar de uma GameBox emprestada cancela o empréstimo (aviso por baixo do empréstimo ativo). Mudar só o nome ou a ordem não cancela.
+- Apagar a conta apaga o nome e o identificador dessa pessoa em todos os empréstimos em que entrou.
+- Brilho no máximo só enquanto o cartão com o QR está no ecrã. O bloqueio de capturas cobre o ecrã todo.
+- Um cancelamento ou expiração normais não vão para os relatórios de erro, e o código do empréstimo nunca entra num relatório nem nos registos da app. Os registos de pedidos da plataforma (Google) guardam o endereço `/e/{id}`: exclusão a criar no deploy.
+- Android sem Play Store: a app desiste de ler o código de instalação ao fim de 3 falhas.
+- Consultas aos empréstimos só por igualdade; sem índices compostos.
+- Frames: 45La a 45Le, 45Lbv, 45Lbc, 45Lbe, 45Lbm, 44L, 12L, 12Lc, 50, 50b, 50c, 50d, 50e.
+- Ordem do deploy e o que falha se a app sair primeiro: no plano 8, secção "Depois do plano".
+
 ## Fica para quem constrói
 
 - Formato exato do texto de partilha, dentro do tom da app.
