@@ -23,7 +23,7 @@ import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const LER_TEXT = {
-  title: 'Ler GameBox',
+  title: 'Ler código',
   hint: 'Aponta a câmara para o código da tua GameBox.',
   unknown: 'Código não reconhecido.',
   read: 'Número lido',
@@ -218,8 +218,9 @@ export default function GameboxLer() {
               <PrimaryButton label={LER_TEXT.confirm} onPress={confirm} variant="white" />
               <PrimaryButton label={LER_TEXT.retry} onPress={retry} variant="outline" />
             </>
-          ) : null}
-          <ManualLink onPress={manual} />
+          ) : (
+            <ManualLink onPress={manual} />
+          )}
         </View>
       </View>
     </Screen>

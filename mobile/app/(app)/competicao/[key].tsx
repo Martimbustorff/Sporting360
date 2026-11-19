@@ -124,7 +124,7 @@ function RoundsTab({ competition }: { competition: SeasonCompetition }) {
     <View style={{ flex: 1 }}>
       <OfflineBanner visible={fromCache(rounds) || fromCache(fixtures)} />
       <View
-        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s12, paddingBottom: space.s4 }}
+        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s24, paddingBottom: space.s4 }}
       >
         <Arrow dir="left" disabled={index <= 0} onPress={() => go(-1)} />
         <Text71

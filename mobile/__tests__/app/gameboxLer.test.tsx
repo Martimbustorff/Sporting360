@@ -50,6 +50,15 @@ describe('/gamebox/ler', () => {
     expect(lastProps().onBarcodeScanned).toBeUndefined();
   });
 
+  it('título "Ler código" e, com número lido, só Confirmar e Corrigir (frame 46)', async () => {
+    await render(ui());
+    expect(screen.getByText(LER_TEXT.title)).toBeTruthy();
+    expect(LER_TEXT.title).toBe('Ler código');
+    await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));
+    expect(screen.queryByRole('button', { name: LER_TEXT.manual })).toBeNull();
+    expect(screen.getByRole('button', { name: LER_TEXT.confirm })).toBeTruthy();
+  });
+
   it('Corrigir volta a ligar a leitura', async () => {
     await render(ui());
     await act(async () => lastProps().onBarcodeScanned!({ data: '266571276572', type: 'qr' }));

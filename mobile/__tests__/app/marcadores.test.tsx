@@ -1,4 +1,5 @@
 // Task 12: ecrã /equipa/marcadores (frame 11). Hooks de dados mockados.
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -72,6 +73,13 @@ describe('/equipa/marcadores', () => {
     expect(screen.queryByTestId('chip-league')).toBeNull();
     expect(screen.queryByTestId('chip-all')).toBeNull();
     expect(screen.getByTestId('leader-card')).toBeTruthy();
+  });
+
+  it('foto do líder em quadrado arredondado de 56 (frame 11) e as linhas em círculo', async () => {
+    ready(players);
+    await render(wrap());
+    const box = (id: string) => screen.getByTestId(id).children[0] as unknown as { props: { style: object } };
+    expect(StyleSheet.flatten(box('leader-photo').props.style)).toMatchObject({ width: 56, borderRadius: 20 });
   });
 
   it('nome longo a 320 pt fica numa linha com reticências', async () => {

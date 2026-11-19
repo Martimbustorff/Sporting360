@@ -4,9 +4,8 @@
 // (surface-06, raio 12, colunas de 56), golos por período em barras verticais (até 63 pt) e tabela de jogadores com
 // `PlayerPhoto` de 24 (J, Min, G, A, Nota). Transferências: etiqueta Entrada/Saída, nome, "de/para clube", data e tipo à direita.
 // Troféus: ícone e texto para o treinador; jogadores com a contagem e a seta.
-// SEM FIGMA: os erros e vazios de cada secção, o aviso de cache, a ligação "Ver marcadores", "Jogos sem sofrer" no cartão (o frame mostra
-// Marcados e Sofridos), os golos sofridos por período (só se mostram os marcados, como no frame; os sofridos ficam no rótulo de
-// acessibilidade da barra), a linha "Treinador" dos troféus com o nome do treinador no título da secção, e o treinador sem seta
+// SEM FIGMA: os erros e vazios de cada secção, o aviso de cache, a ligação "Ver marcadores", os golos sofridos por período (só se mostram os marcados, como no frame; os sofridos ficam no rótulo de
+// acessibilidade da barra), e o treinador sem seta
 // (não há ecrã do treinador). O frame de transferências não tem emblemas: o emblema do outro clube deixou de se mostrar.
 // Cada tab lê só os seus documentos e depende só do principal (Plantel: plantel; Troféus: troféus). Uma leitura
 // principal falhada mostra o erro, nunca o vazio; uma secundária (treinador, indisponíveis) só a sua secção.
@@ -36,7 +35,6 @@ import {
   playersByGoals,
   playersWithTrophies,
   ratingText,
-  seasonLabel,
   teamStatsVM,
   transferTypeLabel,
   trophyPlaceText,
@@ -89,6 +87,8 @@ function SquadTab() {
   const players = dataOf(squad)?.players ?? [];
   if (players.length === 0) return <EmptyState icon="info" text={NO_SQUAD} />;
   const c = dataOf(coach);
+  // O frame mostra o número também nos indisponíveis; o documento de lesões não o tem, vem do plantel.
+  const numberOf = new Map(players.map((p) => [p.id, p.number]));
   const out = injuries.status === 'ready' ? unavailablePlayers(injuries.data) : [];
   const coachDetail = c ? [countryNamePt(c.nationality), c.since ? `desde ${calendarDateText(c.since)}` : null].filter(Boolean).join(' · ') : '';
   return (
@@ -120,6 +120,7 @@ function SquadTab() {
               <PersonRow
                 key={i.playerId}
                 label={why ? `${i.name}, ${why}` : i.name}
+                number={numberOf.get(i.playerId) ?? null}
                 photo={i.photo}
                 name={i.name}
                 detail={why || undefined}
@@ -254,7 +255,7 @@ function TeamStatsBlock({ leagueId, season }: { leagueId: string; season: string
   const rows: [string, Split | null][] = [
     ['Marcados', vm.goalsFor],
     ['Sofridos', vm.goalsAgainst],
-    ['Jogos sem sofrer', vm.cleanSheet],
+    ['Sem sofrer', vm.cleanSheet],
   ];
   const shown = rows.filter((r): r is [string, Split] => r[1] !== null);
   return (
@@ -356,7 +357,7 @@ function StatsTab({ season }: { season: string }) {
     <TabScroll>
       <Chips items={list.map((c) => ({ key: c.key, label: c.name }))} value={current.key} onChange={setPicked} testIDPrefix="comp" />
       <TeamStatsBlock key={current.key} leagueId={current.leagueId} season={season} />
-      <SectionBar label={`Jogadores, época ${seasonLabel(season)}`} />
+      <SectionBar label="Jogadores da época" />
       <Touchable
         testID="link-marcadores"
         accessibilityRole="link"
@@ -430,7 +431,7 @@ function TrophiesTab() {
   const trophies = useTeamData('trophies');
   const squad = useTeamData('squad');
   const coach = useTeamData('coach');
-  // Só os troféus decidem o ecrã; o plantel (nomes dos jogadores) e o treinador (nome no título) são secundários.
+  // Só os troféus decidem o ecrã; o plantel (nomes dos jogadores) é secundário.
   if (trophies.status === 'loading') return <Loading testID="trophies-loading" />;
   if (trophies.status === 'error') return <EmptyState icon="info" text={ERROR_TEXT} />;
   const t = dataOf(trophies);
@@ -444,13 +445,12 @@ function TrophiesTab() {
   if (coachTrophies.length === 0 && !showPlayers) {
     return squad.status === 'loading' ? <Loading testID="trophies-loading" /> : <EmptyState icon="info" text={NO_TROPHIES} />;
   }
-  const coachName = dataOf(coach)?.name;
   return (
     <TabScroll>
       <OfflineBanner visible={anyCache([trophies, squad, coach])} />
       {coachTrophies.length > 0 ? (
         <View>
-          <SectionBar label={coachName ? `Treinador, ${coachName}` : 'Treinador'} />
+          <SectionBar label="Treinador" />
           {coachTrophies.map((x, i) => (
             <TextRow key={`${x.league}-${x.season}-${i}`} icon left={`${x.league} · ${x.season}`} right={trophyPlaceText(x.place)} />
           ))}

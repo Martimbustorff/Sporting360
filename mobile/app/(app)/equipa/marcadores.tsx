@@ -117,7 +117,7 @@ function LeaderCard({ r, metric, position }: { r: LeaderRow; metric: LeaderMetri
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#leaderGrad)" />
       </Svg>
-      <PlayerPhoto photo={r.player.photo} size={layout.leaderPhoto} testID="leader-photo" />
+      <PlayerPhoto photo={r.player.photo} size={layout.leaderPhoto} shape="rounded" testID="leader-photo" />
       <View style={{ flex: 1, minWidth: 0, gap: layout.leaderTextGap }}>
         <Text71 variant="eyebrow13" numberOfLines={1} ellipsizeMode="tail">{EYEBROW[metric]}</Text71>
         <Text71 variant="titleS20" numberOfLines={1} ellipsizeMode="tail">{r.player.name}</Text71>

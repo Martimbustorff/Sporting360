@@ -28,7 +28,6 @@ import {
   playerPositionLabel,
   playerSeasonLine,
   ratingText,
-  seasonLabel,
   sidelinedPeriodText,
   trophyPlaceText,
 } from '@/lib/team';
@@ -142,7 +141,6 @@ export default function Jogador() {
             {facts.length > 0 ? <Muted text={facts.join(' · ')} /> : null}
           </View>
         </View>
-        <SectionBar label={`Época ${seasonLabel(season)}`} />
         {line ? <SeasonNumbers line={line} /> : <Muted text={NO_GAMES} />}
         <SectionBar label="Troféus" />
         {trophies.status === 'error' ? (

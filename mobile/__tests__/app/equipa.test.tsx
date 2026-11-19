@@ -184,6 +184,13 @@ describe('/equipa: PlayerPhoto, etiquetas e 44 pt (V7.1)', () => {
     expect(within(out).queryByText('Dúvida')).toBeNull();
   });
 
+  it('indisponível que está no plantel leva o número no distintivo (frame 38)', async () => {
+    mockTeam.injuries = ready({ items: [{ playerId: '9', name: 'Viktor Gyökeres', photo: null, type: 'Missing Fixture', reason: 'Knee Injury', fixtureId: '1', date: null }] });
+    await render(wrap(<Equipa />));
+    const out = screen.getByLabelText('Viktor Gyökeres, Fora, Lesão no joelho');
+    expect(within(out).getByTestId('player-number', { includeHiddenElements: true })).toBeTruthy();
+  });
+
   it('indisponível "Questionable": etiqueta Dúvida', async () => {
     mockTeam.injuries = ready({ items: [{ playerId: '26', name: 'Ousmane Diomande', photo: null, type: 'Questionable', reason: 'Knee Injury', fixtureId: '1', date: null }] });
     await render(wrap(<Equipa />));
@@ -266,7 +273,7 @@ describe('/equipa: Estatísticas', () => {
     expect(screen.getByLabelText('Forma: V V E D V')).toBeTruthy();
     expect(screen.getByLabelText('Marcados: casa 14, fora 9, total 23')).toBeTruthy();
     expect(screen.getByLabelText('Sofridos: casa 3, fora 5, total 8')).toBeTruthy();
-    expect(screen.getByLabelText('Jogos sem sofrer: casa 4, fora 2, total 6')).toBeTruthy();
+    expect(screen.getByLabelText('Sem sofrer: casa 4, fora 2, total 6')).toBeTruthy();
     expect(screen.getByLabelText('0-15: marcados 1, sofridos 0')).toBeTruthy();
     expect(screen.getByLabelText('76-90: marcados 8, sofridos 2')).toBeTruthy();
     expect(screen.queryByText('91-105')).toBeNull();
@@ -437,7 +444,8 @@ describe('/equipa/jogador/[id]', () => {
     expect(screen.getByTestId('player-shirt').props.children).toBe('9');
     expect(screen.getByText('Avançado · 24 anos')).toBeTruthy();
     expect(screen.getByLabelText('Jogos: 12')).toBeTruthy();
-    expect(screen.getByText('Época 2026/27')).toBeTruthy();
+    // O frame 42 não tem título de época antes dos quatro quadrados.
+    expect(screen.queryByText('Época 2026/27')).toBeNull();
     expect(screen.getByLabelText('Golos: 15')).toBeTruthy();
     expect(screen.getByLabelText('Assistências: 3')).toBeTruthy();
     expect(screen.getByLabelText('Minutos: 1 010')).toBeTruthy();
