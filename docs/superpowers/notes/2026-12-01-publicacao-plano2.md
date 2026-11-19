@@ -23,7 +23,8 @@ Os argumentos `--only functions:v2027:...` abaixo foram gerados por `deployArg` 
 |---|---|
 | `DEPLOY_DATA_FUNCTIONS` (12) | footballFixturesSync, footballPostMatchSync, footballLiveTicker, footballStandingsSync, footballSeasonSync, footballWeeklySync, footballPrematchSync, videosSync, newsSync, tweetsSync, apiSportsSync, freeSourcesSync |
 | `DEPLOY_CUTOVER_FUNCTIONS` (1) | legacyPredictionSettlement |
-| `DEPLOY_ENGINE_FUNCTIONS` (7) | submitPrediction, voteMvp, mvpTallyAggregator, settleScheduler, updateProfile, deleteAccount, linkProviderByEmail (as três últimas vêm do Plano 3, branch `v2027-app`) |
+| `DEPLOY_ENGINE_FUNCTIONS` (14) | submitPrediction, voteMvp, mvpTallyAggregator, settleScheduler, updateProfile, deleteAccount, linkProviderByEmail, createLoan, claimLoan, cancelLoan, loansMaintenance, onGameboxDeleted, onGameboxUpdated, loanRedirect (as sete últimas são do empréstimo de GameBox, planos 8 e 9) |
+| `DEPLOY_PUSH_FUNCTIONS` (1) | predictionReminderPush (Plano 6) |
 | `LEGACY_FUNCTIONS` (13, `us-central1`) | gamesSheduler, liveMatchUpdater, summarySheduler, statisticsSheduler, newsSheduler, twitterScheduler, videosSheduler, PlayersSheduler, lineupsheduler, standingsSheduler, predictionsSettlementScheduler, games, backfill |
 
 ## 1. Verificações iniciais (PARAGEM (Martim): credenciais do Martim, só leitura)
@@ -355,8 +356,16 @@ Nos logs: nenhum `PERMISSION_DENIED` nas escritas da V2 e nenhuma das functions 
 A partir da árvore integrada (as três callables do Plano 3 só existem lá):
 
 ```bash
-firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:mvpTallyAggregator,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail --project scp360-37a74
+firebase deploy --only functions:v2027:submitPrediction,functions:v2027:voteMvp,functions:v2027:mvpTallyAggregator,functions:v2027:settleScheduler,functions:v2027:updateProfile,functions:v2027:deleteAccount,functions:v2027:linkProviderByEmail,functions:v2027:createLoan,functions:v2027:claimLoan,functions:v2027:cancelLoan,functions:v2027:loansMaintenance,functions:v2027:onGameboxDeleted,functions:v2027:onGameboxUpdated,functions:v2027:loanRedirect --project scp360-37a74
+firebase deploy --only functions:v2027:predictionReminderPush --project scp360-37a74
 ```
+
+Atualizado a 19/11 (planos 6, 8 e 9), gerado de `deployLists.ts`. Depois deste passo, pela ordem do plano 8 ("Depois do plano"):
+
+- Hosting outra vez (`firebase deploy --only hosting --project scp360-37a74`): leva o reencaminhamento `/e` para a `loanRedirect` e o AASA com `/e/*`. Verificar com `curl -sI https://s360-prognostico-download.web.app/e/AAAAAAAAAAAAAAAAAAAAAA`: `302` para a loja.
+- Exclusão no Cloud Logging dos registos de pedidos da `loanRedirect` (o endereço tem o código do empréstimo).
+- Canal de TV: opcional, documento `config/tvChannels` com `overrides: { "<id do jogo>": "SPORT TV1" }` (texto vazio esconde o chip). Sem o documento vale a regra da Liga.
+- O push só envia com o `PUSH_ENABLED` ligado e a chave APNs carregada na consola Firebase (passos do Martim, Plano 6).
 
 Verificar: `settleScheduler` corre de 10 em 10 minutos e devolve 0 sem jogos por liquidar; `mvpTallyAggregator` corre de minuto a minuto (`ingestHealth/mvp_tally` aparece depois da primeira execução com um jogo ativo); as callables aparecem em `europe-west1`. Sem o `mvpTallyAggregator` o `voteMvp` grava os votos mas nunca escreve `mvpTallies/{gameId}`, e a app nova mostra a votação sem percentagens. A V2 não as usa; a app nova (Planos 4 e 5) sim.
 
