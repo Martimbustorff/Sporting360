@@ -73,7 +73,12 @@ export function AuthLinkRow({ text, action, onPress }: { text: string; action: s
       <Text71 variant="caption12" color="textMuted">
         {text}
       </Text71>
-      <Touchable accessibilityRole="link" accessibilityLabel={action} onPress={onPress} hitSlop={space.s12}>
+      <Touchable
+        accessibilityRole="link"
+        accessibilityLabel={action}
+        onPress={onPress}
+        style={{ minHeight: layout.minTouch, justifyContent: 'center' }}
+      >
         <Text71 variant="captionStrong12" color="primaryOnDark">
           {action}
         </Text71>
