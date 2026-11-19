@@ -107,6 +107,7 @@ export const GAME_HEADER_TEXT = {
   extraTime: 'Prolongamento',
   endOfGame: 'Fim do jogo',
   finishedChip: 'Fim',
+  versus: 'VS',
   predictionTitle: 'O teu prognóstico',
 } as const;
 
@@ -168,9 +169,9 @@ function MomentPill({ game }: { game: GameHeaderVM }) {
         borderWidth: layout.headerPillBorder,
         borderColor: colors.primaryOnDark,
         borderRadius: layout.headerPillRadius,
-        paddingLeft: space.s12 - 2,
-        paddingRight: space.s12,
-        paddingVertical: space.s4 + 1,
+        paddingLeft: layout.headerPillPadLeft,
+        paddingRight: layout.headerPillPadRight,
+        paddingVertical: layout.headerPillPadY,
       }}
     >
       {game.state === 'live' ? <LiveDot /> : null}
@@ -199,9 +200,9 @@ function FlipBox({ value, testID, ringed }: { value: number; testID: string; rin
               shadowOpacity: layout.headerScoreGlowOpacity,
               shadowRadius: layout.headerScoreGlowRadius,
               shadowOffset: { width: 0, height: 0 },
-              elevation: 8,
+              elevation: layout.headerScoreGlowElevation,
             }
-          : { shadowColor: colors.black, shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 }),
+          : layout.headerScoreShadow),
       }}
     >
       <Text71
@@ -299,7 +300,7 @@ function Scorers({ goals }: { goals: GoalVM[] }) {
       <Image
         source={ICON_BALL}
         accessible={false}
-        style={{ width: layout.headerBallIcon, height: layout.headerBallIcon, marginTop: space.s4 / 2 }}
+        style={{ width: layout.headerBallIcon, height: layout.headerBallIcon, marginTop: layout.headerBallTop }}
       />
       {column('away')}
     </View>
@@ -315,9 +316,9 @@ function CompactChip({ game }: { game: GameHeaderVM }) {
       testID="compact-state"
       style={{
         backgroundColor: live ? colors.primary : colors.surface10,
-        borderRadius: radii.r8 / 2,
+        borderRadius: layout.chipRadius,
         paddingHorizontal: layout.compactStateChipPadX,
-        paddingVertical: space.s4 / 2,
+        paddingVertical: layout.compactStateChipPadY,
       }}
     >
       <Text71 variant="badge11" color={live ? 'white' : 'textMuted'} numberOfLines={1}>
@@ -339,7 +340,8 @@ export function compactSummary(game: GameHeaderVM): string {
 }
 
 function Compact({ game }: { game: GameHeaderVM }) {
-  const score = game.state === 'scheduled' || game.state === 'postponed' || game.state === 'cancelled' ? null : game.score;
+  const off = game.state === 'postponed' || game.state === 'cancelled';
+  const score = game.state === 'scheduled' || off ? null : game.score;
   return (
     <View
       testID="game-header-compact"
@@ -350,7 +352,7 @@ function Compact({ game }: { game: GameHeaderVM }) {
     >
       <TeamCrest team={game.home} testID="compact-crest-home" size="xs" />
       <Text71 variant="title24" numberOfLines={1} testID="compact-score">
-        {score ? `${score.home} - ${score.away}` : formatTime(game.kickoff)}
+        {score ? `${score.home} - ${score.away}` : off ? GAME_HEADER_TEXT.versus : formatTime(game.kickoff)}
       </Text71>
       <TeamCrest team={game.away} testID="compact-crest-away" size="xs" />
       <CompactChip game={game} />
@@ -371,7 +373,7 @@ export function GameNavTitle({ game }: { game: Pick<GameHeaderVM, 'competitionNa
       {round ? (
         <View
           testID="competition-badge"
-          style={{ backgroundColor: colors.primary, borderRadius: radii.r8 / 2, paddingHorizontal: layout.compactStateChipPadX, paddingVertical: space.s4 / 2 }}
+          style={{ backgroundColor: colors.primary, borderRadius: layout.chipRadius, paddingHorizontal: layout.compactStateChipPadX, paddingVertical: layout.compactStateChipPadY }}
         >
           <Text71 variant="badge11" numberOfLines={1}>{round}</Text71>
         </View>
@@ -387,8 +389,6 @@ export type GameHeaderProps = {
   game: GameHeaderVM;
   /** 'full' (por omissão): antes, ao vivo ou terminado; 'compact': uma linha com emblemas, resultado e estado. */
   size?: 'full' | 'compact';
-  /** Só para a Agenda e a galeria, que usam o cabeçalho sem scroll. */
-  now?: Date;
 };
 
 export function GameHeader({ game, size = 'full' }: GameHeaderProps) {
@@ -399,7 +399,7 @@ export function GameHeader({ game, size = 'full' }: GameHeaderProps) {
   const showTimeline = hasScore && game.goals !== undefined;
   const lastMinute = game.state === 'finished' ? 90 : Math.min(game.minute ?? 0, 90);
   return (
-    <View testID="game-header" accessible={false} style={{ alignItems: 'center', gap: space.s16, paddingHorizontal: space.s16, paddingTop: space.s8, paddingBottom: space.s16 }}>
+    <View testID="game-header" accessible={false} style={{ alignItems: 'center', gap: space.s16, paddingHorizontal: space.s16, paddingTop: layout.headerPadTop, paddingBottom: space.s16 }}>
       <MomentPill game={game} />
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'stretch', justifyContent: 'center' }}>
         <Team team={game.home} side="home" />

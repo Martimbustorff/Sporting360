@@ -2,7 +2,7 @@
 // a 30 %). Linhas em `StatRow`; divisória de 1 px a 20 % entre linhas (500:28667).
 // SEM FIGMA: o esqueleto em branco enquanto carrega, o estado de erro, "Sem estatísticas para este jogo." (terminado,
 // adiado ou cancelado sem documento) e o aviso de cache.
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { StatRow } from '@/components/StatRow';
@@ -11,14 +11,13 @@ import { useMatchDetail } from '@/data/sports';
 import { uiState } from '@/lib/matchVM';
 import { STAT_ORDER, statRows } from '@/lib/stats';
 import { colors, layout, spacing } from '@/theme/tokens';
-import { useMatchScroll } from '@/components/match/MatchScroll';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const STATS_ERROR = 'Não foi possível carregar os dados.';
 const NO_STATS = 'Sem estatísticas para este jogo.';
 const CARD: Record<string, 'yellow' | 'red'> = { 'Yellow Cards': 'yellow', 'Red Cards': 'red' };
 
 export function StatsTab({ match }: { match: Match }) {
-  const scrollProps = useMatchScroll();
   const stats = useMatchDetail(match.id, 'statistics');
   const state = uiState(match.status);
   if (stats.status === 'loading') return <View testID="stats-loading" />;
@@ -31,8 +30,7 @@ export function StatsTab({ match }: { match: Match }) {
   const rows = statRows(doc, match.home.id, match.away.id);
   const rowKey = (i: number) => STAT_ORDER[i]?.key ?? String(i);
   return (
-    <ScrollView
-      {...scrollProps}
+    <MatchScrollView
       testID="stats-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl }}
     >
@@ -45,6 +43,6 @@ export function StatsTab({ match }: { match: Match }) {
           <StatRow {...r} card={CARD[rowKey(i)]} muted={preGame} />
         </View>
       ))}
-    </ScrollView>
+    </MatchScrollView>
   );
 }

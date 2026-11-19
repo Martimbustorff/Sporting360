@@ -1,7 +1,7 @@
 // SEM FIGMA: tab Vídeos sem frame vetorial; referência na imagem "Appstore S360" 818:20891 (get_design_context):
 // lista vertical de vídeos a toda a largura (margens de 14 px), miniatura e título. Composto com tokens: o rótulo do
 // tipo ("Golo", "Resumo", ...) a primary por cima de cada vídeo, o esqueleto em branco, os vazios e o aviso de cache.
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { isAllowedEmbed, VideoPlayer } from '@/components/VideoPlayer';
@@ -9,7 +9,7 @@ import type { Match, Video } from '@/data/schemas';
 import { useMatchVideos } from '@/data/sports';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
-import { useMatchScroll } from '@/components/match/MatchScroll';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const VIDEOS_ERROR = 'Não foi possível carregar os dados.';
 const EMPTY = 'Os vídeos aparecem depois dos lances.';
@@ -37,7 +37,6 @@ function byMinute(vs: Video[]): Video[] {
 }
 
 export function VideosTab({ match }: { match: Match }) {
-  const scrollProps = useMatchScroll();
   const videos = useMatchVideos(match.id);
   if (videos.status === 'loading') return <View testID="videos-loading" />;
   if (videos.status === 'error') return <EmptyState icon="info" text={VIDEOS_ERROR} />;
@@ -54,8 +53,7 @@ export function VideosTab({ match }: { match: Match }) {
   }
 
   return (
-    <ScrollView
-      {...scrollProps}
+    <MatchScrollView
       testID="videos-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: layout.videoListGap }}
     >
@@ -68,6 +66,6 @@ export function VideosTab({ match }: { match: Match }) {
           <VideoPlayer video={v} />
         </View>
       ))}
-    </ScrollView>
+    </MatchScrollView>
   );
 }

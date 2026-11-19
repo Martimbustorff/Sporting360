@@ -104,7 +104,7 @@ export default function Agenda() {
           accessibilityLabel="Próximo jogo"
           onPress={() => router.push(`/jogo/${next.id}`)}
         >
-          <GameHeader game={toGameHeaderVM(next)} now={now} />
+          <GameHeader game={toGameHeaderVM(next)} />
         </Touchable>
       ) : null}
       <View style={{ paddingHorizontal: spacing.screenX }}>

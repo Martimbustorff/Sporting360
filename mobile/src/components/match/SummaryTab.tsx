@@ -7,7 +7,7 @@
 // do estádio. A barra "TV/Transmissão Online" (655:31954) fica de fora: `matches` não tem canal de TV.
 // O texto `advice` da API (inglês) nunca se mostra.
 import { Image } from 'expo-image';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { EventRow } from '@/components/EventRow';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
@@ -25,7 +25,7 @@ import {
 } from '@/lib/prematch';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
-import { useMatchScroll } from '@/components/match/MatchScroll';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
 const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
@@ -253,11 +253,9 @@ function MatchInfo({ match }: { match: Match }) {
 }
 
 export function SummaryTab({ match }: { match: Match }) {
-  const scrollProps = useMatchScroll();
   const state = uiState(match.status);
   return (
-    <ScrollView
-      {...scrollProps}
+    <MatchScrollView
       testID="summary-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
     >
@@ -271,6 +269,6 @@ export function SummaryTab({ match }: { match: Match }) {
         <Events match={match} live={state !== 'finished'} />
       )}
       <MatchInfo match={match} />
-    </ScrollView>
+    </MatchScrollView>
   );
 }

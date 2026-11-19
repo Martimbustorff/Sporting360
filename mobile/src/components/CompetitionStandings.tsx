@@ -6,7 +6,8 @@
 // `table` para `bracket` a meio da época, Review Focus 5). A escolha guarda-se por competição até a app reiniciar
 // (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
 import { useReducer } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 import { router } from 'expo-router';
 import { BracketView } from '@/components/BracketView';
 import { EmptyState } from '@/components/EmptyState';
@@ -77,7 +78,7 @@ export function CompetitionStandings({
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 
   return (
-    <ScrollView
+    <MatchScrollView
       testID="competition-standings"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
     >
@@ -101,6 +102,6 @@ export function CompetitionStandings({
           <Body variant="tab" style={{ color: colors.primary }}>Ver competição</Body>
         </Touchable>
       ) : null}
-    </ScrollView>
+    </MatchScrollView>
   );
 }

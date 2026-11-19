@@ -25,11 +25,16 @@ require('react-native-gesture-handler/jestSetup');
 // Cobre só o que os componentes usam; estender aqui quando outra tarefa precisar de mais.
 jest.mock('react-native-worklets', () => ({ scheduleOnRN: (fn: (...a: unknown[]) => void, ...args: unknown[]) => fn(...args) }));
 jest.mock('react-native-reanimated', () => {
-  const { View } = require('react-native');
+  const { View, ScrollView } = require('react-native');
   const sv = <T,>(v: T) => { let cur = v; return { get: () => cur, set: (n: T) => { cur = n; } }; };
   return {
     __esModule: true,
-    default: { View, createAnimatedComponent: (c: unknown) => c },
+    default: { View, ScrollView, createAnimatedComponent: (c: unknown) => c },
+    // O handler corre no JS dos testes: o onScroll do worklet é passado tal e qual ao ScrollView.
+    useAnimatedScrollHandler: (h: any) => {
+      const fn = typeof h === 'function' ? h : h.onScroll;
+      return (e: any) => fn(e.nativeEvent ?? e);
+    },
     useSharedValue: (v: unknown) => require('react').useRef(sv(v)).current,
     useAnimatedStyle: (fn: () => object) => fn(),
     useReducedMotion: jest.fn(() => false),

@@ -1,10 +1,10 @@
 // Figma V7.1: 06 (4924:6268, cabeçalho completo ao vivo), 29 (4945:7833, antes do jogo), 08 (4933:7057, compacto com os
 // separadores fixos), 10 (4935:7111) e 34 (4947:9606, outra modalidade, sem separadores). O cabeçalho é o `GameHeader`; a
 // barra de separadores é o `Tabs mode="scroll"` e fica fixa por baixo; o conteúdo de cada separador trata do seu scroll e
-// avisa o cabeçalho (`useMatchScroll`), que fecha para a linha compacta.
+// avisa o cabeçalho (`MatchScrollView`), que fecha para a linha compacta.
 // SEM FIGMA: o esqueleto de carregamento, o aviso de cache (OfflineBanner) e a linha "Fonte: ...". O sino do Figma não
-// existe hoje neste ecrã (nenhuma ação), por isso não se desenha. Ao vivo, os pontos do cartão do prognóstico só aparecem
-// com os eventos de pontos do servidor.
+// existe hoje neste ecrã (nenhuma ação), por isso não se desenha. Ao vivo, os pontos do cartão do prognóstico são provisórios
+// (`provisionalPoints`); depois de liquidado mandam os eventos de pontos do servidor.
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -15,7 +15,7 @@ import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
-import { CollapsingHeader, CrossfadeCenter } from '@/components/match/CollapsingHeader';
+import { CrossfadeCenter, MatchDetailLayout } from '@/components/match/CollapsingHeader';
 import { LineupsTab } from '@/components/match/LineupsTab';
 import { MatchScrollProvider, useMatchScrollContext } from '@/components/match/MatchScroll';
 import { MvpTab } from '@/components/match/MvpTab';
@@ -30,6 +30,7 @@ import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
 import { FOOTBALL_TABS, type MatchTabKey } from '@/lib/matchTabs';
 import { goalsFromEvents, toGameHeaderVM } from '@/lib/matchVM';
 import { predictionPoints } from '@/lib/predictionPoints';
+import { provisionalNote, provisionalPoints } from '@/lib/provisionalPoints';
 import { sportLabel } from '@/lib/sports';
 import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
@@ -116,14 +117,21 @@ function useFootballHeaderVM(match: Match): GameHeaderVM {
   const pick = prediction.status === 'ready' ? prediction.data : null;
   const settledPoints =
     settlement.status === 'ready' && points.status === 'ready' ? predictionPoints(points.data) : null;
-  return useMemo(
-    () => ({
-      ...toGameHeaderVM(match),
-      goals: goals ? goalsFromEvents(goals, match.home.id) : [],
-      prediction: pick ? { home: pick.home, away: pick.away, points: settledPoints } : null,
-    }),
-    [match, goals, pick, settledPoints],
-  );
+  return useMemo(() => {
+    const vm = toGameHeaderVM(match);
+    // Ao vivo (e ao intervalo) os pontos são provisórios, com o resultado atual (frame 06). Depois do jogo só valem os
+    // pontos do servidor: terminado e por liquidar mostra só o palpite.
+    const running = (vm.state === 'live' || vm.state === 'halftime') && vm.score;
+    let prediction: GameHeaderVM['prediction'] = null;
+    if (pick) {
+      if (settledPoints != null) prediction = { home: pick.home, away: pick.away, points: settledPoints };
+      else if (running && vm.score) {
+        const p = provisionalPoints(pick, vm.score);
+        prediction = { home: pick.home, away: pick.away, points: p.total, note: provisionalNote(pick, p.kind) };
+      } else prediction = { home: pick.home, away: pick.away, points: null };
+    }
+    return { ...vm, goals: goals ? goalsFromEvents(goals, match.home.id) : [], prediction };
+  }, [match, goals, pick, settledPoints]);
 }
 
 /** Outras modalidades (spec 5.6, frame 34): só cabeçalho (competição, data, hora e local), sem separadores. */
@@ -148,24 +156,23 @@ function FootballDetail({ match, initialTab }: { match: Match; initialTab: Match
   const header = useFootballHeaderVM(match);
   const ActiveTab = TAB_VIEWS[tab];
   return (
-    <View style={{ flex: 1 }}>
-      <CollapsingHeader>
-        <GameHeader game={header} />
-      </CollapsingHeader>
-      <Tabs
-        mode="scroll"
-        items={FOOTBALL_TABS}
-        value={tab}
-        onChange={(k) => {
-          // Cada separador tem o seu scroll: ao mudar, o cabeçalho volta a abrir.
-          scroll?.reset();
-          setTab(k);
-        }}
-      />
-      <View style={{ flex: 1 }}>
-        <ActiveTab match={match} />
-      </View>
-    </View>
+    <MatchDetailLayout
+      header={<GameHeader game={header} />}
+      tabs={
+        <Tabs
+          mode="scroll"
+          items={FOOTBALL_TABS}
+          value={tab}
+          onChange={(k) => {
+            // Cada separador tem o seu scroll: ao mudar, o cabeçalho volta a abrir.
+            scroll?.reset();
+            setTab(k);
+          }}
+        />
+      }
+    >
+      <ActiveTab match={match} />
+    </MatchDetailLayout>
   );
 }
 

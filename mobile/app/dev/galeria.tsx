@@ -186,9 +186,9 @@ function Gallery() {
 
         <Section title="GameHeader">
           <Body variant="body">Agendado (equipa com nome longo)</Body>
-          <GameHeader game={SCHEDULED} now={NOW} />
+          <GameHeader game={SCHEDULED} />
           <Body variant="body">Ao vivo (ronda longa)</Body>
-          <GameHeader game={LIVE} now={NOW} />
+          <GameHeader game={LIVE} />
         </Section>
 
         <Section title="CompetitionBadge">

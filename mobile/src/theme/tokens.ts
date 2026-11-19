@@ -401,6 +401,23 @@ export const layout = {
   headerTeamColumn: 104,
   headerTeamGap: 8,
   headerPillRadius: 14,
+  headerPillPadLeft: 10,
+  headerPillPadRight: 12,
+  headerPillPadY: 5,
+  headerMomentGap: 16,
+  headerPadTop: 8,
+  headerScoreShadow: { shadowColor: colors.black, shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  headerScoreGlowElevation: 8,
+  headerBallTop: 2,
+  timelineMargin: 8,
+  timelineDotGap: 4,
+  timelineLabelWidth: 40,
+  timelineNowGlow: 8,
+  chipRadius: 4,
+  compactStateChipPadY: 2,
+  predictionMargin: 8,
+  predictionGap: 12,
+  predictionNoteGap: 8,
   headerPillBorder: 1,
   headerPillDot: 8,
   headerScoreBox: { width: 64, height: 80 },
@@ -430,8 +447,9 @@ export const layout = {
   matchLuz: { width: 680, height: 520, top: -90 }, // 4924:6269 "Luz", centrada no ecrã
   matchRings: { size: 560, top: -74, opacity: 0.22 }, // 4924:6270 "Anéis (marca)" a 22 %
   matchBackdropHeight: 520, // altura do cantinho da luz (4924:6269)
-  collapseRange: 120, // scroll (pt) até o cabeçalho completo estar fechado e o compacto totalmente visível
-  collapseCompactFrom: 0.5, // progresso a partir do qual o compacto é o rótulo acessível
+  collapseRange: 120, // SEM FIGMA: alcance de reserva enquanto a altura do cabeçalho completo não foi medida
+  collapseCompactFrom: 0.5, // progresso (scroll / altura do cabeçalho) a partir do qual o compacto é o rótulo acessível
+  collapseCompactExit: 0.4, // histerese: só volta ao completo abaixo disto
   tabsScrollPad: 24, // folga ao pôr o separador ativo à vista
   homeIndicator: 34, // iOS home indicator area included in Figma bottoms
   // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)

@@ -8,7 +8,7 @@
 // Task 17 (P52): com prognóstico (guardado ou acabado de enviar) há "Partilhar prognóstico", que abre o cartão
 // "S360 MATCHDAY" (ShareCard) numa folha com "Partilhar" e "Fechar", como na referência 818:20427.
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Modal, ScrollView, Text, View } from 'react-native';
+import { Modal, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
@@ -27,7 +27,7 @@ import { submitPrediction } from '@/services/game';
 import { shareMatchday } from '@/services/share';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
-import { useMatchScroll } from '@/components/match/MatchScroll';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const PREDICTION_TEXT = {
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
@@ -286,7 +286,6 @@ function MyPrediction({ home, away }: { home: number; away: number }) {
 }
 
 export function PredictionTab({ match }: { match: Match }) {
-  const scrollProps = useMatchScroll();
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const prediction = useMyPrediction(match.id, uid);
@@ -337,13 +336,12 @@ export function PredictionTab({ match }: { match: Match }) {
   }
 
   return (
-    <ScrollView
-      {...scrollProps}
+    <MatchScrollView
       testID="prediction-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
     >
       <OfflineBanner visible={offline} />
       {body}
-    </ScrollView>
+    </MatchScrollView>
   );
 }

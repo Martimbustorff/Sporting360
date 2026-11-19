@@ -1,42 +1,62 @@
-// SEM FIGMA (comportamento, notas 06 e 08): o cabeçalho completo fecha com o scroll do separador ativo, sem saltos: a
-// altura natural mede-se uma vez (onLayout) e a altura animada vai dela a 0 ao longo de `layout.collapseRange` pt, com a
-// opacidade a cair mais depressa. Os separadores ficam por baixo, fixos. Sem provider de scroll mostra o cabeçalho inteiro.
+// Bloco sobreposto do detalhe do jogo (ver MatchScroll.tsx): cabeçalho completo + separadores sobem juntos `min(y, H)`
+// com translateY; o cabeçalho completo esmorece mais depressa. O conteúdo fica numa janela constante por baixo.
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useMatchScrollContext } from '@/components/match/MatchScroll';
-import { layout } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
-export function CollapsingHeader({ children }: { children: ReactNode }) {
+/** Progresso 0 a 1 do colapso: scroll sobre a altura medida do cabeçalho completo. */
+function useCollapse() {
   const ctx = useMatchScrollContext();
-  const natural = useSharedValue(-1);
-  const style = useAnimatedStyle(() => {
-    const h = natural.get();
-    const y = ctx ? ctx.y.get() : 0;
-    const p = interpolate(y, [0, layout.collapseRange], [0, 1], Extrapolation.CLAMP);
-    return {
-      ...(h >= 0 ? { height: h * (1 - p) } : {}),
-      opacity: 1 - Math.min(1, p * 1.5),
-    };
+  const fallback = useSharedValue(0);
+  return { y: ctx?.y ?? fallback, height: ctx?.headerHeight ?? fallback };
+}
+
+export function MatchDetailLayout({ header, tabs, children }: { header: ReactNode; tabs: ReactNode; children: ReactNode }) {
+  const ctx = useMatchScrollContext();
+  const { y, height } = useCollapse();
+  const compact = ctx?.compact === true;
+  const slide = useAnimatedStyle(() => {
+    const h = height.get();
+    return { transform: [{ translateY: -Math.min(Math.max(y.get(), 0), h) }] };
+  });
+  const fade = useAnimatedStyle(() => {
+    const h = height.get();
+    const p = h > 0 ? Math.min(Math.max(y.get(), 0), h) / h : 0;
+    return { opacity: 1 - Math.min(1, p * 1.5) };
   });
   return (
-    <Animated.View testID="collapsing-header" style={[{ overflow: 'hidden' }, style]} pointerEvents={ctx?.compact ? 'none' : 'auto'}>
-      <View onLayout={(e) => natural.set(e.nativeEvent.layout.height)}>{children}</View>
-    </Animated.View>
+    <View testID="match-detail" style={{ flex: 1, overflow: 'hidden' }}>
+      <View style={{ flex: 1, paddingTop: ctx?.inset ?? 0 }}>{children}</View>
+      <Animated.View testID="collapsing-header" style={[{ position: 'absolute', top: 0, left: 0, right: 0 }, slide]} pointerEvents="box-none">
+        <Animated.View
+          style={fade}
+          pointerEvents={compact ? 'none' : 'auto'}
+          accessibilityElementsHidden={compact}
+          importantForAccessibility={compact ? 'no-hide-descendants' : 'auto'}
+          onLayout={(e) => ctx?.setHeaderHeight(e.nativeEvent.layout.height)}
+        >
+          {header}
+        </Animated.View>
+        <View style={{ backgroundColor: colors.bg }} onLayout={(e) => ctx?.setTabsHeight(e.nativeEvent.layout.height)}>{tabs}</View>
+      </Animated.View>
+    </View>
   );
 }
 
-/** Cabeçalho compacto e título da competição em cruzamento (4933:7267 / 4924:6365), no centro da barra de navegação. */
+/** Competição e resultado compacto em cruzamento (4924:6365 / 4933:7267), no centro da barra de navegação. */
 export function CrossfadeCenter({ title, compact }: { title: ReactNode; compact: ReactNode }) {
   const ctx = useMatchScrollContext();
+  const { y, height } = useCollapse();
   const isCompact = ctx?.compact === true;
   const titleStyle = useAnimatedStyle(() => {
-    const y = ctx ? ctx.y.get() : 0;
-    return { opacity: interpolate(y, [0, layout.collapseRange], [1, 0], Extrapolation.CLAMP) };
+    const h = height.get() > 0 ? height.get() : layout.collapseRange;
+    return { opacity: interpolate(y.get(), [0, h], [1, 0], Extrapolation.CLAMP) };
   });
   const compactStyle = useAnimatedStyle(() => {
-    const y = ctx ? ctx.y.get() : 0;
-    return { opacity: interpolate(y, [0, layout.collapseRange], [0, 1], Extrapolation.CLAMP) };
+    const h = height.get() > 0 ? height.get() : layout.collapseRange;
+    return { opacity: interpolate(y.get(), [0, h], [0, 1], Extrapolation.CLAMP) };
   });
   const fill = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' } as const;
   return (

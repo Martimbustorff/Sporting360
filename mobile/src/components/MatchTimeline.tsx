@@ -4,9 +4,9 @@
 import { View, type DimensionValue } from 'react-native';
 import type { GoalVM } from '@/lib/matchVM';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, space } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
-const LABEL_W = 40;
+const LABEL_W = layout.timelineLabelWidth;
 const pct = (minute: number): DimensionValue => `${Math.min(Math.max(minute, 0), 90) / 0.9}%`;
 
 export function MatchTimeline({
@@ -23,7 +23,7 @@ export function MatchTimeline({
   const track = layout.timelineTrack;
   const trackTop = layout.timelineTrackTop;
   return (
-    <View testID="match-timeline" style={{ alignSelf: 'stretch', height: layout.timelineHeight, marginHorizontal: space.s8 }}>
+    <View testID="match-timeline" style={{ alignSelf: 'stretch', height: layout.timelineHeight, marginHorizontal: layout.timelineMargin }}>
       <View
         style={{ position: 'absolute', left: 0, right: 0, top: trackTop, height: track, borderRadius: track / 2, backgroundColor: colors.surface20 }}
       />
@@ -53,7 +53,7 @@ export function MatchTimeline({
               position: 'absolute',
               left: pct(g.minute),
               marginLeft: -layout.timelineGoalDot / 2,
-              top: mine ? trackTop - layout.timelineGoalDot - space.s4 : trackTop + track + space.s4,
+              top: mine ? trackTop - layout.timelineGoalDot - layout.timelineDotGap : trackTop + track + layout.timelineDotGap,
               width: layout.timelineGoalDot,
               height: layout.timelineGoalDot,
               borderRadius: layout.timelineGoalDot / 2,
@@ -76,7 +76,7 @@ export function MatchTimeline({
             backgroundColor: colors.white,
             shadowColor: colors.primaryOnDark,
             shadowOpacity: 1,
-            shadowRadius: space.s8,
+            shadowRadius: layout.timelineNowGlow,
             shadowOffset: { width: 0, height: 0 },
           }}
         />

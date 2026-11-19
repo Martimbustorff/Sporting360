@@ -4,7 +4,7 @@
 // 655:31960), a lista de suplentes (número, nome, nota), o texto sobre quando saem os onzes, o esqueleto em branco,
 // o estado de erro, "Sem formações para este jogo." e o aviso de cache.
 import { router } from 'expo-router';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Pitch } from '@/components/Pitch';
@@ -15,7 +15,7 @@ import { uiState } from '@/lib/matchVM';
 import { pitchRows, ratingsMap } from '@/lib/pitch';
 import { Body, Display } from '@/theme/typography';
 import { layout, spacing } from '@/theme/tokens';
-import { useMatchScroll } from '@/components/match/MatchScroll';
+import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const LINEUPS_ERROR = 'Não foi possível carregar os dados.';
 const LINEUPS_SOON = 'Os onzes são conhecidos cerca de uma hora antes do jogo.';
@@ -60,7 +60,6 @@ function SubRow({ p, rating, onPress }: { p: LineupPlayer; rating?: string; onPr
 }
 
 export function LineupsTab({ match }: { match: Match }) {
-  const scrollProps = useMatchScroll();
   const lineups = useMatchDetail(match.id, 'lineups');
   const players = useMatchDetail(match.id, 'players');
   const state = uiState(match.status);
@@ -84,8 +83,7 @@ export function LineupsTab({ match }: { match: Match }) {
   ];
 
   return (
-    <ScrollView
-      {...scrollProps}
+    <MatchScrollView
       testID="lineups-tab"
       contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
     >
@@ -121,6 +119,6 @@ export function LineupsTab({ match }: { match: Match }) {
           </View>
         ) : null,
       )}
-    </ScrollView>
+    </MatchScrollView>
   );
 }

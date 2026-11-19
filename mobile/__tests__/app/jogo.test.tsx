@@ -166,7 +166,36 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
     await render(ui());
     expect(screen.getByText('L. Suárez 23’')).toBeTruthy();
     expect(screen.getByTestId('prediction-pick').props.children).toBe('2-1');
+    // Ao vivo 2-1 com palpite 2-1: pontos provisórios (participação 1 + exato 3).
+    expect(within(screen.getByTestId('prediction-points')).getByText('+4 PTS')).toBeTruthy();
+    expect(screen.getByText('Estás a acertar no resultado exato')).toBeTruthy();
+  });
+
+  it.each([
+    [{ home: 1, away: 0 }, '+2 PTS', 'Estás a acertar no vencedor'],
+    [{ home: 0, away: 3 }, '+1 PTS', 'Para já só tens o ponto da participação'],
+  ])('ao vivo com palpite %j mostra %s e a linha certa', async (pick, chip, note) => {
+    mockMatch.current = ready(liveMatch());
+    mockUser.current.prediction = { status: 'ready', data: { gameId: '1001', ...pick } };
+    await render(ui());
+    expect(within(screen.getByTestId('prediction-points')).getByText(chip)).toBeTruthy();
+    expect(screen.getByText(note)).toBeTruthy();
+  });
+
+  it('ao vivo empatado com palpite de empate diz "no empate"', async () => {
+    mockMatch.current = ready({ ...liveMatch(), score: { home: 1, away: 1, halftime: null, extratime: null, penalty: null } });
+    mockUser.current.prediction = { status: 'ready', data: { gameId: '1001', home: 0, away: 0 } };
+    await render(ui());
+    expect(screen.getByText('Estás a acertar no empate')).toBeTruthy();
+  });
+
+  it('terminado e ainda por liquidar mostra só o palpite, sem pontos', async () => {
+    mockMatch.current = ready({ ...liveMatch(), status: 'FT' as GameStatus });
+    mockUser.current.prediction = { status: 'ready', data: { gameId: '1001', home: 2, away: 1 } };
+    await render(ui());
+    expect(screen.getByTestId('prediction-pick')).toBeTruthy();
     expect(screen.queryByTestId('prediction-points')).toBeNull();
+    expect(screen.queryByTestId('prediction-note')).toBeNull();
   });
 
   it('sem prognóstico o cartão fica escondido', async () => {
@@ -192,7 +221,7 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
       },
     };
     await render(ui());
-    expect(within(screen.getByTestId('prediction-points')).getByText('+4 pts')).toBeTruthy();
+    expect(within(screen.getByTestId('prediction-points')).getByText('+4 PTS')).toBeTruthy();
   });
 
   it('o cabeçalho completo e os separadores aparecem juntos; o compacto está escondido', async () => {

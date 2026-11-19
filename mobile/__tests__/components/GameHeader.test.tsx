@@ -126,9 +126,9 @@ describe('GameHeader completo, ao vivo (frame 06)', () => {
     expect(screen.queryByTestId('prediction-points')).toBeNull();
   });
 
-  it('com pontos liquidados mostra o selo "+3 pts"', async () => {
+  it('com pontos liquidados mostra o selo "+4 PTS"', async () => {
     await render(<GameHeader game={{ ...live, state: 'finished', prediction: { home: 2, away: 1, points: 4 } }} />);
-    expect(within(screen.getByTestId('prediction-points')).getByText('+4 pts')).toBeTruthy();
+    expect(within(screen.getByTestId('prediction-points')).getByText('+4 PTS')).toBeTruthy();
   });
 
   it('halftime mostra Intervalo e o resultado, sem minuto', async () => {
@@ -215,5 +215,10 @@ describe('nomes longos a 320 pt', () => {
     await render(<GameNavTitle game={base} />);
     expect(screen.getByText('J16')).toBeTruthy();
     expect(screen.getByText('Liga Portugal')).toBeTruthy();
+  });
+
+  it.each(['postponed', 'cancelled'] as const)('compacto %s mostra VS e não a hora', async (state) => {
+    await render(<GameHeader game={{ ...base, state }} size="compact" />);
+    expect(screen.getByTestId('compact-score').props.children).toBe('VS');
   });
 });

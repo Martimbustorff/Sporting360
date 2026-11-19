@@ -21,10 +21,15 @@ export function Tabs<K extends string>({
   // Modo scroll: o separador ativo faz scroll para ficar à vista (também quando muda por `?tab=` ou por toque).
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
   const spans = useRef<Record<string, { x: number; width: number }>>({});
+  // Janela visível do scroll (largura e deslocamento atuais): só se faz scroll quando o separador não está todo à vista.
+  const view = useRef({ width: 0, x: 0 });
   const reveal = useCallback(
     (key: string) => {
       const span = spans.current[key];
-      if (mode === 'scroll' && span) scroller.current?.scrollTo({ x: Math.max(0, span.x - layout.tabsScrollPad), animated: true });
+      if (mode !== 'scroll' || !span) return;
+      const { width, x } = view.current;
+      const visible = width > 0 && span.x >= x && span.x + span.width <= x + width;
+      if (!visible) scroller.current?.scrollTo({ x: Math.max(0, span.x - layout.tabsScrollPad), animated: true });
     },
     [mode],
   );
@@ -76,6 +81,14 @@ export function Tabs<K extends string>({
           horizontal
           showsHorizontalScrollIndicator={false}
           accessibilityRole="tablist"
+          testID="tabs-scroll"
+          scrollEventThrottle={16}
+          onLayout={(e) => {
+            view.current.width = e.nativeEvent.layout.width;
+          }}
+          onScroll={(e) => {
+            view.current.x = e.nativeEvent.contentOffset.x;
+          }}
           contentContainerStyle={{ paddingHorizontal: space.s16, gap: space.s24 }}
         >
           {tabs}

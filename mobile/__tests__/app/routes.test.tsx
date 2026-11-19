@@ -19,14 +19,14 @@ jest.mock('@/data/hooks', () => ({
 // expo-router/testing-library troca o mock de Reanimated pelo oficial, que falha em Jest: a folha (Sheet) fica de fora.
 jest.mock('@/components/HomeGameboxSheet', () => ({ HomeGameboxSheet: () => null, useGameboxSheetCollapsedHeight: () => 116 }));
 // Plano 7 T6: o expo-router/testing-library troca o Reanimated por {}; o scroll/colapso do cabeçalho do jogo
-// (Reanimated) é testado em jogo.test e MatchScroll.test. Aqui só passa os filhos.
+// (Reanimated) é testado em MatchScroll.test e jogo.test. Aqui só passa os filhos.
 jest.mock('@/components/match/MatchScroll', () => ({
   MatchScrollProvider: ({ children }: { children: React.ReactNode }) => children,
   useMatchScrollContext: () => null,
-  useMatchScroll: () => ({ scrollEventThrottle: 16 }),
+  MatchScrollView: jest.requireActual('react-native').ScrollView,
 }));
 jest.mock('@/components/match/CollapsingHeader', () => ({
-  CollapsingHeader: ({ children }: { children: React.ReactNode }) => children,
+  MatchDetailLayout: ({ header, tabs, children }: { header: React.ReactNode; tabs: React.ReactNode; children: React.ReactNode }) => [header, tabs, children],
   CrossfadeCenter: ({ title }: { title: React.ReactNode }) => title,
 }));
 // Task 6: a folha de consentimento (também uma Sheet) tem o mesmo problema; testada em AnalyticsConsentSheet.test.

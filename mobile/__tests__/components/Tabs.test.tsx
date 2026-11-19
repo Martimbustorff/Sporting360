@@ -60,6 +60,24 @@ describe('Tabs', () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ x: 16 + 3 * 104 - layout.tabsScrollPad, animated: true });
   });
 
+  it('scroll mode: só faz scroll quando o separador ativo não está todo à vista', async () => {
+    const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
+    scrollTo.mockClear();
+    const many = ['a', 'b', 'c', 'd'].map((k) => ({ key: k, label: k.toUpperCase() }));
+    const { rerender } = await render(<Tabs items={many} value="a" onChange={() => {}} mode="scroll" />);
+    await fireEvent(screen.getByTestId('tabs-scroll'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 48 } } });
+    for (const [i, t] of screen.getAllByRole('tab').entries()) {
+      await fireEvent(t, 'layout', { nativeEvent: { layout: { x: 16 + i * 104, y: 0, width: 80, height: 48 } } });
+    }
+    scrollTo.mockClear();
+    // "c" ocupa 224 a 304, dentro dos 360 visíveis: não mexe.
+    await rerender(<Tabs items={many} value="c" onChange={() => {}} mode="scroll" />);
+    expect(scrollTo).not.toHaveBeenCalled();
+    // "d" ocupa 328 a 408, cortado: faz scroll.
+    await rerender(<Tabs items={many} value="d" onChange={() => {}} mode="scroll" />);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+  });
+
   it('equal mode nunca faz scroll', async () => {
     const scrollTo = (ScrollView as unknown as { prototype: { scrollTo: jest.Mock } }).prototype.scrollTo;
     scrollTo.mockClear();
