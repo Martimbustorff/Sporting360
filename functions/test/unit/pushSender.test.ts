@@ -28,15 +28,15 @@ function messaging(o: { badCode?: string; throwOnBatch?: number } = {}): FakeMes
 describe("fcmSender", () => {
   it("toTopic manda fcmMessage({ topic })", async () => {
     const m = messaging();
-    await fcmSender(m).toTopic("push_news", MSG);
+    await fcmSender(m).toTopic("push_mvpOpen", MSG);
     expect(m.send).toHaveBeenCalledTimes(1);
-    expect(m.send.mock.calls[0][0]).toMatchObject({ topic: "push_news", data: { route: "/jogo/1" } });
+    expect(m.send.mock.calls[0][0]).toMatchObject({ topic: "push_mvpOpen", data: { route: "/jogo/1" } });
   });
 
   it("toTopic lança se o FCM falhar", async () => {
     const m = messaging();
     m.send.mockRejectedValueOnce(new Error("quota"));
-    await expect(fcmSender(m).toTopic("push_goals", MSG)).rejects.toThrow("quota");
+    await expect(fcmSender(m).toTopic("push_mvpOpen", MSG)).rejects.toThrow("quota");
   });
 
   it("toTokens parte em lotes de 500 e junta invalid", async () => {

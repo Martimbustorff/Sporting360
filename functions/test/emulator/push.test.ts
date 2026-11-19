@@ -4,7 +4,6 @@ import type { EventItem } from "../../src/football/mapFixture";
 import type { MatchDoc } from "../../src/model/types";
 import { sendOnce } from "../../src/push/markers";
 import { dispatchMatchPushes } from "../../src/push/matchPush";
-import { NEWS_DAILY_CAP, NEWS_MAX_AGE_MS, NEWS_MIN_GAP_MS, NEWS_QUIET_FROM, NEWS_QUIET_TO, pushLatestNews } from "../../src/push/newsPush";
 import { REMINDER_LATEST_MS, REMINDER_LEAD_MS, remindersOn, runPredictionReminder } from "../../src/push/predictionReminder";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import { fakeSender } from "../helpers/fakeSender";
@@ -111,114 +110,25 @@ function ev(over: Partial<EventItem> = {}): EventItem {
 const at = (min: number) => new Date(KO.getTime() + min * MIN);
 
 describe("dispatchMatchPushes", () => {
-  it("LIVE minuto 2: push_matchStart uma vez, mesmo chamado 2 vezes", async () => {
+  it("jogo ao vivo com golos e elapsed baixo: nada para push_matchStart nem push_goals", async () => {
     const f = fakeSender();
-    const m = liveMatch();
-    expect((await dispatchMatchPushes(db, f.sender, m, [], at(2))).sent).toEqual(["matchStart"]);
-    expect((await dispatchMatchPushes(db, f.sender, m, [], at(2))).sent).toEqual([]);
-    expect(f.topics).toHaveLength(1);
-    expect(f.topics[0]).toMatchObject({ topic: "push_matchStart", msg: { route: "/jogo/9002" } });
-    expect((await db.doc("ingestState/match_9002").get()).get("push.matchStartSentAt")).toBeInstanceOf(Timestamp);
-  });
-
-  it("LIVE minuto 60 sem marca: nada de matchStart (ligado a meio do jogo)", async () => {
-    const f = fakeSender();
-    await dispatchMatchPushes(db, f.sender, liveMatch({ elapsed: 60, statusRaw: "2H" }), [], at(75));
+    const m = liveMatch({ elapsed: 2, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
+    const events = [ev({ minute: 1, playerId: "1", playerName: "Trincão" }), ev({ minute: 2, playerId: "2", playerName: "Pote" })];
+    const r = await dispatchMatchPushes(db, f.sender, m, events, at(3));
+    await dispatchMatchPushes(db, f.sender, m, events, at(4));
+    expect(r).toEqual({ sent: [], failed: [] });
     expect(f.topics).toEqual([]);
+    const d = (await db.doc("ingestState/match_9002").get()).data();
+    expect(d?.push?.matchStartSentAt).toBeUndefined();
+    expect(d?.push?.goals).toBeUndefined();
   });
 
-  it("HT nunca envia matchStart", async () => {
+  it("golo dos descontos em FT, logo após o apito: também nada", async () => {
     const f = fakeSender();
-    await dispatchMatchPushes(db, f.sender, liveMatch({ status: "HT", statusRaw: "HT", elapsed: 0 }), [], at(50));
-    await dispatchMatchPushes(db, f.sender, liveMatch({ status: "NS", statusRaw: "NS", elapsed: null }), [], at(0));
-    expect(f.topics).toEqual([]);
-  });
-
-  it("dois golos novos: dois push_goals; repetir não envia mais", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
-    const events = [ev({ minute: 20, playerId: "1", playerName: "Trincão" }), ev({ minute: 28, playerId: "2", playerName: "Pote" })];
-    const r = await dispatchMatchPushes(db, f.sender, m, events, at(31));
-    expect(r.sent).toEqual(["goal:9002_20_1", "goal:9002_28_2"]);
-    await dispatchMatchPushes(db, f.sender, m, events, at(31));
-    expect(f.topics.map((t) => t.topic)).toEqual(["push_goals", "push_goals"]);
-    expect(f.topics[0].msg.body).toBe("Trincão (20'). Sporting CP 2-0 Benfica");
-  });
-
-  it("nunca mais golos do que o resultado do Sporting (golo anulado ainda nos lances)", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
-    const events = [ev({ minute: 20, playerId: "1" }), ev({ minute: 25, playerId: "2" })];
-    await dispatchMatchPushes(db, f.sender, m, events, at(31));
-    await dispatchMatchPushes(db, f.sender, m, events, at(32));
-    expect(f.topics).toHaveLength(1);
-    // O minuto do lance muda na API (chave nova): o orçamento continua a travar.
-    await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 21, playerId: "1" })], at(33));
-    expect(f.topics).toHaveLength(1);
-  });
-
-  it("correção da API muda a chave de um golo já enviado: sai só o golo novo", async () => {
-    const f = fakeSender();
-    await db.doc("ingestState/match_9002").set({ push: { goals: { "9002_23_P1": Timestamp.fromDate(at(24)) } } });
-    const m = liveMatch({ elapsed: 31, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
-    const events = [ev({ minute: 23, playerId: "P2", playerName: "Trincão" }), ev({ minute: 30, playerId: "P3", playerName: "Pote" })];
-    const r = await dispatchMatchPushes(db, f.sender, m, events, at(32));
-    expect(r.sent).toEqual(["goal:9002_30_P3"]);
-    expect(f.topics.map((t) => t.msg.body)).toEqual(["Pote (30'). Sporting CP 2-0 Benfica"]);
-  });
-
-  it("golo anulado pelo VAR ainda nos lances: sai o golo real mais recente", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
-    const events = [
-      ev({ minute: 20, playerId: "1", playerName: "Anulado" }),
-      ev({ minute: 20, type: "var", detail: "Goal cancelled", playerId: "1" }),
-      ev({ minute: 25, playerId: "2", playerName: "Real" }),
-    ];
-    await dispatchMatchPushes(db, f.sender, m, events, at(31));
-    expect(f.topics.map((t) => t.msg.body)).toEqual(["Real (25'). Sporting CP 1-0 Benfica"]);
-  });
-
-  it("orçamento de 2 com 3 golos por enviar: os 2 mais recentes, por ordem", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
-    const events = [ev({ minute: 18, playerId: "1" }), ev({ minute: 22, playerId: "2" }), ev({ minute: 27, playerId: "3" })];
-    const r = await dispatchMatchPushes(db, f.sender, m, events, at(31));
-    expect(r.sent).toEqual(["goal:9002_22_2", "goal:9002_27_3"]);
-  });
-
-  it("LIVE com elapsed nulo: não decide o início do jogo", async () => {
-    const f = fakeSender();
-    await dispatchMatchPushes(db, f.sender, liveMatch({ elapsed: null }), [], at(40));
-    expect(f.topics).toEqual([]);
-  });
-
-  it("golo com mais de 15 min de jogo não sai (elapsed 70, golo aos 20)", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 70, statusRaw: "2H", score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
-    await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 20 })], at(85));
-    expect(f.topics).toEqual([]);
-  });
-
-  it("golo dos descontos visto já em FT, 5 min depois do apito: sai; 15 min depois: não", async () => {
     const finishedAt = at(110);
     const m = liveMatch({ id: "9003", status: "FT", statusRaw: "FT", elapsed: 90, finishedAt, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
-    const late = new Date(finishedAt.getTime() + 15 * MIN);
-    const f1 = fakeSender();
-    await dispatchMatchPushes(db, f1.sender, m, [ev({ minute: 90, extra: 4 })], late);
-    expect(f1.topics.filter((t) => t.topic === "push_goals")).toEqual([]);
-    const f2 = fakeSender();
-    await dispatchMatchPushes(db, f2.sender, m, [ev({ minute: 90, extra: 4 })], new Date(finishedAt.getTime() + 5 * MIN));
-    const goals = f2.topics.filter((t) => t.topic === "push_goals");
-    expect(goals).toHaveLength(1);
-    expect(goals[0].msg.body).toBe("Gyökeres (90+4'). Sporting CP 1-0 Benfica");
-  });
-
-  it("golo do adversário nunca sai", async () => {
-    const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 1, away: 1, halftime: null, extratime: null, penalty: null } });
-    await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 25, teamId: "211", playerId: "9" }), ev({ minute: 26, teamId: "228", detail: "Own Goal", playerId: "8" })], at(31));
-    expect(f.topics).toEqual([]);
+    await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 90, extra: 4 })], new Date(finishedAt.getTime() + 5 * MIN));
+    expect(f.topics.filter((t) => t.topic !== "push_mvpOpen")).toEqual([]);
   });
 
   it("MVP aberto (LIVE 80'): push_mvpOpen uma vez com /jogo/9002?tab=mvp; aberto outra vez em FT: não repete", async () => {
@@ -241,15 +151,12 @@ describe("dispatchMatchPushes", () => {
     expect((await db.doc("ingestState/match_9002").get()).exists).toBe(false);
   });
 
-  it("FCM falha no golo: failed, e a chamada seguinte envia", async () => {
+  it("FCM falha no MVP: failed, e a chamada seguinte envia", async () => {
     const f = fakeSender();
-    const m = liveMatch({ elapsed: 30, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
-    await db.doc("ingestState/match_9002").set({ push: { matchStartSentAt: Timestamp.fromDate(at(1)) } });
+    const m = liveMatch({ elapsed: 80, statusRaw: "2H" });
     f.failNext(1);
-    const r1 = await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 25 })], at(31));
-    expect(r1).toEqual({ sent: [], failed: ["goal:9002_25_7"] });
-    const r2 = await dispatchMatchPushes(db, f.sender, m, [ev({ minute: 25 })], at(32));
-    expect(r2.sent).toEqual(["goal:9002_25_7"]);
+    expect(await dispatchMatchPushes(db, f.sender, m, [], at(96))).toEqual({ sent: [], failed: ["mvpOpen"] });
+    expect((await dispatchMatchPushes(db, f.sender, m, [], at(97))).sent).toEqual(["mvpOpen"]);
     expect(f.topics).toHaveLength(1);
   });
 });
@@ -406,104 +313,5 @@ describe("runPredictionReminder", () => {
     expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
     expect(f.tokens).toEqual([]);
     expect((await db.doc("ingestState/match_9002").get()).get("push.reminderSentAt")).toBeUndefined();
-  });
-});
-
-describe("pushLatestNews", () => {
-  // Novembro: Lisboa está em UTC+0.
-  const T = (hhmm: string, day = "2026-11-23") => new Date(`${day}T${hhmm}:00Z`);
-  async function news(id: string, publishedAt: Date, sport = "football") {
-    await db.doc(`news/${id}`).set({ id, title: `Título ${id}`, summary: `Resumo ${id}`, sport, publishedAt, url: `https://x.pt/${id}` });
-  }
-
-  it("constantes", () => {
-    expect(NEWS_DAILY_CAP).toBe(2);
-    expect(NEWS_MAX_AGE_MS).toBe(2 * 60 * MIN);
-    expect(NEWS_MIN_GAP_MS).toBe(3 * 60 * MIN);
-    expect([NEWS_QUIET_FROM, NEWS_QUIET_TO]).toEqual([22, 9]);
-  });
-
-  it("envia a notícia de futebol mais recente com menos de 2 h para push_news", async () => {
-    await news("n-antiga", T("09:30"));
-    await news("n-recente", T("09:50"));
-    const f = fakeSender();
-    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(1);
-    expect(f.topics).toHaveLength(1);
-    expect(f.topics[0]).toMatchObject({ topic: "push_news", msg: { title: "Título n-recente", body: "Resumo n-recente", route: "/noticias?id=n-recente" } });
-    const day = (await db.doc("ingestState/push_news_2026-11-23").get()).data()!;
-    expect(day.count).toBe(1);
-    expect(Object.keys(day.sent)).toEqual(["n-recente"]);
-  });
-
-  it("ignora outras modalidades e notícias com mais de 2 h", async () => {
-    await news("futsal", T("09:55"), "futsal");
-    await news("velha", T("07:59"));
-    const f = fakeSender();
-    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(0);
-    expect(f.topics).toEqual([]);
-  });
-
-  it("a mesma notícia nunca sai duas vezes", async () => {
-    await news("n1", T("09:50"));
-    const f = fakeSender();
-    await pushLatestNews(db, f.sender, T("10:00"));
-    // Mesmo com o intervalo cumprido, não há notícia nova com menos de 2 h.
-    await news("n1", T("11:55"));
-    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(0);
-    expect(f.topics).toHaveLength(1);
-  });
-
-  it("no máximo 2 por dia, com 3 h entre elas", async () => {
-    const f = fakeSender();
-    await news("a", T("09:55"));
-    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(1);
-    await news("b", T("10:55"));
-    expect((await pushLatestNews(db, f.sender, T("11:00"))).count).toBe(0);
-    await news("c", T("12:55"));
-    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(1);
-    await news("d", T("16:55"));
-    expect((await pushLatestNews(db, f.sender, T("17:00"))).count).toBe(0);
-    await news("e", T("09:55", "2026-11-24"));
-    expect((await pushLatestNews(db, f.sender, T("10:00", "2026-11-24"))).count).toBe(1);
-    expect(f.topics.map((t) => t.msg.route)).toEqual(["/noticias?id=a", "/noticias?id=c", "/noticias?id=e"]);
-  });
-
-  it("23:30 e 08:59 de Lisboa: não envia; 09:00 envia", async () => {
-    const f = fakeSender();
-    await news("noite", T("23:00"));
-    expect((await pushLatestNews(db, f.sender, T("23:30"))).count).toBe(0);
-    await news("manha", T("08:00", "2026-11-24"));
-    expect((await pushLatestNews(db, f.sender, T("08:59", "2026-11-24"))).count).toBe(0);
-    expect((await pushLatestNews(db, f.sender, T("09:00", "2026-11-24"))).count).toBe(1);
-    expect(f.topics[0].msg.route).toBe("/noticias?id=manha");
-  });
-
-  it("hora de verão: 21:30 UTC em julho são 22:30 em Lisboa e não envia", async () => {
-    const f = fakeSender();
-    await news("verao", new Date("2026-07-10T21:00:00Z"));
-    expect((await pushLatestNews(db, f.sender, new Date("2026-07-10T21:30:00Z"))).count).toBe(0);
-  });
-
-  it("FCM falha: count fica como estava e a execução seguinte envia", async () => {
-    const f = fakeSender();
-    await news("a", T("09:55"));
-    await pushLatestNews(db, f.sender, T("10:00"));
-    await news("b", T("12:55"));
-    f.failNext(1);
-    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(0);
-    const day = (await db.doc("ingestState/push_news_2026-11-23").get()).data()!;
-    expect(day.count).toBe(1);
-    expect(Object.keys(day.sent)).toEqual(["a"]);
-    expect((day.lastAt as Timestamp).toDate()).toEqual(T("10:00"));
-    expect((await pushLatestNews(db, f.sender, T("13:15"))).count).toBe(1);
-    expect(f.topics.map((t) => t.msg.route)).toEqual(["/noticias?id=a", "/noticias?id=b"]);
-  });
-
-  it("duas execuções em paralelo enviam uma vez", async () => {
-    const f = fakeSender();
-    await news("a", T("09:55"));
-    const r = await Promise.all([pushLatestNews(db, f.sender, T("10:00")), pushLatestNews(db, f.sender, T("10:00"))]);
-    expect(r.map((x) => x.count).sort()).toEqual([0, 1]);
-    expect(f.topics).toHaveLength(1);
   });
 });

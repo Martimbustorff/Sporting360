@@ -1,13 +1,9 @@
-import type { EventItem } from "../../src/football/mapFixture";
 import type { MatchDoc } from "../../src/model/types";
 import {
   PUSH_TOPICS,
   cleanText,
   fcmMessage,
-  goalMessage,
-  matchStartMessage,
   mvpOpenMessage,
-  newsMessage,
   predictionReminderMessage,
 } from "../../src/push/messages";
 
@@ -30,54 +26,9 @@ const m: MatchDoc = {
   source: { provider: "api-football", id: "9002" },
 };
 
-function goal(over: Partial<EventItem> = {}): EventItem {
-  return {
-    minute: 10,
-    extra: null,
-    teamId: "228",
-    playerId: null,
-    playerName: null,
-    assistId: null,
-    assistName: null,
-    type: "goal",
-    detail: "Normal Goal",
-    comments: null,
-    ...over,
-  };
-}
-
 const DASHES = /[\u2013\u2014]/;
 
 describe("push messages", () => {
-  it("início do jogo", () =>
-    expect(matchStartMessage(m)).toEqual({
-      title: "Começou o jogo",
-      body: "Sporting CP vs Benfica. Acompanha ao vivo na S360.",
-      route: "/jogo/9002",
-    }));
-
-  it("golo com marcador e minuto", () =>
-    expect(goalMessage(m, goal({ minute: 23, playerName: "Pedro Gonçalves" }))).toEqual({
-      title: "Golo do Sporting!",
-      body: "Pedro Gonçalves (23'). Sporting CP 2-1 Benfica",
-      route: "/jogo/9002",
-    }));
-
-  it("golo nos descontos", () =>
-    expect(goalMessage(m, goal({ minute: 90, extra: 4, playerName: "Gyökeres" })).body).toBe(
-      "Gyökeres (90+4'). Sporting CP 2-1 Benfica",
-    ));
-
-  it("autogolo e marcador desconhecido", () => {
-    expect(goalMessage(m, goal({ minute: 10, detail: "Own Goal", teamId: "211", playerName: "Otamendi" })).body).toBe(
-      "Autogolo (10'). Sporting CP 2-1 Benfica",
-    );
-    expect(goalMessage(m, goal({ minute: 10, detail: "own goal", teamId: "211", playerName: "Otamendi" })).body).toBe(
-      "Autogolo (10'). Sporting CP 2-1 Benfica",
-    );
-    expect(goalMessage(m, goal({ minute: 10, playerName: null })).body).toBe("Golo (10'). Sporting CP 2-1 Benfica");
-  });
-
   it("MVP", () =>
     expect(mvpOpenMessage(m)).toEqual({
       title: "A votação do MVP está aberta",
@@ -97,31 +48,17 @@ describe("push messages", () => {
     );
   });
 
-  it("notícia: título limpo e cortado, resumo ou texto de recurso", () => {
-    const n = newsMessage({ id: "record-pt-abc", title: "Rúben \u2014 o regresso", summary: "x".repeat(300) });
-    expect(n.title).toBe("Rúben - o regresso");
-    expect(n.body.length).toBeLessThanOrEqual(141);
-    expect(n.route).toBe("/noticias?id=record-pt-abc");
-    expect(newsMessage({ id: "a", title: "T", summary: "" }).body).toBe("Lê a notícia na S360.");
-    expect(newsMessage({ id: "a", title: "T", summary: null }).body).toBe("Lê a notícia na S360.");
-    expect(newsMessage({ id: "a", title: "T" }).body).toBe("Lê a notícia na S360.");
-    expect(newsMessage({ id: "a b/c", title: "T" }).route).toBe("/noticias?id=a%20b%2Fc");
-    expect(newsMessage({ id: "a", title: "y".repeat(200) }).title.length).toBeLessThanOrEqual(101);
-  });
-
   it("cleanText troca travessões e junta espaços", () => {
     expect(cleanText("  a \u2013 b\n\n c  ", 100)).toBe("a - b c");
+    expect(cleanText("x".repeat(300), 140).length).toBeLessThanOrEqual(141);
   });
 
   it("nenhum texto tem travessões", () => {
     const all = [
-      matchStartMessage(m),
-      goalMessage(m, goal({ minute: 23, playerName: "Pedro \u2014 Gonçalves" })),
-      goalMessage(m, goal({ minute: 10, detail: "Own Goal", teamId: "211" })),
       mvpOpenMessage(m),
+      mvpOpenMessage({ ...m, away: { id: "1", name: "Clube \u2013 Teste", logo: null } }),
       predictionReminderMessage(m),
-      newsMessage({ id: "x", title: "A \u2013 B \u2014 C", summary: "d \u2014 e" }),
-      matchStartMessage({ ...m, away: { id: "1", name: "Clube \u2013 Teste", logo: null } }),
+      predictionReminderMessage({ ...m, home: { id: "1", name: "A \u2014 B", logo: null } }),
     ];
     for (const msg of all) {
       expect(msg.title).not.toMatch(DASHES);
@@ -130,19 +67,18 @@ describe("push messages", () => {
   });
 
   it("payload FCM: só route em data, sem uid nem email", () => {
-    const p = fcmMessage({ topic: "push_goals" }, matchStartMessage(m));
+    const p = fcmMessage({ topic: "push_mvpOpen" }, mvpOpenMessage(m));
     expect(p).toMatchObject({
-      topic: "push_goals",
-      notification: { title: "Começou o jogo" },
-      data: { route: "/jogo/9002" },
+      topic: "push_mvpOpen",
+      notification: { title: "A votação do MVP está aberta" },
+      data: { route: "/jogo/9002?tab=mvp" },
       android: { priority: "high" },
       apns: { payload: { aps: { sound: "default" } } },
     });
     expect(Object.keys(p.data!)).toEqual(["route"]);
-    expect(Object.keys(fcmMessage({ token: "t1" }, matchStartMessage(m)))).toEqual(expect.arrayContaining(["token"]));
-    expect(Object.keys(fcmMessage({ token: "t1" }, matchStartMessage(m)))).not.toContain("topic");
+    expect(Object.keys(fcmMessage({ token: "t1" }, predictionReminderMessage(m)))).toEqual(expect.arrayContaining(["token"]));
+    expect(Object.keys(fcmMessage({ token: "t1" }, predictionReminderMessage(m)))).not.toContain("topic");
   });
 
-  it("PUSH_TOPICS", () =>
-    expect(PUSH_TOPICS).toEqual(["push_matchStart", "push_goals", "push_mvpOpen", "push_news"]));
+  it("PUSH_TOPICS: só a abertura do MVP", () => expect(PUSH_TOPICS).toEqual(["push_mvpOpen"]));
 });
