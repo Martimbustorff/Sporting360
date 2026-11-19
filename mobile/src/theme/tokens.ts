@@ -722,7 +722,7 @@ export const layout = {
   consentCheck: 20,
   consentPadTop: 8,
   consentContentTop: 20,
-  consentBottom: 42,
+  consentBottomExtra: 8, // 05: 42 em baixo no frame = indicador de início (34) + 8
   consentItemGap: 8,
   linkNoteIcon: 14, // 03: nota "Abre no navegador" (4922:6039)
   linkNoteGap: 6,

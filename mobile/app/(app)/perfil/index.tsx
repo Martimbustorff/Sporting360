@@ -16,7 +16,7 @@ import { Header } from '@/components/Header';
 import { MenuRow } from '@/components/MenuRow';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
-import { initialOf } from '@/components/RankingRow';
+import { initialOf } from '@/lib/initialOf';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
@@ -86,7 +86,7 @@ function Note({ text: t, testID }: { text: string; testID?: string }) {
 
 function LinkText({ label, a11y, onPress }: { label: string; a11y: string; onPress: () => void }) {
   return (
-    <Touchable accessibilityRole="button" accessibilityLabel={a11y} onPress={onPress} style={{ minHeight: layout.minTouch, justifyContent: 'center' }}>
+    <Touchable accessibilityRole="button" accessibilityLabel={a11y} onPress={onPress} style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center', alignItems: 'center' }}>
       <Text71 variant="captionStrong12" color="primaryOnDark">{label}</Text71>
     </Touchable>
   );
@@ -210,11 +210,12 @@ function FavoritePlayerRow({ player }: { player: { id: string; name: string } | 
         gap: space.s16,
       }}
     >
-      <Text71 variant="body14" color="textMuted" style={{ flex: 1, flexShrink: 0 }}>Jogador favorito</Text71>
+      <Text71 variant="body14" color="textMuted" style={{ flexShrink: 0 }}>Jogador favorito</Text71>
+      <View style={{ flex: 1 }} />
       {player ? (
         <PlayerPhoto testID="favorite-player-photo" photo={found?.photo ?? null} size={layout.leaderRowPhoto} number={found?.number ?? null} />
       ) : null}
-      <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1, textAlign: 'right' }}>
+      <Text71 variant="strong14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, textAlign: 'right' }}>
         {text(player?.name)}
       </Text71>
     </View>

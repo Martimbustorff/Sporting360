@@ -1,6 +1,6 @@
 // Task 22: Editar perfil e Notificações. Hooks e serviço mockados; expo-router global (jest.setup).
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { AppState, Linking } from 'react-native';
+import { AppState, Linking, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockUser: { current: unknown } = { current: { status: 'loading' } };
@@ -121,6 +121,14 @@ describe('Editar perfil', () => {
     expect(screen.getByTestId('favorite-player-photo')).toBeTruthy();
     expect(screen.getByText('Morita')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Jogador favorito: Morita. Mudar' })).toBeTruthy();
+  });
+
+  it('os chips de modalidade têm alvo de toque mínimo de 44 pt', async () => {
+    await render(wrap(<EditarPerfil />));
+    for (const name of ['Futsal', 'Futebol']) {
+      const st = StyleSheet.flatten(screen.getByRole('radio', { name }).props.style);
+      expect(st.minHeight).toBeGreaterThanOrEqual(44);
+    }
   });
 
   it('documento inexistente abre o formulário vazio', async () => {

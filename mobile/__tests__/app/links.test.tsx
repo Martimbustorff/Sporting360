@@ -1,5 +1,7 @@
 // Task 25: Mapa do estádio, Sites do clube e Comunidade Leonina (escondida pela flag). Hooks mockados, browser = mock.
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { layout } from '@/theme/tokens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -65,6 +67,16 @@ describe('Mapa do estádio', () => {
     expect(screen.queryByLabelText('Ampliar mapa')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Reduzir mapa'));
     expect(screen.getByLabelText('Ampliar mapa')).toBeTruthy();
+  });
+
+  it('a altura da área do mapa segue o zoom (sem cortar o mapa ampliado)', async () => {
+    await render(wrap(<Estadio />));
+    const h = () => StyleSheet.flatten(screen.getByTestId('estadio-area').props.style).height as number;
+    expect(h()).toBeCloseTo(layout.stadiumMap.height, 0);
+    await fireEvent.press(screen.getByLabelText('Ampliar mapa'));
+    await waitFor(() => expect(h()).toBeCloseTo(layout.stadiumMap.height * layout.stadiumZoomScale, 0));
+    await fireEvent.press(screen.getByLabelText('Reduzir mapa'));
+    await waitFor(() => expect(h()).toBeCloseTo(layout.stadiumMap.height, 0));
   });
 
   it('Museu: marcador no mapa e entrada na legenda, sem ligação nem linha de lista', async () => {

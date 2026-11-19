@@ -89,8 +89,7 @@ export default function Conta() {
             accessibilityRole="button"
             accessibilityLabel="Mudar password"
             onPress={() => router.push('/definicoes/password')}
-            hitSlop={space.s12}
-            style={{ alignSelf: 'flex-start' }}
+            style={{ alignSelf: 'flex-start', minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center' }}
           >
             <Text71 variant="captionStrong12" style={{ textDecorationLine: 'underline' }}>
               Mudar password

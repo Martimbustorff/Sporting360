@@ -6,6 +6,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Touchable } from '@/components/Touchable';
 import { type Consent, setAnalyticsConsent } from '@/services/analytics';
@@ -27,6 +28,7 @@ export const CONSENT_POINTS = [
 export const CONSENT_POLICY = 'Ler a política de privacidade';
 
 export function AnalyticsConsentSheet({ onDone, onPrivacy }: { onDone: () => void; onPrivacy?: () => void }) {
+  const { bottom } = useSafeAreaInsets();
   const choose = async (c: Consent) => {
     try {
       await setAnalyticsConsent(c);
@@ -37,7 +39,7 @@ export function AnalyticsConsentSheet({ onDone, onPrivacy }: { onDone: () => voi
   };
 
   return (
-    <View testID="consent-overlay" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'flex-end', backgroundColor: colors.scrimV71 }}>
+    <View testID="consent-overlay" accessibilityViewIsModal style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'flex-end', backgroundColor: colors.scrimV71 }}>
       <View
         style={{
           backgroundColor: colors.white,
@@ -45,7 +47,7 @@ export function AnalyticsConsentSheet({ onDone, onPrivacy }: { onDone: () => voi
           borderTopRightRadius: radii.r28,
           paddingTop: layout.consentPadTop,
           paddingHorizontal: space.s24,
-          paddingBottom: layout.consentBottom,
+          paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.consentBottomExtra,
           alignItems: 'stretch',
         }}
       >

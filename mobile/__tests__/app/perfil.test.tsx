@@ -1,4 +1,5 @@
 // Task 21: ecrã do Perfil e "meu jogo". Hooks de dados mockados (sem rede).
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -138,6 +139,24 @@ describe('Perfil: identidade', () => {
     expect(screen.getByTestId('favorite-player-photo')).toBeTruthy();
     expect(screen.queryByTestId('player-photo-image', { hidden: true })).toBeNull();
     expect(screen.getByText('Francisco Trincão')).toBeTruthy();
+  });
+
+  it('"Editar" (nome público) tem alvo de toque mínimo de 44 pt', async () => {
+    await renderScreen();
+    const st = StyleSheet.flatten(screen.getByRole('button', { name: 'Editar nome público' }).props.style);
+    expect(st.minHeight).toBeGreaterThanOrEqual(44);
+    expect(st.minWidth).toBeGreaterThanOrEqual(44);
+  });
+
+  it('jogador favorito com nome longo: etiqueta não encolhe e o nome ocupa uma linha com reticências (320 pt)', async () => {
+    mockUser.current = ready({ ...USER, favoritePlayer: { id: '9', name: 'Francisco Fernando Trincão da Silva Albuquerque' } });
+    await renderScreen();
+    const name = screen.getByText('Francisco Fernando Trincão da Silva Albuquerque');
+    expect(name.props.numberOfLines).toBe(1);
+    expect(StyleSheet.flatten(name.props.style).flex).toBe(1);
+    const label = StyleSheet.flatten(screen.getByText('Jogador favorito').props.style);
+    expect(label.flexShrink).toBe(0);
+    expect(label.flex).toBeUndefined();
   });
 
   it('o email (users e sessão) nunca aparece', async () => {

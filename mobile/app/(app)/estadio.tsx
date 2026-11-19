@@ -64,15 +64,24 @@ export default function Estadio() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const [zoomed, setZoomed] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
+  // A altura da área segue o zoom (mesma duração e curva), para o mapa ampliado não ser cortado em cima e em baixo.
+  const areaHeight = useRef(new Animated.Value(layout.stadiumMap.height)).current;
 
   useEffect(() => {
-    Animated.timing(scale, {
-      toValue: zoomed ? layout.stadiumZoomScale : 1,
-      duration: layout.stadiumZoomMs,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [zoomed, scale]);
+    const timing = { duration: layout.stadiumZoomMs, easing: Easing.out(Easing.cubic) };
+    const a = Animated.timing(scale, { ...timing, toValue: zoomed ? layout.stadiumZoomScale : 1, useNativeDriver: true });
+    const b = Animated.timing(areaHeight, {
+      ...timing,
+      toValue: layout.stadiumMap.height * (zoomed ? layout.stadiumZoomScale : 1),
+      useNativeDriver: false,
+    });
+    a.start();
+    b.start();
+    return () => {
+      a.stop();
+      b.stop();
+    };
+  }, [zoomed, scale, areaHeight]);
 
   const label = zoomed ? 'Reduzir mapa' : 'Ampliar mapa';
 
@@ -93,7 +102,7 @@ export default function Estadio() {
         }
       />
       <ScrollView contentContainerStyle={{ paddingBottom: space.s24 }}>
-        <View style={{ alignItems: 'center', overflow: 'hidden' }}>
+        <Animated.View testID="estadio-area" style={{ height: areaHeight, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           <Image
             source={LUZ}
             accessible={false}
@@ -102,7 +111,7 @@ export default function Estadio() {
           <Animated.View testID="estadio-mapa" style={{ transform: [{ scale }] }}>
             <Image source={MAP} contentFit="contain" accessibilityLabel={MAP_A11Y} accessible style={layout.stadiumMap} />
           </Animated.View>
-        </View>
+        </Animated.View>
         <View style={{ paddingHorizontal: space.s24, paddingTop: layout.stadiumBelowTop, gap: space.s16 }}>
           <Legend />
           <View>

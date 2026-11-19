@@ -6,7 +6,6 @@
 // SEM FIGMA (copy mantida): "Análise de utilização", explicação sem biometria, mensagens de erro, "Ligar conta Apple".
 // O email nunca aparece aqui (só em Conta).
 import Feather from '@expo/vector-icons/Feather';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Application from 'expo-application';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -18,7 +17,7 @@ import { MenuRow } from '@/components/MenuRow';
 import { Screen } from '@/components/Screen';
 import { ToggleRow } from '@/components/ToggleRow';
 import { useMyUser } from '@/data/hooks';
-import { initialOf } from '@/components/RankingRow';
+import { initialOf } from '@/lib/initialOf';
 import { useBiometricControl } from '@/providers/BiometricGate';
 import { useSession } from '@/providers/SessionProvider';
 import { getAnalyticsConsent, setAnalyticsConsent } from '@/services/analytics';

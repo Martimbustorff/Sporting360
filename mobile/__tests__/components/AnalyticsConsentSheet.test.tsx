@@ -1,4 +1,6 @@
 // Task 6: folha de consentimento e o seu encaixe em (app)/_layout (depois do BiometricGate abrir).
+import { StyleSheet } from 'react-native';
+import { layout } from '@/theme/tokens';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -36,6 +38,15 @@ describe('AnalyticsConsentSheet no layout', () => {
     expect(screen.getByRole('link', { name: CONSENT_POLICY })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Aceitar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Agora não' })).toBeTruthy();
+  });
+
+  it('a folha é modal para o leitor de ecrã e respeita o indicador de início', async () => {
+    await render(wrap(<AppLayout />));
+    await screen.findByText(CONSENT_TITLE);
+    const overlay = screen.getByTestId('consent-overlay');
+    expect(overlay.props.accessibilityViewIsModal).toBe(true);
+    const sheet = overlay.children[0] as unknown as { props: { style: object } };
+    expect(StyleSheet.flatten(sheet.props.style) as { paddingBottom: number }).toMatchObject({ paddingBottom: 34 + layout.consentBottomExtra });
   });
 
   it('o título não é um botão (a folha não se fecha sem escolha) e é anunciado como cabeçalho', async () => {

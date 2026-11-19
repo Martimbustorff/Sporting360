@@ -124,7 +124,7 @@ function PlayerField({
 /** Frame 23 (4942:7821): opções em pílulas; a escolhida em branco com texto bg, as outras surface-10. */
 function SportChips({ value, onChange }: { value: Sport | null; onChange: (s: Sport) => void }) {
   return (
-    <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: layout.chipsGap }}>
+    <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: layout.chipsGap }}>
       {SPORTS.map((sp) => {
         const active = sp.key === value;
         return (
@@ -134,14 +134,18 @@ function SportChips({ value, onChange }: { value: Sport | null; onChange: (s: Sp
             accessibilityLabel={sp.label}
             accessibilityState={{ selected: active }}
             onPress={() => onChange(sp.key)}
-            style={{
-              paddingHorizontal: layout.leaderChipPadX,
-              paddingVertical: layout.leaderChipPadY,
-              borderRadius: layout.leaderChipRadius,
-              backgroundColor: active ? colors.white : colors.surface10,
-            }}
+            style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center', alignItems: 'center' }}
           >
-            <Text71 variant="captionStrong12" color={active ? 'bg' : 'white'} numberOfLines={1}>{sp.label}</Text71>
+            <View
+              style={{
+                paddingHorizontal: layout.leaderChipPadX,
+                paddingVertical: layout.leaderChipPadY,
+                borderRadius: layout.leaderChipRadius,
+                backgroundColor: active ? colors.white : colors.surface10,
+              }}
+            >
+              <Text71 variant="captionStrong12" color={active ? 'bg' : 'white'} numberOfLines={1}>{sp.label}</Text71>
+            </View>
           </Touchable>
         );
       })}

@@ -1,5 +1,5 @@
 // Task 26: Definições, Conta e Mudar password. Sessão, biometria, Analytics, Apple e auth mockados (sem rede).
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -94,10 +94,18 @@ describe('Definições', () => {
     expect(screen.getByTestId('conta-card-initial').props.children).toBe('M');
   });
 
-  it('"Apagar conta" é a última linha, em danger, e "Terminar sessão" não tem seta', async () => {
+  it('"Apagar conta" é a última linha, sem separador; "Terminar sessão" e "Apagar conta" não têm seta', async () => {
     await render(wrap(<Definicoes />));
     await flush();
     const rows = screen.getAllByTestId('list-row');
+    // Linha = [ícone, etiqueta, trailing?]: sem seta só há dois filhos.
+    const parts = (label: string) => {
+      const row = rows.find((r) => r.props.accessibilityLabel === label);
+      return typeof row?.children[0] === 'string' ? [] : (row?.children[0] as { children: unknown[] }).children;
+    };
+    expect(parts('Terminar sessão')).toHaveLength(2);
+    expect(parts('Apagar conta')).toHaveLength(2);
+    expect(parts('Notificações')).toHaveLength(3);
     expect(rows[rows.length - 1]?.props.accessibilityLabel).toBe('Apagar conta');
     expect(screen.getAllByTestId('list-row-separator').length).toBe(rows.length - 1);
   });
@@ -253,6 +261,15 @@ describe('Conta', () => {
     await render(wrap(<Conta />));
     await fireEvent.press(screen.getByRole('button', { name: /Nome público/ }));
     expect(mockPush).toHaveBeenCalledWith('/perfil/nome');
+  });
+
+  it('"Mudar password" tem alvo de toque mínimo de 44 pt, sem hitSlop fixo', async () => {
+    await render(wrap(<Conta />));
+    await flush();
+    const b = screen.getByRole('button', { name: 'Mudar password' });
+    const st = StyleSheet.flatten(b.props.style);
+    expect(st.minHeight).toBeGreaterThanOrEqual(44);
+    expect(st.minWidth).toBeGreaterThanOrEqual(44);
   });
 
   it('"Mudar password" só com o provider password', async () => {
