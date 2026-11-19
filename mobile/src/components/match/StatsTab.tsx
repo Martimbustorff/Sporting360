@@ -6,7 +6,6 @@
 // SEM FIGMA: o estado de erro, "Sem estatísticas para este jogo." (terminado,
 // adiado ou cancelado sem documento), o aviso de cache e o estado antes do jogo (as mesmas linhas a 30 %).
 import { useState } from 'react';
-import { View } from 'react-native';
 import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';

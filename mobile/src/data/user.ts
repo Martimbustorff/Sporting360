@@ -48,6 +48,7 @@ const LOADING: Loadable<never> = { status: 'loading' };
 
 /** Same Loadable with `data` transformed; keeps `fromCache`. `f` must be a module-level function. */
 function useMapped<A, B>(l: Loadable<A>, f: (a: A) => B): Loadable<B> {
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- f é função de módulo, só a identidade do Loadable conta
   return useMemo(() => (l.status === 'ready' ? { status: 'ready', data: f(l.data), fromCache: l.fromCache } : l), [l]);
 }
 

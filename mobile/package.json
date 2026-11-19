@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "check:tokens": "node scripts/check-tokens.mjs",
     "seed:emulator": "node scripts/seed-emulator.mjs",
-    "eas-build-pre-install": "node scripts/launchGate.js"
+    "eas-build-pre-install": "node scripts/launchGate.js",
+    "lint": "expo lint"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -74,6 +75,8 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~58.0.4",
     "firebase-admin": "^14.5.1",
     "jest": "^30.5.2",
     "jest-expo": "^58.0.15",

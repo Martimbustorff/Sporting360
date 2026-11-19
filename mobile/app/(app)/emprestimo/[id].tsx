@@ -195,6 +195,7 @@ function Emprestimo({ raw }: { raw: string | undefined }) {
   const ownerGamebox = claim.status === 'owner' && loanData ? loanData.gameboxId : null;
   useEffect(() => {
     if (ownerGamebox) router.replace(`/gamebox/${ownerGamebox}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- só reage ao gamebox do dono; router não é dependência
   }, [ownerGamebox]);
 
   // Uma vez inativo, fica inativo (sem voltar a desenhar o QR se chegar um snapshot antigo).

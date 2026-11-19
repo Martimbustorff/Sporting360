@@ -17,8 +17,8 @@ import { minuteText, penaltiesText, stateLabel, type GoalVM, type UiState } from
 import { formatRound } from '@/lib/formatRound';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
 import { SPORTING_API_ID } from '@/lib/teams';
-import { Display, Text71 } from '@/theme/typography';
-import { colors, layout, radii, radius, space, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SPORTING_CREST = require('../../assets/images/sporting-cp-2026.png') as number;

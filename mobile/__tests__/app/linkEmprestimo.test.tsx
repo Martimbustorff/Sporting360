@@ -12,7 +12,7 @@ jest.mock('@/lib/installReferrer', () => ({ readLoanReferrerOnce: () => mockRead
 import { act } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 import { LoanReferrerGate } from '@/components/LoanReferrerGate';
-import { setPendingLink, takePendingLink } from '@/lib/pendingLink';
+import { takePendingLink } from '@/lib/pendingLink';
 import AuthLayout from '../../app/(auth)/_layout';
 import AppLayout from '../../app/(app)/_layout';
 import LinkEmprestimo from '../../app/(app)/e/[id]';

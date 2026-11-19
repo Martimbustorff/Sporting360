@@ -133,6 +133,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>, option
         setState({ status: 'error', error: toError(e) });
       },
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- só resubscreve quando o caminho muda; setState só escreve o estado do caminho atual e as opções vêm por ref
   }, [path]);
 
   return path !== null && held.key === path ? held.value : LOADING;

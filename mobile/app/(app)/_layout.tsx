@@ -28,6 +28,7 @@ function AnalyticsConsentGate({ onSettled }: { onSettled: () => void }) {
     return () => {
       alive = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- corre uma vez ao montar, onSettled muda de identidade a cada render
   }, []);
   // A página de privacidade abre por cima: a folha fica escondida (mas montada, a escolha continua pendente) enquanto lá está.
   const onTerms = usePathname().includes('/definicoes/termos');

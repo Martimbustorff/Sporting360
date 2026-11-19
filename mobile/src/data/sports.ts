@@ -72,6 +72,7 @@ const TEAM = 'teams/football_228';
 /** Same Loadable with `data` transformed; keeps `fromCache`. Memoized on the input object. */
 function useMapped<A, B>(l: Loadable<A>, f: (a: A) => B): Loadable<B> {
   // `f` must be a module-level function: only the Loadable identity is a dependency.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- f é função de módulo, só a identidade do Loadable conta
   return useMemo(() => (l.status === 'ready' ? { status: 'ready', data: f(l.data), fromCache: l.fromCache } : l), [l]);
 }
 

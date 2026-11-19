@@ -13,7 +13,7 @@ import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { STADIUM_LINKS, type StadiumLink } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
-import { colors, layout, radii, space } from '@/theme/tokens';
+import { colors, layout, space } from '@/theme/tokens';
 import { Text71 } from '@/theme/typography';
 
 /* eslint-disable @typescript-eslint/no-require-imports */

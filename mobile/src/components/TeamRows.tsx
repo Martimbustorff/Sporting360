@@ -12,7 +12,7 @@ import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { ScreenSkeleton, SkeletonRows } from '@/components/Skeleton';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, space } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const TROPHY_ICON = require('../../assets/icons/trophy.svg');
