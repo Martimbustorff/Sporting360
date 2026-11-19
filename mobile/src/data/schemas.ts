@@ -359,6 +359,19 @@ export const StandingsDocSchema = z.looseObject({
 });
 export type StandingsDoc = z.infer<typeof StandingsDocSchema>;
 
+/** `competitions/{key}/data/liveFixtures` (functions/src/football/liveFixtures.ts): jogos da liga a decorrer. */
+export const LiveFixtureSchema = z.looseObject({
+  homeId: idString,
+  awayId: idString,
+  homeGoals: num,
+  awayGoals: num,
+  elapsed: nullable(num),
+  status: str.catch(''),
+});
+export type LiveFixture = z.infer<typeof LiveFixtureSchema>;
+export const LiveFixturesDocSchema = z.looseObject({ updatedAt: ts, fixtures: z.array(LiveFixtureSchema) });
+export type LiveFixturesDoc = z.infer<typeof LiveFixturesDocSchema>;
+
 export const FixtureItemSchema = z.looseObject({
   id: str,
   kickoff: ts,

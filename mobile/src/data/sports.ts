@@ -24,6 +24,7 @@ import {
   SidelinedDocSchema,
   SquadDocSchema,
   StandingsDocSchema,
+  LiveFixturesDocSchema,
   StatisticsDocSchema,
   TeamInjuriesDocSchema,
   TeamStatsDocSchema,
@@ -47,6 +48,7 @@ import {
   type Sport,
   type SquadDoc,
   type StandingsDoc,
+  type LiveFixturesDoc,
   type TeamInjuriesDoc,
   type TeamStatsDoc,
   type TopListDoc,
@@ -191,6 +193,7 @@ export function useCompetition(key: string | null): Loadable<Competition> {
 
 export type CompetitionDataDocs = {
   standings: StandingsDoc;
+  liveFixtures: LiveFixturesDoc;
   fixtures: FixturesDoc;
   rounds: RoundsDoc;
   bracket: Bracket;
@@ -203,6 +206,7 @@ export type CompetitionDataKind = keyof CompetitionDataDocs;
 
 const COMPETITION_SCHEMAS: { [K in CompetitionDataKind]: z.ZodType<CompetitionDataDocs[K]> } = {
   standings: StandingsDocSchema,
+  liveFixtures: LiveFixturesDocSchema,
   fixtures: FixturesDocSchema,
   rounds: RoundsDocSchema,
   bracket: BracketDocSchema,

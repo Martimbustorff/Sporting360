@@ -58,6 +58,10 @@ export const colors = {
   formLoss: '#E53836',
   yellow71: '#FACC2E',
   yellow71Bg: 'rgba(250, 204, 46, 0.18)',
+  // Classificação V7.1 (4935:7111): faixa de zona europeia e legenda
+  zoneChampions: '#1F73F2',
+  zoneEurope: '#FA8C26',
+  zoneConference: '#33BFBF',
   // Formações V7.1 (4947:8531): relva do campo
   pitchField: '#006B4A',
   // Cartão S360 MATCHDAY V7.1 (4946:8197): degradê do topo (#00543b) ao bg e linha do rodapé (branco a 15 %)
@@ -360,6 +364,24 @@ export const layout = {
   tableColWidth: 31,
   tableGoalsWidth: 44,
   tablePointsWidth: 30,
+  // Classificação V7.1 (4935:7287): colunas # 28, J 28, DG 36, PTS 40; linha com 9 de altura vertical e faixa de zona de 3
+  stColPos: 28,
+  stColPlayed: 28,
+  stColDiff: 36,
+  stColPts: 40,
+  stRowPadY: 9,
+  stRowPadRight: 8,
+  stRowPadLeft: 10, // sem faixa; com faixa 7 + 3 de borda
+  stBand: 3,
+  stHeadPadY: 6,
+  stArrow: { width: 8, height: 6 }, // Sobe / Desce (4935:7302)
+  stArrowGap: 3,
+  stLiveDot: 6, // ponto do alternador "Ao vivo" (4935:7282)
+  stLegendGap: 14,
+  stLegendItemGap: 6,
+  stLegendBar: { width: 3, height: 12 },
+  stCrestGap: 8,
+  stContentGap: 12,
   // SEM FIGMA: quadro das eliminatórias (BracketView), composto com tokens
   tieTeamGap: 8,
   tieScoreWidth: 32,

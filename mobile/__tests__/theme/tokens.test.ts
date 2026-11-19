@@ -42,6 +42,9 @@ const MAP: Record<string, string> = {
   yellow71: 'yellow71',
   yellow71Bg: 'yellow71Bg',
   pitchField: 'pitchField',
+  zoneChampions: 'zoneChampions',
+  zoneEurope: 'zoneEurope',
+  zoneConference: 'zoneConference',
   shareCardTop: 'shareCardTop',
   shareCardRule: 'shareCardRule',
 };

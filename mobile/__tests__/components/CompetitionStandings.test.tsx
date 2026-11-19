@@ -8,7 +8,8 @@ type L =
   | { status: 'missing' }
   | { status: 'error'; error: Error }
   | { status: 'ready'; data: unknown; fromCache?: boolean };
-const mockData: { competition: L; standings: L; bracket: L } = {
+const mockData: { competition: L; standings: L; bracket: L; liveFixtures: L } = {
+  liveFixtures: { status: 'missing' },
   competition: { status: 'missing' },
   standings: { status: 'missing' },
   bracket: { status: 'missing' },
@@ -16,7 +17,7 @@ const mockData: { competition: L; standings: L; bracket: L } = {
 
 jest.mock('@/data/sports', () => ({
   useCompetition: jest.fn(() => mockData.competition),
-  useCompetitionData: jest.fn((_key: string | null, kind: 'standings' | 'bracket') => mockData[kind]),
+  useCompetitionData: jest.fn((_key: string | null, kind: 'standings' | 'bracket' | 'liveFixtures') => mockData[kind]),
 }));
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn() } }));
@@ -29,6 +30,7 @@ import { BracketView } from '@/components/BracketView';
 import { CompetitionStandings } from '@/components/CompetitionStandings';
 import { resetViewChoices } from '@/lib/standings';
 import { StandingsTable } from '@/components/StandingsTable';
+import { colors, layout } from '@/theme/tokens';
 
 const KEY = 'football_2_2026';
 
@@ -90,6 +92,7 @@ beforeEach(() => {
   mockData.competition = { status: 'missing' };
   mockData.standings = { status: 'missing' };
   mockData.bracket = { status: 'missing' };
+  mockData.liveFixtures = { status: 'missing' };
 });
 
 describe('CompetitionStandings: Review Focus 5 (tabela passa a eliminatórias em direto)', () => {
@@ -224,11 +227,11 @@ describe('StandingsTable', () => {
   it('colunas, golos 8:4 e linha do Sporting destacada', async () => {
     await render(<StandingsTable groups={standings.groups} highlightTeamId="228" sport="football" />);
     // O cabeçalho fica fora da acessibilidade: cada linha tem o seu rótulo completo.
-    for (const h of ['#', 'Equipa', 'J', 'V', 'E', 'D', 'G', 'P']) {
+    for (const h of ['#', 'Equipa', 'J', 'DG', 'PTS']) {
       expect(screen.getByText(h, { includeHiddenElements: true })).toBeTruthy();
     }
     expect(screen.getByLabelText('1.º Sporting CP, 13 pontos, 6 jogos')).toBeTruthy();
-    expect(screen.getAllByText('8:4')).toHaveLength(2);
+    expect(screen.getAllByText('+4')).toHaveLength(2);
     expect(screen.getByTestId('standings-row-228').props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByTestId('standings-row-541').props.accessibilityState).toEqual({ selected: false });
     // Emblema por linha (variante 500:30076); o Sporting com o emblema local 2026 (asset, não o URL).
@@ -251,7 +254,6 @@ describe('StandingsTable', () => {
     const name = screen.getByText(long);
     expect(name.props.numberOfLines).toBe(1);
     expect(name.props.ellipsizeMode).toBe('tail');
-    expect(StyleSheet.flatten(name.props.style)).toMatchObject({ flex: 1 });
     const points = screen.getByTestId('standings-points-999');
     expect(points.props.children).toBe(13);
     // A coluna dos pontos tem largura fixa e não encolhe: o nome é que cede.
@@ -340,7 +342,7 @@ describe('BracketView', () => {
   });
 });
 
-describe('StandingsTable: nome do clube mais pequeno (Plan 5 Task 2)', () => {
+describe('StandingsTable: nome longo (V7.1)', () => {
   it('nome longo: uma linha, reticências, tamanho 10; emblema e pontos visíveis em cada linha', async () => {
     const long: StandingsDoc['groups'] = [
       { name: 'Liga', rows: [row(1, '228', 'Sporting Clube de Portugal B', 13), row(2, '541', 'Real Madrid', 10)] },
@@ -349,11 +351,131 @@ describe('StandingsTable: nome do clube mais pequeno (Plan 5 Task 2)', () => {
     const name = screen.getByText('Sporting Clube de Portugal B');
     expect(name.props.numberOfLines).toBe(1);
     expect(name.props.ellipsizeMode).toBe('tail');
-    expect(StyleSheet.flatten(name.props.style).fontSize).toBe(10);
+    expect(StyleSheet.flatten(name.props.style).fontSize).toBe(14);
     for (const id of ['228', '541']) {
       expect(screen.getByTestId(`standings-crest-${id}`, { includeHiddenElements: true })).toBeTruthy();
       expect(screen.getByTestId(`standings-points-${id}`)).toBeTruthy();
     }
     expect(screen.getByTestId('standings-points-228').props.children).toBe(13);
+  });
+});
+
+describe('Classificação ao vivo (Plan 7 Task 11)', () => {
+  const LIGA = 'football_94_2026';
+  const zoned = (r: StandingRow, description: string | null, o: Partial<StandingRow> = {}): StandingRow => ({ ...r, description, ...o }) as StandingRow;
+  const liga: StandingsDoc = {
+    groups: [
+      {
+        name: 'Liga Portugal',
+        rows: [
+          zoned(row(1, '211', 'Benfica', 29), 'Promotion - Champions League (Group Stage: )', { goalsDiff: 19 }),
+          zoned(row(2, '212', 'FC Porto', 27), 'Promotion - Europa League (League phase: )', { goalsDiff: 15 }),
+          zoned(row(3, '228', 'Sporting', 26), 'Promotion - Conference League (Qualification: )', { goalsDiff: 20 }),
+          zoned(row(4, '217', 'SC Braga', 23), null, { goalsDiff: 9 }),
+        ],
+      },
+    ],
+  };
+  const fixture = (homeId: string, awayId: string, homeGoals: number, awayGoals: number) => ({ homeId, awayId, homeGoals, awayGoals, elapsed: 67, status: '2H' });
+  const liveDoc = (ageMs: number, fixtures = [fixture('228', '212', 2, 1)]) => ({
+    status: 'ready' as const,
+    data: { updatedAt: new Date(Date.now() - ageMs), fixtures },
+  });
+  const rank = (id: string) => screen.getByTestId(`standings-rank-${id}`).props.children;
+
+  beforeEach(() => {
+    mockData.standings = { status: 'ready', data: liga };
+  });
+
+  it('documento recente com jogos: alternador, "Ao vivo" ativo, projeção com setas e resultado em direto', async () => {
+    mockData.liveFixtures = liveDoc(30_000);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.getByTestId('standings-live-toggle')).toBeTruthy();
+    expect(screen.getByTestId('segment-live').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByText('Com os resultados dos jogos a decorrer. A tabela oficial da Liga atualiza de hora a hora.')).toBeTruthy();
+    // Sporting 26 + 3 = 29 (+22) e FC Porto 27 (+14): o Sporting passa de 3.º para 1.º (diferença de golos sobre o Benfica), o Benfica desce.
+    expect(rank('228')).toBe(1);
+    expect(rank('211')).toBe(2);
+    expect(rank('212')).toBe(3);
+    expect(screen.getByTestId('standings-arrow-228-up')).toBeTruthy();
+    expect(screen.getByTestId('standings-arrow-211-down')).toBeTruthy();
+    expect(screen.getByTestId('standings-arrow-212-down')).toBeTruthy();
+    expect(screen.queryByTestId('standings-arrow-217-up')).toBeNull();
+    expect(screen.getByTestId('standings-live-228').props.children).toBe('AO VIVO 2-1');
+    expect(screen.getByTestId('standings-live-212').props.children).toBe('AO VIVO 1-2');
+    expect(screen.queryByTestId('standings-live-211')).toBeNull();
+    expect(screen.getByTestId('standings-points-228').props.children).toBe(29);
+  });
+
+  it('"Oficial": tabela oficial, sem setas nem resultados em direto, e volta a "Ao vivo"', async () => {
+    mockData.liveFixtures = liveDoc(30_000);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Oficial' }));
+    expect(rank('211')).toBe(1);
+    expect(rank('228')).toBe(3);
+    expect(screen.getByTestId('standings-points-228').props.children).toBe(26);
+    expect(screen.queryByTestId('standings-live-228')).toBeNull();
+    expect(screen.queryByTestId('standings-arrow-228-up')).toBeNull();
+    expect(screen.queryByText(/Com os resultados dos jogos a decorrer/)).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Oficial' }).props.accessibilityState.selected).toBe(true);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Ao vivo' }));
+    expect(rank('228')).toBe(1);
+  });
+
+  it('documento de jogos ao vivo velho (mais de 5 min): tabela oficial e sem alternador', async () => {
+    mockData.liveFixtures = liveDoc(6 * 60_000);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.queryByTestId('standings-live-toggle')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Oficial' })).toBeNull();
+    expect(rank('211')).toBe(1);
+    expect(screen.getByTestId('standings-points-228').props.children).toBe(26);
+    expect(screen.queryByTestId('standings-live-228')).toBeNull();
+  });
+
+  it('sem jogos ao vivo, sem documento ou erro de leitura: tabela oficial e sem alternador', async () => {
+    for (const live of [liveDoc(1_000, []), { status: 'missing' as const }, { status: 'error' as const, error: new Error('permission-denied') }, { status: 'loading' as const }]) {
+      mockData.liveFixtures = live;
+      const { unmount } = await render(<CompetitionStandings competitionKey={LIGA} />);
+      expect(screen.queryByTestId('standings-live-toggle')).toBeNull();
+      expect(screen.getByTestId('standings-table')).toBeTruthy();
+      expect(rank('211')).toBe(1);
+      await unmount();
+    }
+  });
+
+  it('faixa de zona e legenda a partir de `description`; só as zonas presentes; a linha do Sporting destacada', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    const band = (id: string) => StyleSheet.flatten(screen.getByTestId(`standings-row-${id}`).props.style).borderLeftColor;
+    expect(band('211')).toBe(colors.zoneChampions);
+    expect(band('212')).toBe(colors.zoneEurope);
+    expect(band('228')).toBe(colors.zoneConference);
+    expect(band('217')).toBe('transparent');
+    for (const label of ['Liga dos Campeões', 'Liga Europa', 'Conference']) expect(screen.getByText(label)).toBeTruthy();
+    expect(screen.getByTestId('standings-row-228').props.accessibilityState).toEqual({ selected: true });
+    expect(StyleSheet.flatten(screen.getByTestId('standings-row-228').props.style).backgroundColor).toBe(colors.surface10);
+  });
+
+  it('sem zonas na tabela: sem legenda', async () => {
+    mockData.standings = { status: 'ready', data: standings };
+    await render(<CompetitionStandings competitionKey={KEY} />);
+    expect(screen.queryByTestId('standings-legend')).toBeNull();
+  });
+
+  it('nomes longos a 320 pt: uma linha com reticências, pontos e emblema visíveis', async () => {
+    const names = ['Gil Vicente', 'Sporting Clube de Portugal Sub-23 Norte'];
+    await render(
+      <StandingsTable
+        groups={[{ name: '', rows: names.map((n, i) => zoned(row(i + 1, String(900 + i), n, 20 - i), null)) }]}
+        highlightTeamId="228"
+        sport="football"
+      />,
+    );
+    for (const n of names) {
+      const el = screen.getByText(n);
+      expect(el.props.numberOfLines).toBe(1);
+      expect(el.props.ellipsizeMode).toBe('tail');
+    }
+    expect(screen.getByTestId('standings-points-901').props.children).toBe(19);
+    expect(StyleSheet.flatten(screen.getByTestId('standings-points-901').props.style)).toMatchObject({ flexShrink: 0, width: layout.stColPts });
   });
 });
