@@ -89,6 +89,27 @@ describe('app.config.ts share link (Plano 5, Task 6)', () => {
   });
 });
 
+describe('push (Plano 6)', () => {
+  const { expo } = read('app.json');
+  it('regista o plugin de messaging e o push no iOS', () => {
+    expect(expo.plugins).toContain('@react-native-firebase/messaging');
+    expect(expo.ios.entitlements['aps-environment']).toBe('production');
+    expect(expo.ios.infoPlist.UIBackgroundModes).toEqual(['remote-notification']);
+  });
+  it('o app.config.ts mantém o entitlement', () => {
+    jest.resetModules();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cfg = require('../../app.config').default({ config: expo });
+    expect(cfg.ios.entitlements['aps-environment']).toBe('production');
+  });
+  it('firebase.json mostra notificações com a app aberta no iOS', () =>
+    expect(read('firebase.json')['react-native'].messaging_ios_foreground_presentation_options).toEqual(['badge', 'sound', 'list', 'banner']));
+  it('o messaging tem a mesma versão dos outros módulos RNFirebase', () => {
+    const deps = read('package.json').dependencies as Record<string, string>;
+    expect(deps['@react-native-firebase/messaging']).toBe(deps['@react-native-firebase/app']);
+  });
+});
+
 describe('mobile/firebase.json', () => {
   it('turns analytics collection off by default', () => {
     const fb = read('firebase.json');

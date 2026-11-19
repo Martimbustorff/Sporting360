@@ -12,12 +12,18 @@
       "supportsTablet": false,
       "googleServicesFile": "./GoogleService-Info.plist",
       "usesAppleSignIn": true,
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "infoPlist": {
         "CFBundleDevelopmentRegion": "pt-PT",
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "A S360 só usa as tuas fotografias para guardar o cartão do teu prognóstico quando o partilhas.",
-        "NSPhotoLibraryAddUsageDescription": "A S360 guarda nas tuas fotografias o cartão do teu prognóstico quando escolhes guardá-lo."
+        "NSPhotoLibraryAddUsageDescription": "A S360 guarda nas tuas fotografias o cartão do teu prognóstico quando escolhes guardá-lo.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -46,6 +52,7 @@
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       "@react-native-firebase/app-check",
+      "@react-native-firebase/messaging",
       [
         "@react-native-google-signin/google-signin",
         {
