@@ -3,8 +3,8 @@
 // Layout da produção (leão, logótipo S360, nome, sócio desde, cartão do jogo, menu, folha GameBox), margem única de 24 pt.
 // O cartão tem sempre 192 pt (o menu não salta) e muda com o momento do jogo (lib/homeMatchMoment); a contagem do
 // "Dia de jogo" anda ao segundo só com a Home visível e a app em primeiro plano.
-// SEM FIGMA: as linhas RANKING (ícone Feather "award": o Figma desenha um troféu) e COMUNIDADE LEONINA (Feather "users")
-// não são do menu de 5 linhas do Figma; "News" do Figma passa a "NOTÍCIAS" (pt-PT). O ecrã faz scroll quando não cabe.
+// SEM FIGMA: a linha COMUNIDADE LEONINA (Feather "users") não é do menu de 5 linhas do Figma; "News" do Figma passa a
+// "NOTÍCIAS" (pt-PT). RANKING usa o troféu do Figma (V7.1 Icon / Trophy). O ecrã faz scroll quando não cabe.
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -34,12 +34,13 @@ const ICONS = {
   calendar: require('../../assets/icons/calendar.svg'), // 239:16220 Calendar / Calendar
   compass: require('../../assets/icons/compass.svg'), // 307:6615 Navigation / Compass
   globe: require('../../assets/icons/globe.svg'), // 302:4143 Navigation / Globe
+  trophy: require('../../assets/icons/trophy.svg'), // V7.1 Icon / Trophy (menu do 01)
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 const iconStyle = { width: layout.menuRowIcon, height: layout.menuRowIcon };
 const svgIcon = (source: number) => <Image source={source} style={iconStyle} accessible={false} />;
-const featherIcon = (name: 'award' | 'users') => <Feather name={name} size={layout.menuRowIcon} color={colors.white} />;
+const featherIcon = (name: 'users') => <Feather name={name} size={layout.menuRowIcon} color={colors.white} />;
 
 type MenuItem = { label: string; href: Href; icon: ReactNode };
 
@@ -47,7 +48,7 @@ function menuItems(comunidade: boolean): MenuItem[] {
   return [
     { label: 'NOTÍCIAS', href: '/noticias', icon: svgIcon(ICONS.news) },
     { label: 'AGENDA', href: '/agenda', icon: svgIcon(ICONS.calendar) },
-    { label: 'RANKING', href: '/ranking', icon: featherIcon('award') },
+    { label: 'RANKING', href: '/ranking', icon: svgIcon(ICONS.trophy) },
     { label: 'MAPA DO ESTÁDIO', href: '/estadio', icon: svgIcon(ICONS.compass) },
     // Só com config/app features.comunidadeLeonina === true (omissão: false). Não apagar.
     ...(comunidade ? [{ label: 'COMUNIDADE LEONINA', href: '/comunidade' as Href, icon: featherIcon('users') }] : []),
@@ -113,9 +114,9 @@ export default function Home() {
         }}
       >
         <View style={{ height: layout.minTouch, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={type.lockLogo} accessibilityRole="header" accessibilityLabel="S360">
+          <Text71 variant="brand48" accessibilityRole="header" accessibilityLabel="S360">
             <Text style={{ color: colors.primary }}>S</Text>360
-          </Text>
+          </Text71>
           <Touchable
             accessibilityRole="button"
             accessibilityLabel="Definições"

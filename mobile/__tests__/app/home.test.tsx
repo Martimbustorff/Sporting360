@@ -1,5 +1,6 @@
 // Task 5: Home. Dados mockados (hooks); expo-router global (jest.setup) com `router.push` estável.
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Match } from '@/data/schemas';
@@ -81,6 +82,14 @@ beforeEach(() => {
   mockNext.current = { status: 'ready', data: [] };
   mockVote.current = { status: 'missing' };
   (useHomeMatches as jest.Mock).mockImplementation(() => mockNext.current);
+});
+
+describe('logótipo (Figma 01, 4921:5309)', () => {
+  it('S360 a 48 pt (Title de marca), não os 68 pt do ecrã de bloqueio', async () => {
+    await render(ui());
+    const logo = screen.getByLabelText('S360');
+    expect(StyleSheet.flatten(logo.props.style).fontSize).toBe(48);
+  });
 });
 
 describe('menu', () => {
