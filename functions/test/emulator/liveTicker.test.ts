@@ -685,6 +685,78 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     expect((await db.doc("ingestHealth/football_live").get()).get("consecutiveFailures")).toBe(0);
   });
 
+  it("um jogo de outra equipa acaba antes do do Sporting: fica como FT com finishedAt até a classificação oficial ser mais recente", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    // o Porto-Benfica estava no documento e já não vem em direto (liveResponse só tem o jogo do Sporting)
+    await db.doc(LIVE_DOC).set({
+      updatedAt: new Date(clock - MIN),
+      fixtures: [
+        { homeId: "228", awayId: "211", homeGoals: 2, awayGoals: 1, elapsed: 66, status: "2H" },
+        { homeId: "212", awayId: "217", homeGoals: 1, awayGoals: 0, elapsed: 89, status: "2H" },
+      ],
+    });
+    await db.doc("competitions/football_94_2026/data/standings").set({ groups: [], updatedAt: new Date(KO - 60 * MIN) });
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
+    const only = envelope([fx("fixture-live-2h.json", { elapsed: 67 })]);
+    await tick(deps(f, { liveResponse: only }));
+    let fixtures = (await db.doc(LIVE_DOC).get()).get("fixtures") as Record<string, unknown>[];
+    expect(fixtures).toHaveLength(2);
+    expect(fixtures[0]).toMatchObject({ homeId: "228", status: "2H" });
+    expect(fixtures[0]).not.toHaveProperty("finishedAt");
+    expect(fixtures[1]).toMatchObject({ homeId: "212", awayId: "217", homeGoals: 1, awayGoals: 0, status: "FT", elapsed: null });
+    const fin = (fixtures[1]!.finishedAt as { toMillis: () => number }).toMillis();
+    expect(fin).toBe(clock);
+
+    // minuto seguinte: continua, com o mesmo finishedAt
+    clock += MIN;
+    await tick(deps(f, { liveResponse: only }));
+    fixtures = (await db.doc(LIVE_DOC).get()).get("fixtures") as Record<string, unknown>[];
+    expect(fixtures).toHaveLength(2);
+    expect((fixtures[1]!.finishedAt as { toMillis: () => number }).toMillis()).toBe(fin);
+
+    // a classificação oficial é refrescada depois do apito desse jogo: deixa de ser mantido
+    await db.doc("competitions/football_94_2026/data/standings").set({ groups: [], updatedAt: new Date(fin + 1000) });
+    clock += MIN;
+    await tick(deps(f, { liveResponse: only }));
+    fixtures = (await db.doc(LIVE_DOC).get()).get("fixtures") as Record<string, unknown>[];
+    expect(fixtures).toHaveLength(1);
+    expect(fixtures[0]).toMatchObject({ homeId: "228" });
+  });
+
+  it("depois do apito do Sporting: FT mantido enquanto a oficial for mais antiga, descartado quando for mais recente", async () => {
+    clock = KO + 67 * MIN;
+    const ft = fx("fixture-live-2h.json");
+    ft.fixture.status = { long: "Match Finished", short: "FT", elapsed: 90, extra: null };
+    const finishedAt = KO + 112 * MIN;
+    await seedFrom(ft, finishedAt);
+    await db.doc(`matches/${ID}`).set({ finishedAt: new Date(finishedAt), finishedAtSource: "observed" }, { merge: true });
+    await db.doc(`ingestState/match_${ID}`).set({ ticker: { endRefresh: true, postRefresh: true } }, { merge: true });
+    const rivalFin = new Date(finishedAt - 3 * MIN);
+    await db.doc(LIVE_DOC).set({
+      updatedAt: new Date(finishedAt - MIN),
+      fixtures: [
+        { homeId: "228", awayId: "211", homeGoals: 2, awayGoals: 1, elapsed: 90, status: "2H" },
+        { homeId: "212", awayId: "217", homeGoals: 1, awayGoals: 0, elapsed: null, status: "FT", finishedAt: rivalFin },
+      ],
+    });
+    await db.doc("competitions/football_94_2026/data/standings").set({ groups: [], updatedAt: new Date(rivalFin.getTime() - MIN) });
+    clock = finishedAt + 2 * MIN;
+    const f = fakeFetch([[byIds, envelope([ft])]]);
+    await tick(deps(f));
+    expect(liveCalls).toHaveLength(0);
+    let fixtures = (await db.doc(LIVE_DOC).get()).get("fixtures") as Record<string, unknown>[];
+    // o jogo do Sporting (ainda "2H" no documento) cai; o FT do rival continua porque a oficial é anterior
+    expect(fixtures).toHaveLength(1);
+    expect(fixtures[0]).toMatchObject({ homeId: "212", status: "FT" });
+
+    await db.doc("competitions/football_94_2026/data/standings").set({ groups: [], updatedAt: new Date(finishedAt + MIN) });
+    clock += MIN;
+    await tick(deps(f));
+    fixtures = (await db.doc(LIVE_DOC).get()).get("fixtures") as Record<string, unknown>[];
+    expect(fixtures).toEqual([]);
+  });
+
   it("o jogo acaba: o documento fica com fixtures vazio (sem pedido à API) para a app não somar o resultado duas vezes", async () => {
     clock = KO + 67 * MIN;
     await seedFrom(fx("fixture-live-2h.json"), clock);

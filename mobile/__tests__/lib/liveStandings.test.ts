@@ -157,3 +157,17 @@ describe('zoneOf', () => {
     expect(zoneOf(null)).toBeNull();
   });
 });
+
+describe('jogos FT mantidos pelo servidor até a oficial os contar', () => {
+  it('o esquema aceita status FT, elapsed nulo e finishedAt, e a projeção conta o jogo', () => {
+    const { LiveFixturesDocSchema } = jest.requireActual('@/data/schemas') as typeof import('@/data/schemas');
+    const doc = LiveFixturesDocSchema.parse({
+      updatedAt: new Date(),
+      fixtures: [{ homeId: 212, awayId: '217', homeGoals: 2, awayGoals: 0, elapsed: null, status: 'FT', finishedAt: new Date() }],
+    });
+    expect(doc.fixtures[0]).toMatchObject({ homeId: '212', status: 'FT', elapsed: null });
+    const { rows } = projectStandings(official, doc.fixtures);
+    expect(by(rows, '212')).toMatchObject({ points: 30, liveScore: '2-0' });
+    expect(liveStandingsAvailable({ updatedAt: new Date(), fixtures: doc.fixtures }, new Date())).toBe(true);
+  });
+});

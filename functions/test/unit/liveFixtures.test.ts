@@ -21,3 +21,39 @@ describe("liveFixtureItems", () => {
     expect(liveFixtureItems([fx("1H", 1, 2, [null, null])])[0]).toMatchObject({ homeGoals: 0, awayGoals: 0 });
   });
 });
+
+import { KEEP_FINISHED_MAX_MS, keepFinished, type LiveFixtureItem } from "../../src/football/liveFixtures";
+
+describe("keepFinished", () => {
+  const NOW = new Date("2026-11-22T21:30:00Z");
+  const item = (homeId: string, awayId: string, o: Partial<LiveFixtureItem> = {}): LiveFixtureItem => ({
+    homeId, awayId, homeGoals: 2, awayGoals: 1, elapsed: 88, status: "2H", ...o,
+  });
+
+  it("jogo que saiu do live=all fica como FT com o último resultado e finishedAt = agora", () => {
+    const kept = keepFinished([item("212", "217"), item("228", "211")], [item("228", "211")], NOW, null);
+    expect(kept).toEqual([{ homeId: "212", awayId: "217", homeGoals: 2, awayGoals: 1, elapsed: null, status: "FT", finishedAt: NOW }]);
+  });
+
+  it("um jogo já mantido conserva o finishedAt original", () => {
+    const fin = new Date(NOW.getTime() - 5 * 60_000);
+    const kept = keepFinished([item("212", "217", { status: "FT", elapsed: null, finishedAt: fin })], [], NOW, null);
+    expect(kept[0]?.finishedAt).toEqual(fin);
+  });
+
+  it("deixa de ser mantido quando a classificação oficial é posterior ao finishedAt", () => {
+    const fin = new Date(NOW.getTime() - 5 * 60_000);
+    const prev = [item("212", "217", { status: "FT", finishedAt: fin })];
+    expect(keepFinished(prev, [], NOW, new Date(fin.getTime() - 1))).toHaveLength(1);
+    expect(keepFinished(prev, [], NOW, new Date(fin.getTime() + 1))).toHaveLength(0);
+  });
+
+  it("jogo que volta a estar em direto não é duplicado", () => {
+    expect(keepFinished([item("212", "217")], [item("212", "217", { homeGoals: 3 })], NOW, null)).toEqual([]);
+  });
+
+  it("rede de segurança: largado passadas 3 h sem a oficial", () => {
+    const fin = new Date(NOW.getTime() - KEEP_FINISHED_MAX_MS - 1);
+    expect(keepFinished([item("212", "217", { status: "FT", finishedAt: fin })], [], NOW, null)).toEqual([]);
+  });
+});

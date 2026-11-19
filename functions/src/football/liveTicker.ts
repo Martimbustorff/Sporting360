@@ -8,7 +8,7 @@ import { MAX_IDS } from "../sources/apiFootball";
 import { recordRun, runJob } from "../store/health";
 import { saveMatch } from "../store/writer";
 import { refreshCompetition, refreshStandings } from "./competitionSync";
-import { clearLiveFixtures, isLiveSportingLeagueMatch, isRecentlyFinishedSportingLeagueMatch, refreshLiveFixtures } from "./liveFixtures";
+import { isLiveSportingLeagueMatch, isRecentlyFinishedSportingLeagueMatch, pruneLiveFixtures, refreshLiveFixtures } from "./liveFixtures";
 import { LIVE_OWNERSHIP_MS, listFootballWindow, type FootballDeps } from "./fixturesSync";
 import { mapFixture } from "./mapFixture";
 import { POSTMATCH_TAIL_MS, PREMATCH_LEAD_MS, phaseFor, ratingsSlot, type Phase } from "./phase";
@@ -280,7 +280,7 @@ export async function tick(d: TickDeps): Promise<TickResult> {
       liveFail(`liveFixtures ${m.competition.id}`, e);
     }
   }
-  // Jogo do Sporting acabado há pouco (e nenhum em direto nessa liga): esvazia o documento, sem pedidos.
+  // Jogo do Sporting acabado há pouco (e nenhum em direto nessa liga): descarta o que a oficial já conta, sem pedidos.
   const cleared = new Set<string>();
   for (const m of state.values()) {
     const key = m.competition.key;
@@ -288,9 +288,9 @@ export async function tick(d: TickDeps): Promise<TickResult> {
     cleared.add(key);
     out.liveStandings.attempted++;
     try {
-      await clearLiveFixtures(d, key);
+      await pruneLiveFixtures(d, key);
     } catch (e) {
-      liveFail(`liveFixtures ${m.competition.id} (limpeza)`, e);
+      liveFail(`liveFixtures ${m.competition.id} (descarte)`, e);
     }
   }
 
