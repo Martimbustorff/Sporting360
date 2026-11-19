@@ -2,6 +2,8 @@ import { logger } from "firebase-functions";
 import { legacyFromFixture } from "../legacy/footballLegacy";
 import { FINAL_STATUSES, LIVE_STATUSES } from "../model/status";
 import type { MatchDoc } from "../model/types";
+import { dispatchMatchPushes } from "../push/matchPush";
+import type { PushSender } from "../push/sender";
 import { MAX_IDS } from "../sources/apiFootball";
 import { runJob } from "../store/health";
 import { saveMatch } from "../store/writer";
@@ -39,7 +41,11 @@ const POST_REFRESH_UNTIL_MS = 2 * HOUR;
 /** Fonte em `ingestHealth`. */
 export const LIVE_SOURCE = "football_live";
 
-export type TickDeps = FootballDeps & { sleep: (ms: number) => Promise<void> };
+export type TickDeps = FootballDeps & {
+  sleep: (ms: number) => Promise<void>;
+  /** Envio de push (início, golos, MVP). Sem ele, o ticker não envia nem grava marcas. */
+  push?: PushSender;
+};
 
 export interface TickResult {
   /** Pedidos à API feitos neste tick (os que chegaram a ter resposta HTTP 2xx). */
@@ -219,6 +225,12 @@ export async function tick(d: TickDeps): Promise<TickResult> {
           saved.push(match);
           const rf = i === 0 ? ratingsFlag.get(id) : undefined;
           if (rf) await setFlag(id, rf);
+          // Push depois de guardar; uma falha aqui nunca conta como falha do tick.
+          if (d.push) {
+            await dispatchMatchPushes(d.db, d.push, match, details?.events?.items ?? [], now).catch((e) =>
+              logger.warn(`liveTicker: push do jogo ${id} falhou: ${msg(e)}`),
+            );
+          }
         } catch (e) {
           fail(`jogo ${id}`, e);
         }

@@ -7,6 +7,7 @@ import { mapFixture } from "../../src/football/mapFixture";
 import { legacyFromFixture } from "../../src/legacy/footballLegacy";
 import { apiFootball } from "../../src/sources/apiFootball";
 import { saveMatch } from "../../src/store/writer";
+import { fakeSender } from "../helpers/fakeSender";
 import { clearAll, testDb } from "../helpers/emulatorDb";
 import { fakeFetch } from "../helpers/fakeFetch";
 import { seedFootballMatch } from "../helpers/seedMatch";
@@ -494,5 +495,41 @@ describe("tick: fim de jogo", () => {
     const f = fakeFetch([[byIds, envelope([{ ...fx("fixture-ft.json"), fixture: { ...fx("fixture-ft.json").fixture, id: 1500009 } }])], ...competitionRoutes(94)]);
     const r = await tick(deps(f));
     expect(r.calls).toBe(1 + 7);
+  });
+});
+
+describe("tick: push", () => {
+  it("sem deps.push não envia nem grava marcas", async () => {
+    await seedFrom(fx("fixture-ns.json"), KO - 60 * MIN);
+    clock = KO + 2 * MIN;
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-1h.json", { elapsed: 1 })])]]);
+    await tick(deps(f));
+    expect((await db.doc(`ingestState/match_${ID}`).get()).get("push")).toBeUndefined();
+  });
+
+  it("NS → LIVE com fixture-live-1h (elapsed 1): um push_matchStart em dois ticks seguidos", async () => {
+    await seedFrom(fx("fixture-ns.json"), KO - 60 * MIN);
+    clock = KO + 2 * MIN;
+    const s = fakeSender();
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-1h.json", { elapsed: 1 })])]]);
+    await tick({ ...deps(f), push: s.sender });
+    clock = KO + 3 * MIN;
+    await tick({ ...deps(f), push: s.sender });
+    const starts = s.topics.filter((t) => t.topic === "push_matchStart");
+    expect(starts).toHaveLength(1);
+    expect(starts[0].msg.route).toBe(`/jogo/${ID}`);
+    // O golo do fixture (12', resultado 1-0) sai uma vez, mesmo com 8 iterações.
+    expect(s.topics.filter((t) => t.topic === "push_goals")).toHaveLength(1);
+  });
+
+  it("o push a falhar não conta como falha do tick", async () => {
+    await seedFrom(fx("fixture-ns.json"), KO - 60 * MIN);
+    clock = KO + 2 * MIN;
+    const s = fakeSender();
+    s.failNext(100);
+    const f = fakeFetch([[byIds, envelope([fx("fixture-live-1h.json", { elapsed: 1 })])]]);
+    const r = await tick({ ...deps(f), push: s.sender });
+    expect(r.failed).toBe(0);
+    expect(s.topics).toEqual([]);
   });
 });

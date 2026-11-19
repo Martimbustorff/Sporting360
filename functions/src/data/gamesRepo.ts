@@ -30,7 +30,8 @@ function toDate(v: unknown): Date | null {
   return null;
 }
 
-function toState(m: MatchDoc): GameState {
+/** Estado de jogo (motor de pontos e janelas) a partir de um `MatchDoc`. */
+export function gameStateOf(m: MatchDoc): GameState {
   return {
     gameId: m.id,
     kickoff: m.kickoff,
@@ -51,7 +52,7 @@ export async function getGameState(
 ): Promise<GameState | null> {
   const m = await getMatch(db, gameId);
   if (!m || m.sport !== "football") return null;
-  return toState(m);
+  return gameStateOf(m);
 }
 
 export async function getPlayerLines(db: Firestore, gameId: string): Promise<PlayerLine[]> {
@@ -94,7 +95,7 @@ export async function listFinishedUnsettled(db: Firestore, now: Date): Promise<G
     if (!finishedAt) continue;
     const m = { ...(data as MatchDoc), id: d.id, kickoff: toDate(data.kickoff) ?? new Date(NaN), finishedAt } as MatchDoc;
     if (!FINAL_STATUSES.includes(m.status)) continue;
-    candidates.push(toState(m));
+    candidates.push(gameStateOf(m));
   }
 
   const settled = await Promise.all(
@@ -114,5 +115,5 @@ export async function listFootballStates(db: Firestore, from: Date, to: Date): P
     .where("kickoff", ">=", Timestamp.fromDate(from))
     .where("kickoff", "<=", Timestamp.fromDate(to))
     .get();
-  return snap.docs.map((d) => toState({ ...fromFirestore(d.data() as MatchDoc), id: d.id }));
+  return snap.docs.map((d) => gameStateOf({ ...fromFirestore(d.data() as MatchDoc), id: d.id }));
 }

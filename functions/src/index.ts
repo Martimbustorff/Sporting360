@@ -1,7 +1,8 @@
 import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
+import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
@@ -10,6 +11,7 @@ import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixtu
 import { runApiSportsJob } from "./modalities/apiSportsSync";
 import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
+import { fcmSender } from "./push/sender";
 import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleRun } from "./scheduled/settle";
@@ -127,6 +129,8 @@ export const footballLiveTicker = onSchedule(
         ...footballDeps(),
         api: apiFootball({ key: RAPIDAPI_KEY.value(), timeoutMs: LIVE_REQUEST_TIMEOUT_MS }),
         sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+        // Push de início, golos e MVP só com PUSH_ENABLED (desligado até ao lançamento da V7.1).
+        push: PUSH_ENABLED.value() ? fcmSender(getMessaging()) : undefined,
       },
       { minRemaining: 500 },
     );
