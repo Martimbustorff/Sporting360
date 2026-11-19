@@ -3,8 +3,8 @@
 // aviso do brilho. O QR do Figma é ilustrativo: aqui é o número da GameBox (react-native-qrcode-svg), nunca em logs.
 // Enquanto o ecrã tem o foco: brilho no máximo (valor anterior reposto ao sair e em segundo plano), ecrã sempre ligado e
 // vertical (lib/ticketMode). Lugar: Estádio no futebol, Pavilhão nas outras modalidades (lib/gamebox.ticketVenue).
-// Jogo seguinte: o primeiro por abrir da Home (useHomeMatches). SEM FIGMA: sem jogo a faixa mostra o nome da GameBox e o
-// recinto; "Esta GameBox já não existe." e o erro de leitura reusam os textos do formulário.
+// Jogo seguinte: o primeiro jogo EM CASA do Sporting por abrir, em todas as modalidades (useUpcomingMatches por
+// modalidade); fora de casa não conta. SEM FIGMA: sem jogo a faixa mostra só o nome da GameBox; "Esta GameBox já não existe." e o erro de leitura reusam os textos do formulário.
 // Rota `/gamebox/bilhete?id={id}`: `principal` é a GameBox antiga do perfil da V2 (mesma regra da folha da Home).
 import { useMemo } from 'react';
 import { Image } from 'expo-image';
@@ -18,9 +18,9 @@ import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
 import { useNow } from '@/data/clock';
 import { useMyUser } from '@/data/hooks';
-import { useHomeMatches } from '@/data/sports';
+import { useUpcomingMatches } from '@/data/sports';
 import { useMyGameboxes } from '@/data/user';
-import type { Match } from '@/data/schemas';
+import { SportSchema, type Match, type Sport } from '@/data/schemas';
 import {
   fromGameboxDoc,
   gameboxLabel,
@@ -28,7 +28,6 @@ import {
   resolveGameboxList,
   ticketSeat,
   ticketVenue,
-  VENUE_NAMES,
   type GameboxView,
   type Seat,
 } from '@/lib/gamebox';
@@ -48,8 +47,6 @@ export const TICKET_TEXT = {
   memberPrefix: 'Sócio n.º',
   notFound: 'Esta GameBox já não existe.',
   loadError: 'Não foi possível carregar as tuas GameBox.',
-  stadium: 'Estádio',
-  pavilion: 'Pavilhão',
   venueShort: { stadium: 'Alvalade', pavilion: 'João Rocha' },
 } as const;
 
@@ -64,17 +61,20 @@ const sentence = (s: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s)
 
 const GRACE_MS = 4 * 3_600_000; // como a Home: um jogo por abrir há mais de 4 h deixa de contar
 
-/** O primeiro jogo ainda por jogar (ao vivo, ou NS/PST sem passar a folga); os terminados saltam para o seguinte. */
-function upcoming(matches: readonly Match[], now: Date): Match | null {
+/** O primeiro jogo EM CASA ainda por jogar (ao vivo, ou NS/PST sem passar a folga); os terminados e os fora saltam. */
+function upcomingHome(matches: readonly Match[], now: Date): Match | null {
   return (
     [...matches]
+      .filter((m) => m.sportingSide === 'home')
       .sort((x, y) => x.kickoff.getTime() - y.kickoff.getTime())
       .find((m) => m.status === 'LIVE' || m.status === 'HT' || ((m.status === 'NS' || m.status === 'PST') && m.kickoff.getTime() >= now.getTime() - GRACE_MS)) ??
     null
   );
 }
 
-function Band({ title, subtitle }: { title: string; subtitle: string }) {
+const SPORTS: readonly Sport[] = SportSchema.options;
+
+function Band({ title, subtitle }: { title: string; subtitle: string | null }) {
   return (
     <View
       style={{
@@ -100,7 +100,7 @@ function Band({ title, subtitle }: { title: string; subtitle: string }) {
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text71 variant="label16" numberOfLines={1} ellipsizeMode="tail">{title}</Text71>
-        <Text71 variant="caption12" numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text71>
+        {subtitle ? <Text71 variant="caption12" numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text71> : null}
       </View>
     </View>
   );
@@ -130,7 +130,7 @@ function Ticket({ gamebox, index, match }: { gamebox: GameboxView; index: number
   const title = match ? `${match.home.name} - ${match.away.name}` : gameboxLabel(gamebox.name, index);
   const subtitle = match
     ? `${sentence(formatCardDate(match.kickoff))} · ${formatTime(match.kickoff)} · ${venueName}`
-    : `${venue === 'stadium' ? TICKET_TEXT.stadium : TICKET_TEXT.pavilion} ${VENUE_NAMES[venue]}`;
+    : null;
   return (
     <View style={{ backgroundColor: colors.white, borderRadius: layout.ticketRadius, overflow: 'hidden' }}>
       <Band title={title} subtitle={subtitle} />
@@ -182,8 +182,13 @@ function Body({ gamebox, index }: { gamebox: GameboxView; index: number }) {
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const user = useMyUser(uid);
   const now = useNow(60_000);
-  const matches = useHomeMatches(now);
-  const match = useMemo(() => (matches.status === 'ready' ? upcoming(matches.data, now) : null), [matches, now]);
+  // Um hook por modalidade (lista fixa, ordem estável).
+  const lists = SPORTS.map((sport) => useUpcomingMatches(sport, now)); // eslint-disable-line react-hooks/rules-of-hooks
+  const match = useMemo(
+    () => upcomingHome(lists.flatMap((l) => (l.status === 'ready' ? l.data : [])), now),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [...lists, now],
+  );
   const data = user.status === 'ready' ? user.data : null;
   const rawName = (data?.name ?? '').trim();
   const name = rawName.includes('@') ? '' : rawName;

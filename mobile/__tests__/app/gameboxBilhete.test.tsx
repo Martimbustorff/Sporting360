@@ -21,7 +21,13 @@ jest.mock('@/providers/SessionProvider', () => ({
 }));
 jest.mock('@/data/user', () => ({ useMyGameboxes: jest.fn(() => mockBoxes.current) }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
-jest.mock('@/data/sports', () => ({ useHomeMatches: jest.fn(() => mockMatches.current) }));
+// Dados por modalidade: `mockMatches.current` é a lista de jogos; cada hook devolve os da sua modalidade.
+jest.mock('@/data/sports', () => ({
+  useUpcomingMatches: jest.fn((sport: string) => {
+    const m = mockMatches.current as { status: string; data?: { sport: string }[] };
+    return m.status === 'ready' ? { status: 'ready', data: (m.data ?? []).filter((x) => x.sport === sport) } : m;
+  }),
+}));
 
 import * as Brightness from 'expo-brightness';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -90,7 +96,7 @@ describe('/gamebox/bilhete', () => {
     expect(screen.getByText('Mostra este código na porta')).toBeTruthy();
     expect(screen.getByText('Maria Silva')).toBeTruthy();
     expect(screen.getByText('Sócio n.º 123 456')).toBeTruthy();
-    // Sem jogo: Estádio.
+    // Sem jogo: lugar do Estádio.
     for (const v of ['5', 'A12', '7', '14']) expect(screen.getByText(v)).toBeTruthy();
   });
 
@@ -100,6 +106,42 @@ describe('/gamebox/bilhete', () => {
     await flush();
     expect(screen.getByText('Sporting CP - FC Porto')).toBeTruthy();
     expect(screen.getByText(/20:30/)).toBeTruthy();
+  });
+
+  it('sem jogo seguinte a faixa mostra só o nome da GameBox', async () => {
+    await render(ui());
+    await flush();
+    expect(screen.getByText('Lugar anual')).toBeTruthy();
+    expect(screen.queryByText(/Alvalade|João Rocha/)).toBeNull();
+  });
+
+  it('o próximo jogo fora de casa não conta: sem Alvalade na faixa e sem jogo seguinte', async () => {
+    const away = { ...match('football'), home: { id: '2', name: 'FC Porto', logo: null }, away: { id: '1', name: 'Sporting CP', logo: null }, sportingSide: 'away' };
+    mockMatches.current = { status: 'ready', data: [away] };
+    await render(ui());
+    await flush();
+    expect(screen.queryByText('FC Porto - Sporting CP')).toBeNull();
+    expect(screen.queryByText(/Alvalade/)).toBeNull();
+    expect(screen.getByText('Lugar anual')).toBeTruthy();
+  });
+
+  it('fora de casa no futebol salta para o próximo em casa de outra modalidade', async () => {
+    const away = { ...match('football'), kickoff: new Date('2027-12-20T20:30:00Z'), sportingSide: 'away' };
+    const futsal = { ...match('futsal'), id: 'm3', kickoff: new Date('2027-12-22T20:30:00Z') };
+    mockMatches.current = { status: 'ready', data: [away, futsal] };
+    await render(ui());
+    await flush();
+    expect(screen.getByText(/João Rocha/)).toBeTruthy();
+    for (const v of ['P1', 'B2', '3', '9']) expect(screen.getByText(v)).toBeTruthy();
+  });
+
+  it('o jogo em casa mais cedo ganha entre modalidades', async () => {
+    const futsal = { ...match('futsal'), id: 'm3', kickoff: new Date('2027-12-22T20:30:00Z') };
+    mockMatches.current = { status: 'ready', data: [futsal, match('football')] };
+    await render(ui());
+    await flush();
+    expect(screen.getByText(/Alvalade/)).toBeTruthy();
+    expect(screen.queryByText('B2')).toBeNull();
   });
 
   it('Estádio no futebol e Pavilhão nas outras modalidades', async () => {
