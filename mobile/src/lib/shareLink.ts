@@ -13,3 +13,6 @@ export const SHARE_SHORT_TEXT = `${share.host}/j`;
 export function shareLink(gameId: string): string {
   return `${SHARE_HOST}/j?src=share&game=${encodeURIComponent(gameId)}`;
 }
+
+/** Link do empréstimo de GameBox (Plano 8): o mesmo que o servidor devolve em createLoan (LOAN_URL_BASE). */
+export const loanLink = (loanId: string): string => `${SHARE_HOST}/e/${loanId}`;

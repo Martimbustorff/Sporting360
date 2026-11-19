@@ -27,6 +27,8 @@ export const LOAN_TEXT = {
   lentFor: 'Emprestada para',
   notOpened: 'Ainda não aberto',
   cancel: 'Cancelar empréstimo',
+  // SEM FIGMA, por desenhar: botão de partilhar o link outra vez (empréstimo ainda não aberto).
+  shareAgain: 'Partilhar link outra vez',
   cancelTitle: 'Cancelar empréstimo?',
   cancelBody: 'Quem recebeu deixa de ver a GameBox para este jogo.',
   back: 'Voltar',

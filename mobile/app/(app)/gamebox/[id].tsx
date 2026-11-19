@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, Share, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
@@ -23,6 +23,8 @@ import { Touchable } from '@/components/Touchable';
 import { useOwnerLoans, type LoanItem } from '@/data/loans';
 import { useMyGameboxes } from '@/data/user';
 import { formatTime } from '@/lib/ptDate';
+import { loanLink } from '@/lib/shareLink';
+import { loanShareText } from '@/services/loans';
 import {
   EMPTY_SEAT,
   fromGameboxDoc,
@@ -104,6 +106,17 @@ function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: 
               </Text71>
             </View>
           </View>
+          {active.openedAt ? null : (
+            <PrimaryButton
+              label={LOAN_TEXT.shareAgain}
+              variant="outline"
+              onPress={() =>
+                void Share.share({
+                  message: loanShareText({ homeName: active.match.homeName, awayName: active.match.awayName, url: loanLink(active.id) }),
+                }).catch(() => undefined)
+              }
+            />
+          )}
           <PrimaryButton label={LOAN_TEXT.cancel} variant="outline" onPress={() => setSheet('cancel')} />
         </View>
       ) : (

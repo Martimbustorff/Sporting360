@@ -207,6 +207,20 @@ describe('Empréstimo ativo', () => {
     expect(screen.getByText('Aberto por leao_1906 às 18:42')).toBeTruthy();
   });
 
+  it('partilhar outra vez: só enquanto não foi aberto, com o mesmo texto e link', async () => {
+    mockLoans.current = { status: 'ready', data: [loan()] };
+    const view = await render(ui());
+    await fireEvent.press(screen.getByRole('button', { name: 'Partilhar link outra vez' }));
+    expect(share).toHaveBeenCalledWith({
+      message: 'Empresto-te a minha GameBox para o Sporting CP - FC Porto. Abre na app S360: https://s360-prognostico-download.web.app/e/L1',
+    });
+    await view.unmount();
+    mockLoans.current = { status: 'ready', data: [loan({ recipientName: 'leao_1906', openedAt: new Date('2027-12-21T18:42:00Z') })] };
+    await render(ui());
+    expect(screen.queryByRole('button', { name: 'Partilhar link outra vez' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancelar empréstimo' })).toBeTruthy();
+  });
+
   it('cancelar pede confirmação e só depois chama cancelLoan; Voltar não cancela', async () => {
     mockLoans.current = { status: 'ready', data: [loan()] };
     await render(ui());
