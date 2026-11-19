@@ -2,10 +2,13 @@
 import type { Competition, Tie } from '@/data/schemas';
 import {
   aggregateText,
+  formResults,
+  getTableView,
   getViewChoice,
   legScoreText,
   resetViewChoices,
   resolveView,
+  setTableView,
   setViewChoice,
   showSelector,
 } from '@/lib/standings';
@@ -122,5 +125,28 @@ describe('textos', () => {
 
   it('mão por jogar não tem resultado', () => {
     expect(legScoreText({ ...leg1, status: 'NS', score: { home: null, away: null, penaltyHome: null, penaltyAway: null } }, 0, '228')).toBeNull();
+  });
+});
+
+describe('formResults e vista da tabela (Task 6 do Plano 9)', () => {
+  beforeEach(() => resetViewChoices());
+
+  it('W, D e L da API passam a V, E e D; ignora outros caracteres; no máximo os 5 mais recentes', () => {
+    expect(formResults('WDL')).toEqual(['V', 'E', 'D']);
+    expect(formResults('wdlx?')).toEqual(['V', 'E', 'D']);
+    expect(formResults('LLWWDWL')).toEqual(['V', 'V', 'E', 'V', 'D']);
+  });
+
+  it('nulo ou vazio: sem resultados', () => {
+    expect(formResults(null)).toEqual([]);
+    expect(formResults('')).toEqual([]);
+  });
+
+  it('a vista abre em "short", guarda a escolha e o reset volta a "short"', () => {
+    expect(getTableView()).toBe('short');
+    setTableView('form');
+    expect(getTableView()).toBe('form');
+    resetViewChoices();
+    expect(getTableView()).toBe('short');
   });
 });

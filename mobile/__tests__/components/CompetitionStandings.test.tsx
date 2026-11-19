@@ -397,7 +397,7 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     await render(<CompetitionStandings competitionKey={LIGA} />);
     expect(screen.getByTestId('standings-live-toggle')).toBeTruthy();
     expect(screen.getByTestId('segment-live').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByText('Com os resultados dos jogos a decorrer. A tabela oficial da Liga atualiza de hora a hora.')).toBeTruthy();
+    expect(screen.getByText('Com os resultados dos jogos a decorrer.')).toBeTruthy();
     // Sporting 26 + 3 = 29 (+22) e FC Porto 27 (+14): o Sporting passa de 3.º para 1.º (diferença de golos sobre o Benfica), o Benfica desce.
     expect(rank('228')).toBe(1);
     expect(rank('211')).toBe(2);
@@ -532,5 +532,177 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     }
     expect(screen.getByTestId('standings-points-901').props.children).toBe(19);
     expect(StyleSheet.flatten(screen.getByTestId('standings-points-901').props.style)).toMatchObject({ flexShrink: 0, width: layout.stColPts });
+  });
+});
+
+describe('Classificação com três vistas (Task 6 do Plano 9)', () => {
+  const LIGA = 'football_94_2026';
+  const r = (rank: number, teamId: string, name: string, o: Partial<StandingRow>): StandingRow => ({ ...row(rank, teamId, name, 20), ...o }) as StandingRow;
+  const liga: StandingsDoc = {
+    groups: [
+      {
+        name: 'Liga Portugal',
+        rows: [
+          r(1, '228', 'Sporting CP', { points: 14, played: 6, win: 4, draw: 2, lose: 0, goalsDiff: 9, form: 'WWDWW' }),
+          r(2, '212', 'FC Porto', { points: 13, played: 6, win: 4, draw: 1, lose: 1, goalsDiff: 5, form: 'WDLWDWLX' }),
+          r(3, '217', 'SC Braga', { points: 9, played: 6, win: 2, draw: 3, lose: 1, goalsDiff: 1, form: null }),
+          r(4, '99', 'Famalicão', { points: 8, played: 6, win: 2, draw: 2, lose: 2, goalsDiff: 0, form: '' }),
+        ],
+      },
+    ],
+  };
+  const fixture = (homeId: string, awayId: string, homeGoals: number, awayGoals: number) => ({ homeId, awayId, homeGoals, awayGoals, elapsed: 60, status: '2H' });
+  const live = (fixtures = [fixture('228', '212', 1, 0)], ageMs = 30_000) => ({
+    status: 'ready' as const,
+    data: { updatedAt: new Date(Date.now() - ageMs), fixtures },
+  });
+  const tab = (name: string) => screen.getByRole('tab', { name });
+  const width = (id: string) => StyleSheet.flatten(screen.getByTestId(id, { includeHiddenElements: true }).props.style).width;
+
+  beforeEach(() => {
+    mockData.standings = { status: 'ready', data: liga };
+  });
+
+  it('o seletor tem Resumida, Completa e Forma, abre em Resumida e a tabela é a de sempre (J, DG, PTS)', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.getByTestId('standings-view-selector')).toBeTruthy();
+    for (const n of ['Resumida', 'Completa', 'Forma']) expect(tab(n)).toBeTruthy();
+    expect(tab('Resumida').props.accessibilityState.selected).toBe(true);
+    expect(tab('Completa').props.accessibilityState.selected).toBe(false);
+    for (const h of ['J', 'DG', 'PTS']) expect(screen.getByText(h, { includeHiddenElements: true })).toBeTruthy();
+    for (const h of ['V', 'E']) expect(screen.queryByText(h, { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('standings-win-228')).toBeNull();
+    expect(screen.queryByTestId('standings-form-228')).toBeNull();
+    expect(screen.getByLabelText('1.º Sporting CP, 14 pontos, 6 jogos')).toBeTruthy();
+  });
+
+  it('Completa: J, V, E, D, DG e PTS com as larguras do Figma, nome curto e com reticências', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Completa'));
+    expect(tab('Completa').props.accessibilityState.selected).toBe(true);
+    for (const h of ['#', 'Equipa', 'J', 'V', 'E', 'D', 'DG', 'PTS']) expect(screen.getByText(h, { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByTestId('standings-win-228').props.children).toBe(4);
+    expect(screen.getByTestId('standings-draw-228').props.children).toBe(2);
+    expect(screen.getByTestId('standings-lose-228').props.children).toBe(0);
+    expect(screen.getByTestId('standings-points-228').props.children).toBe(14);
+    expect(width('standings-win-228')).toBe(layout.stColResult);
+    expect(width('standings-points-228')).toBe(layout.stColPtsFull);
+    expect(layout).toMatchObject({ stColPlayedFull: 22, stColResult: 20, stColDiffFull: 32, stColPtsFull: 30 });
+    // Nome curto do Sporting; todos os nomes numa linha com reticências, números sem encolher.
+    const name = screen.getByText('Sporting');
+    expect(name.props.numberOfLines).toBe(1);
+    expect(name.props.ellipsizeMode).toBe('tail');
+    expect(StyleSheet.flatten(screen.getByTestId('standings-win-228').props.style).flexShrink).toBe(0);
+    expect(screen.getByLabelText(/^1\.º Sporting, 14 pontos, 6 jogos, 4 vitórias, 2 empates, 0 derrotas/)).toBeTruthy();
+  });
+
+  it('Forma: até 5 pills com V, E e D (W, D, L da API), a mais recente à direita; sem forma, sem pills', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Forma'));
+    const pills = (id: string) => screen.queryAllByTestId(new RegExp(`^standings-form-${id}-\\d$`), { includeHiddenElements: true });
+    expect(pills('228')).toHaveLength(5);
+    expect(pills('212')).toHaveLength(5); // 'WDLWDWLX': ignora o X e fica com os 5 mais recentes (L W D W L)
+    const text = (id: string) => pills(id).map((p) => (p.children[0] as unknown as { props: { children: string } }).props.children);
+    expect(text('212')).toEqual(['D', 'V', 'E', 'V', 'D']);
+    expect(text('228')).toEqual(['V', 'V', 'E', 'V', 'V']);
+    expect(screen.getByLabelText(/^2\.º FC Porto\. Últimos jogos: derrota, vitória, empate, vitória, derrota$/)).toBeTruthy();
+    expect(screen.getByLabelText(/^1\.º Sporting\. Últimos jogos: vitória, vitória, empate, vitória, vitória$/)).toBeTruthy();
+    expect(pills('217')).toHaveLength(0);
+    expect(pills('99')).toHaveLength(0);
+    expect(screen.getByLabelText('3.º SC Braga')).toBeTruthy();
+    // Cores: as mesmas fichas do pré-jogo (V primary, E surface20, D formLoss).
+    const bg = (id: string, i: number) => StyleSheet.flatten(screen.getByTestId(`standings-form-${id}-${i}`, { includeHiddenElements: true }).props.style).backgroundColor;
+    expect(bg('228', 0)).toBe(colors.primary);
+    expect(bg('228', 2)).toBe(colors.surface20);
+    expect(bg('212', 0)).toBe(colors.formLoss);
+    expect(width('standings-form-228-0')).toBe(layout.stFormPill);
+    // Sem J, DG e PTS.
+    for (const h of ['J', 'DG', 'PTS']) expect(screen.queryByText(h, { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('standings-points-228')).toBeNull();
+  });
+
+  it('a escolha vale nos dois sítios, mesmo desmontando, e para todas as competições', async () => {
+    const first = await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Forma'));
+    await first.unmount();
+    const second = await render(<CompetitionStandings competitionKey={LIGA} showCompetitionLink={false} />);
+    expect(tab('Forma').props.accessibilityState.selected).toBe(true);
+    await second.rerender(<CompetitionStandings competitionKey="football_2_2026" />);
+    expect(tab('Forma').props.accessibilityState.selected).toBe(true);
+  });
+
+  it('com o alternador ao vivo, o seletor fica por baixo da nota; sem ele, é a primeira coisa por cima da tabela', async () => {
+    mockData.liveFixtures = live();
+    const { toJSON, unmount } = await render(<CompetitionStandings competitionKey={LIGA} />);
+    const order = (testIDs: string[]) => {
+      const json = JSON.stringify(toJSON());
+      return testIDs.map((t) => json.indexOf(`"${t}"`));
+    };
+    const [toggle, selector, table] = order(['standings-live-toggle', 'standings-view-selector', 'standings-table']);
+    expect(toggle).toBeGreaterThan(-1);
+    expect(toggle).toBeLessThan(selector!);
+    expect(selector).toBeLessThan(table!);
+    expect(screen.getByText('Com os resultados dos jogos a decorrer.')).toBeTruthy();
+    await unmount();
+    mockData.liveFixtures = { status: 'missing' };
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.queryByTestId('standings-live-toggle')).toBeNull();
+    expect(screen.getByTestId('standings-view-selector')).toBeTruthy();
+  });
+
+  it('"Ao vivo" + "Completa": V, E e D projetados batem com J e PTS; a forma é sempre a oficial', async () => {
+    mockData.liveFixtures = live([fixture('228', '212', 1, 0)]);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Completa'));
+    const n = (k: string, id: string) => screen.getByTestId(`standings-${k}-${id}`).props.children;
+    // Sporting: 4V 2E 0D + vitória = 5V 2E 0D, 7 jogos, 17 pontos. FC Porto: 4V 1E 2D, 7 jogos, 13 pontos.
+    expect([n('win', '228'), n('draw', '228'), n('lose', '228'), n('points', '228')]).toEqual([5, 2, 0, 17]);
+    expect([n('win', '212'), n('draw', '212'), n('lose', '212'), n('points', '212')]).toEqual([4, 1, 2, 13]);
+    expect(screen.getByLabelText(/^1\.º Sporting, 17 pontos, 7 jogos/)).toBeTruthy();
+    await fireEvent.press(tab('Forma'));
+    expect(screen.getByLabelText(/^1\.º Sporting, ao vivo 1-0\. Últimos jogos: vitória, vitória, empate, vitória, vitória$/)).toBeTruthy();
+  });
+
+  it('jogos em curso: o ponto aparece nas equipas que jogam, nas três vistas, em "Ao vivo" e em "Oficial"', async () => {
+    mockData.liveFixtures = live([fixture('228', '212', 1, 0)]);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    for (const mode of ['Ao vivo', 'Oficial']) {
+      await fireEvent.press(tab(mode));
+      for (const v of ['Resumida', 'Completa', 'Forma']) {
+        await fireEvent.press(tab(v));
+        expect(screen.getByTestId('standings-livedot-228')).toBeTruthy();
+        expect(screen.getByTestId('standings-livedot-212')).toBeTruthy();
+        expect(screen.queryByTestId('standings-livedot-217')).toBeNull();
+        const dot = StyleSheet.flatten(screen.getByTestId('standings-livedot-228').props.style);
+        expect(dot).toMatchObject({ width: 6, height: 6, marginHorizontal: 6, backgroundColor: colors.primaryOnDark });
+      }
+    }
+  });
+
+  it('documento velho ou sem jogos: sem pontos e sem alternador', async () => {
+    mockData.liveFixtures = live([fixture('228', '212', 1, 0)], 6 * 60_000);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.queryByTestId('standings-livedot-228')).toBeNull();
+    expect(screen.queryByTestId('standings-live-toggle')).toBeNull();
+  });
+
+  it('a linha do Sporting continua destacada nas três vistas, com a legenda das zonas como estava', async () => {
+    const zoned: StandingsDoc = { groups: [{ name: '', rows: [{ ...liga.groups[0]!.rows[0]!, description: 'Promotion - Champions League' }, ...liga.groups[0]!.rows.slice(1)] }] };
+    mockData.standings = { status: 'ready', data: zoned };
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    for (const v of ['Resumida', 'Completa', 'Forma']) {
+      await fireEvent.press(tab(v));
+      expect(screen.getByTestId('standings-row-228').props.accessibilityState).toEqual({ selected: true });
+      expect(screen.getByTestId('standings-row-212').props.accessibilityState).toEqual({ selected: false });
+      expect(screen.getByTestId('standings-legend')).toBeTruthy();
+    }
+  });
+
+  it('a 320 pt os números e as pills não encolhem (largura fixa, sem encolher)', async () => {
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    await fireEvent.press(tab('Completa'));
+    for (const k of ['win', 'draw', 'lose', 'points']) expect(StyleSheet.flatten(screen.getByTestId(`standings-${k}-212`).props.style).flexShrink).toBe(0);
+    await fireEvent.press(tab('Forma'));
+    expect(StyleSheet.flatten(screen.getByTestId('standings-form-212', { includeHiddenElements: true }).props.style).flexShrink).toBe(0);
   });
 });

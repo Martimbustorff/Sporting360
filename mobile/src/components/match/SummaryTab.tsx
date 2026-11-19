@@ -30,7 +30,7 @@ import {
   type PrematchFull,
 } from '@/lib/prematch';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, radius, space, spacing } from '@/theme/tokens';
+import { colors, formLetterBg, layout, radius, space, spacing } from '@/theme/tokens';
 import { LiveEvents, LiveNumbers } from '@/components/match/LiveSummary';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
@@ -41,7 +41,7 @@ const CANCELLED = 'Jogo cancelado.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
-const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.formLoss };
+const LETTER_BG: Record<FormLetter, string> = formLetterBg;
 
 /** Previsão (sem frame): percentagens de vitória da casa, empate e fora, com o nome da equipa por baixo. */
 function Prediction({ p, match }: { p: PrematchFull; match: Match }) {

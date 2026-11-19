@@ -59,6 +59,9 @@ export const colors = {
   injuryBg: 'rgba(229, 56, 54, 0.25)',
 } as const;
 
+/** Fundo da letra de forma (V / E / D): o mesmo no pré-jogo (Sumário) e na classificação. */
+export const formLetterBg = { V: colors.primary, E: colors.surface20, D: colors.formLoss } as const;
+
 export const fonts = {
   // Headlines: always uppercase (screen titles, names, minutes, scores, menu items)
   display: 'DinCondensed',
@@ -304,7 +307,16 @@ export const layout = {
   stHeadPadY: 6,
   stArrow: { width: 8, height: 6 }, // Sobe / Desce (4935:7302)
   stArrowGap: 3,
-  stLiveDot: 6, // ponto do alternador "Ao vivo" (4935:7282)
+  stLiveDot: 6, // ponto do alternador "Ao vivo" (4935:7282); também o "a jogar agora" ao lado do nome (4997:12493)
+  stLiveDotGap: 6, // espaço de cada lado do ponto, entre o emblema e o nome
+  // Vista "Completa" (4997:12493): J 22, V/E/D 20, DG 32, PTS 30; a "Resumida" fica com stColPlayed/stColDiff/stColPts
+  stColPlayedFull: 22,
+  stColResult: 20,
+  stColDiffFull: 32,
+  stColPtsFull: 30,
+  // Vista "Forma" (4997:12673, pill 4997:12492): círculo de 20, 4 entre pills
+  stFormPill: 20,
+  stFormPillGap: 4,
   stLegendGap: 14,
   stLegendItemGap: 6,
   stLegendBar: { width: 3, height: 12 },

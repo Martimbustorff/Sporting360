@@ -359,3 +359,35 @@ describe('projectStandings: sem dupla contagem (guardDoubleCount)', () => {
     expect(rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
   });
 });
+
+describe('projectStandings: J, V, E, D, DG e PTS coerentes (vista Completa)', () => {
+  const t = (r: StandingRow) => ({ played: r.played, win: r.win, draw: r.draw, lose: r.lose, goalsDiff: r.goalsDiff, points: r.points });
+  const base = { played: 12, win: 7, draw: 2, lose: 3, goalsDiff: 10, points: 23 };
+
+  it('vitória, empate e derrota somam V, E ou D com J, DG e PTS', () => {
+    const o = [row(1, 'A', 'A', 23, base), row(2, 'B', 'B', 23, base), row(3, 'C', 'C', 23, base), row(4, 'D', 'D', 23, base)];
+    const { rows } = projectStandings(o, [live('A', 'B', 2, 0), live('C', 'D', 1, 1)]);
+    expect(t(by(rows, 'A'))).toEqual({ played: 13, win: 8, draw: 2, lose: 3, goalsDiff: 12, points: 26 });
+    expect(t(by(rows, 'B'))).toEqual({ played: 13, win: 7, draw: 2, lose: 4, goalsDiff: 8, points: 23 });
+    expect(t(by(rows, 'C'))).toEqual({ played: 13, win: 7, draw: 3, lose: 3, goalsDiff: 10, points: 24 });
+  });
+
+  it('equipa que a guarda de dupla contagem salta fica com os números oficiais todos juntos', () => {
+    const o = [row(1, 'A', 'A', 23, base), row(2, 'B', 'B', 23, base)];
+    // A tem 11 terminados na lista e 12 na tabela: já contou o jogo. B tem 12: soma.
+    const results = [
+      ...Array.from({ length: 11 }, (_, i) => ({ homeId: 'A', awayId: `X${i}`, homeGoals: 1, awayGoals: 0 })),
+      ...Array.from({ length: 12 }, (_, i) => ({ homeId: 'B', awayId: `Y${i}`, homeGoals: 1, awayGoals: 0 })),
+    ];
+    const { rows } = projectStandings(o, [live('A', 'B', 3, 0)], results, { guardDoubleCount: true });
+    expect(t(by(rows, 'A'))).toEqual(base);
+    expect(t(by(rows, 'B'))).toEqual({ played: 13, win: 7, draw: 2, lose: 4, goalsDiff: 7, points: 23 });
+  });
+
+  it('a forma nunca se projeta', () => {
+    const o = [row(1, 'A', 'A', 23, { form: 'WDL' }), row(2, 'B', 'B', 23, { form: 'LLL' })];
+    const { rows } = projectStandings(o, [live('A', 'B', 2, 0)]);
+    expect(by(rows, 'A').form).toBe('WDL');
+    expect(by(rows, 'B').form).toBe('LLL');
+  });
+});

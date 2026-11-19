@@ -6,6 +6,7 @@
 // SEM FIGMA: o seletor "Tabela"/"Eliminatórias" (só quando há as duas vistas), o quadro (`BracketView`), o esqueleto
 // em branco enquanto carrega, o erro, "Sem classificação para esta competição.", o aviso de cache e a ligação
 // "Ver competição" (Body tab a primary, centrada, alvo de toque de 44 px).
+// Seletor "Resumida / Completa / Forma" (4997:12881): `Segmented` entre a nota do alternador e a tabela, uma escolha para todas as competições.
 // A vista abre pela escolha do utilizador, depois por `competitions/{key}.view.primary` (que muda em direto de
 // `table` para `bracket` a meio da época, Review Focus 5). A escolha guarda-se por competição até a app reiniciar
 // (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
@@ -26,13 +27,16 @@ import { useNow } from '@/data/clock';
 import { useCompetition, useCompetitionData } from '@/data/sports';
 import { finishedResults, liveStandingsAvailable, projectStandings } from '@/lib/liveStandings';
 import {
+  getTableView,
   getViewChoice,
   hasBracketTies,
   hasTableRows,
   resolveView,
+  setTableView,
   setViewChoice,
   showSelector,
   type StandingsView,
+  type TableView,
 } from '@/lib/standings';
 import { SPORTING_API_ID } from '@/lib/teams';
 import { Body, Text71 } from '@/theme/typography';
@@ -40,13 +44,18 @@ import { colors, layout, spacing } from '@/theme/tokens';
 
 export const STANDINGS_ERROR = 'Não foi possível carregar os dados.';
 const NO_STANDINGS = 'Sem classificação para esta competição.';
-export const LIVE_NOTE = 'Com os resultados dos jogos a decorrer. A tabela oficial da Liga atualiza de hora a hora.';
+export const LIVE_NOTE = 'Com os resultados dos jogos a decorrer.';
 type Mode = 'live' | 'official';
 /** O documento de jogos ao vivo só se reavalia (velho ou não) a cada 30 s. */
 const LIVE_CHECK_MS = 30_000;
 const SPORTING = String(SPORTING_API_ID);
 /** `roller_hockey_…` também tem "_" no nome: compara o prefixo com cada modalidade. Desconhecida: null. */
 const sportOfKey = (key: string): Sport | null => SportSchema.options.find((s) => key.startsWith(`${s}_`)) ?? null;
+const TABLE_VIEWS: { key: TableView; label: string }[] = [
+  { key: 'short', label: 'Resumida' },
+  { key: 'full', label: 'Completa' },
+  { key: 'form', label: 'Forma' },
+];
 const VIEWS: { key: StandingsView; label: string }[] = [
   { key: 'table', label: 'Tabela' },
   { key: 'bracket', label: 'Eliminatórias' },
@@ -90,6 +99,12 @@ export function CompetitionStandings({
   // Sem seletor não há como desfazer uma escolha antiga: aí manda o servidor.
   const userChoice = selector ? getViewChoice(competitionKey) : null;
   const shown = resolveView(view, hasRows, hasTies, userChoice);
+  // Vista da tabela (Resumida, Completa, Forma): uma só para todas as competições, até a app reiniciar.
+  const tableView = getTableView();
+  const chooseTableView = (v: TableView) => {
+    setTableView(v);
+    rerender();
+  };
   const choose = (v: StandingsView) => {
     setViewChoice(competitionKey, v);
     rerender();
@@ -103,6 +118,8 @@ export function CompetitionStandings({
     shown === 'table' && table && liveOn && mode === 'live'
       ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures, results, { guardDoubleCount: fixtures.status === 'ready' }).rows }))
       : null;
+  // Equipas em jogo: com o documento recente, nas três vistas e tanto em "Ao vivo" como em "Oficial".
+  const liveTeamIds = new Set(liveOn ? liveReady.fixtures.flatMap((f) => [f.homeId, f.awayId]) : []);
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 
   return (
@@ -135,7 +152,12 @@ export function CompetitionStandings({
         />
       ) : null}
       {projected ? <Text71 variant="caption12" color="textMuted">{LIVE_NOTE}</Text71> : null}
-      {shown === 'table' && table ? <StandingsTable groups={projected ?? table.groups} highlightTeamId={SPORTING} sport={sport} /> : null}
+      {shown === 'table' && table ? (
+        <Segmented testID="standings-view-selector" items={TABLE_VIEWS} value={tableView} onChange={chooseTableView} />
+      ) : null}
+      {shown === 'table' && table ? (
+        <StandingsTable groups={projected ?? table.groups} highlightTeamId={SPORTING} sport={sport} view={tableView} liveTeamIds={liveTeamIds} />
+      ) : null}
       {shown === 'bracket' && knockout ? <BracketView bracket={knockout} highlightTeamId={SPORTING} /> : null}
       {showCompetitionLink ? (
         <Touchable

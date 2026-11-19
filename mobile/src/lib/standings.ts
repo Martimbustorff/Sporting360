@@ -3,6 +3,7 @@
 // functions/src/football/bracket.ts) e nunca se recalculam aqui (preflight F11).
 import type { Bracket, Competition, StandingsDoc, Tie } from '@/data/schemas';
 import { penaltiesText } from '@/lib/matchVM';
+import { formLetters, type FormLetter } from '@/lib/prematch';
 
 export type StandingsView = 'table' | 'bracket';
 
@@ -54,9 +55,32 @@ export function setViewChoice(competitionKey: string, v: StandingsView): void {
   viewChoices.set(competitionKey, v);
 }
 
+/** Vista da tabela: "Resumida", "Completa" ou "Forma" (Task 6 do Plano 9). */
+export type TableView = 'short' | 'full' | 'form';
+
+// Uma só escolha para todas as competições, guardada em memória até a app reiniciar (como a de cima).
+let tableView: TableView = 'short';
+
+export function getTableView(): TableView {
+  return tableView;
+}
+
+export function setTableView(v: TableView): void {
+  tableView = v;
+}
+
 /** Só para testes: começa cada teste sem escolhas. */
 export function resetViewChoices(): void {
   viewChoices.clear();
+  tableView = 'short';
+}
+
+/**
+ * Forma da API (W, D, L; mais recente no fim) em V, E, D: os últimos 5 jogos, na mesma ordem das fichas de forma do
+ * pré-jogo (`formLetters`), por isso a mais recente fica à direita nos dois sítios. Outros caracteres e `null`: nada.
+ */
+export function formResults(form: string | null): FormLetter[] {
+  return formLetters(form);
 }
 
 /** Agregado do servidor, "3-2"; null enquanto a eliminatória não acabou. */
