@@ -12,6 +12,8 @@ import { LoanSchema, type Loan } from './schemas';
 export type LoanItem = Loan & { id: string };
 
 const CLOCK_MS = 30_000;
+// Uma app lançada antes das regras novas recebe permissão negada nestas consultas: esperado, não vai ao Crashlytics.
+const LOANS_QUERY = { expectDenied: true, reportAs: 'loans' } as const;
 
 /** Ativo: não cancelado e ainda dentro da validade (como functions/src/loans/model.ts isLoanActive). */
 export const isLoanActive = (l: Pick<Loan, 'cancelledAt' | 'expiresAt'>, now: Date): boolean =>
@@ -22,7 +24,7 @@ function useActiveLoans(field: 'ownerUid' | 'recipientUid', gameboxId: string | 
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const now = useNow(CLOCK_MS);
   const q = useMemo(() => (uid ? query(collection(db(), 'loans'), where(field, '==', uid), ...(field === 'ownerUid' ? [where('cancelledAt', '==', null)] : [])) : null), [uid, field]);
-  const all = useCollection(q, LoanSchema);
+  const all = useCollection(q, LoanSchema, LOANS_QUERY);
   return useMemo(
     () =>
       all.status === 'ready'
@@ -43,8 +45,8 @@ export function useRecipientLoans(): Loadable<LoanItem[]> {
 }
 
 // Cancelado ou expirado, as regras negam a leitura: é esperado (não vai ao Crashlytics) e o id do empréstimo nunca entra num relatório.
-const LOAN_DOC = { expectDenied: true, reportAs: 'loans/*' } as const;
-const SECRET_DOC = { expectDenied: true, reportAs: 'loans/*/secret/number' } as const;
+const LOAN_DOC = { expectDenied: true, reportAs: 'loans/*', cacheMissingIsLoading: true } as const;
+const SECRET_DOC = { expectDenied: true, reportAs: 'loans/*/secret/number', cacheMissingIsLoading: true } as const;
 
 const SecretSchema = z.object({ number: z.string().min(1) });
 export type LoanSecret = z.infer<typeof SecretSchema>;

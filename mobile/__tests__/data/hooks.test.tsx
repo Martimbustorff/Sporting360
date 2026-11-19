@@ -145,6 +145,31 @@ describe('useDocument', () => {
     });
   });
 
+  describe('cacheMissingIsLoading', () => {
+    const Opt = () => <Probe value={useDocument('things/a', ItemSchema, { cacheMissingIsLoading: true })} />;
+
+    it('em falta vindo da cache fica a carregar; só o servidor dá missing', async () => {
+      await render(<Opt />);
+      await act(async () => lastSubscription().next(docSnap(null, true)));
+      expect(out().status).toBe('loading');
+      await act(async () => lastSubscription().next(docSnap(null, false)));
+      expect(out().status).toBe('missing');
+    });
+
+    it('cache em falta e depois servidor com o documento: fica ready', async () => {
+      await render(<Opt />);
+      await act(async () => lastSubscription().next(docSnap(null, true)));
+      await act(async () => lastSubscription().next(docSnap({ name: 'A' }, false)));
+      expect(out()).toEqual({ status: 'ready', data: { name: 'A' }, fromCache: false });
+    });
+
+    it('sem a opção, em falta vindo da cache continua a ser missing', async () => {
+      await render(<DocProbe path="things/a" />);
+      await act(async () => lastSubscription().next(docSnap(null, true)));
+      expect(out().status).toBe('missing');
+    });
+  });
+
   it('unsubscribes on unmount', async () => {
     const view = await render(<DocProbe path="things/a" />);
     const { unsubscribe } = lastSubscription();
@@ -263,6 +288,29 @@ describe('useCollection', () => {
   function ColProbe({ query }: { query: typeof q }) {
     return <Probe value={useCollection(query, ItemSchema)} />;
   }
+
+  describe('opções (permissão negada esperada)', () => {
+    const OPTS = { expectDenied: true, reportAs: 'things' } as const;
+    const withCode = (code: string) => Object.assign(new Error('x'), { code });
+    const Opt = () => <Probe value={useCollection(q, ItemSchema, OPTS)} />;
+
+    it('permission-denied esperado vira error sem ir ao Crashlytics', async () => {
+      await render(<Opt />);
+      await act(async () => lastSubscription().error(withCode('firestore/permission-denied')));
+      expect(out().status).toBe('error');
+      expect(recordError).not.toHaveBeenCalled();
+    });
+
+    it('outros erros vão ao Crashlytics; sem a opção, permission-denied também', async () => {
+      await render(<Opt />);
+      await act(async () => lastSubscription().error(withCode('firestore/unavailable')));
+      expect(recordError).toHaveBeenCalledTimes(1);
+      (recordError as jest.Mock).mockClear();
+      await render(<ColProbe query={{ __kind: 'other' } as unknown as typeof q} />);
+      await act(async () => lastSubscription().error(withCode('firestore/permission-denied')));
+      expect(recordError).toHaveBeenCalledTimes(1);
+    });
+  });
 
   it('drops invalid documents one by one and adds the id', async () => {
     await render(<ColProbe query={q} />);

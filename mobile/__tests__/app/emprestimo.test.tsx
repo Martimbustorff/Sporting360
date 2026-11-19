@@ -212,15 +212,123 @@ describe('Empréstimo (destinatário)', () => {
 
   it('sem rede: mensagem e Tentar outra vez volta a pedir', async () => {
     (claimLoan as jest.Mock).mockRejectedValueOnce(new LoanError('offline')).mockResolvedValueOnce('claimed');
-    READY();
+    // sem nada em cache; ao voltar a rede o claim passa e o servidor entrega o empréstimo
     await render(ui());
     await flush();
     expect(screen.getByText('Sem ligação. Tenta outra vez quando houver rede.')).toBeTruthy();
     expect(screen.queryByTestId('qrcode')).toBeNull();
+    READY();
     await fireEvent.press(screen.getByRole('button', { name: 'Tentar outra vez' }));
     await flush();
     expect(claimLoan).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId('qrcode')).toBeTruthy();
+  });
+
+  describe('sinal fraco à porta (claim falha sem rede)', () => {
+    const offline = () => (claimLoan as jest.Mock).mockRejectedValue(new LoanError('offline'));
+
+    it('com a cache a ter o empréstimo preso a esta conta e ativo: mostra o cartão com o segredo em cache', async () => {
+      offline();
+      READY();
+      await render(ui());
+      await flush();
+      expect((useLoan as jest.Mock).mock.calls.some((c) => c[0] === 'L1')).toBe(true);
+      expect(screen.getByTestId('qrcode').props.value).toBe(NUMBER);
+      expect(screen.queryByText('Sem ligação. Tenta outra vez quando houver rede.')).toBeNull();
+    });
+
+    it('sem nada em cache: aviso de sem ligação com Tentar outra vez', async () => {
+      offline();
+      await render(ui());
+      await flush();
+      expect(screen.getByText('Sem ligação. Tenta outra vez quando houver rede.')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Tentar outra vez' })).toBeTruthy();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+    });
+
+    it('empréstimo em cache preso a outra conta: aviso, sem QR', async () => {
+      offline();
+      mockLoan.current = { status: 'ready', data: loan({ recipientUid: 'u9' }) };
+      mockSecret.current = { status: 'ready', data: { number: NUMBER } };
+      await render(ui());
+      await flush();
+      expect(screen.getByText('Sem ligação. Tenta outra vez quando houver rede.')).toBeTruthy();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+    });
+
+    it('em cache mas já expirado pelo relógio: sem QR', async () => {
+      offline();
+      mockLoan.current = { status: 'ready', data: loan({ expiresAt: new Date(Date.now() - 1000) }) };
+      mockSecret.current = { status: 'ready', data: { number: NUMBER } };
+      await render(ui());
+      await flush();
+      expect(screen.getByText(INACTIVE)).toBeTruthy();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+    });
+
+    it('cache em falta (a carregar) e depois o servidor com o empréstimo: mostra o cartão', async () => {
+      offline();
+      const { rerender } = await render(ui());
+      await flush();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+      READY();
+      await rerender(ui());
+      await flush();
+      expect(screen.getByTestId('qrcode')).toBeTruthy();
+    });
+
+    it('cache com o empréstimo e depois o servidor a dizer cancelado: o QR desaparece', async () => {
+      offline();
+      READY();
+      const { rerender } = await render(ui());
+      await flush();
+      expect(screen.getByTestId('qrcode')).toBeTruthy();
+      mockLoan.current = { status: 'ready', data: loan({ cancelledAt: new Date() }) };
+      await rerender(ui());
+      await flush();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+      expect(screen.getByText(INACTIVE)).toBeTruthy();
+    });
+
+    it('cache com o empréstimo e depois permissão negada (cancelado no servidor): "já não está ativo"', async () => {
+      offline();
+      READY();
+      const { rerender } = await render(ui());
+      await flush();
+      mockLoan.current = { status: 'error', error: new Error('permission-denied') };
+      mockSecret.current = { status: 'error', error: new Error('permission-denied') };
+      await rerender(ui());
+      await flush();
+      expect(screen.queryByTestId('qrcode')).toBeNull();
+      expect(screen.getByText(INACTIVE)).toBeTruthy();
+    });
+
+    it('sem ter visto o empréstimo preso, um erro de permissão não é "inativo": continua o aviso de sem ligação', async () => {
+      offline();
+      mockLoan.current = { status: 'error', error: new Error('permission-denied') };
+      await render(ui());
+      await flush();
+      expect(screen.getByText('Sem ligação. Tenta outra vez quando houver rede.')).toBeTruthy();
+    });
+
+    it('o temporizador da validade esconde o QR sem rede', async () => {
+      jest.useFakeTimers();
+      try {
+        offline();
+        mockLoan.current = { status: 'ready', data: loan({ expiresAt: new Date(Date.now() + 60_000) }) };
+        mockSecret.current = { status: 'ready', data: { number: NUMBER } };
+        await render(ui());
+        await flush();
+        expect(screen.getByTestId('qrcode')).toBeTruthy();
+        await act(async () => {
+          jest.advanceTimersByTime(61_000);
+        });
+        expect(screen.queryByTestId('qrcode')).toBeNull();
+        expect(screen.getByText(INACTIVE)).toBeTruthy();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   it('erro desconhecido: mensagem genérica', async () => {

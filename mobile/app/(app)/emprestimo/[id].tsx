@@ -9,6 +9,8 @@
 // só enquanto o cartão com o QR está à vista (LoanCard): os avisos e o a carregar não os ligam e a troca para "já não está ativo" liberta-os.
 // Cancelado ou expirado com o ecrã aberto: o segredo falha com permissão negada (ou o documento mostra cancelledAt /
 // expiresAt) e passa logo a "já não está ativo", sem QR e sem reabrir; a validade também se vigia aqui com um temporizador.
+// Sem rede ao abrir: se a cache já tem o empréstimo preso a esta conta e ativo, mostra o cartão (o temporizador da validade
+// continua a esconder o QR); senão, o aviso de sem ligação com "Tentar outra vez".
 // SEM FIGMA (textos genéricos da app reutilizados): a carregar (espaço vazio, como as outras listas), sem rede e erro
 // desconhecido ("Sem ligação..." e "Não foi possível concluir..." do empréstimo; "Tentar outra vez" do cofre biométrico).
 import { useEffect, useReducer, useRef, useState } from 'react';
@@ -175,12 +177,19 @@ function Emprestimo({ raw }: { raw: string | undefined }) {
     };
   }, [id, uid, attempt]);
 
-  // Só depois do claim: antes, as regras só deixam o dono ler.
+  // Só depois do claim: antes, as regras só deixam o dono ler. Com o claim falhado por falta de rede (sinal fraco à porta) subscreve-se
+  // na mesma: se a cache já tem o empréstimo preso a esta conta e ativo, o cartão mostra-se com o segredo em cache.
+  const offline = claim.status === 'error' && claim.code === 'offline';
   const open = claim.status === 'claimed' || claim.status === 'owner';
-  const loan = useLoan(open ? id : null);
-  const secret = useLoanSecret(claim.status === 'claimed' ? id : null);
+  const loan = useLoan(open || offline ? id : null);
+  const secret = useLoanSecret(claim.status === 'claimed' || offline ? id : null);
   const loanData = loan.status === 'ready' ? loan.data : null;
-  const expired = useExpired(claim.status === 'claimed' ? (loanData?.expiresAt ?? null) : null);
+  const pinned = loanData !== null && uid !== null && loanData.recipientUid === uid;
+  // Empréstimo preso a esta conta visto sem rede: depois disso, um erro ou um em falta vindo do servidor é "já não está ativo".
+  const pinnedSeen = useRef(false);
+  if (offline && pinned) pinnedSeen.current = true;
+  const tracked = claim.status === 'claimed' || (offline && pinned);
+  const expired = useExpired(tracked ? (loanData?.expiresAt ?? null) : null);
 
   const ownerGamebox = claim.status === 'owner' && loanData ? loanData.gameboxId : null;
   useEffect(() => {
@@ -189,12 +198,12 @@ function Emprestimo({ raw }: { raw: string | undefined }) {
 
   // Uma vez inativo, fica inativo (sem voltar a desenhar o QR se chegar um snapshot antigo).
   const dead = useRef(false);
+  const gone = loan.status === 'missing' || loan.status === 'error' || secret.status === 'missing' || secret.status === 'error';
   if (
     !id ||
     (claim.status === 'error' && claim.code === 'inactive') ||
-    (claim.status === 'claimed' &&
-      (loan.status === 'missing' || loan.status === 'error' || secret.status === 'missing' || secret.status === 'error' ||
-        (loanData !== null && (loanData.cancelledAt !== null || expired))))
+    (claim.status === 'claimed' && (gone || (loanData !== null && (loanData.cancelledAt !== null || expired)))) ||
+    (offline && ((pinnedSeen.current && gone) || (pinned && (loanData.cancelledAt !== null || expired))))
   ) {
     dead.current = true;
   }
@@ -202,6 +211,8 @@ function Emprestimo({ raw }: { raw: string | undefined }) {
   let body;
   if (dead.current) {
     body = <Notice text={LOAN_SCREEN_TEXT.inactive} onClose={close} />;
+  } else if (offline && pinned && loanData && secret.status === 'ready') {
+    body = <LoanCard loan={loanData} number={secret.data.number} />;
   } else if (claim.status === 'error') {
     body =
       claim.code === 'claimed-by-other' ? (

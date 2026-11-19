@@ -70,6 +70,18 @@ export type DocumentOptions = {
   expectDenied?: boolean;
   /** Caminho a mostrar em relatórios e mensagens, sem ids (ex.: `loans/*`/secret/number); por omissão, o caminho. */
   reportAs?: string;
+  /**
+   * Um documento em falta que vem da cache local (sem rede, ou ainda não confirmado) não prova que não existe: fica a carregar
+   * até chegar o snapshot do servidor. Só um snapshot do servidor dá `missing`.
+   */
+  cacheMissingIsLoading?: boolean;
+};
+
+export type CollectionOptions = {
+  /** Negar a permissão é esperado (ex.: app lançada antes das regras): vira `error` sem ir ao Crashlytics. */
+  expectDenied?: boolean;
+  /** Nome da coleção a mostrar em relatórios, sem ids. */
+  reportAs?: string;
 };
 
 const isDenied = (e: unknown): boolean => /(^|\/)permission-denied$/.test(codeOf(e) ?? '');
@@ -98,7 +110,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>, option
       SNAPSHOT_OPTIONS,
       (snap) => {
         if (!snap.exists()) {
-          setState({ status: 'missing' });
+          setState(optionsRef.current?.cacheMissingIsLoading && snap.metadata?.fromCache === true ? LOADING : { status: 'missing' });
           return;
         }
         const shown = optionsRef.current?.reportAs ?? path;
@@ -133,6 +145,7 @@ export function useDocument<T>(path: string | null, schema: z.ZodType<T>, option
 export function useCollection<T>(
   query: Query | null,
   schema: z.ZodType<T>,
+  options?: CollectionOptions,
 ): Loadable<Array<T & { id: string }>> {
   const [held, setHeld] = useState<{
     key: Query | null;
@@ -140,6 +153,8 @@ export function useCollection<T>(
   }>({ key: null, value: LOADING });
   const schemaRef = useRef(schema);
   schemaRef.current = schema;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     if (query === null) return undefined;
@@ -159,7 +174,9 @@ export function useCollection<T>(
         setState({ status: 'ready', data: items, fromCache: snap.metadata?.fromCache === true });
       },
       (e) => {
-        reportDataError(e, 'collection listener failed');
+        if (!(optionsRef.current?.expectDenied && isDenied(e))) {
+          reportDataError(e, `collection listener failed${optionsRef.current?.reportAs ? ` ${optionsRef.current.reportAs}` : ''}`);
+        }
         setState({ status: 'error', error: toError(e) });
       },
     );
