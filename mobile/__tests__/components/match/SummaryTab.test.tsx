@@ -431,6 +431,7 @@ describe('Sumário ao vivo: partes e estados', () => {
   it.each([
     ['LIVE', true],
     ['HT', true],
+    ['FT', false],
     ['AET', false],
     ['PEN', false],
     ['PST', false],

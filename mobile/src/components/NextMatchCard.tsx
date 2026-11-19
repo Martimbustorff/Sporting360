@@ -20,9 +20,7 @@ import { formatCardDate, formatTime } from '@/lib/ptDate';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const ICON_CALENDAR = require('../../assets/icons/calendar.svg') as number;
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const NEXT_MATCH_TEXT = {
   none: 'SEM JOGOS AGENDADOS',

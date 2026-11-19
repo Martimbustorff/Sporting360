@@ -16,7 +16,6 @@ import { clearSignOutNotice } from '@/lib/signOutNotice';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space, type } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const RINGS = require('../../assets/images/welcome-rings.svg');
 
 export default function Welcome() {

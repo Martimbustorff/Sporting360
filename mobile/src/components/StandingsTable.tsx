@@ -111,13 +111,13 @@ function Row({
       ? rowLabel(row)
       : view === 'full'
         ? `${rowLabel(row, name)}, ${countText(row.win, 'vitória', 'vitórias')}, ${countText(row.draw, 'empate', 'empates')}, ${countText(row.lose, 'derrota', 'derrotas')}, diferença de golos ${diffText(row.goalsDiff)}`
-        : `${row.rank}.º ${name}${row.liveScore ? `, ao vivo ${row.liveScore}` : ''}${results.length > 0 ? `. Últimos jogos: ${results.map((r) => FORM_WORD[r]).join(', ')}` : ''}`;
+        : `${row.rank}.º ${name}${row.liveScore ? `, ao vivo ${row.liveScore}` : isLive ? ', a jogar agora' : ''}${results.length > 0 ? `. Últimos jogos: ${results.map((r) => FORM_WORD[r]).join(', ')}` : ''}`;
   return (
     <View
       testID={`standings-row-${row.teamId}`}
       accessible
       accessibilityState={{ selected: highlight }}
-      accessibilityLabel={isLive && !row.liveScore ? `${label}, a jogar agora` : label}
+      accessibilityLabel={isLive && !row.liveScore && view !== 'form' ? `${label}, a jogar agora` : label}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

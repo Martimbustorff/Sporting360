@@ -172,7 +172,7 @@ export const MatchSchema = z.looseObject({
   /** Canal de TV ("SPORT TV", "BTV", "TVI / V+"); ausente ou null sem canal. */
   tv: z.string().nullish().catch(null),
   /** Estado em bruto da API (ET, BT, P...); documentos antigos não o têm. */
-  statusRaw: z.string().nullish(),
+  statusRaw: z.string().nullish().catch(null),
   source: z.looseObject({ provider: str, id: str, attribution: nullable(str) }),
 });
 export type Match = z.infer<typeof MatchSchema>;

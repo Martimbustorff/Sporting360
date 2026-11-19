@@ -20,9 +20,7 @@ import { SPORTING_API_ID } from '@/lib/teams';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const SPORTING_CREST = require('../../assets/images/sporting-cp-2026.png') as number;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ICON_BALL = require('../../assets/icons/ball.svg') as number;
 
 export type TeamVM = {

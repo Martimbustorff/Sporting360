@@ -30,6 +30,15 @@ export function liveStandingsAvailable(doc: Pick<LiveFixturesDoc, 'updatedAt' | 
   return age > -LIVE_MAX_SKEW_MS && age < LIVE_MAX_AGE_MS;
 }
 
+/**
+ * Estados "em jogo" do servidor (functions/src/football/liveFixtures.ts, IN_PLAY_STATUSES; o intervalo conta como em jogo).
+ * O documento guarda também jogos terminados ("FT") até 3 h, que não são "a jogar agora".
+ */
+const IN_PLAY = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']);
+
+/** O jogo ainda está a decorrer (não terminado, adiado ou por começar). */
+export const isInPlay = (f: Pick<LiveFixture, 'status'>): boolean => IN_PLAY.has(f.status);
+
 /** Resultado final de um jogo da liga entre duas equipas, para o confronto direto. */
 export type LeagueResult = { homeId: string; awayId: string; homeGoals: number; awayGoals: number };
 
@@ -77,6 +86,7 @@ export function projectStandings(
     if (!b) return;
     const r = b.r;
     b.liveScore = `${own}-${other}`;
+    // Um jogo dado por falta conta no `played` oficial mas não está na lista de jogos: a equipa não se projeta e ficam os valores oficiais.
     if (options.guardDoubleCount && r.played > finishedBefore(teamId, f)) return;
     r.played += 1;
     r.goalsFor += own;

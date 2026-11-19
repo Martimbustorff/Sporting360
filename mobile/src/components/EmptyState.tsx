@@ -6,9 +6,7 @@ import { Image } from 'expo-image';
 import { Text71 } from '@/theme/typography';
 import { layout, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CALENDAR = require('../../assets/icons/calendar-check.svg');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const INFO = require('../../assets/icons/info.svg');
 
 /** `compact` (50b, 50c): ícone a 8 do topo e nada por baixo; os 24 até ao botão são do ecrã. */

@@ -25,7 +25,7 @@ import { Touchable } from '@/components/Touchable';
 import { SportSchema, type Sport } from '@/data/schemas';
 import { useNow } from '@/data/clock';
 import { useCompetition, useCompetitionData } from '@/data/sports';
-import { finishedResults, liveStandingsAvailable, projectStandings } from '@/lib/liveStandings';
+import { finishedResults, isInPlay, liveStandingsAvailable, projectStandings } from '@/lib/liveStandings';
 import {
   getTableView,
   getViewChoice,
@@ -117,7 +117,7 @@ export function CompetitionStandings({
       ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures, results, { guardDoubleCount: fixtures.status === 'ready' }).rows }))
       : null;
   // Equipas em jogo: com o documento recente, nas três vistas e tanto em "Ao vivo" como em "Oficial".
-  const liveTeamIds = new Set(liveOn ? liveReady.fixtures.flatMap((f) => [f.homeId, f.awayId]) : []);
+  const liveTeamIds = new Set(liveOn ? liveReady.fixtures.filter(isInPlay).flatMap((f) => [f.homeId, f.awayId]) : []);
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 
   return (

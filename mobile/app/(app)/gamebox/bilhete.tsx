@@ -46,7 +46,6 @@ import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CREST = require('../../../assets/images/sporting-cp-2026.png');
 
 export const TICKET_TEXT = {
@@ -222,7 +221,7 @@ function Page({
         gap: layout.ticketBlockGap,
       }}
     >
-      <Ticket gamebox={gamebox} index={index} match={match} lent={!!loan} loading={loans.status === 'loading'} />
+      <Ticket gamebox={gamebox} index={index} match={match} lent={!!loan} loading={!settled || loans.status === 'loading'} />
       {name || member ? (
         <View style={{ alignItems: 'center', gap: layout.gameboxTextGap }}>
           {name ? <Text71 variant="label16" numberOfLines={1} ellipsizeMode="tail">{name}</Text71> : null}

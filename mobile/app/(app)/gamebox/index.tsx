@@ -28,9 +28,7 @@ import { GameboxSaveError, reorderGameboxes, saveGamebox } from '@/services/game
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const MENU_DUO = require('../../../assets/icons/menu-duo.svg');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const FAB_PLUS = require('../../../assets/icons/fab-plus.svg');
 
 export const GAMEBOX_TEXT = {

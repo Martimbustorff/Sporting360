@@ -735,10 +735,27 @@ describe('Classificação com três vistas (Task 6 do Plano 9)', () => {
     await fireEvent.press(tab('Completa'));
     expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toMatch(/, a jogar agora$/);
     await fireEvent.press(tab('Forma'));
-    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('1.º Sporting. Últimos jogos: vitória, vitória, empate, vitória, vitória, a jogar agora');
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('1.º Sporting, a jogar agora. Últimos jogos: vitória, vitória, empate, vitória, vitória');
     // Em "Ao vivo" o resultado em direto já diz que joga: sem repetir.
     await fireEvent.press(tab('Ao vivo'));
     expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).not.toMatch(/a jogar agora/);
+  });
+
+  it('jogo terminado ainda no documento ao vivo (FT): só as equipas em jogo têm o ponto e "a jogar agora"', async () => {
+    mockData.liveFixtures = live([{ ...fixture('217', '99', 0, 0), status: 'FT' }, fixture('228', '212', 1, 0)]);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    for (const mode of ['Ao vivo', 'Oficial']) {
+      await fireEvent.press(tab(mode));
+      for (const v of ['Resumida', 'Completa', 'Forma']) {
+        await fireEvent.press(tab(v));
+        expect(screen.queryByTestId('standings-livedot-228')).toBeTruthy();
+        expect(screen.queryByTestId('standings-livedot-212')).toBeTruthy();
+        expect(screen.queryByTestId('standings-livedot-217')).toBeNull();
+        expect(screen.queryByTestId('standings-livedot-99')).toBeNull();
+        for (const id of ['217', '99']) expect(screen.getByTestId(`standings-row-${id}`).props.accessibilityLabel).not.toMatch(/a jogar agora/);
+        if (mode === 'Oficial') expect(screen.getByTestId('standings-row-212').props.accessibilityLabel).toMatch(/a jogar agora/);
+      }
+    }
   });
 
   it('as opções do seletor têm alvo de toque de 44 pt (alargado pelo Touchable)', async () => {

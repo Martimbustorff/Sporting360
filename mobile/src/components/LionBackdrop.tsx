@@ -7,9 +7,7 @@ import { Image } from 'expo-image';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { colors, layout } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const LION = require('../../assets/images/lock-lion.png');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const RINGS = require('../../assets/images/welcome-rings.svg');
 
 /** Fundo da Home (V7.1); com `blurred` o leão desfocado sem anéis. Ocupa o pai inteiro, sem toques. */

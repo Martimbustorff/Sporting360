@@ -27,14 +27,12 @@ import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 import { Touchable } from '@/components/Touchable';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const ICONS = {
   conta: require('../../../assets/icons/user.svg'), // 323:11823 User / User_03
   gamebox: require('../../../assets/icons/qr-code.svg'), // 309:9328 System / Qr_Code
   lock: require('../../../assets/icons/lock.svg'), // 348:37930 Interface / Lock
   bell: require('../../../assets/icons/bell.svg'), // 302:4152 Communication / Bell
 };
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const DEFINICOES_TEXT = {
   noBiometric: (label: string) => `Sem ${label} configurado neste telemóvel.`,

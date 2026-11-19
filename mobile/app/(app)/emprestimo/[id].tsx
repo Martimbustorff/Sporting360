@@ -90,7 +90,9 @@ function Notice({ text, onClose, onRetry }: { text: string; onClose: () => void;
 }
 
 function LoanCard({ loan, number }: { loan: Loan; number: string | null }) {
-  useTicketMode(!useGateCovered());
+  // Brilho e ecrã ligado só com o QR desenhado (o segredo já chegou) e sem o bloqueio por cima.
+  const covered = useGateCovered();
+  useTicketMode(!covered && number !== null);
   const { match } = loan;
   const seatValue = (k: keyof Loan['seat']): string => {
     const v: unknown = loan.seat[k];

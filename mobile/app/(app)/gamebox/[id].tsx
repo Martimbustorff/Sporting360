@@ -41,11 +41,8 @@ import { deleteGamebox, GameboxSaveError, saveGamebox, type GameboxSaveCode } fr
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const QR_CODE = require('../../../assets/icons/qr-code.svg');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CHECK = require('../../../assets/icons/check-big.svg');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CLOSE = require('../../../assets/icons/close.svg');
 
 export const FORM_TEXT = {

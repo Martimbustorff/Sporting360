@@ -19,7 +19,6 @@ import { fromGameboxDoc, normalizeGameboxNumber, resolveGameboxList, type Gamebo
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CAMERA = require('../../assets/icons/camera-large.svg');
 
 export const SHEET_TEXT = {

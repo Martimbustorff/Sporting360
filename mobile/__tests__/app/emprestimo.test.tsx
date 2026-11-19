@@ -401,6 +401,23 @@ describe('Empréstimo (destinatário)', () => {
     expect(deactivateKeepAwake).toHaveBeenCalled();
   });
 
+  it('segredo ainda a carregar (sem QR): brilho e ecrã ligado esperam; sobem quando o número chega', async () => {
+    claimed();
+    READY();
+    mockSecret.current = { status: 'loading' };
+    const view = await render(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    expect(Brightness.setBrightnessAsync).not.toHaveBeenCalled();
+    expect(activateKeepAwakeAsync).not.toHaveBeenCalled();
+    mockSecret.current = { status: 'ready', data: { number: NUMBER } };
+    await view.rerender(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
+    expect(Brightness.setBrightnessAsync).toHaveBeenCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalled();
+  });
+
   it('com o BiometricGate por cima o cartão não sobe o brilho; ao abrir, sobe', async () => {
     claimed();
     READY();

@@ -6,8 +6,6 @@ module.exports = defineConfig([
   expoConfig,
   globalIgnores(['dist/*', '.expo/*', 'node_modules/*', 'ios/*', 'android/*', 'coverage/*', 'web-build/*']),
   {
-    // Os `eslint-disable` de require() do código (imagens, módulos nativos) ficam como documentação.
-    linterOptions: { reportUnusedDisableDirectives: 'off' },
     rules: {
       // Regras do React Compiler (a app não o usa): os padrões com ref/setState em efeitos são deliberados e testados, mudá-los mexia no comportamento.
       'react-hooks/refs': 'off',
@@ -22,6 +20,8 @@ module.exports = defineConfig([
   {
     // jest.mock tem de vir antes dos imports e os mocks usam require: a ordem é o padrão do jest.
     files: ['__tests__/**', 'jest.setup.ts'],
+    // Os `eslint-disable` de require() dos mocks ficam como documentação.
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
     rules: {
       'import/first': 'off',
       'import/no-duplicates': 'off',

@@ -36,10 +36,8 @@ import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const LUZ = require('../../../assets/images/match-luz.svg') as number;
 const RINGS = require('../../../assets/images/welcome-rings.svg') as number;
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 const TAB_VIEWS: Record<MatchTabKey, (props: { match: Match }) => React.JSX.Element> = {
   sumario: SummaryTab,

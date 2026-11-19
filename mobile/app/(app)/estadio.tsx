@@ -16,7 +16,6 @@ import { openLink } from '@/lib/openLink';
 import { colors, layout, space } from '@/theme/tokens';
 import { Text71 } from '@/theme/typography';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const MAP = require('../../assets/images/estadio-mapa.png'); // nó 445:4511
 const LUZ = require('../../assets/images/estadio-luz.svg'); // 4923:5984
 const ICONS: Record<StadiumLink['id'] | 'expand' | 'shrink' | 'museum', number> = {
@@ -26,7 +25,6 @@ const ICONS: Record<StadiumLink['id'] | 'expand' | 'shrink' | 'museum', number> 
   shrink: require('../../assets/icons/shrink.svg'),
   museum: require('../../assets/icons/museum.svg'),
 };
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const MAP_A11Y = 'Mapa do estádio com os sectores, a Loja Verde, o Museu e a Bilheteira';
 

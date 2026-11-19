@@ -565,6 +565,30 @@ describe('/gamebox/bilhete: GameBox emprestada', () => {
     expect(screen.getByTestId('ticket-loan-loading')).toBeTruthy();
   });
 
+  it('listas de jogos ainda a carregar: o Ticket mostra o espaço de carregamento, nunca o QR (GameBox emprestada para o jogo seguinte não pisca o QR)', async () => {
+    mockMatches.current = { status: 'loading' };
+    mockLoans.current = [{ id: 'L1', gameboxId: 'g1', matchId: 'm1' }];
+    const view = await render(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    expect(screen.getByTestId('ticket-loan-loading')).toBeTruthy();
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    await view.rerender(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    expect(screen.queryByTestId('ticket-loan-loading')).toBeNull();
+    expect(screen.getByText('Emprestada para este jogo')).toBeTruthy();
+  });
+
+  it('listas de jogos em erro contam como respondidas: o dono fica com o QR (e o brilho sobe)', async () => {
+    mockMatches.current = { status: 'error', error: new Error('offline') };
+    await render(ui());
+    await flush();
+    expect(screen.getByTestId('qrcode')).toBeTruthy();
+    expect(screen.queryByTestId('ticket-loan-loading')).toBeNull();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+  });
+
   it('com erro a ler o empréstimo mostra o QR (é o código do próprio dono)', async () => {
     mockMatches.current = { status: 'ready', data: [match('football')] };
     mockLoansStatus.current = 'error';

@@ -10,7 +10,6 @@ import { useAppConfig } from '@/data/hooks';
 import { isVersionBelow, resolveStoreUrl } from '@/lib/version';
 import { colors, spacing, type } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const LOGO = require('../../assets/images/splash-logo.png');
 
 /**

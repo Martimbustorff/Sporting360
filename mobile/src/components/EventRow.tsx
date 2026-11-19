@@ -28,9 +28,7 @@ const LABEL: Record<EventVM['kind'], string> = {
   var: 'VAR',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const SUB_ICON = require('../../assets/icons/event-sub.png') as number;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const BALL_ICON = require('../../assets/icons/ball.svg') as number;
 
 function Glyph({ kind }: { kind: EventVM['kind'] }) {

@@ -25,6 +25,7 @@ export function ModalSheet({
   const { bottom } = useSafeAreaInsets();
   const rhythm = gap === 'loose' ? layout.modalSheetGapLoose : gap === 'tight' ? layout.modalSheetGapTight : layout.modalSheetGap;
   // `tight`: o título fica a 28 do topo (grabber de 12 a 17, depois 11), não a 17 + 14.
+  // Negativa (-3): o gap de 14 entre filhos já poria o título a 17 + 14 = 31; a margem puxa-o para os 28 do frame, por isso o título não leva deslocamento próprio.
   const grabberMargin = gap === 'tight' ? layout.modalSheetTitleTop - (space.s12 + layout.grabberHeight) - rhythm : 0;
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>

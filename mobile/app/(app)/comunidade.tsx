@@ -19,13 +19,11 @@ import { useAppConfig } from '@/data/hooks';
 import type { CommunityEntry } from '@/data/schemas';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const CHANNELS = [
   { key: 'twitter', label: 'Twitter', icon: require('../../assets/icons/twitter.svg') },
   { key: 'patreon', label: 'Patreon', icon: require('../../assets/icons/patreon.svg') },
   { key: 'youtube', label: 'Youtube', icon: require('../../assets/icons/youtube.svg') },
 ] as const;
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const COMUNIDADE_INTRO = 'Aqui podes encontrar onde na web se fala sobre o Sporting';
 

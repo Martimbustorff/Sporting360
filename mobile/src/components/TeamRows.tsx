@@ -14,7 +14,6 @@ import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
 import { colors, layout } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const TROPHY_ICON = require('../../assets/icons/trophy.svg');
 
 const TAG_BG = {

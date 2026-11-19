@@ -13,9 +13,7 @@ import { type Consent, setAnalyticsConsent } from '@/services/analytics';
 import { colors, layout, radii, space } from '@/theme/tokens';
 import { Text71 } from '@/theme/typography';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const CHECK = require('../../assets/icons/check-big.svg');
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const CONSENT_TITLE = 'AJUDA A MELHORAR A S360';
 export const CONSENT_TEXT =

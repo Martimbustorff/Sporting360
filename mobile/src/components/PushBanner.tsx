@@ -8,7 +8,6 @@ import type { ForegroundPush } from '@/services/push';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const CREST = require('../../assets/images/sporting-cp-2026.png') as number;
 
 /** Tempo até o aviso fechar sozinho. */

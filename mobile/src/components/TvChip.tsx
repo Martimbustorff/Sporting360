@@ -5,7 +5,6 @@ import { View } from 'react-native';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const ICON_TV = require('../../assets/icons/tv.svg') as number;
 
 export function TvChip({ tv, testID = 'tv-chip' }: { tv?: string | null; testID?: string }) {

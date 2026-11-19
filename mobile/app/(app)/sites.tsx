@@ -12,7 +12,6 @@ import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 import Feather from '@expo/vector-icons/Feather';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const ICONS: Record<ClubSite['id'], number> = {
   sporting: require('../../assets/icons/globe.svg'), // 302:4143 Navigation / Globe
   minuto: require('../../assets/icons/user-card.svg'), // 7:2933 User / User_Card_ID
@@ -20,7 +19,6 @@ const ICONS: Record<ClubSite['id'], number> = {
   bilheteira: require('../../assets/icons/ticket.svg'), // 7:2917 Interface / Ticket_Voucher
   gameback: require('../../assets/icons/share.svg'), // 4922:6027 Ícone (partilha)
 };
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 export const SITES_NOTE = 'Abre no navegador, fora da app.';
 export const SITES_INTRO = 'Aqui podes encontrar ligações diretas para os sites oficiais do clube.';

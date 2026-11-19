@@ -27,7 +27,6 @@ import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space, type } from '@/theme/tokens';
 
-/* eslint-disable @typescript-eslint/no-require-imports */
 const ICONS = {
   settings: require('../../assets/icons/settings-future.svg'), // 4:1727 Interface / Settings_Future
   news: require('../../assets/icons/news.svg'), // 1561:5409 news_icon_with_photo 7
@@ -36,7 +35,6 @@ const ICONS = {
   globe: require('../../assets/icons/globe.svg'), // 302:4143 Navigation / Globe
   trophy: require('../../assets/icons/trophy.svg'), // V7.1 Icon / Trophy (menu do 01)
 };
-/* eslint-enable @typescript-eslint/no-require-imports */
 
 const iconStyle = { width: layout.menuRowIcon, height: layout.menuRowIcon };
 const svgIcon = (source: number) => <Image source={source} style={iconStyle} accessible={false} />;

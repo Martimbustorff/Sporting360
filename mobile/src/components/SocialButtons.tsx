@@ -15,7 +15,6 @@ import { NEEDS_EXISTING_LOGIN_MESSAGE, signInWithApple, signInWithGoogle, type S
 import { Text71 } from '@/theme/typography';
 import { colors, layout } from '@/theme/tokens';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const GOOGLE_G = require('../../assets/images/google-g.svg');
 
 type Message = { text: string; tone: 'error' | 'info' };
