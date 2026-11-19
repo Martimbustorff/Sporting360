@@ -60,6 +60,9 @@ export const colors = {
   yellow71Bg: 'rgba(250, 204, 46, 0.18)',
   // Formações V7.1 (4947:8531): relva do campo
   pitchField: '#006B4A',
+  // Cartão S360 MATCHDAY V7.1 (4946:8197): degradê do topo (#00543b) ao bg e linha do rodapé (branco a 15 %)
+  shareCardTop: '#00543B',
+  shareCardRule: 'rgba(255, 255, 255, 0.15)',
 } as const;
 
 export const fonts = {
@@ -103,6 +106,10 @@ export const text71 = {
   /** Contagem do cartão do jogo (Figma 4932:6358): Title 32, números tabulares para não tremer ao segundo. */
   countdown32: { ...dinC, fontSize: 32, lineHeight: lh(32, 110), letterSpacing: 0, fontVariant: ['tabular-nums'] },
   captionStrong12: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
+  /** Marca "S360" do cartão de partilha (4946:8199): DIN Condensed 48. */
+  brand48: { ...dinC, fontSize: 48, lineHeight: lh(48, 100), letterSpacing: 0 },
+  /** "MATCH" fino do cartão de partilha (4946:8201): Title L 28 em DIN Condensed Light. */
+  matchLight28: { fontFamily: fonts.dinCondensedLight, fontSize: 28, lineHeight: lh(28, 110), letterSpacing: 0, textTransform: 'uppercase' },
 } as const satisfies Record<string, TextStyle>;
 
 export const type = {
@@ -153,11 +160,6 @@ export const type = {
   standingsTeam: { fontFamily: fonts.bodySemiBold, fontSize: 10, color: colors.white },
   tableValue: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase', textAlign: 'center' },
   tablePosition: { fontFamily: fonts.display, fontSize: 20, color: colors.black, textTransform: 'uppercase' },
-  // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427): "S360" display com o S a primary,
-  // "MATCH" fino e "DAY" carregado
-  shareLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
-  shareMatch: { fontFamily: fonts.bodyLight, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
-  shareDay: { fontFamily: fonts.bodySemiBold, fontSize: 28, color: colors.white, textTransform: 'uppercase' },
   // Folha GameBox Digital (Figma 450:5419): nome 450:5527, número, etiqueta e valor dos lugares 450:5532 / 450:5533
   gameboxName: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
   gameboxNumber: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
@@ -527,8 +529,32 @@ export const layout = {
   mvpRowHeight: 48, // SEM FIGMA: linha de candidato da tab MVP (referência raster 818:21193)
   shareCardWidth: 347,
   shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
-  shareQr: 72,
-  shareQrQuietZone: 4,
+  shareQr: 48, // V7.1 4946:8227
+  shareQrQuietZone: 2,
+  // V7.1 Prognóstico (4945:8059) e cartão S360 MATCHDAY (4946:8197)
+  stepValue: { width: 52, height: 60 }, // caixa branca do seletor
+  stepValueRadius: 8,
+  stepRowRadius: 16,
+  stepRowPadLeft: 16,
+  stepRowPadRight: 12,
+  stepRowPadY: 12,
+  stepRowGap: 12,
+  rulesRadius: 12,
+  statusIcon: 16, // relógio e visto
+  statusGap: 8,
+  shareBox: { width: 48, height: 58 }, // caixas do cartão
+  shareBoxRadius: 6,
+  shareBoxGap: 8,
+  shareCardRadius: 20,
+  shareCardPadX: 20,
+  shareCardPadTop: 20,
+  shareCardPadBottom: 18,
+  shareCardGap: 14,
+  shareTeamWidth: 88,
+  shareTeamGap: 6,
+  shareFooterPadTop: 10,
+  shareSheetPadTop: 12,
+  shareSheetPadBottom: 8, // somado à área do indicador de início
   // GameBox (Figma 323:12992 lista, 327:15134 / 450:5633 / 450:5683 formulário)
   gameboxFab: 60, // botão "+" redondo branco (327:14894)
   gameboxFabRight: 32, // borda direita a 32 px (centro em 313 de 375)

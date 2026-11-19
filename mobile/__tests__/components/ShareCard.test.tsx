@@ -1,4 +1,4 @@
-// Task 17: cartão "S360 MATCHDAY" (SEM FIGMA; referência 818:20427).
+// Task 9 (V7.1, frame 30 4946:7934): cartão "S360 MATCHDAY" (SEM FIGMA; referência 818:20427).
 import { createRef, type ComponentRef } from 'react';
 import { View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -40,13 +40,28 @@ describe('ShareCard', () => {
     expect(screen.getByTestId('share-title')).toHaveTextContent('MATCHDAY');
     expect(screen.getByText('Liga Portugal')).toBeTruthy();
     expect(screen.getByText('J20')).toBeTruthy();
-    expect(screen.getByTestId('share-kickoff')).toHaveTextContent('16 abril 20:15');
+    expect(screen.getByTestId('share-kickoff')).toHaveTextContent('16 abril · 20:15');
     expect(screen.getByText('Famalicão')).toBeTruthy();
     expect(screen.getByText('Sporting CP')).toBeTruthy();
     expect(screen.getByTestId('share-score-home')).toHaveTextContent('1');
     expect(screen.getByTestId('share-score-away')).toHaveTextContent('2');
     expect(screen.getByText('#JogoAJogoLadoALado')).toBeTruthy();
     expect(screen.getByText('Partilha o teu prognóstico')).toBeTruthy();
+  });
+
+  it('V7.1: S360 com o S a primary, MATCH fino e DAY carregado, caixas brancas 48x58 e rodapé com o link curto', async () => {
+    await render(<ShareCard match={MATCH} home={1} away={2} />);
+    const logo = screen.getByTestId('share-logo');
+    expect(JSON.stringify(logo.props.style)).toContain('"fontSize":48');
+    const title = screen.getByTestId('share-title');
+    expect(JSON.stringify(title.props.style)).toContain('"fontSize":28');
+    expect(JSON.stringify(screen.getByText('MATCH').props.style)).toContain('DinCondensedLight');
+    expect(JSON.stringify(screen.getByText('S').props.style)).toContain('#00835B');
+    const box = screen.getByTestId('share-score-home').parent!;
+    expect(JSON.stringify(box.props.style)).toContain('"width":48');
+    expect(JSON.stringify(box.props.style)).toContain('"height":58');
+    expect(screen.getByText('Partilha o teu prognóstico')).toBeTruthy();
+    expect(screen.getByTestId('qrcode').props.size).toBe(48);
   });
 
   it('QR com o link do jogo e o link curto em texto', async () => {
@@ -77,7 +92,7 @@ describe('ShareCard', () => {
     jest.setSystemTime(new Date('2027-04-14T10:00:00Z'));
     try {
       await render(<ShareCard match={MATCH} home={1} away={2} />);
-      expect(screen.getByTestId('share-kickoff')).toHaveTextContent('16 abril 20:15');
+      expect(screen.getByTestId('share-kickoff')).toHaveTextContent('16 abril · 20:15');
       expect(screen.queryByText(/Sexta-feira/)).toBeNull();
     } finally {
       jest.useRealTimers();

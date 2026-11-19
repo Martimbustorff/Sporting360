@@ -1,25 +1,23 @@
-// SEM FIGMA: cartão "S360 MATCHDAY" partilhável (Task 17). Sem frame vetorial; referência visual na imagem raster da
-// página "Appstore S360" (818:20427, ver com get_screenshot). Composto com tokens: "S360" com o S a primary,
-// "MATCH" fino + "DAY" carregado, nome da competição, CompetitionBadge com a jornada, data e hora (Europe/Lisbon),
-// emblemas e nomes (TeamCrest: Sporting com o emblema local 2026), caixas brancas do prognóstico (ScoreBox do
-// GameHeader), "#JogoAJogoLadoALado", "Partilha o teu prognóstico" e, a mais do que a referência (requisito do
-// Martim, plano2-inputs "Cartão de prognóstico partilhável"), o QR e o link curto em texto, porque algumas apps
-// largam a mensagem. Sem fotografias de pessoas. A View do cartão vai por ref para a captura (react-native-view-shot);
-// `collapsable={false}` para o Android não a achatar.
-// Task 18 (carry da revisão da Task 17): data absoluta ("16 abril", Europe/Lisbon), porque a imagem dura mais do que
-// a semana do jogo; em ecrãs estreitos (320 pt) o cartão encolhe à vista para caber com `layout.shareCardInset` de
-// cada lado. A escala fica em Views por fora do cartão: o cartão capturado não tem transformação e mantém os 347 pt.
+// Figma V7.1: cartão S360 MATCHDAY (4946:8197, 347 pt): degradê do topo ao bg, raio 20, "S360" (S a primary) com "MATCH" em
+// DIN Condensed Light e "DAY" em Title L 28, jornada + competição, data absoluta ("21 dezembro · 20:30", Europe/Lisbon, porque
+// a imagem dura mais do que a semana do jogo), emblemas (Sporting com o 2026 local) e nomes, caixas brancas do prognóstico,
+// "#JogoAJogoLadoALado" e rodapé com "Partilha o teu prognóstico", link curto e QR. Sem fotografias de pessoas.
+// A View do cartão vai por ref para a captura (react-native-view-shot); `collapsable={false}` para o Android não a achatar.
+// Em ecrãs estreitos o cartão encolhe à vista para caber com `layout.shareCardInset` de cada lado. A escala fica em Views
+// por fora do cartão: o cartão capturado não tem transformação e mantém os 347 pt.
 import { forwardRef, useState, type ComponentRef, type ReactNode } from 'react';
-import { Text, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { CompetitionBadge } from '@/components/CompetitionBadge';
-import { ScoreBox, TeamCrest, type TeamVM } from '@/components/GameHeader';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { TeamCrest, type TeamVM } from '@/components/GameHeader';
+import { ValueBox } from '@/components/Stepper';
 import type { Match } from '@/data/schemas';
+import { formatRound } from '@/lib/formatRound';
 import { competitionText, toGameHeaderVM } from '@/lib/matchVM';
 import { formatDayMonth, formatTime } from '@/lib/ptDate';
 import { SHARE_SHORT_TEXT, shareLink } from '@/lib/shareLink';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout } from '@/theme/tokens';
 
 export const SHARE_CARD_TEXT = {
   hashtag: '#JogoAJogoLadoALado',
@@ -31,11 +29,11 @@ type CardProps = Props & { onLayout: (e: LayoutChangeEvent) => void };
 
 function Team({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   return (
-    <View style={{ width: layout.teamColumnWidth, alignItems: 'center', gap: layout.headerCrestNameGap }}>
-      <TeamCrest team={team} testID={`share-crest-${side}`} />
-      <Body variant="body" numberOfLines={2} style={{ textAlign: 'center' }}>
+    <View style={{ width: layout.shareTeamWidth, alignItems: 'center', gap: layout.shareTeamGap }}>
+      <TeamCrest team={team} testID={`share-crest-${side}`} size="md" />
+      <Text71 variant="label16" numberOfLines={2} style={{ textAlign: 'center' }}>
         {team.name}
-      </Body>
+      </Text71>
     </View>
   );
 }
@@ -85,6 +83,7 @@ export const ShareCard = forwardRef<ComponentRef<typeof View>, Props>(function S
 const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ match, home, away, onLayout }, ref) {
   const vm = toGameHeaderVM(match);
   const { name, round } = competitionText(match.competition);
+  const roundText = formatRound(round);
   return (
     <View
       ref={ref}
@@ -94,50 +93,89 @@ const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ ma
       style={{
         width: layout.shareCardWidth,
         backgroundColor: colors.bg,
-        borderRadius: radius.md,
-        padding: spacing.lg,
-        gap: spacing.md,
+        borderRadius: layout.shareCardRadius,
+        overflow: 'hidden',
+        paddingHorizontal: layout.shareCardPadX,
+        paddingTop: layout.shareCardPadTop,
+        paddingBottom: layout.shareCardPadBottom,
+        gap: layout.shareCardGap,
         alignItems: 'center',
       }}
     >
-      <View style={{ alignItems: 'center' }}>
-        <Text testID="share-logo" style={type.shareLogo}>
-          <Text style={{ color: colors.primary }}>S</Text>360
-        </Text>
-        <Text testID="share-title" style={type.shareMatch}>
-          MATCH<Text style={type.shareDay}>DAY</Text>
-        </Text>
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" pointerEvents="none">
+        <Defs>
+          <LinearGradient id="shareCardGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={colors.shareCardTop} />
+            <Stop offset="1" stopColor={colors.bg} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#shareCardGrad)" />
+      </Svg>
+
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.shareBoxGap }}>
+        <Text71 testID="share-logo" variant="brand48">
+          <Text71 variant="brand48" color="primary">S</Text71>360
+        </Text71>
+        <Text71 testID="share-title" variant="titleL28">
+          <Text71 variant="matchLight28">MATCH</Text71>DAY
+        </Text71>
       </View>
 
-      <Body variant="badge" numberOfLines={1}>
-        {name}
-      </Body>
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch' }}>
-        <View style={{ flex: 1, alignItems: 'flex-start' }}>
-          <CompetitionBadge label={round} size="sm" />
-        </View>
-        <Body variant="body" testID="share-kickoff" style={{ opacity: layout.mutedOpacity }}>
-          {`${formatDayMonth(match.kickoff)} ${formatTime(match.kickoff)}`}
-        </Body>
-        <View style={{ flex: 1 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.shareBoxGap }}>
+        {roundText ? (
+          <View
+            testID="competition-badge"
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: layout.chipRadius,
+              paddingHorizontal: layout.badgeSmallPadX,
+              paddingVertical: layout.badgeSmallPadY,
+            }}
+          >
+            <Text71 variant="badge11">{roundText}</Text71>
+          </View>
+        ) : null}
+        <Text71 variant="label16" numberOfLines={1} style={{ flexShrink: 1 }}>
+          {name}
+        </Text71>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
+      <Text71 variant="caption12" color="textMuted" testID="share-kickoff">
+        {`${formatDayMonth(match.kickoff)} \u00B7 ${formatTime(match.kickoff)}`}
+      </Text71>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch' }}>
         <Team team={vm.home} side="home" />
-        <View style={{ flexDirection: 'row', gap: layout.scoreBoxGap }}>
-          <ScoreBox value={home} testID="share-score-home" />
-          <ScoreBox value={away} testID="share-score-away" />
+        <View style={{ flexDirection: 'row', gap: layout.shareBoxGap }}>
+          <ValueBox value={home} testID="share-score-home" size="share" />
+          <ValueBox value={away} testID="share-score-away" size="share" />
         </View>
         <Team team={vm.away} side="away" />
       </View>
 
-      <View style={{ alignItems: 'center', gap: spacing.xs }}>
-        <Body variant="badge">{SHARE_CARD_TEXT.hashtag}</Body>
-        <Body variant="body">{SHARE_CARD_TEXT.invite}</Body>
-      </View>
+      <Text71 variant="captionStrong12" color="primaryOnDark">
+        {SHARE_CARD_TEXT.hashtag}
+      </Text71>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: layout.stepRowGap,
+          alignSelf: 'stretch',
+          borderTopWidth: layout.separator,
+          borderTopColor: colors.shareCardRule,
+          paddingTop: layout.shareFooterPadTop,
+        }}
+      >
+        <View style={{ flex: 1, minWidth: 0, gap: layout.gameboxTextGap }}>
+          <Text71 variant="captionStrong12" numberOfLines={1}>
+            {SHARE_CARD_TEXT.invite}
+          </Text71>
+          <Text71 variant="badge11" color="textMuted" numberOfLines={1}>
+            {SHARE_SHORT_TEXT}
+          </Text71>
+        </View>
         <QRCode
           value={shareLink(match.id)}
           size={layout.shareQr}
@@ -145,7 +183,6 @@ const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ ma
           backgroundColor={colors.white}
           quietZone={layout.shareQrQuietZone}
         />
-        <Body variant="body">{SHARE_SHORT_TEXT}</Body>
       </View>
     </View>
   );

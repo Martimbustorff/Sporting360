@@ -42,6 +42,8 @@ const MAP: Record<string, string> = {
   yellow71: 'yellow71',
   yellow71Bg: 'yellow71Bg',
   pitchField: 'pitchField',
+  shareCardTop: 'shareCardTop',
+  shareCardRule: 'shareCardRule',
 };
 
 describe('tokens <-> tailwind', () => {

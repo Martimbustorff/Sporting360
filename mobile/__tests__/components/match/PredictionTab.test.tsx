@@ -113,6 +113,21 @@ describe('Stepper', () => {
   });
 });
 
+describe('Stepper V7.1', () => {
+  it('nome longo: uma linha com reticências (nunca corta a meio nem empurra os botões)', async () => {
+    await render(<Stepper label="Sporting de Braga B Futebol Clube" value={3} onChange={jest.fn()} />);
+    const name = screen.getByText('Sporting de Braga B Futebol Clube');
+    expect(name.props.numberOfLines).toBe(1);
+    expect(screen.getByLabelText('Menos um golo para Sporting de Braga B Futebol Clube')).toBeTruthy();
+  });
+
+  it('só de leitura: mostra o valor e não tem botões', async () => {
+    await render(<Stepper readOnly label="SC Braga" value={4} />);
+    expect(value('SC Braga')).toBe(4);
+    expect(screen.queryByLabelText('Mais um golo para SC Braga')).toBeNull();
+  });
+});
+
 describe('Prognóstico aberto', () => {
   it('mostra equipas, contagem, regras e sem nota das taças numa liga', async () => {
     await render(<PredictionTab match={match()} />, { wrapper });
@@ -123,6 +138,19 @@ describe('Prognóstico aberto', () => {
     expect(screen.queryByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
     expect(value('Sporting CP')).toBe(0);
     expect(value('SC Braga')).toBe(0);
+  });
+
+  it('V7.1 frame 29: "Só podes submeter uma vez." por baixo do botão e cartão "Pontos" com as regras', async () => {
+    await render(<PredictionTab match={match()} />, { wrapper });
+    expect(screen.getByText('Só podes submeter uma vez.')).toBeTruthy();
+    expect(screen.getByText('Pontos')).toBeTruthy();
+    expect(screen.queryByText('Já submeteste este prognóstico.')).toBeNull();
+  });
+
+  it('a regra do prolongamento fica dentro do cartão das regras nos jogos a eliminar', async () => {
+    await render(<PredictionTab match={match({ type: 'cup' })} />, { wrapper });
+    expect(screen.getByText('Pontos')).toBeTruthy();
+    expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
   it('em taças mostra a regra do prolongamento e penáltis', async () => {
@@ -172,7 +200,7 @@ describe('Prognóstico aberto', () => {
     expect(httpsCallable).toHaveBeenCalledWith({ __mock: 'functions' }, 'submitPrediction');
     expect(mockCall).toHaveBeenCalledTimes(1);
     expect(mockCall).toHaveBeenCalledWith({ gameId: '1001', home: 2, away: 1 });
-    expect(screen.getByText('O teu prognóstico: 2-1')).toBeTruthy();
+    expect(screen.getByLabelText('O teu prognóstico: 2-1')).toBeTruthy();
     expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
   });
 
@@ -309,8 +337,21 @@ describe('Prognóstico feito, liquidado e fechado', () => {
   it('prognóstico existente mostra "2-1" e sem formulário', async () => {
     mockData.prediction = prediction(2, 1);
     await render(<PredictionTab match={match()} />, { wrapper });
-    expect(screen.getByText('O teu prognóstico: 2-1')).toBeTruthy();
+    expect(screen.getByLabelText('O teu prognóstico: 2-1')).toBeTruthy();
     expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+  });
+
+  it('submetido (V7.1 frame 30): estado "Já submeteste", linhas só de leitura com os valores, regras e Partilhar em contorno', async () => {
+    mockData.prediction = prediction(2, 1);
+    await render(<PredictionTab match={match()} />, { wrapper });
+    expect(screen.getByText('Já submeteste este prognóstico.')).toBeTruthy();
+    expect(value('Sporting CP')).toBe(2);
+    expect(value('SC Braga')).toBe(1);
+    expect(screen.queryByLabelText('Mais um golo para Sporting CP')).toBeNull();
+    expect(screen.queryByLabelText('Menos um golo para SC Braga')).toBeNull();
+    expect(screen.getByText('+1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
+    expect(screen.queryByText('Só podes submeter uma vez.')).toBeNull();
+    expect(screen.getByLabelText('Partilhar prognóstico')).toBeTruthy();
   });
 
   it('liquidado: resultado final e pontos do prognóstico somados (1 + 3 → "+4 pontos"; MVP não conta)', async () => {
@@ -322,7 +363,7 @@ describe('Prognóstico feito, liquidado e fechado', () => {
     };
     await render(<PredictionTab match={match({ status: 'FT', kickoff: new Date('2026-11-20T20:00:00Z') })} />, { wrapper });
     expect(screen.getByText('Resultado final: 2-1')).toBeTruthy();
-    expect(screen.getByText('O teu prognóstico: 2-1')).toBeTruthy();
+    expect(screen.getByLabelText('O teu prognóstico: 2-1')).toBeTruthy();
     expect(screen.getByText('+4 pontos')).toBeTruthy();
   });
 
@@ -355,7 +396,7 @@ describe('Adiado e cancelado (Review Focus 2)', () => {
   it('PST com prognóstico guardado mostra o prognóstico', async () => {
     mockData.prediction = prediction(1, 1);
     await render(<PredictionTab match={match({ status: 'PST' })} />, { wrapper });
-    expect(screen.getByText('O teu prognóstico: 1-1')).toBeTruthy();
+    expect(screen.getByLabelText('O teu prognóstico: 1-1')).toBeTruthy();
   });
 
   it('CANC: jogo cancelado, sem pontos', async () => {

@@ -1,14 +1,15 @@
-// SEM FIGMA: tab Prognóstico sem frame vetorial; referência nas imagens da página "Appstore S360" (Mapa do Figma do
-// Plano 4: "Vídeos, Prognóstico, MVP, cartão S360 MATCHDAY", ver 818:21042). Composto com tokens: dois Stepper com a
-// caixa de resultado do GameHeader, PrimaryButton, FormMessage e a confirmação como folha inferior em Modal (o mesmo
-// padrão da folha da password de apagar-conta, porque o Sheet é uma folha fixa do ecrã e não um diálogo).
+// Figma V7.1: Prognóstico (4945:7833) e submetido com a folha de partilha (4946:7934). "Fecha em" com relógio, duas linhas de
+// seletor (Stepper), cartão das regras com contorno ("PONTOS"), Primário "Submeter prognóstico" e "Só podes submeter uma
+// vez."; submetido: "Já submeteste este prognóstico.", as linhas só com o valor e "Partilhar prognóstico" (Contorno).
 // Regras (spec §6): uma submissão definitiva, só pela callable submitPrediction (services/game.ts); fecha ao apito
 // inicial. A janela da app (lib/gameWindows.predictionOpen) só desenha a UI: o servidor decide e os seus códigos de
 // erro dão as mensagens. Adiado (PST) fecha com explicação e reabre sozinho quando o jogo volta a NS.
-// Task 17 (P52): com prognóstico (guardado ou acabado de enviar) há "Partilhar prognóstico", que abre o cartão
-// "S360 MATCHDAY" (ShareCard) numa folha com "Partilhar" e "Fechar", como na referência 818:20427.
+// As folhas (confirmação e partilha) são Modal escuro (bg-raised, raio 28, grabber ao centro, 4946:8195): o Sheet é uma
+// folha fixa do ecrã com título e não um diálogo, por isso o Modal mantém-se com o mesmo aspeto do Figma.
+// A partilha abre o cartão "S360 MATCHDAY" (ShareCard) com "Partilhar" (Branco) e "Fechar" (Contorno).
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { Modal, Text, View } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { Modal, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
@@ -16,20 +17,24 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ShareCard } from '@/components/ShareCard';
 import { Stepper } from '@/components/Stepper';
+import { TeamCrest } from '@/components/GameHeader';
 import type { Match } from '@/data/schemas';
 import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
 import { countdownText } from '@/lib/countdown';
 import { GameActionError, isKnockoutGame, predictionOpen, type GameActionCode } from '@/lib/gameWindows';
 import { useSession } from '@/providers/SessionProvider';
+import { toGameHeaderVM } from '@/lib/matchVM';
 import { predictionPoints } from '@/lib/predictionPoints';
 import { reportCode } from '@/lib/report';
 import { submitPrediction } from '@/services/game';
 import { shareMatchday } from '@/services/share';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const PREDICTION_TEXT = {
+  rulesTitle: 'Pontos',
+  once: 'Só podes submeter uma vez.',
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
   cupRule: 'Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.',
   submit: 'Submeter prognóstico',
@@ -90,11 +95,76 @@ function usePredictionClock(kickoff: Date): Date {
   return now;
 }
 
-function Info({ text }: { text: string }) {
+function StatusLine({ icon, text }: { icon: 'clock' | 'check-circle'; text: string }) {
   return (
-    <Body variant="body" style={{ textAlign: 'center', color: colors.textMuted }}>
-      {text}
-    </Body>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.statusGap }}>
+      <Feather name={icon} size={layout.statusIcon} color={colors.primaryOnDark} accessibilityElementsHidden importantForAccessibility="no" />
+      <Text71 variant="captionStrong12" color="primaryOnDark">
+        {text}
+      </Text71>
+    </View>
+  );
+}
+
+function RulesCard({ knockout }: { knockout: boolean }) {
+  return (
+    <View
+      style={{
+        borderWidth: layout.separator,
+        borderColor: colors.separator,
+        borderRadius: layout.rulesRadius,
+        paddingHorizontal: space.s16,
+        paddingVertical: space.s12,
+        gap: space.s4,
+      }}
+    >
+      <Text71 variant="eyebrow13" color="textSubtle">
+        {PREDICTION_TEXT.rulesTitle}
+      </Text71>
+      <Text71 variant="caption12" color="textMuted">
+        {PREDICTION_TEXT.rules}
+      </Text71>
+      {knockout ? (
+        <Text71 variant="caption12" color="textMuted">
+          {PREDICTION_TEXT.cupRule}
+        </Text71>
+      ) : null}
+    </View>
+  );
+}
+
+/** Folha escura sobre o ecrã (bg-raised, raio 28, grabber ao centro; 4946:8195) para a confirmação e a partilha. */
+function DarkSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  const { bottom } = useSafeAreaInsets();
+  return (
+    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrimV71 }}>
+        <View
+          accessibilityViewIsModal
+          style={{
+            backgroundColor: colors.bgRaised,
+            borderTopLeftRadius: radii.r28,
+            borderTopRightRadius: radii.r28,
+            paddingHorizontal: space.s24,
+            paddingTop: layout.shareSheetPadTop,
+            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.shareSheetPadBottom,
+            gap: space.s16,
+            alignItems: 'stretch',
+          }}
+        >
+          <View
+            style={{
+              alignSelf: 'center',
+              width: layout.grabberWidth,
+              height: layout.grabberHeight,
+              borderRadius: layout.grabberHeight / 2,
+              backgroundColor: colors.surface20,
+            }}
+          />
+          {children}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -109,36 +179,22 @@ function ConfirmSheet({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const { bottom } = useSafeAreaInsets();
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onCancel}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            padding: layout.lockModalPad,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
-            gap: layout.lockModalGap,
-          }}
-        >
-          <Text style={type.screenTitle} accessibilityRole="header">
-            Confirmar prognóstico
-          </Text>
-          <Body variant="body">{`É definitivo. Confirmas ${home}-${away}?`}</Body>
-          <PrimaryButton label="Confirmar" onPress={onConfirm} />
-          <PrimaryButton label="Cancelar" variant="secondary" onPress={onCancel} />
-        </View>
+    <DarkSheet onClose={onCancel}>
+      <Text71 variant="title24" accessibilityRole="header">
+        Confirmar prognóstico
+      </Text71>
+      <Text71 variant="body14" color="textMuted">{`É definitivo. Confirmas ${home}-${away}?`}</Text71>
+      <View style={{ gap: space.s12 }}>
+        <PrimaryButton label="Confirmar" onPress={onConfirm} />
+        <PrimaryButton label="Cancelar" variant="outline" onPress={onCancel} />
       </View>
-    </Modal>
+    </DarkSheet>
   );
 }
 
 /** Folha com o cartão "S360 MATCHDAY": captura e partilha (imagem + texto com link); fecha depois de partilhar. */
 function ShareSheet({ match, home, away, onClose }: { match: Match; home: number; away: number; onClose: () => void }) {
-  const { bottom } = useSafeAreaInsets();
   const card = useRef<ComponentRef<typeof View>>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,31 +214,18 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
   };
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            padding: layout.lockModalPad,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
-            gap: layout.lockModalGap,
-            alignItems: 'stretch',
-          }}
-        >
-          {/* A área do cartão vai até `shareCardInset` da borda do ecrã (o padding da folha é maior); o cartão
-              escala-se sozinho para caber nela (ShareCard.shareCardScale). */}
-          <View style={{ alignItems: 'center', marginHorizontal: layout.shareCardInset - layout.lockModalPad }}>
-            <ShareCard ref={card} match={match} home={home} away={away} />
-          </View>
-          {error ? <FormMessage text={error} /> : null}
-          <PrimaryButton label={PREDICTION_TEXT.shareSend} onPress={() => void share()} loading={sending} />
-          <PrimaryButton label={PREDICTION_TEXT.shareClose} variant="secondary" onPress={onClose} />
-        </View>
+    <DarkSheet onClose={onClose}>
+      {/* A área do cartão vai até `shareCardInset` da borda do ecrã (o padding da folha é maior); o cartão
+          escala-se sozinho para caber nela (ShareCard.shareCardScale). */}
+      <View style={{ alignItems: 'center', marginHorizontal: layout.shareCardInset - space.s24 }}>
+        <ShareCard ref={card} match={match} home={home} away={away} />
       </View>
-    </Modal>
+      {error ? <FormMessage text={error} /> : null}
+      <View style={{ gap: space.s12 }}>
+        <PrimaryButton label={PREDICTION_TEXT.shareSend} variant="white" onPress={() => void share()} loading={sending} />
+        <PrimaryButton label={PREDICTION_TEXT.shareClose} variant="outline" onPress={onClose} />
+      </View>
+    </DarkSheet>
   );
 }
 
@@ -190,8 +233,35 @@ function SharePrediction({ match, home, away }: { match: Match; home: number; aw
   const [open, setOpen] = useState(false);
   return (
     <View style={{ alignSelf: 'stretch' }}>
-      <PrimaryButton label={PREDICTION_TEXT.share} variant="secondary" onPress={() => setOpen(true)} />
+      <PrimaryButton label={PREDICTION_TEXT.share} variant="outline" onPress={() => setOpen(true)} />
       {open ? <ShareSheet match={match} home={home} away={away} onClose={() => setOpen(false)} /> : null}
+    </View>
+  );
+}
+
+function crestOf(team: ReturnType<typeof toGameHeaderVM>['home'], side: 'home' | 'away') {
+  return <TeamCrest team={team} testID={`prediction-crest-${side}`} size="sm" />;
+}
+
+/** As duas linhas só de leitura (4946:8064), um único elemento acessível: "O teu prognóstico: 2-1". */
+function MyPrediction({ match, home, away }: { match: Match; home: number; away: number }) {
+  const vm = toGameHeaderVM(match);
+  return (
+    <View accessible accessibilityLabel={`O teu prognóstico: ${home}-${away}`} style={{ gap: space.s16 }}>
+      <Stepper readOnly label={match.home.name} crest={crestOf(vm.home, 'home')} value={home} />
+      <Stepper readOnly label={match.away.name} crest={crestOf(vm.away, 'away')} value={away} />
+    </View>
+  );
+}
+
+function SubmittedPrediction({ match, home, away, children }: { match: Match; home: number; away: number; children?: React.ReactNode }) {
+  return (
+    <View style={{ gap: space.s16 }}>
+      <StatusLine icon="check-circle" text={PREDICTION_ERRORS.ALREADY} />
+      {children}
+      <MyPrediction match={match} home={home} away={away} />
+      <RulesCard knockout={isKnockoutGame(match.competition)} />
+      <SharePrediction match={match} home={home} away={away} />
     </View>
   );
 }
@@ -207,14 +277,7 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
   // Um toque duplo em "Confirmar" antes do novo render não chama a callable duas vezes.
   const busy = useRef(false);
 
-  if (sent) {
-    return (
-      <View style={{ gap: spacing.md, alignItems: 'center' }}>
-        <MyPrediction home={sent.home} away={sent.away} />
-        <SharePrediction match={match} home={sent.home} away={sent.away} />
-      </View>
-    );
-  }
+  if (sent) return <SubmittedPrediction match={match} home={sent.home} away={sent.away} />;
 
   const send = async () => {
     if (busy.current) return;
@@ -239,49 +302,42 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
     }
   };
 
+  const vm = toGameHeaderVM(match);
   return (
-    <View style={{ gap: spacing.lg }}>
-      <Info text={PREDICTION_TEXT.rules} />
-      {isKnockoutGame(match.competition) ? <Info text={PREDICTION_TEXT.cupRule} /> : null}
-      <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        <Stepper
-          label={match.home.name}
-          value={home}
-          onChange={(n) => {
-            setHome(n);
-            setError(null);
-          }}
-          min={0}
-          max={MAX_GOALS}
-        />
-        <Stepper
-          label={match.away.name}
-          value={away}
-          onChange={(n) => {
-            setAway(n);
-            setError(null);
-          }}
-          min={0}
-          max={MAX_GOALS}
-        />
-      </View>
-      <Body variant="strip" style={{ textAlign: 'center' }}>
-        {`Fecha em ${countdownText(match.kickoff.getTime() - now.getTime())}`}
-      </Body>
+    <View style={{ gap: space.s16 }}>
+      <StatusLine icon="clock" text={`Fecha em ${countdownText(match.kickoff.getTime() - now.getTime())}`} />
+      <Stepper
+        label={match.home.name}
+        crest={crestOf(vm.home, 'home')}
+        value={home}
+        onChange={(n) => {
+          setHome(n);
+          setError(null);
+        }}
+        min={0}
+        max={MAX_GOALS}
+      />
+      <Stepper
+        label={match.away.name}
+        crest={crestOf(vm.away, 'away')}
+        value={away}
+        onChange={(n) => {
+          setAway(n);
+          setError(null);
+        }}
+        min={0}
+        max={MAX_GOALS}
+      />
+      <RulesCard knockout={isKnockoutGame(match.competition)} />
       {error ? <FormMessage text={error} /> : null}
       <PrimaryButton label={PREDICTION_TEXT.submit} onPress={() => setConfirming(true)} loading={sending} />
+      <Text71 variant="caption12" color="textSubtle">
+        {PREDICTION_TEXT.once}
+      </Text71>
       {confirming ? (
         <ConfirmSheet home={home} away={away} onConfirm={() => void send()} onCancel={() => setConfirming(false)} />
       ) : null}
     </View>
-  );
-}
-
-function MyPrediction({ home, away }: { home: number; away: number }) {
-  return (
-    <Display variant="sectionScore" style={{ textAlign: 'center' }}>
-      {`O teu prognóstico: ${home}-${away}`}
-    </Display>
   );
 }
 
@@ -311,20 +367,18 @@ export function PredictionTab({ match }: { match: Match }) {
   if (prediction.status === 'ready') {
     const settled = settlement.status === 'ready' ? settlement.data : null;
     body = (
-      <View style={{ gap: spacing.md, alignItems: 'center' }}>
+      <SubmittedPrediction match={match} home={prediction.data.home} away={prediction.data.away}>
         {settled ? (
-          <Display variant="sectionScore" style={{ textAlign: 'center' }}>
+          <Text71 variant="titleS20" style={{ textAlign: 'center' }}>
             {`Resultado final: ${settled.finalHome}-${settled.finalAway}`}
-          </Display>
+          </Text71>
         ) : null}
-        <MyPrediction home={prediction.data.home} away={prediction.data.away} />
         {settled && points.status === 'ready' ? (
-          <Display variant="screenTitle" style={{ textAlign: 'center' }}>
+          <Text71 variant="title24" color="primaryOnDark" style={{ textAlign: 'center' }}>
             {pointsText(predictionPoints(points.data))}
-          </Display>
+          </Text71>
         ) : null}
-        <SharePrediction match={match} home={prediction.data.home} away={prediction.data.away} />
-      </View>
+      </SubmittedPrediction>
     );
   } else if (match.status === 'PST') {
     body = <EmptyState icon="info" text={PREDICTION_TEXT.postponed} />;
@@ -338,7 +392,7 @@ export function PredictionTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="prediction-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
+      contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: space.s16 + space.s4, paddingBottom: space.s32, gap: space.s16 }}
     >
       <OfflineBanner visible={offline} />
       {body}

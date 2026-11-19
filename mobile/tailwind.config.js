@@ -43,6 +43,8 @@ module.exports = {
           yellow71: '#FACC2E',
           yellow71Bg: 'rgba(250, 204, 46, 0.18)',
           pitchField: '#006B4A',
+          shareCardTop: '#00543B',
+          shareCardRule: 'rgba(255, 255, 255, 0.15)',
         },
       },
       fontFamily: {

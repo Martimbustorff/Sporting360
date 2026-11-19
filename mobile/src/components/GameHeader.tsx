@@ -83,23 +83,6 @@ export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?
 }
 
 
-/** Caixa de resultado branca simples (Stepper do Prognóstico e cartão de partilha); o cabeçalho usa `FlipBox`. */
-export function ScoreBox({ value, testID }: { value: number; testID: string }) {
-  return (
-    <View
-      style={{
-        backgroundColor: colors.white,
-        borderRadius: radius.sm,
-        padding: spacing.sm,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Display variant="scoreBox" testID={testID}>{value}</Display>
-    </View>
-  );
-}
-
 export const GAME_HEADER_TEXT = {
   next: 'Próximo jogo',
   live: 'Ao vivo',
