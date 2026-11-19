@@ -21,7 +21,7 @@ export const CONSENT_TITLE = 'AJUDA A MELHORAR A S360';
 export const CONSENT_TEXT =
   'Gostávamos de saber que ecrãs e funcionalidades usas, para decidir o que melhorar a seguir. Para isso usamos o Google Analytics para Firebase.';
 export const CONSENT_POINTS = [
-  'Só dados de utilização, sem te identificar.',
+  'Só dados de utilização, sem o teu nome nem o teu email.',
   'Nunca o teu nome, email ou número de sócio.',
   'Podes mudar de ideias a qualquer momento nas Definições.',
 ] as const;

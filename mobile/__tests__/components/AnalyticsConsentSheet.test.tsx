@@ -35,6 +35,9 @@ describe('AnalyticsConsentSheet no layout', () => {
     expect(await screen.findByText(CONSENT_TITLE)).toBeTruthy();
     expect(screen.getByText(CONSENT_TEXT)).toBeTruthy();
     for (const p of CONSENT_POINTS) expect(screen.getByText(p)).toBeTruthy();
+    // O id interno vai para a análise (setUserId): o texto não promete anonimato total.
+    expect(screen.getByText('Só dados de utilização, sem o teu nome nem o teu email.')).toBeTruthy();
+    expect(screen.queryByText(/sem te identificar/)).toBeNull();
     expect(screen.getByRole('link', { name: CONSENT_POLICY })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Aceitar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Agora não' })).toBeTruthy();
