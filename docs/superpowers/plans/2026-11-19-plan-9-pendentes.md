@@ -128,6 +128,31 @@
 - [ ] **Step 4:** Bateria completa: `cd functions && npm test && npm run lint && npm run build` e o emulador; `cd mobile && npx jest && npx tsc --noEmit && npm run check:tokens && npm run lint`. Tudo verde.
 - [ ] **Step 5: Commit** `chore(pendentes): ESLint a correr e notas de verificação fechadas`.
 
+### Task 6: Classificação com três vistas (Resumida, Completa, Forma)
+
+Pedido e aprovação do Martim (19/11, 22:53 e 22:55), a partir de uma app de referência. Sem alterações no servidor: `win`, `draw`, `lose`, `goalsDiff` e `form` já vêm na tabela.
+
+**Files:**
+- Modify: `mobile/src/components/CompetitionStandings.tsx`, `mobile/src/components/StandingsTable.tsx`, `mobile/src/lib/liveStandings.ts`, `mobile/src/theme/tokens.ts`
+- Test: os testes existentes dos três ficheiros, mais casos novos
+
+**Interfaces:**
+- Produces: `type StandingsView = 'short' | 'full' | 'form'`; `formResults(form: string | null): Array<'V' | 'E' | 'D'>` (lê W, D, L da API; ignora outros caracteres; no máximo os 5 mais recentes).
+
+- [ ] **Step 1 (Figma, antes do código):** no frame 10 Classificação, seletor "Resumida / Completa / Forma" por cima da tabela (componente Segmented do quadro 4918:5041), com "Resumida" ativa; frames novos `10b Classificação · Completa` (colunas J, V, E, D, DG, PTS) e `10c Classificação · Forma` (5 bolinhas por equipa com V, E ou D, a mais recente à direita); ponto "a jogar agora" ao lado do nome de duas equipas num dos frames; linha do Sporting destacada nos três. Cores das bolinhas: verde do Sporting na vitória, cinzento no empate, encarnado dos cartões na derrota, letra branca. Mapa de cobertura atualizado.
+- [ ] **Step 2: Testes:**
+  - O seletor mostra "Resumida", "Completa" e "Forma"; abre em "Resumida", que é a tabela de hoje (J, DG, PTS) sem mudanças.
+  - "Completa" mostra J, V, E, D, DG, PTS; a 320 pt os números não cortam e o nome encurta com reticências.
+  - "Forma" mostra até 5 bolinhas por equipa na mesma ordem das fichas de forma que a app já mostra antes do jogo (a mais recente à direita); W, D e L da API passam a V, E e D; `form` nulo ou vazio não mostra bolinhas; rótulo de acessibilidade por linha ("Últimos jogos: vitória, empate, derrota").
+  - A escolha vale nos dois sítios (separador Classificação do jogo e página da competição) e mantém-se enquanto a app estiver aberta.
+  - O alternador "Ao vivo" continua a aparecer só durante os jogos; em "Ao vivo" + "Completa", V, E e D são os projetados e batem com os pontos projetados; em "Forma" a forma é sempre a oficial.
+  - Com jogos da liga a decorrer, as equipas que estão a jogar têm o ponto ao lado do nome nas três vistas.
+  - A linha do Sporting continua destacada nas três vistas; a legenda das zonas e as setas ficam como estão.
+- [ ] **Step 3:** `npx jest` nos ficheiros tocados; esperar FALHA.
+- [ ] **Step 4:** Implementar a partir dos frames (carregar `figma:figma-design-to-code` antes de `get_design_context`).
+- [ ] **Step 5:** `npx jest && npx tsc --noEmit && npm run check:tokens`; esperar PASSA.
+- [ ] **Step 6: Commit** `feat(classificacao): vistas Resumida, Completa e Forma`.
+
 ## Depois do plano
 
 - O que só se vê em dispositivo (fontes DIN, contagem a 320 pt, cabeçalho a recolher, brilho, bloqueio de capturas, link `/e`, referrer, zoom do Estádio, ícone do Face ID, permissão `WRITE_SETTINGS`) fica para a build.
