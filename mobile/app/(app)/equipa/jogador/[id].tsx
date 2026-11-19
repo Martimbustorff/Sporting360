@@ -1,17 +1,22 @@
-// SEM FIGMA: o Figma não tem frame do jogador (Mapa do Figma do Plano 4). Compõe Header ("Jogador"), foto redonda
-// de 96 px (`layout.playerPhoto`, círculo surface10 sem foto), nome em DIN 24 (`sectionScore`, uma linha com reticências)
-// e "N.º 9, Avançado, 24 anos" a muted; depois `SectionBar` e `InfoRow` (655:31905 / 655:31960) para os números da
-// época, e `TextRow` (TeamRows) para os troféus e o histórico de lesões.
+// Figma V7.1: frame 42 "Jogador" (4950:8462). Header "JOGADOR"; cabeça com a foto de 84 (`PlayerPhoto`, 4959:9550), o número em
+// Title 24 primary-on-dark junto ao nome em Title 24 e a linha "Extremo · 25 anos" em Caption 12 muted; quatro quadrados
+// (JOGOS, GOLOS, ASSIST., NOTA a primary; surface-06, raio 12, 12 em cima e em baixo); linhas com `InfoRow`; TROFÉUS com o ícone
+// (4950:8548) e HISTÓRICO DE LESÕES, "Sem lesões registadas." em Caption 12 muted.
+// Diferenças do frame: a foto fica redonda (o frame mostra um quadrado de cantos redondos; `PlayerPhoto` é circular em todo o
+// app); a linha de facto não leva nacionalidade (o plantel não a tem); as linhas Remates à baliza, Passes-chave e Dribles
+// certos não existem nos dados e não se mostram; ficam Minutos e os cartões amarelos e vermelhos (copy já existente).
+// SEM FIGMA: o aviso de cache, o erro, "Jogador não encontrado.", "Sem jogos esta época.", "Sem troféus registados." e o erro de
+// secção. O número só se mostra com número no plantel.
 // O id é o da API-Football (Formações e Plantel abrem `/equipa/jogador/{id}`). O jogador vem do plantel ou, se já
 // saiu, da linha de estatísticas da época. Plantel ou estatísticas a falhar: erro no ecrã, nunca "Sem jogos esta
 // época."; troféus ou lesões a falhar: "Não foi possível carregar esta secção." só nessa secção.
 import { useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Image } from 'expo-image';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 import { SectionError, TextRow } from '@/components/TeamRows';
@@ -28,8 +33,8 @@ import {
   sidelinedPeriodText,
   trophyPlaceText,
 } from '@/lib/team';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 const ERROR_TEXT = 'Não foi possível carregar os dados.';
 const NOT_FOUND = 'Jogador não encontrado.';
@@ -43,32 +48,52 @@ const param = (v: string | string[] | undefined): string | undefined => (Array.i
 const Loading = () => <View testID="player-loading" />;
 
 function Muted({ text }: { text: string }) {
-  return <Body variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>{text}</Body>;
+  return <Text71 variant="caption12" color="textMuted">{text}</Text71>;
 }
 
-function Photo({ uri }: { uri: string | null }) {
-  const box = { width: layout.playerPhoto, height: layout.playerPhoto, borderRadius: layout.playerPhoto / 2 };
-  if (!uri) return <View testID="player-photo" style={{ ...box, backgroundColor: colors.surface10 }} />;
-  return <Image testID="player-photo" source={{ uri }} contentFit="cover" accessibilityIgnoresInvertColors style={box} />;
+function Tile({ label, value, accent = false, a11y }: { label: string; value: string; accent?: boolean; a11y: string }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={a11y}
+      style={{
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'center',
+        gap: layout.playerNameGap / 2,
+        paddingVertical: layout.playerTilePadY,
+        borderRadius: layout.tieCardRadius,
+        backgroundColor: colors.surface06,
+      }}
+    >
+      <Text71 variant="title24" color={accent ? 'primary' : 'white'} numberOfLines={1}>{value}</Text71>
+      <Text71 variant="badge11" color="textSubtle" numberOfLines={1}>{label}</Text71>
+    </View>
+  );
 }
 
 function SeasonNumbers({ line }: { line: PlayerSeasonStats }) {
+  const rating = ratingText(line.rating);
   const rows: [string, string][] = [
-    ['Jogos', String(line.appearances)],
     ['Minutos', capacityText(line.minutes)],
-    ['Golos', String(line.goals)],
-    ['Assistências', String(line.assists)],
-    ['Nota média', ratingText(line.rating)],
     ['Cartões amarelos', String(line.yellow)],
     ['Cartões vermelhos', String(line.red)],
   ];
   return (
-    <View>
-      {rows.map(([label, value]) => (
-        <View key={label} accessible accessibilityLabel={`${label}: ${value}`}>
-          <InfoRow label={label} value={value} />
-        </View>
-      ))}
+    <View style={{ gap: space.s12 }}>
+      <View style={{ flexDirection: 'row', gap: layout.playerTileGap }}>
+        <Tile label="Jogos" value={String(line.appearances)} a11y={`Jogos: ${line.appearances}`} />
+        <Tile label="Golos" value={String(line.goals)} a11y={`Golos: ${line.goals}`} />
+        <Tile label="Assist." value={String(line.assists)} a11y={`Assistências: ${line.assists}`} />
+        <Tile label="Nota" value={rating} accent a11y={`Nota média: ${rating}`} />
+      </View>
+      <View>
+        {rows.map(([label, value]) => (
+          <View key={label} accessible accessibilityLabel={`${label}: ${value}`}>
+            <InfoRow label={label} value={value} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -97,24 +122,26 @@ export default function Jogador() {
     if (!member && !anyLine) return <EmptyState icon="info" text={NOT_FOUND} />;
     const name = member?.name ?? anyLine?.name ?? '';
     const photo = member?.photo ?? anyLine?.photo ?? null;
-    const facts = [
-      member?.number != null ? `N.º ${member.number}` : '',
-      playerPositionLabel(member?.position ?? null),
-      member?.age != null ? `${member.age} anos` : '',
-    ].filter(Boolean);
+    const number = member?.number ?? null;
+    const facts = [playerPositionLabel(member?.position ?? null), member?.age != null ? `${member.age} anos` : ''].filter(Boolean);
     const line = playerSeasonLine(statsDoc, id);
     const won = trophies.status === 'ready' ? (trophies.data.byPlayer[id] ?? []) : [];
     const injuries = sidelined.status === 'ready' ? (sidelined.data.byPlayer[id] ?? []) : [];
     const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
     return (
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32, gap: space.s12 }}>
         <OfflineBanner visible={fromCache} />
-        <View style={{ alignItems: 'center', gap: spacing.sm, paddingTop: spacing.md }}>
-          <Photo uri={photo} />
-          <Display variant="sectionScore" numberOfLines={1} ellipsizeMode="tail" style={{ textAlign: 'center', alignSelf: 'stretch' }}>
-            {name}
-          </Display>
-          {facts.length > 0 ? <Muted text={facts.join(', ')} /> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.playerHeaderGap, paddingTop: space.s12 }}>
+          <PlayerPhoto testID="player-photo" photo={photo} size={layout.playerHeaderPhoto} />
+          <View style={{ flex: 1, minWidth: 0, gap: layout.playerNameGap / 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.playerNameGap }}>
+              {number !== null ? (
+                <Text71 variant="title24" color="primaryOnDark" testID="player-shirt" style={{ flexShrink: 0 }}>{String(number)}</Text71>
+              ) : null}
+              <Text71 variant="title24" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1 }}>{name}</Text71>
+            </View>
+            {facts.length > 0 ? <Muted text={facts.join(' · ')} /> : null}
+          </View>
         </View>
         <SectionBar label={`Época ${seasonLabel(season)}`} />
         {line ? <SeasonNumbers line={line} /> : <Muted text={NO_GAMES} />}
@@ -124,7 +151,7 @@ export default function Jogador() {
         ) : trophies.status === 'loading' ? null : won.length > 0 ? (
           <View>
             {won.map((t, i) => (
-              <TextRow key={`${t.league}-${t.season}-${i}`} left={`${t.league} ${t.season}`} right={trophyPlaceText(t.place)} />
+              <TextRow key={`${t.league}-${t.season}-${i}`} left={`${t.league} · ${t.season}`} right={trophyPlaceText(t.place)} />
             ))}
           </View>
         ) : (
@@ -136,7 +163,7 @@ export default function Jogador() {
         ) : sidelined.status === 'loading' ? null : injuries.length > 0 ? (
           <View>
             {injuries.map((s, i) => (
-              <TextRow key={`${s.start}-${i}`} left={injuryReasonText(s.type)} right={sidelinedPeriodText(s)} />
+              <TextRow key={`${s.start}-${i}`} icon={false} left={injuryReasonText(s.type)} right={sidelinedPeriodText(s)} />
             ))}
           </View>
         ) : (
@@ -148,7 +175,7 @@ export default function Jogador() {
 
   return (
     <Screen padded="none">
-      <Header title="Jogador" onBack={back} />
+      <Header title="JOGADOR" onBack={back} />
       {body}
     </Screen>
   );
