@@ -1,6 +1,6 @@
 // Task 18: tab MVP. Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__), chamada pelo
 // services/game real, para testar o caminho completo até ao código de erro do servidor (functions/src/callables/voteMvp.ts).
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { colors } from '@/theme/tokens';
 import type { GameStatus, Match } from '@/data/schemas';
@@ -121,7 +121,7 @@ describe('Antes de abrir', () => {
     await render(<MvpTab match={match({ elapsed: 62 })} />, { wrapper });
     expect(screen.getByText('A votação abre ao minuto 80.')).toBeTruthy();
     expect(screen.getByText('Faltam cerca de 18 min.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('antes do jogo e ao intervalo: só quando abre', async () => {
@@ -146,15 +146,15 @@ describe('Votação aberta', () => {
     expect(screen.getByText('Fecha 20 minutos depois do apito final.')).toBeTruthy();
     const names = screen.getAllByTestId(/^mvp-candidate-/).map((n) => n.props.testID);
     expect(names).toEqual(['mvp-candidate-20', 'mvp-candidate-10']); // Gyökeres antes de Trincão
-    expect(screen.queryByLabelText('Votar em Banco')).toBeNull();
-    expect(screen.queryByLabelText('Votar em Adversário')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Banco')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Adversário')).toBeNull();
   });
 
   it('o minuto 80 abre a lista sozinho (o jogo chega por onSnapshot)', async () => {
     const { rerender } = await render(<MvpTab match={match({ elapsed: 79 })} />, { wrapper });
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
     await rerender(<MvpTab match={match({ elapsed: 80 })} />);
-    expect(screen.getByLabelText('Votar em Trincão')).toBeTruthy();
+    expect(screen.getByLabelText('Escolher Trincão')).toBeTruthy();
   });
 
   // Review Focus 1
@@ -182,10 +182,10 @@ describe('Votação aberta', () => {
 
   it('a lista acompanha o snapshot: quem entra depois do minuto 80 aparece', async () => {
     const { rerender } = await render(<MvpTab match={match()} />, { wrapper });
-    expect(screen.queryByLabelText('Votar em Quenda')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Quenda')).toBeNull();
     mockData.players = players([p('10', 'Trincão', 90, 17), p('20', 'Gyökeres', 85, 9), p('40', 'Quenda', 3, 57)]);
     await rerender(<MvpTab match={match({ elapsed: 88 })} />);
-    expect(screen.getByLabelText('Votar em Quenda')).toBeTruthy();
+    expect(screen.getByLabelText('Escolher Quenda')).toBeTruthy();
   });
 
   it('depois do fim: contagem "Fecha em mm:ss" a cada segundo', async () => {
@@ -198,16 +198,16 @@ describe('Votação aberta', () => {
 
   it('a contagem chega a zero e a votação fecha sozinha sem chamar o servidor', async () => {
     await render(<MvpTab match={match({ status: 'FT', elapsed: 90, finishedAt: new Date(NOW.getTime() - 20 * 60_000 + 2_000) })} />, { wrapper });
-    expect(screen.getByLabelText('Votar em Trincão')).toBeTruthy();
+    expect(screen.getByLabelText('Escolher Trincão')).toBeTruthy();
     await tick(2_000);
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
     expect(screen.getByText('A votação já fechou.')).toBeTruthy();
     expect(mockCall).not.toHaveBeenCalled();
   });
 
   it('escolher mostra o botão, que pede confirmação e só depois chama voteMvp, uma vez', async () => {
     await render(<MvpTab match={match()} />, { wrapper });
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     expect(screen.queryByText('Votar em Trincão? É definitivo.')).toBeNull();
     await press('VOTAR EM TRINCÃO');
     expect(screen.getByText('Votar em Trincão? É definitivo.')).toBeTruthy();
@@ -219,17 +219,17 @@ describe('Votação aberta', () => {
     expect(mockCall).toHaveBeenCalledTimes(1);
     expect(mockCall).toHaveBeenCalledWith({ gameId: '1001', playerId: '10' });
     expect(screen.getByText('O teu voto: Trincão')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Gyökeres')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Gyökeres')).toBeNull();
   });
 
   it('cancelar não chama o servidor e a escolha fica marcada', async () => {
     await render(<MvpTab match={match()} />, { wrapper });
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Cancelar');
     expect(screen.queryByText('Votar em Trincão? É definitivo.')).toBeNull();
     expect(mockCall).not.toHaveBeenCalled();
-    expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    expect(screen.getByLabelText('Escolher Trincão').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
   });
 });
 
@@ -287,7 +287,7 @@ describe('Relógio de 1 segundo (carry da Task 18)', () => {
     mockCall.mockRejectedValueOnce(Object.assign(new Error('MVP_CLOSED'), { code: 'failed-precondition' }));
     await render(<MvpTab match={ended(10 * 60_000)} />, { wrapper });
     expect(running()).toBe(1);
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
@@ -304,7 +304,7 @@ describe('Relógio de 1 segundo (carry da Task 18)', () => {
 describe('Erros da callable', () => {
   async function voteTrincao(m = match()) {
     await render(<MvpTab match={m} />, { wrapper });
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
@@ -317,10 +317,10 @@ describe('Erros da callable', () => {
     await voteTrincao();
     expect(mockCall).toHaveBeenCalledTimes(2);
     expect(screen.getByText('Sem ligação. O teu voto não foi enviado; tenta outra vez.')).toBeTruthy();
-    expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    expect(screen.getByLabelText('Escolher Trincão').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
     expect(recordError).not.toHaveBeenCalled();
 
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
@@ -344,7 +344,7 @@ describe('Erros da callable', () => {
     );
     await voteTrincao();
     expect(screen.getByText('Sem ligação. O teu voto não foi enviado; tenta outra vez.')).toBeTruthy();
-    expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
+    expect(screen.getByLabelText('Escolher Trincão').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
     expect(recordError).not.toHaveBeenCalled();
   });
 
@@ -352,7 +352,7 @@ describe('Erros da callable', () => {
     mockCall.mockRejectedValueOnce(Object.assign(new Error('MVP_CLOSED'), { code: 'failed-precondition' }));
     await voteTrincao();
     expect(screen.getByText('A votação já fechou.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('MVP_NOT_OPEN: a votação ainda não abriu (relógio do telemóvel adiantado)', async () => {
@@ -375,7 +375,7 @@ describe('Erros da callable', () => {
     mockCall.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'already-exists' }));
     await voteTrincao();
     expect(screen.getByText('Já votaste neste jogo.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
     expect(recordError).not.toHaveBeenCalled();
   });
 
@@ -391,7 +391,7 @@ describe('Votado, fechado e apurado', () => {
     mockData.vote = vote('20');
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.getByText('O teu voto: Gyökeres')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('fechado sem settlements: a apurar o MVP oficial', async () => {
@@ -405,7 +405,7 @@ describe('Votado, fechado e apurado', () => {
     await render(<MvpTab match={match({ status: 'FT', elapsed: 90, finishedAt: new Date(NOW.getTime() - 30 * 60_000) })} />, { wrapper });
     expect(screen.getByText('A votação já fechou.')).toBeTruthy();
     expect(screen.getByText('A apurar o MVP oficial.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('apurado com acerto: MVP oficial e "+2 pontos"', async () => {
@@ -443,14 +443,14 @@ describe('Votado, fechado e apurado', () => {
     mockData.vote = { status: 'loading' };
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.getByTestId('mvp-loading')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('sem sessão: pede para entrar', async () => {
     mockSession.status = 'signedOut';
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.getByText('Entra na tua conta para votares no MVP.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 
   it('dados em cache (sem ligação): aviso offline', async () => {
@@ -464,14 +464,14 @@ describe('Adiado e cancelado (Review Focus 2)', () => {
   it('PST: sem votação, jogo adiado, sem lista', async () => {
     await render(<MvpTab match={match({ status: 'PST', elapsed: null })} />, { wrapper });
     expect(screen.getByText('Sem votação: jogo adiado.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
     expect(screen.queryByText('A votação abre ao minuto 80.')).toBeNull();
   });
 
   it('CANC: sem votação, jogo cancelado, sem lista', async () => {
     await render(<MvpTab match={match({ status: 'CANC', elapsed: null })} />, { wrapper });
     expect(screen.getByText('Sem votação: jogo cancelado.')).toBeTruthy();
-    expect(screen.queryByLabelText('Votar em Trincão')).toBeNull();
+    expect(screen.queryByLabelText('Escolher Trincão')).toBeNull();
   });
 });
 
@@ -511,7 +511,7 @@ describe('Percentagens', () => {
     mockData.tally = tally({ '10': 1, '20': 1 }, 2);
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.queryByText(/%/)).toBeNull();
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
@@ -585,7 +585,7 @@ describe('MVP com notas (V7.1)', () => {
     mockData.players = withRatings();
     await render(<MvpTab match={match()} />, { wrapper });
     for (const n of ['Trincão', 'Gyökeres', 'Hjulmand', 'Quenda', 'Debast']) {
-      expect(screen.getByLabelText(`Votar em ${n}`).props.accessibilityState).toEqual(expect.objectContaining({ selected: false }));
+      expect(screen.getByLabelText(`Escolher ${n}`).props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
     }
     expect(screen.queryByLabelText(/^VOTAR EM /)).toBeNull();
   });
@@ -593,10 +593,10 @@ describe('MVP com notas (V7.1)', () => {
   it('o botão leva o nome escolhido em maiúsculas e muda com a escolha', async () => {
     mockData.players = withRatings();
     await render(<MvpTab match={match()} />, { wrapper });
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     expect(screen.getByLabelText('VOTAR EM TRINCÃO')).toBeTruthy();
-    expect(screen.getByLabelText('Votar em Trincão').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));
-    await press('Votar em Gyökeres');
+    expect(screen.getByLabelText('Escolher Trincão').props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+    await press('Escolher Gyökeres');
     expect(screen.getByLabelText('VOTAR EM GYÖKERES')).toBeTruthy();
     expect(screen.queryByLabelText('VOTAR EM TRINCÃO')).toBeNull();
   });
@@ -639,7 +639,7 @@ describe('MVP com notas (V7.1)', () => {
     expect(screen.queryByTestId(/^mvp-rating-/)).toBeNull();
     expect(screen.queryByText('MELHOR NOTA')).toBeNull();
     expect(screen.queryByText(/API-Football/)).toBeNull();
-    await press('Votar em Trincão');
+    await press('Escolher Trincão');
     await press('VOTAR EM TRINCÃO');
     await press('Confirmar');
     await flush();
@@ -663,5 +663,37 @@ describe('MVP com notas (V7.1)', () => {
     expect(within(row).getByText('Francisco Maximiliano Gonçalves de Albuquerque').props.numberOfLines).toBe(1);
     expect(within(row).getByText('MELHOR NOTA').props.numberOfLines).toBe(1);
     expect(screen.getByTestId('mvp-rating-10')).toBeTruthy();
+  });
+
+  describe('320 pt', () => {
+    afterEach(() => jest.restoreAllMocks());
+    const at = (width: number) => {
+      const real = Dimensions.get.bind(Dimensions);
+      jest.spyOn(Dimensions, 'get').mockImplementation(((k: 'window' | 'screen') => ({ ...real(k), width })) as typeof Dimensions.get);
+    };
+
+    it('o selo desce para a segunda linha, ao lado da posição, e o nome não tem largura fixa', async () => {
+      at(320);
+      mockData.players = players([q('10', 'Francisco Maximiliano Gonçalves de Albuquerque', 8.9)]);
+      await render(<MvpTab match={match()} />, { wrapper });
+      const row = screen.getByTestId('mvp-candidate-10');
+      const second = within(row).getByTestId('mvp-second-line-10');
+      expect(within(second).getByTestId('mvp-best-10')).toBeTruthy();
+      expect(within(second).getByText('MED')).toBeTruthy();
+      const name = within(row).getByText('Francisco Maximiliano Gonçalves de Albuquerque');
+      expect(name.props.numberOfLines).toBe(1);
+      const style = StyleSheet.flatten(name.props.style);
+      expect(style.width).toBeUndefined();
+      expect(style.flexShrink).toBe(1);
+    });
+
+    it('a 360 pt ou mais o selo fica ao lado do nome, fora da segunda linha', async () => {
+      at(360);
+      mockData.players = withRatings();
+      await render(<MvpTab match={match()} />, { wrapper });
+      const row = screen.getByTestId('mvp-candidate-20');
+      expect(within(within(row).getByTestId('mvp-second-line-20')).queryByTestId('mvp-best-20')).toBeNull();
+      expect(within(row).getByTestId('mvp-best-20')).toBeTruthy();
+    });
   });
 });

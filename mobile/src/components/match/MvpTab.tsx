@@ -9,7 +9,7 @@
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Text, View } from 'react-native';
+import { Modal, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
@@ -182,14 +182,35 @@ function CandidateRow({
   selected: boolean;
   onPress: () => void;
 }) {
+  const compact = useWindowDimensions().width < layout.stepCompactBelow;
   const rating = line?.rating ?? null;
   const position = positionAbbr(line?.position ?? null);
+  const badgeEl = best ? (
+    <View
+              testID={`mvp-best-${candidate.playerId}`}
+              style={{
+                flexShrink: 0,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: layout.mvpBadgeGap,
+                paddingHorizontal: layout.mvpBadgePadX,
+                paddingVertical: layout.mvpBadgePadY,
+                borderRadius: layout.mvpBadgeRadius,
+                backgroundColor: colors.primary,
+              }}
+            >
+              <StarIcon />
+              <Text71 variant="badge11" numberOfLines={1}>
+                MELHOR NOTA
+              </Text71>
+            </View>
+  ) : null;
   return (
     <Touchable
       testID={`mvp-candidate-${candidate.playerId}`}
-      accessibilityRole="button"
-      accessibilityLabel={`Votar em ${candidate.name}`}
-      accessibilityState={{ selected }}
+      accessibilityRole="radio"
+      accessibilityLabel={`Escolher ${candidate.name}`}
+      accessibilityState={{ checked: selected }}
       onPress={onPress}
       style={[
         {
@@ -209,31 +230,17 @@ function CandidateRow({
           <Text71 variant="strong14" numberOfLines={1} style={{ flexShrink: 1 }}>
             {candidate.name}
           </Text71>
-          {best ? (
-            <View
-              testID={`mvp-best-${candidate.playerId}`}
-              style={{
-                flexShrink: 0,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: layout.mvpBadgeGap,
-                paddingHorizontal: layout.mvpBadgePadX,
-                paddingVertical: layout.mvpBadgePadY,
-                borderRadius: layout.mvpBadgeRadius,
-                backgroundColor: colors.primary,
-              }}
-            >
-              <StarIcon />
-              <Text71 variant="badge11" numberOfLines={1}>
-                MELHOR NOTA
-              </Text71>
-            </View>
-          ) : null}
+          {best && !compact ? badgeEl : null}
         </View>
-        {position ? (
-          <Text71 variant="caption12" color="textSubtle" numberOfLines={1}>
-            {position}
-          </Text71>
+        {position || (best && compact) ? (
+          <View testID={`mvp-second-line-${candidate.playerId}`} style={{ flexDirection: 'row', alignItems: 'center', gap: layout.mvpNameGap }}>
+            {position ? (
+              <Text71 variant="caption12" color="textSubtle" numberOfLines={1} style={{ flexShrink: 1 }}>
+                {position}
+              </Text71>
+            ) : null}
+            {best && compact ? badgeEl : null}
+          </View>
         ) : null}
       </View>
       {rating !== null ? (
