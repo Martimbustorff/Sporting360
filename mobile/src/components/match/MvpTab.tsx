@@ -4,16 +4,17 @@
 // abre a folha de confirmação (o voto é definitivo). As percentagens da referência aparecem depois de votar ou quando a
 // votação fecha (antes disso puxariam o voto para o mais votado): linha só de leitura com a percentagem à direita e
 // "{n} votos" por baixo (mvpTallies, escrito pelo servidor ao minuto, pode atrasar-se). FormMessage para erros e
-// OfflineBanner, como na tab Prognóstico. A ordem da lista é a de mvpCandidates (a do servidor), nunca a das notas.
+// OfflineBanner, como na tab Prognóstico. A ordem da lista é a do onze (mvpCandidatesInLineupOrder: titulares e depois suplentes que jogaram, pela ordem do documento
+// players), nunca a das notas nem alfabética; o conjunto é o do servidor.
 // Regras (spec §6): abre ao minuto 80, fecha 20 minutos depois do apito final; um voto definitivo, só pela callable
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Text, useWindowDimensions, View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
+import { ModalSheet } from '@/components/ModalSheet';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -26,7 +27,7 @@ import {
   GameActionError,
   MVP_CLOSE_AFTER_MS,
   MVP_OPEN_ELAPSED,
-  mvpCandidates,
+  mvpCandidatesInLineupOrder,
   mvpWindow,
   type GameActionCode,
   type MvpCandidate,
@@ -35,8 +36,8 @@ import { bestRatedIds, positionAbbr, ratingTone, shownRating } from '@/lib/mvpBe
 import { mvpPercentages } from '@/lib/mvpPercent';
 import { useSession } from '@/providers/SessionProvider';
 import { voteMvp } from '@/services/game';
-import { Body, Display, Text71 } from '@/theme/typography';
-import { colors, layout, radii, radius, space, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const MVP_TEXT = {
@@ -115,9 +116,9 @@ function useMvpClock(untilMs: number | null, stop: boolean): Date {
 
 function Info({ text }: { text: string }) {
   return (
-    <Body variant="body" style={{ textAlign: 'center', color: colors.textMuted }}>
+    <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>
       {text}
-    </Body>
+    </Text71>
   );
 }
 
@@ -274,18 +275,18 @@ function ResultRow({ candidate, percent, mine }: { candidate: MvpCandidate; perc
         minHeight: layout.mvpRowHeight,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing.sm,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.md,
+        gap: space.s8,
+        paddingHorizontal: space.s16,
+        borderRadius: radii.r8,
         borderWidth: layout.separator,
-        borderColor: mine ? colors.primary : colors.textDisabled,
+        borderColor: mine ? colors.primary : colors.separator,
         backgroundColor: mine ? colors.primary : undefined,
       }}
     >
-      <Body variant="body" numberOfLines={1} style={{ flex: 1 }}>
+      <Text71 variant="strong14" numberOfLines={1} style={{ flex: 1 }}>
         {candidate.name}
-      </Body>
-      <Text style={[type.newsMeta, { textAlign: 'right' }, mine ? { color: colors.white } : null]}>{`${percent}%`}</Text>
+      </Text71>
+      <Text71 variant="label16" color={mine ? 'white' : 'textMuted'} style={{ textAlign: 'right' }}>{`${percent}%`}</Text71>
     </View>
   );
 }
@@ -296,40 +297,27 @@ function Results({ candidates, tally, mineId }: { candidates: MvpCandidate[]; ta
     candidates.map((c) => c.playerId),
   );
   return (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: space.s8 }}>
       {candidates.map((c) => (
         <ResultRow key={c.playerId} candidate={c} percent={percent[c.playerId] ?? 0} mine={c.playerId === mineId} />
       ))}
-      <Text style={[type.newsMeta, { textAlign: 'center' }]}>{votesText(tally.total)}</Text>
+      <Text71 variant="caption12" color="textMuted" style={{ textAlign: 'center' }}>{votesText(tally.total)}</Text71>
     </View>
   );
 }
 
 function ConfirmSheet({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
-  const { bottom } = useSafeAreaInsets();
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onCancel}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            padding: layout.lockModalPad,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
-            gap: layout.lockModalGap,
-          }}
-        >
-          <Text style={type.screenTitle} accessibilityRole="header">
-            {MVP_TEXT.confirmTitle}
-          </Text>
-          <Body variant="body">{`Votar em ${name}? É definitivo.`}</Body>
-          <PrimaryButton label="Confirmar" onPress={onConfirm} />
-          <PrimaryButton label="Cancelar" variant="secondary" onPress={onCancel} />
-        </View>
+    <ModalSheet grabber="center" onClose={onCancel}>
+      <Text71 variant="title24" accessibilityRole="header">
+        {MVP_TEXT.confirmTitle}
+      </Text71>
+      <Text71 variant="body14" color="textMuted">{`Votar em ${name}? É definitivo.`}</Text71>
+      <View style={{ gap: space.s12 }}>
+        <PrimaryButton label="Confirmar" onPress={onConfirm} />
+        <PrimaryButton label="Cancelar" variant="outline" onPress={onCancel} />
       </View>
-    </Modal>
+    </ModalSheet>
   );
 }
 
@@ -427,14 +415,14 @@ function Settled({ doc, official, points }: { doc: PlayersDoc | null; official: 
   else if (names.length === 0) text = MVP_TEXT.officialUnknown;
   else text = `MVP oficial: ${joinNames(names)}`;
   return (
-    <View style={{ gap: spacing.sm, alignItems: 'center' }}>
-      <Display variant="sectionScore" style={{ textAlign: 'center' }}>
+    <View style={{ gap: space.s8, alignItems: 'center' }}>
+      <Text71 variant="titleS20" style={{ textAlign: 'center' }}>
         {text}
-      </Display>
+      </Text71>
       {points !== null && points > 0 ? (
-        <Display variant="screenTitle" style={{ textAlign: 'center' }}>
+        <Text71 variant="title24" color="primaryOnDark" style={{ textAlign: 'center' }}>
           {pointsText(points)}
-        </Display>
+        </Text71>
       ) : null}
     </View>
   );
@@ -506,9 +494,9 @@ export function MvpTab({ match }: { match: Match }) {
   if (voted !== null) {
     const name = nameOf(doc, voted);
     parts.push(
-      <Display key="vote" variant="sectionScore" style={{ textAlign: 'center' }}>
+      <Text71 key="vote" variant="titleS20" style={{ textAlign: 'center' }}>
         {name ? `O teu voto: ${name}` : MVP_TEXT.voteRecorded}
-      </Display>,
+      </Text71>,
     );
   } else if (alreadyVoted) {
     parts.push(<Info key="already" text={MVP_TEXT.alreadyVoted} />);
@@ -520,7 +508,7 @@ export function MvpTab({ match }: { match: Match }) {
       parts.push(<Info key="left" text={`Faltam cerca de ${MVP_OPEN_ELAPSED - match.elapsed} min.`} />);
     }
   } else {
-    const candidates = mvpCandidates(doc);
+    const candidates = mvpCandidatesInLineupOrder(doc);
     if (players.status === 'loading') parts.push(<View key="players-loading" testID="mvp-players-loading" />);
     // Leitura falhada: erro, nunca a mensagem de "ainda sem candidatos".
     else if (players.status === 'error') parts.push(<EmptyState key="players-error" icon="info" text={MVP_TEXT.error} />);
@@ -530,7 +518,7 @@ export function MvpTab({ match }: { match: Match }) {
 
   // Votou ou fechou: lista de leitura com as percentagens (sem tally, sem votos ou erro de leitura: nada).
   if (tallyData && (voted !== null || state === 'closed' || alreadyVoted || settled !== null)) {
-    const list = mvpCandidates(doc);
+    const list = mvpCandidatesInLineupOrder(doc);
     if (list.length > 0) parts.push(<Results key="results" candidates={list} tally={tallyData} mineId={voted} />);
   }
 
@@ -550,7 +538,7 @@ export function MvpTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="mvp-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingTop: spacing.lg, paddingBottom: spacing.xl, gap: layout.mvpStackGap }}
+      contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: space.s24, paddingBottom: space.s32, gap: layout.mvpStackGap }}
     >
       <OfflineBanner visible={offline} />
       {parts}

@@ -11,10 +11,13 @@ import { colors, layout, radii, space } from '@/theme/tokens';
 export function ModalSheet({
   onClose,
   gap = 'normal',
+  grabber = 'left',
   children,
 }: {
   onClose: () => void;
   gap?: 'normal' | 'loose';
+  /** Grabber à esquerda (21b, 48b) ou ao centro (folhas de confirmação e partilha do jogo, 4946:8195). */
+  grabber?: 'left' | 'center';
   children: ReactNode;
 }) {
   const { bottom } = useSafeAreaInsets();
@@ -37,6 +40,7 @@ export function ModalSheet({
           <View
             testID="modal-sheet-grabber"
             style={{
+              alignSelf: grabber === 'center' ? 'center' : 'flex-start',
               width: layout.grabberWidth,
               height: layout.grabberHeight,
               borderRadius: layout.grabberHeight / 2,

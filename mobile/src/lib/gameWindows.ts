@@ -54,6 +54,26 @@ export function mvpCandidates(doc: PlayersDoc | null, sportingTeamId = '228'): M
     .sort((a, b) => a.name.localeCompare(b.name, 'pt'));
 }
 
+/**
+ * Os mesmos candidatos de `mvpCandidates` (mesmo conjunto, regra do servidor), por ordem do onze para mostrar na lista
+ * (decisão fechada do spec): titulares na ordem do documento `players` (que a API entrega pela ordem do onze) e depois os
+ * suplentes que jogaram, também pela ordem do documento. Nunca se reordena pelas notas nem por nome.
+ */
+export function mvpCandidatesInLineupOrder(doc: PlayersDoc | null, sportingTeamId = '228'): MvpCandidate[] {
+  if (!doc) return [];
+  const seen = new Set<string>();
+  const played = doc.teams
+    .filter((t) => String(t.teamId) === sportingTeamId)
+    .flatMap((t) => t.players)
+    .filter((p) => p.minutes !== null && p.minutes > 0)
+    .filter((p) => !seen.has(String(p.playerId)) && seen.add(String(p.playerId)));
+  return [...played.filter((p) => p.substitute !== true), ...played.filter((p) => p.substitute === true)].map((p) => ({
+    playerId: String(p.playerId),
+    name: p.name,
+    number: p.number,
+  }));
+}
+
 export type Stage = 'table' | 'knockout';
 
 /**

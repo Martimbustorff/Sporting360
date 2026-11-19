@@ -6,6 +6,7 @@ import {
   MVP_CLOSE_AFTER_MS,
   MVP_OPEN_ELAPSED,
   mvpCandidates,
+  mvpCandidatesInLineupOrder,
   mvpWindow,
   predictionOpen,
 } from '@/lib/gameWindows';
@@ -191,5 +192,30 @@ describe('mvpCandidates (vetores do servidor)', () => {
   it('aceita outra equipa como Sporting (parâmetro)', () => {
     const d = doc([line('s1', 'Pote', 90)], [line('a1', 'Adversário', 90)]);
     expect(mvpCandidates(d, '217').map((p) => p.playerId)).toEqual(['a1']);
+  });
+});
+
+describe('mvpCandidatesInLineupOrder (ordem do onze)', () => {
+  const line = (playerId: string, name: string, minutes: number | null, substitute = false) =>
+    ({ playerId, name, minutes, number: null, photo: null, position: null, rating: 7, substitute }) as PlayersDoc['teams'][number]['players'][number];
+
+  it('titulares pela ordem do documento e depois os suplentes que jogaram; sem nome nem nota', () => {
+    const d: PlayersDoc = {
+      teams: [
+        {
+          teamId: '228',
+          players: [line('1', 'Zeca', 90), line('2', 'Ábel', 90), line('3', 'Suplente B', 20, true), line('4', 'Banco', 0, true), line('5', 'Suplente A', 5, true), line('6', 'Bruno', 60)],
+        },
+      ],
+    };
+    expect(mvpCandidatesInLineupOrder(d).map((c) => c.playerId)).toEqual(['1', '2', '6', '3', '5']);
+    // mesmo conjunto que o do servidor
+    expect([...mvpCandidatesInLineupOrder(d).map((c) => c.playerId)].sort()).toEqual(mvpCandidates(d).map((c) => c.playerId).sort());
+  });
+
+  it('sem documento: vazio; linha repetida conta uma vez', () => {
+    expect(mvpCandidatesInLineupOrder(null)).toEqual([]);
+    const d: PlayersDoc = { teams: [{ teamId: '228', players: [line('1', 'A', 90), line('1', 'A', 90)] }] };
+    expect(mvpCandidatesInLineupOrder(d)).toHaveLength(1);
   });
 });

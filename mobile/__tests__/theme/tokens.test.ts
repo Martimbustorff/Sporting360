@@ -26,7 +26,6 @@ const MAP: Record<string, string> = {
   sheetCard: 'sheetCard',
   sheetLabel: 'sheetLabel',
   dotInactive: 'dotInactive',
-  scrim: 'scrim',
   bgRaised: 'bgRaised',
   bgTint: 'bgTint',
   primaryOnDark: 'primaryOnDark',

@@ -4,15 +4,14 @@
 // Regras (spec §6): uma submissão definitiva, só pela callable submitPrediction (services/game.ts); fecha ao apito
 // inicial. A janela da app (lib/gameWindows.predictionOpen) só desenha a UI: o servidor decide e os seus códigos de
 // erro dão as mensagens. Adiado (PST) fecha com explicação e reabre sozinho quando o jogo volta a NS.
-// As folhas (confirmação e partilha) são Modal escuro (bg-raised, raio 28, grabber ao centro, 4946:8195): o Sheet é uma
-// folha fixa do ecrã com título e não um diálogo, por isso o Modal mantém-se com o mesmo aspeto do Figma.
+// As folhas (confirmação e partilha) são a ModalSheet (bg-raised, raio 28, grabber ao centro, 4946:8195).
 // A partilha abre o cartão "S360 MATCHDAY" (ShareCard) com "Partilhar" (Branco) e "Fechar" (Contorno).
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import Feather from '@expo/vector-icons/Feather';
-import { Modal, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
+import { ModalSheet } from '@/components/ModalSheet';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ShareCard } from '@/components/ShareCard';
@@ -29,7 +28,7 @@ import { reportCode } from '@/lib/report';
 import { submitPrediction } from '@/services/game';
 import { shareMatchday } from '@/services/share';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, radii, space } from '@/theme/tokens';
+import { colors, layout, space } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const PREDICTION_TEXT = {
@@ -133,41 +132,6 @@ function RulesCard({ knockout }: { knockout: boolean }) {
   );
 }
 
-/** Folha escura sobre o ecrã (bg-raised, raio 28, grabber ao centro; 4946:8195) para a confirmação e a partilha. */
-function DarkSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
-  const { bottom } = useSafeAreaInsets();
-  return (
-    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrimV71 }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bgRaised,
-            borderTopLeftRadius: radii.r28,
-            borderTopRightRadius: radii.r28,
-            paddingHorizontal: space.s24,
-            paddingTop: layout.shareSheetPadTop,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.shareSheetPadBottom,
-            gap: space.s16,
-            alignItems: 'stretch',
-          }}
-        >
-          <View
-            style={{
-              alignSelf: 'center',
-              width: layout.grabberWidth,
-              height: layout.grabberHeight,
-              borderRadius: layout.grabberHeight / 2,
-              backgroundColor: colors.surface20,
-            }}
-          />
-          {children}
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 function ConfirmSheet({
   home,
   away,
@@ -180,7 +144,7 @@ function ConfirmSheet({
   onCancel: () => void;
 }) {
   return (
-    <DarkSheet onClose={onCancel}>
+    <ModalSheet grabber="center" onClose={onCancel}>
       <Text71 variant="title24" accessibilityRole="header">
         Confirmar prognóstico
       </Text71>
@@ -189,7 +153,7 @@ function ConfirmSheet({
         <PrimaryButton label="Confirmar" onPress={onConfirm} />
         <PrimaryButton label="Cancelar" variant="outline" onPress={onCancel} />
       </View>
-    </DarkSheet>
+    </ModalSheet>
   );
 }
 
@@ -215,7 +179,7 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
   };
 
   return (
-    <DarkSheet onClose={onClose}>
+    <ModalSheet grabber="center" onClose={onClose}>
       {/* A área do cartão vai até `shareCardInset` da borda do ecrã (o padding da folha é maior); o cartão
           escala-se sozinho para caber nela (ShareCard.shareCardScale). */}
       <View style={{ alignItems: 'center', marginHorizontal: layout.shareCardInset - space.s24 }}>
@@ -226,7 +190,7 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
         <PrimaryButton label={PREDICTION_TEXT.shareSend} variant="white" onPress={() => void share()} loading={sending} />
         <PrimaryButton label={PREDICTION_TEXT.shareClose} variant="outline" onPress={onClose} />
       </View>
-    </DarkSheet>
+    </ModalSheet>
   );
 }
 

@@ -27,7 +27,6 @@ module.exports = {
           sheetCard: '#F1F1F1',
           sheetLabel: 'rgba(0, 0, 0, 0.5)',
           dotInactive: 'rgba(0, 0, 0, 0.2)',
-          scrim: 'rgba(0, 27, 19, 0.7)',
           bgRaised: '#06261C',
           bgTint: '#003625',
           primaryOnDark: '#19B37E',

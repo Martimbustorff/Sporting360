@@ -40,7 +40,6 @@ export const colors = {
   sheetCard: '#F1F1F1', // 450:5529
   sheetLabel: 'rgba(0, 0, 0, 0.5)', // 450:5532 (DIN 14, opacidade 50 %)
   dotInactive: 'rgba(0, 0, 0, 0.2)', // 450:5562 (Ellipse 11/12)
-  scrim: 'rgba(0, 27, 19, 0.7)', // SEM FIGMA: fundo das mensagens sobre a câmara do leitor
 
   // V7.1 (variáveis do Figma R3IhhyNxNZuVINgUtJjZE3)
   bgRaised: '#06261C',
@@ -516,9 +515,6 @@ export const layout = {
   lockButtonsGap: 12, // V7.1 48: botões a 12
   lockBottom: 16,
   lockActionsBottom: 20, // V7.1 48: último botão a 20 do indicador de início
-  lockScrim: 'rgba(0, 0, 0, 0.6)', // SEM FIGMA: backdrop behind the enable-biometrics prompt
-  lockModalPad: 32,
-  lockModalGap: 16,
   // Home (Figma 1561:5056). Same lion, tint and rings as the lock screen (lockLion / lockRings / lockTint).
   homeLogoTop: 77, // logo row top (1561:5137); status bar is 44 of it
   homeNameGap: 82, // logo bottom (111, cap-trimmed) to the name (193), measured like lockHintGap

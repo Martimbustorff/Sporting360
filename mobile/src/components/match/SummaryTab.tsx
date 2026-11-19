@@ -304,7 +304,7 @@ export function SummaryTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="summary-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl, gap: spacing.md }}
+      contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32, gap: space.s16 }}
     >
       {state === 'scheduled' ? (
         <PreMatch match={match} />

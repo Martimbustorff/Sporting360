@@ -141,11 +141,11 @@ describe('Antes de abrir', () => {
 });
 
 describe('Votação aberta', () => {
-  it('ao vivo: candidatos do Sporting que jogaram, por nome, e o aviso do fecho', async () => {
+  it('ao vivo: candidatos do Sporting que jogaram, pela ordem do onze, e o aviso do fecho', async () => {
     await render(<MvpTab match={match()} />, { wrapper });
     expect(screen.getByText('Fecha 20 minutos depois do apito final.')).toBeTruthy();
     const names = screen.getAllByTestId(/^mvp-candidate-/).map((n) => n.props.testID);
-    expect(names).toEqual(['mvp-candidate-20', 'mvp-candidate-10']); // Gyökeres antes de Trincão
+    expect(names).toEqual(['mvp-candidate-10', 'mvp-candidate-20']); // ordem do documento (onze), não alfabética
     expect(screen.queryByLabelText('Escolher Banco')).toBeNull();
     expect(screen.queryByLabelText('Escolher Adversário')).toBeNull();
   });
@@ -601,12 +601,18 @@ describe('MVP com notas (V7.1)', () => {
     expect(screen.queryByLabelText('VOTAR EM TRINCÃO')).toBeNull();
   });
 
+  it('titulares primeiro e suplentes que jogaram a seguir, mesmo que venham antes no documento', async () => {
+    mockData.players = players([q('1', 'Suplente', 6.5, { substitute: true, minutes: 20 }), q('2', 'Zeca', 7), q('3', 'Ábel', 7)]);
+    await render(<MvpTab match={match()} />, { wrapper });
+    expect(screen.getAllByTestId(/^mvp-candidate-/).map((n) => n.props.testID)).toEqual(['mvp-candidate-2', 'mvp-candidate-3', 'mvp-candidate-1']);
+  });
+
   it('a ordem da lista não muda com as notas', async () => {
     mockData.players = withRatings();
     const { rerender } = await render(<MvpTab match={match()} />, { wrapper });
     const order = () => screen.getAllByTestId(/^mvp-candidate-/).map((n) => n.props.testID);
     const before = order();
-    expect(before).toEqual(['mvp-candidate-50', 'mvp-candidate-20', 'mvp-candidate-30', 'mvp-candidate-40', 'mvp-candidate-10']);
+    expect(before).toEqual(['mvp-candidate-10', 'mvp-candidate-20', 'mvp-candidate-30', 'mvp-candidate-40', 'mvp-candidate-50']); // ordem do onze
     mockData.players = players([q('10', 'Trincão', 6.0), q('20', 'Gyökeres', 5.0), q('30', 'Hjulmand', 9.9), q('40', 'Quenda', 7.0), q('50', 'Debast', null)]);
     await rerender(<MvpTab match={match()} />);
     expect(order()).toEqual(before);
