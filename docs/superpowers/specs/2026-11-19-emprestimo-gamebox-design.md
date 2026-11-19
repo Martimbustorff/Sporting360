@@ -119,6 +119,16 @@ Onde este texto e as secções acima divergem, vale esta secção.
 - Frames: 45La a 45Le, 45Lbv, 45Lbc, 45Lbe, 45Lbm, 44L, 12L, 12Lc, 50, 50b, 50c, 50d, 50e.
 - Ordem do deploy e o que falha se a app sair primeiro: no plano 8, secção "Depois do plano".
 
+## Acrescentos do plano 9 (19/11, pendentes fechados)
+
+- Cada cancelamento grava o motivo (`cancelReason`): dono, GameBox editada, GameBox apagada, conta de quem recebeu apagada, conta do dono apagada.
+- Quando quem recebeu apaga a conta, o dono vê no detalhe da GameBox "Quem recebeu esta GameBox apagou a conta. O empréstimo foi cancelado.", com X para fechar (frame 45Lr).
+- O documento do empréstimo e o número são apagados 7 dias depois de expirar ou de ser cancelado. Um link antigo mostra "Este empréstimo já não está ativo."
+- O botão "Emprestar para o próximo jogo" já não depende do separador aberto: usa o próximo jogo em casa mais próximo entre os recintos com lugar preenchido.
+- Brilho e ecrã ligado só começam quando o QR está desenhado e nunca por trás do bloqueio biométrico, no modo bilhete e no ecrã de quem recebe.
+- No modo bilhete, uma GameBox emprestada nunca mostra o QR ao dono, nem enquanto os jogos carregam.
+- Os erros dos gatilhos de GameBox saem para o registo só com função e código.
+
 ## Fica para quem constrói
 
 - Formato exato do texto de partilha, dentro do tom da app.
