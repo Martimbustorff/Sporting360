@@ -7,13 +7,13 @@
 // (`setViewChoice`, lib/standings), por isso sobrevive a sair e voltar; só conta enquanto o seletor se mostra.
 import { useReducer } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Touchable } from './Touchable';
 import { router } from 'expo-router';
 import { BracketView } from '@/components/BracketView';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { StandingsTable } from '@/components/StandingsTable';
 import { Tabs } from '@/components/Tabs';
+import { Touchable } from '@/components/Touchable';
 import { SportSchema, type Sport } from '@/data/schemas';
 import { useCompetition, useCompetitionData } from '@/data/sports';
 import {

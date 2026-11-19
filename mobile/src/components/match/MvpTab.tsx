@@ -10,13 +10,13 @@
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
 import { useEffect, useRef, useState } from 'react';
 import { Modal, ScrollView, Text, View } from 'react-native';
-import { Touchable } from '../Touchable';
 import Feather from '@expo/vector-icons/Feather';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { Touchable } from '@/components/Touchable';
 import type { Match, MvpTally, PlayersDoc, PointEvent } from '@/data/schemas';
 import { useMatchDetail, useMvpTally } from '@/data/sports';
 import { useMyGamePoints, useMyMvpVote, useSettlement } from '@/data/user';

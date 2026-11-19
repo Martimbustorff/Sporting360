@@ -2,7 +2,7 @@
 // O cartão só expõe onPress; abrir o artigo no browser interno é responsabilidade do ecrã.
 import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { relativeTime } from '@/lib/relativeTime';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 

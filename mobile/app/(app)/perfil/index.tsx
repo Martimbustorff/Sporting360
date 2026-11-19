@@ -11,7 +11,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { MenuRow } from '@/components/MenuRow';
@@ -20,6 +19,7 @@ import { initialOf } from '@/components/RankingRow';
 import { Screen } from '@/components/Screen';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
+import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import { useMyUser, usePublicProfile, type Loadable } from '@/data/hooks';
 import { useMyPosition } from '@/data/myPosition';

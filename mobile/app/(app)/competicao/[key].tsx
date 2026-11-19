@@ -11,7 +11,6 @@
 // (competitionSync escreve-os só aí; taças e supertaça não têm essas tabs).
 import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
@@ -23,6 +22,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { PositionCircle } from '@/components/StandingsTable';
 import { Tabs } from '@/components/Tabs';
+import { Touchable } from '@/components/Touchable';
 import type { Loadable } from '@/data/hooks';
 import type { Competition, Match, TopListDoc, TopListItem } from '@/data/schemas';
 import { useCompetition, useCompetitionData } from '@/data/sports';

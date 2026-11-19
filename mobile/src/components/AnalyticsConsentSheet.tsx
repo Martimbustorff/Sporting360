@@ -1,9 +1,9 @@
 // SEM FIGMA: composto com a `Sheet` (564:6981 / 564:7119) e os tokens; botões no estilo do PrimaryButton (564:7259)
 // mas em verde, porque a folha é branca. A validar com o Martim.
 import { Text, View } from 'react-native';
-import { Touchable } from './Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sheet } from '@/components/Sheet';
+import { Touchable } from '@/components/Touchable';
 import { type Consent, setAnalyticsConsent } from '@/services/analytics';
 import { colors, layout, radius, type } from '@/theme/tokens';
 

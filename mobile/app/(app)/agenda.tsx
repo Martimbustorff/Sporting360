@@ -8,7 +8,6 @@
 // aqui a lista traz todos os jogos, para o primeiro não desaparecer da lista que o utilizador percorre.
 import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { EmptyState } from '@/components/EmptyState';
@@ -18,6 +17,7 @@ import { MatchRow } from '@/components/MatchRow';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
+import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
 import type { Match, Sport } from '@/data/schemas';

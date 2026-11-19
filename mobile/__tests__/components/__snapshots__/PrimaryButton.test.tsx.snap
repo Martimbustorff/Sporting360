@@ -25,9 +25,18 @@ exports[`PrimaryButton snapshots (primary, secondary): primary 1`] = `
   className="items-center justify-center bg-s360-white"
   collapsable={false}
   focusable={true}
+  hitSlop={
+    {
+      "bottom": 0,
+      "left": 0,
+      "right": 0,
+      "top": 0,
+    }
+  }
   onBlur={[Function]}
   onClick={[Function]}
   onFocus={[Function]}
+  onLayout={[Function]}
   onResponderGrant={[Function]}
   onResponderMove={[Function]}
   onResponderRelease={[Function]}
@@ -92,9 +101,18 @@ exports[`PrimaryButton snapshots (primary, secondary): secondary 1`] = `
   className="items-center justify-center border border-s360-white"
   collapsable={false}
   focusable={true}
+  hitSlop={
+    {
+      "bottom": 0,
+      "left": 0,
+      "right": 0,
+      "top": 0,
+    }
+  }
   onBlur={[Function]}
   onClick={[Function]}
   onFocus={[Function]}
+  onLayout={[Function]}
   onResponderGrant={[Function]}
   onResponderMove={[Function]}
   onResponderRelease={[Function]}

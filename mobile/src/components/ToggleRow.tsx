@@ -4,7 +4,7 @@
 // Separador `divider` abaixo, como em MenuRow.
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { colors, layout, radius, spacing, type } from '@/theme/tokens';
 
 export function ToggleRow({

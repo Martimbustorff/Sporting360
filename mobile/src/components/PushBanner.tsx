@@ -1,7 +1,7 @@
 // SEM FIGMA (Plano 6): aviso de uma notificação recebida com a app aberta no Android (no iOS o sistema mostra-a).
 // Faixa no topo, por cima do ecrã, só com tokens: título e corpo; tocar abre a rota (se houver) e fecha.
 import { View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ForegroundPush } from '@/services/push';
 import { Body } from '@/theme/typography';

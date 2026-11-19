@@ -5,7 +5,7 @@
 // `SectionError`: erro compacto de uma secção secundária (body a muted, centrado), sem esconder o resto do ecrã.
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import { Body, Display } from '@/theme/typography';
 import { colors, layout, radius, spacing } from '@/theme/tokens';
@@ -90,7 +90,7 @@ export function PersonRow({
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={{ ...style }}
+      style={style}
     >
       {content}
     </Touchable>

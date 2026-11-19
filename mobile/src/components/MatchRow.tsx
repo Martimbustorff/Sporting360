@@ -11,9 +11,9 @@
 // têm documento em `matches/{id}` e portanto não abrem o detalhe.
 import Feather from '@expo/vector-icons/Feather';
 import { View } from 'react-native';
-import { Touchable } from './Touchable';
 import { CompetitionBadge } from '@/components/CompetitionBadge';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
+import { Touchable } from '@/components/Touchable';
 import type { Match } from '@/data/schemas';
 import { penaltiesText, scoreText, stateLabel, toGameHeaderVM } from '@/lib/matchVM';
 import { formatKickoffDate, formatTime } from '@/lib/ptDate';

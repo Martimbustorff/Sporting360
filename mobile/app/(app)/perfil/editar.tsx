@@ -8,7 +8,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
@@ -16,6 +15,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { Tabs } from '@/components/Tabs';
 import { TextField } from '@/components/TextField';
+import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
 import type { Sport } from '@/data/schemas';
 import { useTeamData } from '@/data/sports';

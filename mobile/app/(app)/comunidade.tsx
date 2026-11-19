@@ -5,13 +5,13 @@
 // carregar (SEM FIGMA), sem redirecionar. Não apagar.
 // Uma ligação ausente ou que não seja https não gera linha. `description` e `image` da entrada não existem no frame.
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { Redirect, useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
+import { Touchable } from '@/components/Touchable';
 import { isHttps } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
 import { useAppConfig } from '@/data/hooks';

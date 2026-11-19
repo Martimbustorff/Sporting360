@@ -62,3 +62,27 @@ describe('Touchable', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 });
+
+describe('Touchable hit area', () => {
+  const lay = (w: number, h: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width: w, height: h } } });
+
+  it('24x24 gets hitSlop 10 each side', async () => {
+    const onLayout = jest.fn();
+    await render(<Touchable testID="t" onLayout={onLayout}><Text>x</Text></Touchable>);
+    await fireEvent(screen.getByTestId('t'), 'layout', lay(24, 24));
+    expect(screen.getByTestId('t').props.hitSlop).toEqual({ top: 10, bottom: 10, left: 10, right: 10 });
+    expect(onLayout).toHaveBeenCalledTimes(1);
+  });
+
+  it('64x52 gets 0', async () => {
+    await render(<Touchable testID="t"><Text>x</Text></Touchable>);
+    await fireEvent(screen.getByTestId('t'), 'layout', lay(64, 52));
+    expect(screen.getByTestId('t').props.hitSlop).toEqual({ top: 0, bottom: 0, left: 0, right: 0 });
+  });
+
+  it('explicit hitSlop wins', async () => {
+    await render(<Touchable testID="t" hitSlop={8}><Text>x</Text></Touchable>);
+    await fireEvent(screen.getByTestId('t'), 'layout', lay(24, 24));
+    expect(screen.getByTestId('t').props.hitSlop).toBe(8);
+  });
+});

@@ -5,7 +5,6 @@
 // "News" do Figma passa a "NOTÍCIAS" (pt-PT). O ecrã faz scroll quando não cabe; o menu fica encostado à folha.
 import type { ReactNode } from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import { Link, router, type Href } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
@@ -14,6 +13,7 @@ import { GameHeader } from '@/components/GameHeader';
 import { HomeGameboxSheet, useGameboxSheetCollapsedHeight } from '@/components/HomeGameboxSheet';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
+import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import { useAppConfig, useMyUser, usePublicProfile } from '@/data/hooks';
 import { useNextFootballMatch } from '@/data/sports';

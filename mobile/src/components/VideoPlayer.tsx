@@ -9,7 +9,7 @@
 // PORTRAIT_UP (a raiz trava PORTRAIT_UP no arranque).
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, StatusBar, View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
 import * as ScreenOrientation from 'expo-screen-orientation';

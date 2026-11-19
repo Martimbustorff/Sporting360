@@ -13,7 +13,6 @@
 // principal falhada mostra o erro, nunca o vazio; uma secundária (treinador, indisponíveis) só a sua secção.
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { router } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
 import { TeamCrest } from '@/components/GameHeader';
@@ -23,6 +22,7 @@ import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
 import { PersonRow, RowSeparator, SectionError, TextRow } from '@/components/TeamRows';
+import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
 import type { Transfer } from '@/data/schemas';

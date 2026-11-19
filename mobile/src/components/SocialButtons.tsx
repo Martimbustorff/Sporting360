@@ -4,7 +4,6 @@
 // Mesma altura e raio dos botões S360. Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Text, View } from 'react-native';
-import { Touchable } from './Touchable';
 import { Image } from 'expo-image';
 import {
   AppleAuthenticationButton,
@@ -12,6 +11,7 @@ import {
   AppleAuthenticationButtonType,
 } from 'expo-apple-authentication';
 import { FormMessage } from '@/components/AuthForm';
+import { Touchable } from '@/components/Touchable';
 import { NEEDS_EXISTING_LOGIN_MESSAGE, signInWithApple, signInWithGoogle, type SocialResult } from '@/services/social';
 import { googleBrand } from '@/theme/brand';
 import { layout, radius, type } from '@/theme/tokens';

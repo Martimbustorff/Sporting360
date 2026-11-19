@@ -3,7 +3,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import { Touchable } from './Touchable';
+import { Touchable } from '@/components/Touchable';
 import { colors, layout, spacing, type } from '@/theme/tokens';
 
 export function MenuRow({

@@ -5,11 +5,11 @@
 // Usa o `Animated` do React Native (não o Reanimated) para as rotas continuarem a montar no teste de rotas.
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
+import { Touchable } from '@/components/Touchable';
 import { STADIUM_LINKS, type StadiumLink } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
 import { layout, type } from '@/theme/tokens';

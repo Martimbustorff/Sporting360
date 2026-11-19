@@ -7,10 +7,10 @@
 import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
 import { Header } from '@/components/Header';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
+import { Touchable } from '@/components/Touchable';
 import { useMyUser, usePublicProfile } from '@/data/hooks';
 import { publicName } from '@/lib/publicName';
 import { useSession } from '@/providers/SessionProvider';
