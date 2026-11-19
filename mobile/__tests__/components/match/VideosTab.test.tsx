@@ -126,7 +126,7 @@ describe('Vídeos', () => {
     ]);
     await render(<VideosTab match={match()} />);
     const label = (id: string) => within(screen.getByTestId(`video-row-${id}`)).getByTestId('video-type').props.children;
-    expect(['1', '2', '3', '4'].map(label)).toEqual(['Golo', 'Resumo', 'Flash interview', 'Vídeo']);
+    expect(['1', '2', '3', '4'].map(label)).toEqual(['Lance', 'Resumo', 'Flash interview', 'Vídeo']);
   });
 
   it('um embed fora de vsports.pt não aparece na lista', async () => {

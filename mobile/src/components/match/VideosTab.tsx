@@ -4,6 +4,7 @@
 // Decisão: o destaque é o vídeo do tipo `resumo`; sem resumo, o primeiro da lista. Os restantes seguem por minuto.
 // SEM FIGMA: o esqueleto em branco, o estado de erro, os vazios e o aviso de cache.
 import { View } from 'react-native';
+import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { isAllowedEmbed, VideoPlayer } from '@/components/VideoPlayer';
@@ -16,7 +17,7 @@ export const VIDEOS_ERROR = 'Não foi possível carregar os dados.';
 const EMPTY = 'Os vídeos aparecem depois dos lances.';
 const EMPTY_EUROPE = 'Sem vídeos para esta competição.';
 const TYPE_LABEL: Record<Video['type'], string> = {
-  golo: 'Golo',
+  golo: 'Lance', // Figma 33 (4947:8624): o vídeo de golo traz o rótulo "LANCE"
   resumo: 'Resumo',
   flash_interview: 'Flash interview',
   outro: 'Vídeo',
@@ -47,7 +48,7 @@ export function featuredFirst(vs: Video[]): Video[] {
 
 export function VideosTab({ match }: { match: Match }) {
   const videos = useMatchVideos(match.id);
-  if (videos.status === 'loading') return <View testID="videos-loading" />;
+  if (videos.status === 'loading') return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="videos-loading" /></View>;
   if (videos.status === 'error') return <EmptyState icon="info" text={VIDEOS_ERROR} />;
 
   const list = videos.status === 'ready' ? featuredFirst(byMinute(videos.data.filter((v) => isAllowedEmbed(v.embedSrc)))) : [];
