@@ -326,6 +326,7 @@ export async function liveTickerJob(d: TickDeps, o: { minRemaining?: number } = 
         d.db,
         LIVE_STANDINGS_SOURCE,
         st.errors.length > 0 ? { ok: false, error: st.errors.join(" | ").slice(0, 1000) } : { ok: true, count: st.attempted },
+        { alertOnce: true },
       );
     } catch (e) {
       logger.warn(`liveTicker: saúde de ${LIVE_STANDINGS_SOURCE} não registada: ${msg(e)}`);

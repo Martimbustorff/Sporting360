@@ -16,6 +16,29 @@ beforeEach(async () => {
   jest.restoreAllMocks();
 });
 
+describe("recordRun: alertOnce", () => {
+  it("3 falhas seguidas: 1 alerta, consecutiveFailures 3; um sucesso repõe e a falha seguinte volta a alertar", async () => {
+    const err = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    for (let i = 0; i < 3; i++) await recordRun(db, "o", { ok: false, error: `boom${i}` }, { alertOnce: true });
+    const d = (await db.doc("ingestHealth/o").get()).data()!;
+    expect(d.consecutiveFailures).toBe(3);
+    expect(d.lastError).toBe("boom2");
+    expect(err.mock.calls.filter((c) => c[0] === "INGEST_ALERT")).toHaveLength(1);
+    expect(warn).toHaveBeenCalledTimes(2);
+    await recordRun(db, "o", { ok: true, count: 1 }, { alertOnce: true });
+    expect((await db.doc("ingestHealth/o").get()).get("consecutiveFailures")).toBe(0);
+    await recordRun(db, "o", { ok: false, error: "again" }, { alertOnce: true });
+    expect(err.mock.calls.filter((c) => c[0] === "INGEST_ALERT")).toHaveLength(2);
+  });
+
+  it("sem alertOnce cada falha alerta (comportamento anterior)", async () => {
+    const err = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    for (let i = 0; i < 3; i++) await recordRun(db, "n", { ok: false, error: "boom" });
+    expect(err.mock.calls.filter((c) => c[0] === "INGEST_ALERT")).toHaveLength(3);
+  });
+});
+
 describe("recordRun", () => {
   it("conta falhas consecutivas e repõe a 0 com sucesso", async () => {
     const spy = jest.spyOn(logger, "error").mockImplementation(() => undefined);

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { deleteApp, getApps } from "firebase-admin/app";
+import { logger } from "firebase-functions";
 import type { Firestore } from "firebase-admin/firestore";
 import { LIVE_REQUEST_TIMEOUT_MS, TICK_DEADLINE_MS, liveTickerJob, tick, type TickDeps } from "../../src/football/liveTicker";
 import { mapFixture } from "../../src/football/mapFixture";
@@ -660,6 +661,7 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     expect((await db.doc(`matches/${ID}`).get()).get("elapsed")).toBe(67);
     expect((await db.doc(LIVE_DOC).get()).exists).toBe(false);
 
+    const alerts = jest.spyOn(logger, "error").mockImplementation(() => undefined);
     await liveTickerJob(deps(f, { liveResponse: bad }));
     const live = (await db.doc("ingestHealth/football_live").get()).data()!;
     expect(live.consecutiveFailures).toBe(0);
@@ -668,6 +670,13 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     const st = (await db.doc("ingestHealth/football_live_standings").get()).data()!;
     expect(st.consecutiveFailures).toBe(1);
     expect(st.lastError).toMatch(/liveFixtures 94/);
+
+    // segunda falha seguida: conta, mas no total só houve 1 INGEST_ALERT da classificação ao vivo (o da primeira)
+    clock += MIN;
+    await liveTickerJob(deps(f, { liveResponse: bad }));
+    expect((await db.doc("ingestHealth/football_live_standings").get()).get("consecutiveFailures")).toBe(2);
+    expect(alerts.mock.calls.filter((c) => c[0] === "INGEST_ALERT" && (c[1] as { source: string }).source === "football_live_standings")).toHaveLength(1);
+    alerts.mockRestore();
 
     // minuto seguinte sem erro: a saúde da classificação recupera
     clock += MIN;

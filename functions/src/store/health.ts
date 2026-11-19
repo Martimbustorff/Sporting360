@@ -7,6 +7,8 @@ type JobOutput = { count: number; remaining?: number | null; failed?: number; al
 export interface RunOptions {
   expectNonZero?: boolean;
   minRemaining?: number;
+  /** Falha de execução: só alerta na primeira de uma série (as seguintes só contam e fazem `logger.warn`). */
+  alertOnce?: boolean;
 }
 
 /**
@@ -39,7 +41,8 @@ export async function recordRun(db: Firestore, source: string, r: RunResult, o?:
   } else {
     data.lastError = r.error;
     data.consecutiveFailures = failures + 1;
-    alerts.push(`falhou: ${r.error}`);
+    if (o?.alertOnce && failures > 0) logger.warn(`${source}: falha repetida (${failures + 1} seguidas): ${r.error}`);
+    else alerts.push(`falhou: ${r.error}`);
   }
 
   await ref.set(data, { merge: true });
