@@ -758,6 +758,28 @@ describe('Classificação com três vistas (Task 6 do Plano 9)', () => {
     }
   });
 
+  it('jogo terminado (FT) na tabela ao vivo: sem etiqueta nem "ao vivo"/"final" no rótulo, mas nos números; em jogo mantém "AO VIVO x-y"', async () => {
+    mockData.liveFixtures = live([{ ...fixture('217', '99', 2, 0), status: 'FT' }, fixture('228', '212', 1, 0)]);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    const label = (id: string) => screen.getByTestId(`standings-row-${id}`).props.accessibilityLabel as string;
+    await fireEvent.press(tab('Ao vivo'));
+    for (const v of ['Resumida', 'Completa']) {
+      await fireEvent.press(tab(v));
+      for (const id of ['217', '99']) {
+        expect(screen.queryByTestId(`standings-live-${id}`)).toBeNull();
+        expect(label(id)).not.toMatch(/ao vivo|final|2-0|0-2/i);
+        expect(screen.queryByTestId(`standings-livedot-${id}`)).toBeNull();
+      }
+      // SC Braga: 9 + 3 = 12 pontos e 7 jogos (6 + o jogo terminado).
+      expect(label('217')).toMatch(/12 pontos, 7 jogos/);
+      expect(screen.getByTestId('standings-points-217').props.children).toBe(12);
+      expect(screen.getByTestId('standings-live-228').props.children).toBe('AO VIVO 1-0');
+      expect(screen.getByTestId('standings-live-212').props.children).toBe('AO VIVO 0-1');
+      expect(label('228')).toMatch(/, ao vivo 1-0/);
+      expect(screen.queryByTestId('standings-livedot-228')).toBeTruthy();
+    }
+  });
+
   it('as opções do seletor têm alvo de toque de 44 pt (alargado pelo Touchable)', async () => {
     await render(<CompetitionStandings competitionKey={LIGA} />);
     const t = tab('Forma');

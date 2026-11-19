@@ -221,5 +221,6 @@ Verificação a 19/11 com `get_screenshot` de cada frame contra o código. Frame
 | 45Lb 4984:11545, 45Le 4985:11932 | `LoanConfirmSheet.tsx`, `ModalSheet.tsx` | Espaço 14 e título a 28 | sem diferenças (`gap="tight"`) |
 | 50b 4984:13376, 50c 4984:13411 | `emprestimo/[id].tsx`, `EmptyState.tsx` | Ícone a 8 do topo, sem folga por baixo | sem diferenças (`compact`) |
 | 10 4935:7111 (ponto ao vivo), 45L (ecrã do empréstimo), 12s 4994:12254 (Ticket) | `CompetitionStandings.tsx`, `StandingsTable.tsx`, `emprestimo/[id].tsx`, `gamebox/bilhete.tsx` | Revisão final: ponto "a jogar agora" só em jogos a decorrer (não nos terminados ainda no documento ao vivo) e rótulo da Forma com "a jogar agora" antes dos resultados; brilho do cartão do empréstimo só com o QR desenhado; Ticket com espaço de carregamento até as listas e os empréstimos responderem (um erro conta como resposta e o QR aparece); canal de TV mantém o valor guardado quando `config/tvChannels` não se lê | corrigido no código, sem alterações nos frames |
+| 10b 4997:12493 (tabela ao vivo) | `StandingsTable.tsx` | Jogos já terminados na tabela ao vivo: sem etiqueta, só os números atualizados (Martim 19/11 23:43) | corrigido no código, sem alterações nos frames |
 
 Pendentes Martim neste plano: nenhum.

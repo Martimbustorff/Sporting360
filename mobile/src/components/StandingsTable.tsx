@@ -1,7 +1,7 @@
 // Figma V7.1: frame 4935:7111 (tabela 4935:7287). Cabeçalho "# EQUIPA J DG PTS" (Eyebrow 13 text-subtle), linhas com faixa
 // de zona de 3 pt à esquerda (Liga dos Campeões, Liga Europa, Conference, lida de `description`), emblema 18x21, nome Body 14
 // (Strong 14 no Sporting), J e DG Body 14 text-muted, PTS Label 16; a linha do Sporting com fundo surface-10 e raio 8, e a
-// legenda das zonas por baixo. Ao vivo: seta de subida/descida ao lado da posição e "AO VIVO 2-1" (Badge 11) sob o nome.
+// legenda das zonas por baixo. Ao vivo: seta de subida/descida ao lado da posição e "AO VIVO 2-1" (Badge 11) sob o nome; jogo já terminado ainda no documento ao vivo: sem etiqueta, só os números projetados.
 // Diferenças deliberadas: o Figma mostra o emblema da API como círculo cinzento; aqui é o emblema real (TeamCrest) e, sem
 // emblema, o espaço fica vazio. Linhas sem zona levam a divisória text-separator por baixo (como no Figma).
 // Três vistas (Task 6 do Plano 9, 4997:12493 Completa e 4997:12673 Forma): "Resumida" é a de cima; "Completa" tem J, V, E, D, DG
@@ -80,10 +80,11 @@ const diffText = (n: number) => (n > 0 ? `+${n}` : String(n));
 
 const placesText = (n: number) => `${n} ${n === 1 ? 'lugar' : 'lugares'}`;
 
-function rowLabel(row: TableRow, name = row.name): string {
+/** O resultado só se diz para jogos em curso; um jogo terminado que o documento ainda guarda conta nos números e a linha fica normal. */
+function rowLabel(row: TableRow, name = row.name, inPlay = true): string {
   const delta = row.delta ?? 0;
   const move = delta > 0 ? `, sobe ${placesText(delta)}` : delta < 0 ? `, desce ${placesText(-delta)}` : '';
-  return `${row.rank}.º ${name}, ${row.points} pontos, ${row.played} jogos${row.liveScore ? `, ao vivo ${row.liveScore}` : ''}${move}`;
+  return `${row.rank}.º ${name}, ${row.points} pontos, ${row.played} jogos${row.liveScore && inPlay ? `, ao vivo ${row.liveScore}` : ''}${move}`;
 }
 
 const countText = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -103,15 +104,15 @@ function Row({
 }) {
   const results = view === 'form' ? formResults(row.form) : [];
   const zone = zoneOf(row.description);
-  const live = row.liveScore ? `AO VIVO ${row.liveScore}` : null;
+  const live = row.liveScore && isLive ? `AO VIVO ${row.liveScore}` : null;
   const delta = row.delta ?? 0;
   const name = view === 'short' ? row.name : shortClubName(row.name);
   const label =
     view === 'short'
-      ? rowLabel(row)
+      ? rowLabel(row, row.name, isLive)
       : view === 'full'
-        ? `${rowLabel(row, name)}, ${countText(row.win, 'vitória', 'vitórias')}, ${countText(row.draw, 'empate', 'empates')}, ${countText(row.lose, 'derrota', 'derrotas')}, diferença de golos ${diffText(row.goalsDiff)}`
-        : `${row.rank}.º ${name}${row.liveScore ? `, ao vivo ${row.liveScore}` : isLive ? ', a jogar agora' : ''}${results.length > 0 ? `. Últimos jogos: ${results.map((r) => FORM_WORD[r]).join(', ')}` : ''}`;
+        ? `${rowLabel(row, name, isLive)}, ${countText(row.win, 'vitória', 'vitórias')}, ${countText(row.draw, 'empate', 'empates')}, ${countText(row.lose, 'derrota', 'derrotas')}, diferença de golos ${diffText(row.goalsDiff)}`
+        : `${row.rank}.º ${name}${row.liveScore && isLive ? `, ao vivo ${row.liveScore}` : isLive ? ', a jogar agora' : ''}${results.length > 0 ? `. Últimos jogos: ${results.map((r) => FORM_WORD[r]).join(', ')}` : ''}`;
   return (
     <View
       testID={`standings-row-${row.teamId}`}
