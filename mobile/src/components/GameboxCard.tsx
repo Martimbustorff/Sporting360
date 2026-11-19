@@ -3,11 +3,12 @@
 // colunas Porta/Sector/Fila/Lugar: Badge 11 a text-subtle sobre Title S 20). O QR toca para o modo bilhete.
 // O QR é gerado a partir do número (react-native-qrcode-svg), não a imagem do nó.
 // SEM FIGMA: número ilegível (sem QR, com explicação).
-// Task 24: o número decifrado só se mostra no ecrã; nunca vai para logs.
+// Task 24: o número decifrado só se mostra no ecrã; nunca vai para logs. Plano 9 (frames 43 e 44): mostra-se em grupos de
+// quatro (formatGameboxNumber, só para ver); o QR e a validação usam sempre os algarismos sem espaços.
 import { View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Touchable } from '@/components/Touchable';
-import { gameboxLabel, normalizeGameboxNumber, VENUE_NAMES, type GameboxView, type Seat } from '@/lib/gamebox';
+import { formatGameboxNumber, gameboxLabel, normalizeGameboxNumber, VENUE_NAMES, type GameboxView, type Seat } from '@/lib/gamebox';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
@@ -87,7 +88,7 @@ export function GameboxCard({
       <View style={{ alignItems: 'center', gap: layout.gameboxTextGap }}>
         <Text71 variant="strong14" numberOfLines={1}>{name}</Text71>
         {number ? (
-          <Text71 variant="caption12" color="textMuted" selectable>{number}</Text71>
+          <Text71 variant="caption12" color="textMuted" selectable>{formatGameboxNumber(number)}</Text71>
         ) : (
           <Text71 variant="caption12" color="textMuted" style={{ textAlign: 'center' }}>{CARD_TEXT.unreadable}</Text71>
         )}

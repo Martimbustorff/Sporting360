@@ -25,7 +25,7 @@ import { useNow } from '@/data/clock';
 import { useMyUser, usePublicProfile, type Loadable } from '@/data/hooks';
 import { useMyPosition } from '@/data/myPosition';
 import type { PublicProfile, UserDoc } from '@/data/schemas';
-import { useTeamData } from '@/data/sports';
+import { useMatchOnce, useTeamData } from '@/data/sports';
 import {
   useMyLeaderboardEntry,
   useMyPointEvents,
@@ -33,6 +33,7 @@ import {
   useSettlements,
   type PeriodKind,
 } from '@/data/user';
+import { toGameHeaderVM } from '@/lib/matchVM';
 import { myGameStats, type MyGameHistoryItem, type MyGameStats } from '@/lib/myGame';
 import { periodKeys } from '@/lib/periods';
 import { formatDayMonth } from '@/lib/ptDate';
@@ -161,11 +162,20 @@ function HistoryRow({ item }: { item: MyGameHistoryItem }) {
   const date = formatDayMonth(item.gameDate);
   const result = item.final === null ? 'por liquidar' : `final ${item.final}`;
   const settled = item.final !== null;
+  // Título com as equipas ("Sporting CP 2-1 FC Porto", mesmos nomes dos cartões do jogo); enquanto o jogo não chega, ou se
+  // faltar, fica "{data} · Final {x}-{y}". Uma leitura única por linha, sem listener.
+  const match = useMatchOnce(item.gameId);
+  const names = match && item.final !== null ? toGameHeaderVM(match) : null;
+  const title = !settled
+    ? date
+    : names
+      ? `${names.home.name} ${item.final} ${names.away.name}`
+      : `${date} · Final ${item.final}`;
   return (
     <View
       testID="history-row"
       accessible
-      accessibilityLabel={`${date}, prognóstico ${item.pick}, ${result}, ${pointsText(item.points)}`}
+      accessibilityLabel={`${names ? `${title}, ` : ''}${date}, prognóstico ${item.pick}, ${result}, ${pointsText(item.points)}`}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -176,7 +186,7 @@ function HistoryRow({ item }: { item: MyGameHistoryItem }) {
       }}
     >
       <View style={{ flex: 1, minWidth: 0, gap: layout.leaderTextGap }}>
-        <Text71 variant="strong14" numberOfLines={1}>{settled ? `${date} · Final ${item.final}` : date}</Text71>
+        <Text71 variant="strong14" numberOfLines={1}>{title}</Text71>
         <Text71 variant="caption12" color="textSubtle" numberOfLines={1}>{`O teu prognóstico: ${item.pick}`}</Text71>
       </View>
       <View

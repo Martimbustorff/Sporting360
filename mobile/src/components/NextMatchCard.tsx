@@ -1,8 +1,8 @@
 // Figma V7.1: conjunto "V7.1 / Next match card" 4920:5140 (Próximo 4920:5090, Sem jogo 4920:5112, A carregar 4920:5125,
 // Dia de jogo 4932:6358, Ao vivo 4932:6379, Terminado 4932:6400) e frames 01, 01b, 01c, 07a, 07b, 07c da Home.
 // Altura fixa de 192 pt em todos os estados (o menu não salta). Estados vêm de lib/homeMatchMoment.
-// SEM FIGMA: o estado de erro (nota 01b: "o mesmo cartão com Tentar outra vez"; textos escritos aqui), o canal de TV
-// (o `Match` ainda não traz o canal, por isso o chip não aparece) e a hora de um jogo adiado ou cancelado (mostra o
+// Canal de TV: chip 4920:5103 por baixo da hora (`match.tv`; sem canal não aparece).
+// SEM FIGMA: o estado de erro (nota 01b: "o mesmo cartão com Tentar outra vez"; textos escritos aqui) e a hora de um jogo adiado ou cancelado (mostra o
 // estado no lugar da hora, como o GameHeader). O brilho do esqueleto é um pulsar de opacidade (sem gradiente).
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
@@ -11,6 +11,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
+import { TvChip } from '@/components/TvChip';
 import type { Match } from '@/data/schemas';
 import { useSecondNow } from '@/data/clock';
 import { countdownClock, type HomeMoment } from '@/lib/homeMatchMoment';
@@ -251,6 +252,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
           <Teams vm={vm} wide={state === 'matchday'}>
             <Text71 variant="eyebrow13" color={eyebrowColor} numberOfLines={1}>{eyebrow}</Text71>
             {main}
+            {state === 'next' && !action ? <TvChip tv={match.tv} testID="next-tv" /> : null}
             {action ? (
               <Chip
                 label={action.label}

@@ -169,6 +169,10 @@ export const MatchSchema = z.looseObject({
     }),
   ),
   referee: nullable(str),
+  /** Canal de TV ("SPORT TV", "BTV", "TVI / V+"); ausente ou null sem canal. */
+  tv: z.string().nullish(),
+  /** Estado em bruto da API (ET, BT, P...); documentos antigos não o têm. */
+  statusRaw: z.string().nullish(),
   source: z.looseObject({ provider: str, id: str, attribution: nullable(str) }),
 });
 export type Match = z.infer<typeof MatchSchema>;
@@ -680,5 +684,7 @@ export const LoanSchema = z.looseObject({
   recipientName: nullable(str),
   openedAt: nullable(ts),
   cancelledAt: nullable(ts),
+  /** Porque foi cancelado (functions/src/loans); documentos antigos não o têm. */
+  cancelReason: z.enum(['owner', 'gamebox-edited', 'gamebox-deleted', 'recipient-left', 'owner-left']).nullish().catch(null),
 });
 export type Loan = z.infer<typeof LoanSchema>;

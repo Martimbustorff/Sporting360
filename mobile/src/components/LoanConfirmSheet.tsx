@@ -2,7 +2,7 @@
 // "Emprestar"), 45Lbv 4984:11626 (sem jogo: "Fechar"), 45Le 4985:11932 (confirmação de cancelar). Folhas escuras
 // (ModalSheet, grabber ao centro). Só se empresta o PRÓXIMO jogo em casa do recinto: sem lista nem escolha. O jogo vem do
 // mesmo cálculo do modo bilhete (lib/gamebox upcomingHome), depois de filtrar pelo recinto, para a app oferecer exatamente
-// o jogo que o servidor aceita. SEM FIGMA: mensagens de erro e o estado a carregar. Nunca se regista o número nem nomes.
+// o jogo que o servidor aceita. Plano 9: o jogo mais próximo entre os recintos com lugar preenchido (lendVenues). SEM FIGMA: mensagens de erro e o estado a carregar. Nunca se regista o número nem nomes.
 import { useRef, useState } from 'react';
 import { Share, View } from 'react-native';
 import { FormMessage } from '@/components/AuthForm';
@@ -12,7 +12,7 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { useNow } from '@/data/clock';
 import type { Match } from '@/data/schemas';
 import { useUpcomingMatches } from '@/data/sports';
-import { loanableMatch, venueSports, VENUE_NAMES, type TicketVenue } from '@/lib/gamebox';
+import { loanableAcross, ticketVenue, venueSports, VENUE_NAMES, type TicketVenue } from '@/lib/gamebox';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
 import { cancelLoan, createLoan, LoanError, loanShareText, type LoanErrorCode } from '@/services/loans';
 import { Text71 } from '@/theme/typography';
@@ -53,24 +53,23 @@ const errorText = (e: unknown): string => LOAN_TEXT.errors[e instanceof LoanErro
 /** "dom 22 nov · 20:30" */
 export const loanWhen = (kickoff: Date): string => `${formatCardDate(kickoff).toLowerCase()} · ${formatTime(kickoff)}`;
 
-const STADIUM_SPORTS = venueSports('stadium');
-const PAVILION_SPORTS = venueSports('pavilion');
-
 /**
- * Os jogos do recinto. Só se oferece um jogo com TODAS as listas do recinto lidas (o Pavilhão tem cinco): com uma por chegar
- * o mais cedo podia não ser o próximo e o servidor responderia `not-next`. Com uma lista em erro não se oferece nenhum.
+ * Os jogos dos recintos em causa (fixos enquanto a folha está aberta). Só se oferece um jogo com TODAS as listas lidas (o
+ * Pavilhão tem cinco): com uma por chegar o mais cedo podia não ser o próximo e o servidor responderia `not-next`. Com uma
+ * lista em erro não se oferece nenhum. Com mais de um recinto, o jogo em casa mais próximo.
  */
-function useVenueMatches(venue: TicketVenue, now: Date): { match: Match | null; loading: boolean; error: boolean } {
-  const sports = venue === 'stadium' ? STADIUM_SPORTS : PAVILION_SPORTS;
+function useVenueMatches(venues: readonly TicketVenue[], now: Date): { match: Match | null; loading: boolean; error: boolean } {
+  const sports = venues.flatMap((v) => venueSports(v));
   const lists = sports.map((s) => useUpcomingMatches(s, now)); // eslint-disable-line react-hooks/rules-of-hooks
   const error = lists.some((l) => l.status === 'error');
   const loading = !error && lists.some((l) => l.status === 'loading');
   if (error || loading) return { match: null, loading, error };
   const matches = lists.flatMap((l) => (l.status === 'ready' ? l.data : []));
-  return { match: loanableMatch(matches, venue, now), loading: false, error: false };
+  return { match: loanableAcross(matches, venues, now), loading: false, error: false };
 }
 
-function GameCard({ match, venue }: { match: Match; venue: TicketVenue }) {
+function GameCard({ match }: { match: Match }) {
+  const venue = ticketVenue(match.sport);
   return (
     <View
       style={{
@@ -101,17 +100,18 @@ function GameCard({ match, venue }: { match: Match; venue: TicketVenue }) {
 export function LoanConfirmSheet({
   gameboxId,
   number,
-  venue,
+  venues,
   onClose,
 }: {
   gameboxId: string;
   /** Número da GameBox já decifrado (decryptGameboxNumber); nunca se regista. */
   number: string;
-  venue: TicketVenue;
+  /** Recintos em que se pode emprestar (lib/gamebox lendVenues); fixos enquanto a folha está aberta. */
+  venues: readonly TicketVenue[];
   onClose: () => void;
 }) {
   const now = useNow(60_000);
-  const { match, loading, error } = useVenueMatches(venue, now);
+  const { match, loading, error } = useVenueMatches(venues, now);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const busyRef = useRef(false);
@@ -140,7 +140,7 @@ export function LoanConfirmSheet({
       {match ? (
         <>
           <Text71 variant="caption12" color="textMuted">{LOAN_TEXT.lendHint}</Text71>
-          <GameCard match={match} venue={venue} />
+          <GameCard match={match} />
           {message ? <FormMessage text={message} /> : null}
           <PrimaryButton label={LOAN_TEXT.confirm} onPress={() => void lend()} loading={busy} />
         </>

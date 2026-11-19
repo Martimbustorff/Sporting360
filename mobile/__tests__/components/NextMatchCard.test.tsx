@@ -51,6 +51,19 @@ it('Próximo: competição, ronda, data, hora e equipas; tocar abre o jogo', asy
   expect(handlers.onOpenMatch).toHaveBeenCalledWith('1001');
 });
 
+it('Próximo: o canal de TV aparece em chip quando o jogo o traz', async () => {
+  const m = match('NS', { tv: 'BTV' }, '2026-12-26T18:00:00Z');
+  await view(m, moment(m));
+  expect(screen.getByTestId('next-tv')).toBeTruthy();
+  expect(screen.getByText('BTV')).toBeTruthy();
+});
+
+it.each([[null], [''], [undefined]])('Próximo: sem canal (%p) não há chip', async (tv) => {
+  const m = match('NS', { tv }, '2026-12-26T18:00:00Z');
+  await view(m, moment(m));
+  expect(screen.queryByTestId('next-tv')).toBeNull();
+});
+
 it('Próximo com jogo adiado mostra o estado no lugar da hora', async () => {
   const m = match('PST', {}, '2026-12-26T18:00:00Z');
   await view(m, moment(m));

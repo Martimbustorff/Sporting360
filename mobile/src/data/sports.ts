@@ -1,8 +1,8 @@
 // Typed read hooks for games, competitions and the Sporting team (Plan 2 read contract,
 // docs/superpowers/plans/2026-11-18-plan-4-ecras.md, "Contrato de leitura").
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { z } from 'zod';
-import { collection, limit, orderBy, query, where, type Query } from '@react-native-firebase/firestore';
+import { collection, doc, getDoc, limit, orderBy, query, where, type Query } from '@react-native-firebase/firestore';
 import { db } from '@/services/firebase';
 import { orderCompetitions } from '@/lib/team';
 import { BLOCK_MS } from './clock';
@@ -82,6 +82,44 @@ const blockOf = (now: Date): number => Math.floor(now.getTime() / BLOCK_MS) * BL
 
 export function useMatch(id: string | null): Loadable<Match> {
   return useDocument(id ? `matches/${id}` : null, MatchSchema);
+}
+
+/** Leituras únicas de jogos, uma por id e por execução da app (a lista do histórico do perfil tem uma linha por jogo). */
+const matchOnce = new Map<string, Promise<Match | null>>();
+
+/**
+ * Um jogo lido uma só vez (getDoc, sem listener): para listas com uma linha por jogo. `undefined` enquanto chega; `null` se o
+ * jogo não existe, é inválido ou a leitura falhou (nesse caso a próxima linha a pedi-lo volta a tentar). Não escreve nada e
+ * o id do jogo nunca vai para logs.
+ */
+export function useMatchOnce(id: string | null): Match | null | undefined {
+  const [held, setHeld] = useState<{ id: string | null; match: Match | null } | null>(null);
+  useEffect(() => {
+    if (id === null) return undefined;
+    let alive = true;
+    let pending = matchOnce.get(id);
+    if (!pending) {
+      pending = getDoc(doc(db(), `matches/${id}`)).then(
+        (snap) => {
+          const parsed = snap.exists() ? MatchSchema.safeParse({ id, ...snap.data() }) : null;
+          return parsed?.success ? parsed.data : null;
+        },
+        () => {
+          matchOnce.delete(id);
+          return null;
+        },
+      );
+      matchOnce.set(id, pending);
+    }
+    void pending.then((match) => {
+      if (alive) setHeld({ id, match });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+  if (id === null) return null;
+  return held?.id === id ? held.match : undefined;
 }
 
 export type DetailKind = keyof DetailDocs;

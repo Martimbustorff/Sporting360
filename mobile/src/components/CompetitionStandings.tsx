@@ -101,7 +101,7 @@ export function CompetitionStandings({
   const results = fixtures.status === 'ready' ? finishedResults(fixtures.data.items) : [];
   const projected =
     shown === 'table' && table && liveOn && mode === 'live'
-      ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures, results).rows }))
+      ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures, results, { guardDoubleCount: fixtures.status === 'ready' }).rows }))
       : null;
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 

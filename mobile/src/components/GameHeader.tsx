@@ -2,7 +2,7 @@
 // linha 0 a 90, cartão "O teu prognóstico"), 4945:7833 (29, antes do jogo: data, hora Score 72), 4933:7057 (08, compacto:
 // emblemas 24, "2 - 1" Title 24, estado), 4935:7111 (10, compacto ao vivo com o minuto) e 4947:9606 (34, outra modalidade).
 // Emblemas: quando a equipa é o Sporting (id API 228) usa-se sempre o emblema local 2026.
-// Decisões: o `Match` não traz canal de TV, por isso o chip do canal não aparece (regra do controlador, como na Home); o
+// Decisões: o chip do canal de TV (`tv`) aparece por baixo da hora, só antes do jogo (29); o
 // degradé branco das caixas do Figma fica a branco liso (sem biblioteca de degradés); o cartão do prognóstico só mostra
 // pontos quando existem eventos de pontos do servidor (a app nunca calcula pontuação). O nome da competição e a jornada
 // vivem na barra de navegação (`GameNavTitle`), uma só vez (nota 06).
@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { MatchTimeline } from '@/components/MatchTimeline';
+import { TvChip } from '@/components/TvChip';
 import { PredictionSummary, type PredictionVM } from '@/components/PredictionSummary';
 import { minuteText, penaltiesText, stateLabel, type GoalVM, type UiState } from '@/lib/matchVM';
 import { formatRound } from '@/lib/formatRound';
@@ -37,7 +38,7 @@ export type GameHeaderVM = {
   away: TeamVM;
   state: UiState;
   kickoff: Date;
-  /** Canal de TV; o `Match` ainda não o traz, por isso nunca se desenha. */
+  /** Canal de TV; chip por baixo da hora antes do jogo; null, vazio ou ausente não desenha nada. */
   tv?: string | null;
   minute?: number | null;
   /** Minuto já formatado ("45+2’"); quando existe, usa-se em vez de `minute`. */
@@ -261,6 +262,7 @@ function Center({ game }: { game: GameHeaderVM }) {
               {formatTime(game.kickoff)}
             </Text71>
           )}
+          {state === 'scheduled' ? <TvChip tv={game.tv} testID="game-tv" /> : null}
         </>
       )}
     </View>

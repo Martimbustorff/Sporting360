@@ -137,10 +137,11 @@ describe('listas', () => {
     expect(screen.getByText('Fonte: API-SPORTS')).toBeTruthy();
   });
 
-  it('sem atribuições (futebol) não há linha "Fonte:" no fim da lista', async () => {
+  it('futebol: "Fonte: API-Football" por baixo da lista (frame 35)', async () => {
     mockUpcoming.current = ready([match({ id: '1001' })]);
     await render(ui());
-    expect(screen.queryByText(/^Fonte:/)).toBeNull();
+    expect(screen.getByText('Fonte: API-Football')).toBeTruthy();
+    expect(screen.queryByText('Fonte: API-SPORTS')).toBeNull();
   });
 
   it('sem jogos da modalidade mostra o estado vazio', async () => {

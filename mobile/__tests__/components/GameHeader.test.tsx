@@ -43,11 +43,6 @@ describe('GameHeader completo, antes do jogo (frame 29)', () => {
     expect(screen.queryByTestId('score-home')).toBeNull();
   });
 
-  it('esconde o chip do canal: o Match não tem canal de TV', async () => {
-    await render(<GameHeader game={base} />);
-    expect(screen.queryByText('SportTV')).toBeNull();
-  });
-
   it('a hora usa Score 72', async () => {
     await render(<GameHeader game={base} />);
     expect(StyleSheet.flatten(screen.getByTestId('game-time').props.style).fontSize).toBe(72);
@@ -67,6 +62,21 @@ describe('GameHeader completo, antes do jogo (frame 29)', () => {
     await rerender(<GameHeader game={{ ...base, state: 'cancelled' }} />);
     expect(screen.getByText('Cancelado')).toBeTruthy();
     expect(screen.queryByTestId('game-time')).toBeNull();
+  });
+});
+
+describe('Canal de TV no cabeçalho (frame 29)', () => {
+  it('com canal mostra o chip por baixo da hora', async () => {
+    await render(<GameHeader game={{ ...base, tv: 'SPORT TV' }} />);
+    expect(within(screen.getByTestId('game-tv')).getByText('SPORT TV')).toBeTruthy();
+  });
+  it.each([[null], [''], [undefined]])('sem canal (%p) não mostra o chip', async (tv) => {
+    await render(<GameHeader game={{ ...base, tv }} />);
+    expect(screen.queryByTestId('game-tv')).toBeNull();
+  });
+  it('ao vivo não mostra o chip (frame 06)', async () => {
+    await render(<GameHeader game={{ ...live, tv: 'SPORT TV' }} />);
+    expect(screen.queryByTestId('game-tv')).toBeNull();
   });
 });
 

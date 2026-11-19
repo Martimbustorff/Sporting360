@@ -416,7 +416,15 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     mockData.liveFixtures = liveDoc(30_000);
     mockData.fixtures = {
       status: 'ready',
-      data: { items: [{ id: '1', status: 'FT', home: { id: '211' }, away: { id: '228' }, score: { home: 2, away: 0 } }] },
+      // Cada equipa com 6 jogos terminados (como o `played` da tabela oficial): o jogo ao vivo ainda não está na tabela.
+      data: {
+        items: [
+          { id: '1', status: 'FT', home: { id: '211' }, away: { id: '228' }, score: { home: 2, away: 0 } },
+          ...['211', '228', '212'].flatMap((t) =>
+            [0, 1, 2, 3, 4].map((i) => ({ id: `p${t}${i}`, status: 'FT', home: { id: t }, away: { id: `Z${t}${i}` }, score: { home: 1, away: 0 } })),
+          ),
+        ],
+      },
     };
     await render(<CompetitionStandings competitionKey={LIGA} />);
     expect(rank('211')).toBe(1);

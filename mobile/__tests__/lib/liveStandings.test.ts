@@ -299,3 +299,63 @@ describe('jogos FT mantidos pelo servidor até a oficial os contar', () => {
     expect(liveStandingsAvailable({ updatedAt: new Date(), fixtures: doc.fixtures }, new Date())).toBe(true);
   });
 });
+
+describe('projectStandings: sem dupla contagem (guardDoubleCount)', () => {
+  const res = (homeId: string, awayId: string, homeGoals: number, awayGoals: number) => ({ homeId, awayId, homeGoals, awayGoals });
+  // Cada equipa com 12 jogos oficiais; os jogos terminados da lista é que dizem se o jogo em curso já está na tabela.
+  const finished = (id: string, n: number, skip?: string) =>
+    Array.from({ length: n }, (_, i) => res(id, `${skip ?? 'X'}${i}`, 1, 0));
+
+  it('played oficial maior do que os jogos terminados (sem o jogo em curso): a tabela oficial já o conta, não se soma', () => {
+    // A e B: 11 terminados na lista, mas 12 na tabela -> o jogo em curso (A-B) já está contado.
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 28)];
+    const results = [...finished('A', 11), ...finished('B', 11)];
+    const { rows } = projectStandings(t, [live('A', 'B', 2, 0)], results, { guardDoubleCount: true });
+    expect(by(rows, 'A').points).toBe(30);
+    expect(by(rows, 'A').played).toBe(12);
+    expect(by(rows, 'B').points).toBe(28);
+    expect(by(rows, 'B').played).toBe(12);
+  });
+
+  it('played oficial igual aos jogos terminados: soma como até aqui', () => {
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 28)];
+    const results = [...finished('A', 12), ...finished('B', 12)];
+    const { rows } = projectStandings(t, [live('A', 'B', 2, 0)], results, { guardDoubleCount: true });
+    expect(by(rows, 'A').points).toBe(33);
+    expect(by(rows, 'A').played).toBe(13);
+    expect(by(rows, 'B').points).toBe(28);
+    expect(by(rows, 'B').played).toBe(13);
+  });
+
+  it('é por equipa: só a que já tem o jogo na tabela fica de fora', () => {
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 28, { played: 11 })];
+    // A: 11 terminados (tabela 12 -> já conta); B: 11 terminados e tabela 11 -> soma.
+    const results = [...finished('A', 11), ...finished('B', 11)];
+    const { rows } = projectStandings(t, [live('A', 'B', 0, 1)], results, { guardDoubleCount: true });
+    expect(by(rows, 'A').points).toBe(30);
+    expect(by(rows, 'B').points).toBe(31);
+    expect(by(rows, 'B').played).toBe(12);
+  });
+
+  it('o jogo em projeção já terminado na lista não conta para "antes"', () => {
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 28)];
+    // A-B terminado na lista (doc ao vivo atrasado) + 11 de cada: antes = 11, tabela = 12 -> não soma.
+    const results = [res('A', 'B', 2, 0), ...finished('A', 11), ...finished('B', 11)];
+    const { rows } = projectStandings(t, [live('A', 'B', 2, 0)], results, { guardDoubleCount: true });
+    expect(by(rows, 'A').points).toBe(30);
+  });
+
+  it('sem a opção, tudo como antes (a lista de jogos pode nem ter sido lida)', () => {
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 28)];
+    const { rows } = projectStandings(t, [live('A', 'B', 2, 0)], []);
+    expect(by(rows, 'A').points).toBe(33);
+  });
+
+  it('o confronto direto continua a funcionar com o jogo projetado', () => {
+    const t = [row(1, 'A', 'A', 30, { goalsDiff: 0 }), row(2, 'B', 'B', 28, { goalsDiff: 5 }), row(3, 'C', 'C', 28, { goalsDiff: 9 })];
+    // B e C empatam a 28; B-C ao vivo 1-0 dá a B 31 (soma: B tem 11 terminados e tabela 12? aqui iguais a 12).
+    const results = [...finished('A', 12), ...finished('B', 12), ...finished('C', 12)];
+    const { rows } = projectStandings(t, [live('B', 'C', 1, 0)], results, { guardDoubleCount: true });
+    expect(rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+  });
+});

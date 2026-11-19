@@ -1,4 +1,4 @@
-import { AppConfigSchema, PublicProfileSchema, UserDocSchema } from '@/data/schemas';
+import { AppConfigSchema, LoanSchema, PublicProfileSchema, UserDocSchema } from '@/data/schemas';
 
 describe('AppConfigSchema', () => {
   it('accepts the minimal document and keeps unknown Plan 2 fields', () => {
@@ -100,5 +100,29 @@ describe('UserDocSchema', () => {
     const parsed = UserDocSchema.parse({ name: 'Ana', partnerNumber: { weird: 1 } });
     expect(parsed.name).toBe('Ana');
     expect(parsed.partnerNumber).toBeUndefined();
+  });
+});
+
+describe('LoanSchema.cancelReason', () => {
+  const ts = (iso: string) => ({ toDate: () => new Date(iso) });
+  const loan = (extra: Record<string, unknown> = {}) => ({
+    ownerUid: 'u1',
+    gameboxId: 'g1',
+    matchId: 'm1',
+    match: { homeName: 'A', awayName: 'B', kickoff: ts('2026-12-01T20:00:00Z'), venue: 'stadium' },
+    seat: { gate: null, sector: null, row: null, seat: null },
+    createdAt: ts('2026-11-20T10:00:00Z'),
+    expiresAt: ts('2026-12-01T23:00:00Z'),
+    ...extra,
+  });
+  it('aceita os cinco motivos, null e a falta (documentos antigos)', () => {
+    for (const r of ['owner', 'gamebox-edited', 'gamebox-deleted', 'recipient-left', 'owner-left']) {
+      expect(LoanSchema.parse(loan({ cancelReason: r })).cancelReason).toBe(r);
+    }
+    expect(LoanSchema.parse(loan({ cancelReason: null })).cancelReason).toBeNull();
+    expect(LoanSchema.parse(loan()).cancelReason).toBeUndefined();
+  });
+  it('um motivo desconhecido não parte o documento', () => {
+    expect(LoanSchema.parse(loan({ cancelReason: 'novo-motivo' })).cancelReason).toBeNull();
   });
 });

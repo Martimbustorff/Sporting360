@@ -18,7 +18,7 @@ import { Header } from '@/components/Header';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
-import { groupGameboxNumber, isGameboxRouteId, normalizeGameboxNumber } from '@/lib/gamebox';
+import { formatGameboxNumber, isGameboxRouteId, normalizeGameboxNumber } from '@/lib/gamebox';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
@@ -213,7 +213,7 @@ export default function GameboxLer() {
                 adjustsFontSizeToFit
                 numberOfLines={1}
               >
-                {groupGameboxNumber(scanned)}
+                {formatGameboxNumber(scanned)}
               </Text71>
               <PrimaryButton label={LER_TEXT.confirm} onPress={confirm} variant="white" />
               <PrimaryButton label={LER_TEXT.retry} onPress={retry} variant="outline" />

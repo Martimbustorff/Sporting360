@@ -21,6 +21,8 @@ jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) })
 const mockRecipientLoans: { current: unknown } = { current: { status: 'ready', data: [] } };
 jest.mock('@/data/loans', () => ({
   useOwnerLoans: jest.fn(() => ({ status: 'ready', data: [] })),
+  useOwnerLoanNotice: jest.fn(() => null),
+  dismissOwnerLoanNotice: jest.fn(),
   useRecipientLoans: jest.fn(() => mockRecipientLoans.current),
 }));
 jest.mock('@/data/sports', () => ({ useUpcomingMatches: jest.fn(() => ({ status: 'ready', data: [] })) }));

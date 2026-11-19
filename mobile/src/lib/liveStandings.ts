@@ -46,6 +46,15 @@ export function finishedResults(items: FixtureItem[]): LeagueResult[] {
   return out;
 }
 
+export type ProjectOptions = {
+  /**
+   * Sem dupla contagem: com a lista completa de jogos terminados em `results`, uma equipa cujo `played` oficial já é maior
+   * do que os seus jogos terminados (sem contar o jogo em projeção) já tem esse jogo na tabela oficial, e não se soma outra
+   * vez. Só se liga quando a lista de jogos da competição foi lida (senão `results` está vazio e não prova nada).
+   */
+  guardDoubleCount?: boolean;
+};
+
 /**
  * Aplica 3/1/0 pontos a cada jogo ao vivo sobre a tabela oficial e reordena. Não altera `official`.
  * `results`: jogos terminados da época (ver `finishedResults`) para o confronto direto; opcional, puro.
@@ -54,14 +63,21 @@ export function projectStandings(
   official: StandingRow[],
   live: LiveFixture[],
   results: readonly LeagueResult[] = [],
+  options: ProjectOptions = {},
 ): { rows: ProjectedRow[] } {
   const base = official.map((r, i) => ({ r: { ...r }, i, liveScore: null as string | null }));
   const byTeam = new Map(base.map((b) => [b.r.teamId, b]));
 
-  const apply = (teamId: string, own: number, other: number) => {
+  // Jogos terminados por equipa, sem contar o jogo em projeção (o mesmo casa/fora, como no desempate).
+  const finishedBefore = (teamId: string, f: LiveFixture): number =>
+    results.filter((g) => !(g.homeId === f.homeId && g.awayId === f.awayId) && (g.homeId === teamId || g.awayId === teamId)).length;
+
+  const apply = (teamId: string, own: number, other: number, f: LiveFixture) => {
     const b = byTeam.get(teamId);
     if (!b) return;
     const r = b.r;
+    b.liveScore = `${own}-${other}`;
+    if (options.guardDoubleCount && r.played > finishedBefore(teamId, f)) return;
     r.played += 1;
     r.goalsFor += own;
     r.goalsAgainst += other;
@@ -75,11 +91,10 @@ export function projectStandings(
     } else {
       r.lose += 1;
     }
-    b.liveScore = `${own}-${other}`;
   };
   for (const f of live) {
-    apply(f.homeId, f.homeGoals, f.awayGoals);
-    apply(f.awayId, f.awayGoals, f.homeGoals);
+    apply(f.homeId, f.homeGoals, f.awayGoals, f);
+    apply(f.awayId, f.awayGoals, f.homeGoals, f);
   }
 
   // Por pontos projetados; depois, em cada grupo de pontos iguais com uma equipa em jogo, o regulamento. Os restantes

@@ -327,6 +327,7 @@ export const layout = {
   crestCard: { width: 52, height: 60 }, // 4920:5096
   matchCardIcon: 28, // calendário do estado "Sem jogo" (4920:5117)
   matchCardIconOpacity: 0.4, // nota 01b: ícone a 40 %
+  tvChipIcon: 14, // ícone do canal de TV (4921:5318, 4920:5103)
   matchCardBadgePadY: 3, // badge da ronda e canal de TV (4920:5094)
   matchCardShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 12 },
   matchCardCenterWideGrow: 2, // dia de jogo: a coluna central ganha espaço para a contagem a 320 pt
@@ -515,6 +516,10 @@ export const layout = {
   loanStateGap: 8, // cartão ativo: ponto e estado; linhas a 8
   loanDot: 8,
   loanBlockGap: 12, // cartão ativo e botão Cancelar
+  // Aviso ao dono: quem recebeu apagou a conta (Figma 45Lr 4994:13335): raio 10, 14 à esquerda, 5 nos outros lados
+  loanNoticeRadius: 10,
+  loanNoticePadLeft: 14,
+  loanNoticePad: 5,
   // V7.1 Empréstimo, ecrã de quem recebe (Figma 4984:12396) e linha "emprestada a mim" (4984:11976)
   loanQr: 165, // QR do cartão do empréstimo (4984:13083), dentro da caixa branca
   loanQrPad: 16, // zona de silêncio da caixa branca (4984:13082)

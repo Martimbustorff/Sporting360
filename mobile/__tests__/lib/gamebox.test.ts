@@ -2,7 +2,7 @@
 import {
   fromGameboxDoc,
   gameboxLabel,
-  groupGameboxNumber,
+  formatGameboxNumber,
   legacyGameboxFromUser,
   normalizeGameboxNumber,
   readStoredGameboxNumber,
@@ -197,8 +197,8 @@ describe('modo bilhete: recinto e lugar', () => {
     expect(ticketSeat({ ...g, pavilion: null }, 'pavilion')).toEqual({ port: '', sector: '', line: '', seat: '' });
   });
   it('mostra o número em grupos de quatro', () => {
-    expect(groupGameboxNumber('266571276572')).toBe('2665 7127 6572');
-    expect(groupGameboxNumber('123456')).toBe('1234 56');
-    expect(groupGameboxNumber('1234')).toBe('1234');
+    expect(formatGameboxNumber('266571276572')).toBe('2665 7127 6572');
+    expect(formatGameboxNumber('123456')).toBe('1234 56');
+    expect(formatGameboxNumber('1234')).toBe('1234');
   });
 });

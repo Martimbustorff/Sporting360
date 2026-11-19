@@ -34,7 +34,7 @@ const PARTS: { key: StatPart; label: string }[] = [
  */
 function secondHalfAvailable(match: Match): boolean {
   if (match.status === 'HT' || match.status === 'AET' || match.status === 'PEN') return false;
-  const raw = (match as { statusRaw?: string | null }).statusRaw;
+  const raw = match.statusRaw;
   if (raw === 'ET' || raw === 'BT' || raw === 'P') return false;
   return match.score.extratime == null;
 }

@@ -48,6 +48,20 @@ describe('MatchSchema', () => {
     );
   });
 
+  it('tv e statusRaw são opcionais (ausentes ou null) e passam quando existem', () => {
+    const raw = match();
+    delete (raw as Record<string, unknown>).statusRaw;
+    const bare = MatchSchema.parse(raw);
+    expect(bare.tv).toBeUndefined();
+    expect(bare.statusRaw).toBeUndefined();
+    const nulls = MatchSchema.parse(match({ tv: null, statusRaw: null }));
+    expect(nulls.tv).toBeNull();
+    expect(nulls.statusRaw).toBeNull();
+    const full = MatchSchema.parse(match({ tv: 'TVI / V+', statusRaw: 'ET' }));
+    expect(full.tv).toBe('TVI / V+');
+    expect(full.statusRaw).toBe('ET');
+  });
+
   it('venue null and no referee is valid', () => {
     const raw = match({ venue: null });
     delete (raw as Record<string, unknown>).referee;

@@ -2,7 +2,7 @@
 // Ordem do frame: cartão do próximo jogo (o mesmo da Home), pílulas de modalidade, Próximos/Resultados e a lista com
 // todos os jogos (também o do cartão), "Fonte" no fim.
 // SEM FIGMA: o esqueleto de carregamento, o aviso de cache (OfflineBanner), o estado vazio e de erro, e a atribuição
-// "Fonte: ..." só quando há fontes gratuitas. O cartão só aparece quando há próximo jogo (os estados "sem jogo" são da Home).
+// "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas). O cartão só aparece quando há próximo jogo (os estados "sem jogo" são da Home).
 import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { router, useIsFocused, type Href } from 'expo-router';
@@ -64,6 +64,7 @@ const listOf = (l: Loadable<Match[]>) => (l.status === 'ready' ? l.data : []);
 const attributions = (ms: Match[]): string[] => [
   ...new Set(ms.map((m) => m.source.attribution).filter((a): a is string => typeof a === 'string' && a !== '')),
 ];
+export const FOOTBALL_SOURCE = 'API-Football';
 
 export default function Agenda() {
   const [sport, setSport] = useState<Sport>('football');
@@ -115,8 +116,8 @@ export default function Agenda() {
     </View>
   );
 
-  const sources = attributions(list);
-  // Rodapé só quando há fontes a atribuir (o futebol não tem): sem ele não fica um bloco vazio no fim.
+  const sources = sport === 'football' ? [...new Set([FOOTBALL_SOURCE, ...attributions(list)])] : attributions(list);
+  // Rodapé só quando há fontes a atribuir: sem ele não fica um bloco vazio no fim.
   const footer =
     sources.length > 0 ? (
       <View style={{ paddingVertical: space.s12, gap: space.s4 }}>

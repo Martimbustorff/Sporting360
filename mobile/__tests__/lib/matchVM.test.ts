@@ -177,6 +177,12 @@ describe('toGameHeaderVM', () => {
     expect(vm.venue).toBeNull();
   });
 
+  it('passa o canal de TV do jogo; ausente, null ou vazio ficam sem canal', () => {
+    expect(toGameHeaderVM(match({ tv: 'SPORT TV' })).tv).toBe('SPORT TV');
+    expect(toGameHeaderVM(match({ tv: null })).tv).toBeNull();
+    expect(toGameHeaderVM(match()).tv).toBeNull();
+  });
+
   it('crest ids: Sporting side is always 228; opponent id only in football', () => {
     const away = toGameHeaderVM(match({ sportingSide: 'away', home: { id: '217', name: 'SC Braga', logo: 'b' }, away: { id: '228', name: 'Sporting CP', logo: 's' } }));
     expect(away.home.id).toBe(217);

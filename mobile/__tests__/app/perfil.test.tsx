@@ -29,7 +29,11 @@ jest.mock('@/data/hooks', () => ({
   useMyUser: jest.fn(() => mockUser.current),
   usePublicProfile: jest.fn(() => mockProfile.current),
 }));
-jest.mock('@/data/sports', () => ({ useTeamData: jest.fn(() => mockSquad.current) }));
+const mockMatchOnce: { current: (id: string | null) => unknown } = { current: () => undefined };
+jest.mock('@/data/sports', () => ({
+  useTeamData: jest.fn(() => mockSquad.current),
+  useMatchOnce: jest.fn((id: string | null) => mockMatchOnce.current(id)),
+}));
 jest.mock('@/data/user', () => ({
   useMyPointEvents: jest.fn(() => mockEvents.current),
   useMyPredictions: jest.fn(() => mockPredictions.current),
@@ -235,6 +239,31 @@ describe('Perfil: meu jogo', () => {
     // Figma 22: pontos positivos com sinal ("+6 PTS"); zero sem sinal ("0 PTS").
     expect(screen.getAllByText('+6 PTS').length).toBeGreaterThan(0);
     expect(screen.queryByText('+0 PTS')).toBeNull();
+  });
+
+  it('histórico: sem o jogo (a chegar ou em falta) fica "{data} · Final {x}-{y}"', async () => {
+    mockMatchOnce.current = () => undefined;
+    await renderScreen();
+    expect(screen.getByText('12 novembro · Final 2-1')).toBeTruthy();
+    expect(screen.queryByText('Sporting CP 2-1 FC Porto')).toBeNull();
+  });
+
+  it('histórico: com o jogo o título é "{casa} {x}-{y} {fora}"; por liquidar nunca leva as equipas', async () => {
+    mockMatchOnce.current = () => ({
+      id: 'g4',
+      sport: 'football',
+      home: { id: '228', name: 'Sporting CP', logo: null },
+      away: { id: '212', name: 'FC Porto', logo: null },
+      sportingSide: 'home',
+      kickoff: new Date(),
+      status: 'FT',
+      score: { home: 2, away: 1 },
+      competition: { key: 'k', name: 'Liga', round: null, roundLabel: null },
+    });
+    await renderScreen();
+    expect(screen.getAllByText('Sporting CP 2-1 FC Porto')).toHaveLength(1);
+    expect(screen.getByLabelText('Sporting CP 2-1 FC Porto, 12 novembro, prognóstico 2-1, final 2-1, 6 pontos')).toBeTruthy();
+    expect(screen.getByText('15 novembro')).toBeTruthy();
   });
 
   it('sem liquidados mostra "Ainda sem jogos liquidados."', async () => {

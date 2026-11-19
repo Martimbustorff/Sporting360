@@ -20,7 +20,7 @@ import { TextField } from '@/components/TextField';
 import { CancelLoanSheet, LOAN_TEXT, LoanConfirmSheet, loanWhen } from '@/components/LoanConfirmSheet';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { Touchable } from '@/components/Touchable';
-import { useOwnerLoans, type LoanItem } from '@/data/loans';
+import { dismissOwnerLoanNotice, useOwnerLoanNotice, useOwnerLoans, type LoanItem } from '@/data/loans';
 import { useMyGameboxes } from '@/data/user';
 import { formatTime } from '@/lib/ptDate';
 import { loanLink } from '@/lib/shareLink';
@@ -30,9 +30,11 @@ import {
   fromGameboxDoc,
   gameboxNumberError,
   isEmptySeat,
+  lendVenues,
   normalizeGameboxNumber,
   type GameboxInput,
   type Seat,
+  type TicketVenue,
 } from '@/lib/gamebox';
 import { useSession } from '@/providers/SessionProvider';
 import { deleteGamebox, GameboxSaveError, saveGamebox, type GameboxSaveCode } from '@/services/gamebox';
@@ -43,6 +45,8 @@ import { colors, layout, radii, space } from '@/theme/tokens';
 const QR_CODE = require('../../../assets/icons/qr-code.svg');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const CHECK = require('../../../assets/icons/check-big.svg');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const CLOSE = require('../../../assets/icons/close.svg');
 
 export const FORM_TEXT = {
   title: 'GameBox',
@@ -52,6 +56,8 @@ export const FORM_TEXT = {
   scan: 'Ler código da GameBox',
   save: 'Guardar',
   delete: 'Apagar GameBox',
+  recipientLeft: 'Quem recebeu esta GameBox apagou a conta. O empréstimo foi cancelado.',
+  closeNotice: 'Fechar aviso',
   digits: 'O número da GameBox tem só algarismos.',
   length: 'O número da GameBox tem entre 6 e 20 algarismos.',
   confirmTitle: 'Apagar GameBox',
@@ -76,9 +82,40 @@ const SEAT_FIELDS: { key: keyof Seat; label: string }[] = [
 ];
 const codeOfError = (e: unknown): GameboxSaveCode => (e instanceof GameboxSaveError ? e.saveCode : 'UNKNOWN');
 
-/** 45La / 45Lc / 45Ld: botão de emprestar, ou o cartão do empréstimo ativo com "Cancelar empréstimo". Uma só por GameBox. */
-function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: string; venue: Venue }) {
+/** 45Lr (4994:13335): quem recebeu apagou a conta. Por cima do botão de emprestar; o X (44 pt) fecha-o para sempre. */
+function RecipientLeftNotice({ loanId }: { loanId: string }) {
+  return (
+    <View
+      testID="loan-notice"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.s8,
+        backgroundColor: colors.surface20,
+        borderRadius: layout.loanNoticeRadius,
+        paddingLeft: layout.loanNoticePadLeft,
+        paddingRight: layout.loanNoticePad,
+        paddingVertical: layout.loanNoticePad,
+        overflow: 'hidden',
+      }}
+    >
+      <Text71 variant="caption12" style={{ flex: 1, minWidth: 0 }}>{FORM_TEXT.recipientLeft}</Text71>
+      <Touchable
+        accessibilityRole="button"
+        accessibilityLabel={FORM_TEXT.closeNotice}
+        onPress={() => dismissOwnerLoanNotice(loanId)}
+        style={{ width: layout.minTouch, height: layout.minTouch, alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Image source={CLOSE} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
+      </Touchable>
+    </View>
+  );
+}
+
+/** 45La / 45Lc / 45Ld / 45Lr: botão de emprestar, ou o cartão do empréstimo ativo com "Cancelar empréstimo". Uma só por GameBox. */
+function LoanSection({ gameboxId, number, venues }: { gameboxId: string; number: string; venues: readonly TicketVenue[] }) {
   const loans = useOwnerLoans(gameboxId);
+  const notice = useOwnerLoanNotice(gameboxId);
   const [sheet, setSheet] = useState<'lend' | 'cancel' | null>(null);
   if (loans.status !== 'ready') return null;
   const active: LoanItem | undefined = loans.data[0];
@@ -122,11 +159,12 @@ function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: 
         </View>
       ) : (
         <View style={{ gap: space.s8 }}>
+          {notice ? <RecipientLeftNotice loanId={notice.loanId} /> : null}
           <PrimaryButton label={LOAN_TEXT.lend} onPress={() => setSheet('lend')} />
           <Text71 variant="caption12" color="textMuted">{LOAN_TEXT.lendHint}</Text71>
         </View>
       )}
-      {sheet === 'lend' && !active ? <LoanConfirmSheet gameboxId={gameboxId} number={number} venue={venue} onClose={close} /> : null}
+      {sheet === 'lend' && !active ? <LoanConfirmSheet gameboxId={gameboxId} number={number} venues={venues} onClose={close} /> : null}
       {sheet === 'cancel' && active ? <CancelLoanSheet loanId={active.id} onClose={close} /> : null}
     </>
   );
@@ -312,7 +350,11 @@ function GameboxFormView({
             </View>
           </View>
           {existing && normalizeGameboxNumber(loanNumber) ? (
-            <LoanSection gameboxId={existing.id} number={normalizeGameboxNumber(loanNumber) as string} venue={venue} />
+            <LoanSection
+              gameboxId={existing.id}
+              number={normalizeGameboxNumber(loanNumber) as string}
+              venues={lendVenues(initial.stadium, initial.pavilion)}
+            />
           ) : null}
           {message ? <FormMessage text={message} /> : null}
           {existing ? (

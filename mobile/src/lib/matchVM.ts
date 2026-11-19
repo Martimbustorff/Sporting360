@@ -136,7 +136,7 @@ export function toGameHeaderVM(m: Match): GameHeaderVM {
     away: team(m.away, 'away'),
     state: uiState(m.status),
     kickoff: m.kickoff,
-    tv: null,
+    tv: m.tv ?? null,
     minute: m.elapsed,
     minuteText: minuteText(m.elapsed, m.elapsedExtra),
     score: scorePair(m),

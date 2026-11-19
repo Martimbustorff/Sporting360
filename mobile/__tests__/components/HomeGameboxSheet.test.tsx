@@ -84,7 +84,7 @@ describe('HomeGameboxSheet', () => {
     expect((QRCode as unknown as jest.Mock).mock.calls.every(([p]) => p.value === '266571276572')).toBe(true);
     expect(screen.getByText('João')).toBeTruthy();
     expect(screen.getByText('GameBox 2')).toBeTruthy();
-    expect(screen.getAllByText('266571276572')).toHaveLength(2);
+    expect(screen.getAllByText('2665 7127 6572')).toHaveLength(2);
     expect(screen.getAllByText('Estádio')).toHaveLength(2);
     expect(screen.getAllByText('Pavilhão')).toHaveLength(1);
     expect(screen.getAllByText('A27')).toHaveLength(2);

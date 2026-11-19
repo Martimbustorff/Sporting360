@@ -169,7 +169,7 @@ export const ticketSeat = (g: Pick<GameboxInput, 'stadium' | 'pavilion'>, venue:
   venue === 'stadium' ? g.stadium : (g.pavilion ?? EMPTY_SEAT);
 
 /** "2665 7127 6572": o número em grupos de quatro, só para mostrar. */
-export const groupGameboxNumber = (n: string): string => n.replace(/(\d{4})(?=\d)/g, '$1 ');
+export const formatGameboxNumber = (n: string): string => n.replace(/(\d{4})(?=\d)/g, '$1 ');
 
 /** Modalidades que se jogam no recinto (futebol: Estádio; as restantes: Pavilhão). Mesma regra do servidor (callables/loans.ts). */
 export const venueSports = (venue: TicketVenue): Sport[] => SportSchema.options.filter((s) => ticketVenue(s) === venue);
@@ -190,3 +190,24 @@ export function upcomingHome(matches: readonly Match[], now: Date): Match | null
 /** O jogo que a GameBox pode emprestar: o próximo em casa do recinto (o que o servidor aceita). */
 export const loanableMatch = (matches: readonly Match[], venue: TicketVenue, now: Date): Match | null =>
   upcomingHome(matches.filter((m) => ticketVenue(m.sport) === venue), now);
+
+/**
+ * Recintos em que a GameBox pode emprestar: os que têm lugar preenchido; sem lugar em nenhum, os dois. O servidor aceita o
+ * próximo jogo em casa de qualquer dos recintos, por isso a app escolhe aqui qual oferecer.
+ */
+export function lendVenues(stadium: Seat, pavilion: Seat | null): TicketVenue[] {
+  const filled: TicketVenue[] = [];
+  if (!isEmptySeat(stadium)) filled.push('stadium');
+  if (pavilion && !isEmptySeat(pavilion)) filled.push('pavilion');
+  return filled.length > 0 ? filled : ['stadium', 'pavilion'];
+}
+
+/** O jogo em casa mais próximo entre os recintos dados (cada um com a sua regra `loanableMatch`). */
+export function loanableAcross(matches: readonly Match[], venues: readonly TicketVenue[], now: Date): Match | null {
+  let best: Match | null = null;
+  for (const v of venues) {
+    const m = loanableMatch(matches, v, now);
+    if (m && (!best || m.kickoff.getTime() < best.kickoff.getTime())) best = m;
+  }
+  return best;
+}
