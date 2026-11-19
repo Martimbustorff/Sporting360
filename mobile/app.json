@@ -52,7 +52,22 @@
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       "@react-native-firebase/app-check",
-      "@react-native-firebase/messaging",
+      [
+        "@react-native-firebase/messaging",
+        {
+          "android": {
+            "notificationIcon": "./assets/images/android-icon-monochrome.png",
+            "notificationColor": "#00835B"
+          }
+        }
+      ],
+      [
+        "./plugins/withNotificationIcon",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#00835B"
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {

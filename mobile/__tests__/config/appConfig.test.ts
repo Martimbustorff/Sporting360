@@ -92,7 +92,7 @@ describe('app.config.ts share link (Plano 5, Task 6)', () => {
 describe('push (Plano 6)', () => {
   const { expo } = read('app.json');
   it('regista o plugin de messaging e o push no iOS', () => {
-    expect(expo.plugins).toContain('@react-native-firebase/messaging');
+    expect(expo.plugins.some((p: unknown) => (Array.isArray(p) ? p[0] : p) === '@react-native-firebase/messaging')).toBe(true);
     expect(expo.ios.entitlements['aps-environment']).toBe('production');
     expect(expo.ios.infoPlist.UIBackgroundModes).toEqual(['remote-notification']);
   });

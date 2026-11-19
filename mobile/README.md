@@ -91,4 +91,4 @@ O envio fica desligado (`PUSH_ENABLED=false` nos dois `.env` das functions) até
   1. regras: o `firestore.rules` da fase em vigor (ou o `firestore.final.rules` depois do lançamento), com a regra nova de `users/{uid}/devices`;
   2. functions: `functions:v2027:footballLiveTicker,functions:v2027:newsSync,functions:v2027:predictionReminderPush,functions:v2027:deleteAccount` (ainda com `PUSH_ENABLED=false`);
   3. só depois: `PUSH_ENABLED=true` no `.env` de produção e nova publicação das três de envio (`footballLiveTicker`, `newsSync`, `predictionReminderPush`).
-- [ ] **Decisão pendente do Martim:** o ícone pequeno da notificação no Android fica o da app (sem ícone monocromático próprio).
+- [ ] **Ícone pequeno no Android:** gerado de `assets/images/android-icon-monochrome.png` com a cor `#00835B` (`plugins/withNotificationIcon.js`). Confirmar no smoke que aparece na barra de estado (e não um quadrado branco).
