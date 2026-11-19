@@ -3,7 +3,7 @@ jest.mock('@react-native-firebase/firestore');
 jest.mock('@react-native-firebase/crashlytics');
 jest.mock('@/services/firebase', () => ({ db: jest.fn(() => ({ __mock: 'firestore' })) }));
 
-import { deleteDoc, doc, setDoc, updateDoc } from '@react-native-firebase/firestore';
+import { deleteDoc, doc, setDoc, updateDoc, writeBatch } from '@react-native-firebase/firestore';
 import { recordError } from '@react-native-firebase/crashlytics';
 import { decryptGameboxNumber } from '@/lib/gameboxCrypto';
 import type { GameboxInput } from '@/lib/gamebox';
@@ -123,22 +123,25 @@ describe('deleteGamebox', () => {
   });
 });
 
+const lastBatch = () => (writeBatch as jest.Mock).mock.results.at(-1)?.value as { update: jest.Mock; commit: jest.Mock };
+const batchCommit = { mockRejectedValueOnce: (e: unknown) => (writeBatch as jest.Mock).mockReturnValueOnce({ update: jest.fn(), commit: jest.fn(() => Promise.reject(e)) }) };
+
 describe('reorderGameboxes', () => {
-  it('grava só o campo order (1..n) nos documentos que mudaram', async () => {
+  it('grava só o campo order (1..n) num lote, nos documentos que mudaram', async () => {
     await reorderGameboxes(['b', 'a', 'c'], { a: 1, b: 2, c: 3 });
-    const calls = (updateDoc as jest.Mock).mock.calls;
-    expect(calls).toHaveLength(2);
-    expect(calls.map((c) => [c[0].path, c[1]])).toEqual([
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(lastBatch().update.mock.calls.map((c) => [c[0].path, c[1]])).toEqual([
       ['gamebox/b', { order: 1 }],
       ['gamebox/a', { order: 2 }],
     ]);
+    expect(lastBatch().commit).toHaveBeenCalledTimes(1);
   });
   it('sem mudanças não escreve', async () => {
     await reorderGameboxes(['a', 'b'], { a: 1, b: 2 });
-    expect(updateDoc).not.toHaveBeenCalled();
+    expect(writeBatch).not.toHaveBeenCalled();
   });
   it('permission-denied é DENIED', async () => {
-    (updateDoc as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'firestore/permission-denied' }));
+    batchCommit.mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'firestore/permission-denied' }));
     await expect(reorderGameboxes(['b', 'a'], { a: 1, b: 2 })).rejects.toMatchObject({ saveCode: 'DENIED' });
   });
 });

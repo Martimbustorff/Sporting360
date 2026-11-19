@@ -32,7 +32,6 @@ import {
   type GameboxView,
   type Seat,
 } from '@/lib/gamebox';
-import { pickHomeMatch } from '@/lib/homeMatchMoment';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
 import { useTicketMode } from '@/lib/ticketMode';
 import { useSession } from '@/providers/SessionProvider';
@@ -63,10 +62,16 @@ const COLUMNS: { key: keyof Seat; label: string }[] = [
 
 const sentence = (s: string) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
 
-/** O primeiro jogo ainda por jogar (NS/PST ou ao vivo); um jogo terminado já não é "o seguinte". */
+const GRACE_MS = 4 * 3_600_000; // como a Home: um jogo por abrir há mais de 4 h deixa de contar
+
+/** O primeiro jogo ainda por jogar (ao vivo, ou NS/PST sem passar a folga); os terminados saltam para o seguinte. */
 function upcoming(matches: readonly Match[], now: Date): Match | null {
-  const m = pickHomeMatch(matches, now);
-  return m && !['FT', 'AET', 'PEN', 'CANC'].includes(m.status) ? m : null;
+  return (
+    [...matches]
+      .sort((x, y) => x.kickoff.getTime() - y.kickoff.getTime())
+      .find((m) => m.status === 'LIVE' || m.status === 'HT' || ((m.status === 'NS' || m.status === 'PST') && m.kickoff.getTime() >= now.getTime() - GRACE_MS)) ??
+    null
+  );
 }
 
 function Band({ title, subtitle }: { title: string; subtitle: string }) {

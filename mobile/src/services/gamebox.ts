@@ -1,7 +1,7 @@
 // Task 23: gravar e apagar GameBox na coleção `gamebox` (as regras deixam criar, mudar e apagar só ao dono,
 // com `userid` igual ao uid). Formato da V2 (lib/gamebox). O número decifrado nunca vai para logs nem
 // Crashlytics: só a etiqueta e o código do erro (lib/report).
-import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc } from '@react-native-firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, setDoc, updateDoc, writeBatch } from '@react-native-firebase/firestore';
 import { toGameboxDoc, type GameboxInput, normalizeGameboxNumber } from '@/lib/gamebox';
 import { codeOf, reportCode } from '@/lib/report';
 import { db } from '@/services/firebase';
@@ -88,7 +88,10 @@ export async function deleteGamebox(id: string): Promise<void> {
  * pela ordem pretendida e `current` as ordens guardadas. Só o campo `order` é escrito (as regras exigem `userid` igual).
  */
 export async function reorderGameboxes(ids: readonly string[], current: Readonly<Record<string, number>>): Promise<void> {
-  const writes = ids.flatMap((id, i) => (current[id] === i + 1 ? [] : [updateDoc(doc(db(), `gamebox/${id}`), { order: i + 1 })]));
-  if (writes.length === 0) return;
-  await withTimeout(Promise.all(writes), 'GAMEBOX_REORDER_FAILED');
+  const changed = ids.flatMap((id, i) => (current[id] === i + 1 ? [] : [{ id, order: i + 1 }]));
+  if (changed.length === 0) return;
+  // Um lote: ou todas as ordens mudam ou nenhuma (sem ordens repetidas se falhar a meio).
+  const batch = writeBatch(db());
+  for (const c of changed) batch.update(doc(db(), `gamebox/${c.id}`), { order: c.order });
+  await withTimeout(batch.commit(), 'GAMEBOX_REORDER_FAILED');
 }

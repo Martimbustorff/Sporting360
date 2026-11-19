@@ -116,6 +116,16 @@ describe('/gamebox/bilhete', () => {
     expect(screen.queryByText('A12')).toBeNull();
   });
 
+  it('hoje terminou e há outro amanhã: mostra o de amanhã', async () => {
+    const done = { ...match('football', 'FT'), id: 'm0', kickoff: new Date(Date.now() - 3 * 3_600_000), away: { id: '9', name: 'Gil Vicente', logo: null } };
+    const next = { ...match('football'), id: 'm2', kickoff: new Date(Date.now() + 24 * 3_600_000) };
+    mockMatches.current = { status: 'ready', data: [done, next] };
+    await render(ui());
+    await flush();
+    expect(screen.getByText('Sporting CP - FC Porto')).toBeTruthy();
+    expect(screen.queryByText('Sporting CP - Gil Vicente')).toBeNull();
+  });
+
   it('jogo terminado não conta como jogo seguinte', async () => {
     mockMatches.current = { status: 'ready', data: [match('football', 'FT')] };
     await render(ui());
@@ -192,6 +202,22 @@ describe('/gamebox/bilhete', () => {
       await view.unmount();
       await act(async () => resolve(0.4));
       expect(setBrightness).not.toHaveBeenCalledWith(1);
+    });
+
+    it('segundo plano e ativa antes de a primeira leitura chegar: o valor original não se perde', async () => {
+      let resolve: (v: number) => void = () => {};
+      getBrightness.mockReturnValue(new Promise<number>((r) => (resolve = r)));
+      const view = await render(ui());
+      await act(async () => appStateHandler?.('background'));
+      await act(async () => appStateHandler?.('active'));
+      expect(getBrightness).toHaveBeenCalledTimes(1);
+      getBrightness.mockResolvedValue(1); // se relesse, apanharia o máximo
+      await act(async () => resolve(0.4));
+      expect(setBrightness).toHaveBeenCalledTimes(1);
+      expect(setBrightness).toHaveBeenLastCalledWith(1);
+      await view.unmount();
+      await flush();
+      expect(setBrightness).toHaveBeenLastCalledWith(0.4);
     });
 
     it('um erro do módulo de brilho não parte o ecrã', async () => {

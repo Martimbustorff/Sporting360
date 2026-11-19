@@ -49,3 +49,8 @@ export class Timestamp {
     return this.toDate().getTime();
   }
 }
+
+// Lote: regista as atualizações; `commit` é um mock partilhado para os testes.
+export const batchCommit = jest.fn(() => Promise.resolve());
+export const batchUpdate = jest.fn();
+export const writeBatch = jest.fn(() => ({ update: batchUpdate, commit: batchCommit }));

@@ -17,26 +17,40 @@ export function useTicketMode(): void {
 
   useEffect(() => {
     if (!focused) return;
-    let held = false;
+    let held = false; // o ecrã quer o brilho no máximo
+    let applied = false; // o máximo foi posto e há valor a repor
     let saved: number | null = null;
+    let reading: Promise<void> | null = null;
 
+    // O valor original lê-se uma só vez por "ciclo": um segundo engage com a leitura pendente espera por ela em vez de a repetir.
+    const read = () => {
+      reading ??= Brightness.getBrightnessAsync()
+        .then((v) => {
+          saved = v;
+        })
+        .catch(ignore)
+        .finally(() => {
+          reading = null;
+        });
+      return reading;
+    };
     const engage = async () => {
       if (held) return;
       held = true;
-      saved = null;
       try {
-        const current = await Brightness.getBrightnessAsync();
+        if (saved === null) await read();
         // Saiu (ou foi para segundo plano) enquanto o valor era lido: não se sobe nada.
-        if (!held) return;
-        saved = current;
+        if (!held || applied || saved === null) return;
+        applied = true;
         await Brightness.setBrightnessAsync(1);
       } catch {
         // Sem módulo ou sem permissão: o bilhete funciona na mesma.
       }
     };
     const release = () => {
-      if (!held) return;
       held = false;
+      if (!applied) return;
+      applied = false;
       const value = saved;
       saved = null;
       if (value !== null) Brightness.setBrightnessAsync(value).catch(ignore);
