@@ -100,8 +100,14 @@ export function projectStandings(
 
 type Entry = { r: StandingRow; i: number; liveScore: string | null };
 
-/** Ordena um grupo de equipas com os mesmos pontos: confronto direto (pontos, diferença), geral, golos marcados, oficial. */
+/**
+ * Ordena um grupo de equipas com os mesmos pontos: confronto direto (pontos, diferença nos jogos entre elas). Cada
+ * subgrupo que continue empatado e seja mais pequeno do que o grupo repete o confronto direto só entre as suas equipas
+ * (regulamento: reaplica-se sem os jogos contra as já separadas). Subgrupo igual ao grupo: diferença geral, golos
+ * marcados e ordem oficial. A ordem é total e determinista.
+ */
 function tieBreak(group: Entry[], live: LiveFixture[], results: readonly LeagueResult[]): Entry[] {
+  if (group.length < 2) return group;
   const ids = new Set(group.map((b) => b.r.teamId));
   // Um jogo ao vivo entre as equipas empatadas manda sobre o mesmo casa/fora do calendário (ainda não terminado ou a chegar tarde).
   const liveKeys = new Set(live.map((f) => `${f.homeId}|${f.awayId}`));
@@ -122,11 +128,20 @@ function tieBreak(group: Entry[], live: LiveFixture[], results: readonly LeagueR
       away.points += 1;
     }
   }
-  return [...group].sort((a, b) => {
-    const x = h2h.get(a.r.teamId)!;
-    const y = h2h.get(b.r.teamId)!;
-    return y.points - x.points || y.diff - x.diff || b.r.goalsDiff - a.r.goalsDiff || b.r.goalsFor - a.r.goalsFor || a.i - b.i;
-  });
+  const stat = (b: Entry) => h2h.get(b.r.teamId)!;
+  const sorted = [...group].sort((a, b) => stat(b).points - stat(a).points || stat(b).diff - stat(a).diff || a.i - b.i);
+  const out: Entry[] = [];
+  for (let start = 0; start < sorted.length; ) {
+    let end = start + 1;
+    const first = stat(sorted[start]!);
+    while (end < sorted.length && stat(sorted[end]!).points === first.points && stat(sorted[end]!).diff === first.diff) end += 1;
+    const cluster = sorted.slice(start, end);
+    if (cluster.length === 1) out.push(...cluster);
+    else if (cluster.length < group.length) out.push(...tieBreak(cluster, live, results));
+    else out.push(...cluster.sort((a, b) => b.r.goalsDiff - a.r.goalsDiff || b.r.goalsFor - a.r.goalsFor || a.i - b.i));
+    start = end;
+  }
+  return out;
 }
 
 export type Zone = 'champions' | 'europa' | 'conference';

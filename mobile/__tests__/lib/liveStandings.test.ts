@@ -190,6 +190,60 @@ describe('projectStandings: confronto direto (regulamento da Liga Portugal)', ()
   });
 });
 
+describe('projectStandings: confronto direto recursivo', () => {
+  const res = (homeId: string, awayId: string, homeGoals: number, awayGoals: number) => ({ homeId, awayId, homeGoals, awayGoals });
+
+  it('ciclo: B ganha a C, C ganha a A, A ganha a B; B e C ficam a par e B fica acima de C pelo jogo entre os dois', () => {
+    // C sobe a 30 pontos com 1-0 ao vivo sobre E. Pontos entre eles 3 cada; diferença: A -2, B +1, C +1.
+    // B e C ficam a par: reaplica-se só entre os dois (B 2-0 C). C tem melhor diferença geral que B, A a melhor de todas.
+    const t = [
+      row(1, 'A', 'A', 30, { goalsDiff: 20 }),
+      row(2, 'B', 'B', 30, { goalsDiff: 1 }),
+      row(3, 'C', 'C', 27, { goalsDiff: 9 }),
+      row(4, 'E', 'E', 0, { goalsDiff: -20 }),
+    ];
+    const results = [res('B', 'C', 2, 0), res('C', 'A', 3, 0), res('A', 'B', 1, 0)];
+    const rows = projectStandings(t, [live('C', 'E', 1, 0)], results).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['B', 'C', 'A', 'E']);
+  });
+
+  it('4 equipas: o subgrupo repete o confronto sem os jogos contra a equipa já separada', () => {
+    // D 27 sobe a 30 com 1-0 ao vivo sobre E. D ganhou a todos: 9 pontos no mini-campeonato, sozinha no topo.
+    // A, B, C: A 3-0 B, B 1-0 C, C 1-0 A (3 pontos cada); com os jogos contra D (A 0-5, B 0-1, C 0-3) a diferença é -3 para os três.
+    // Sem os jogos contra D: A +2, C 0, B -2. A diferença geral daria B, C, A.
+    const t = [
+      row(1, 'A', 'A', 30, { goalsDiff: 0 }),
+      row(2, 'B', 'B', 30, { goalsDiff: 8 }),
+      row(3, 'C', 'C', 30, { goalsDiff: 4 }),
+      row(4, 'D', 'D', 27, { goalsDiff: 2 }),
+      row(5, 'E', 'E', 0, { goalsDiff: -20 }),
+    ];
+    const results = [
+      res('D', 'A', 5, 0),
+      res('D', 'B', 1, 0),
+      res('D', 'C', 3, 0),
+      res('A', 'B', 3, 0),
+      res('B', 'C', 1, 0),
+      res('C', 'A', 1, 0),
+    ];
+    const rows = projectStandings(t, [live('D', 'E', 1, 0)], results).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['D', 'A', 'C', 'B', 'E']);
+  });
+
+  it('subgrupo igual ao grupo: diferença geral, golos marcados e ordem oficial, sempre determinista', () => {
+    // Três equipas, três empates 0-0 entre elas: nada separa no confronto, decide a geral e depois a oficial.
+    const t = [
+      row(1, 'A', 'A', 30, { goalsDiff: 1, goalsFor: 10 }),
+      row(2, 'B', 'B', 30, { goalsDiff: 5, goalsFor: 10 }),
+      row(3, 'C', 'C', 27, { goalsDiff: 5, goalsFor: 10 }),
+      row(4, 'E', 'E', 0),
+    ];
+    const results = [res('A', 'B', 0, 0), res('B', 'C', 0, 0), res('C', 'A', 0, 0)];
+    // C 27 +3 com 1-0 sobre E: GD +6 e 11 marcados, à frente de B (+5); A em último pela geral.
+    expect(projectStandings(t, [live('C', 'E', 1, 0)], results).rows.map((r) => r.teamId)).toEqual(['C', 'B', 'A', 'E']);
+  });
+});
+
 describe('finishedResults', () => {
   const item = (id: string, status: string, h: number | null, a: number | null, extra = {}) =>
     ({ id, status, home: { id: 'H' + id }, away: { id: 'A' + id }, score: { home: h, away: a, extraHome: null, extraAway: null, penaltyHome: null, penaltyAway: null }, ...extra }) as never;
