@@ -236,16 +236,40 @@ describe('cronologia em duas colunas', () => {
       }),
     };
     await render(<SummaryTab match={match({ status: 'FT' })} />);
+    // Mais recente primeiro: 71' VAR, 50' autogolo, 38' Samu, 23' Suárez.
     const rows = screen.getAllByTestId('event-row');
     const col = (i: number, k: 'left' | 'right') => within(within(rows[i]!).getByTestId(`event-${k}`));
-    expect(col(0, 'left').getByText('Suárez')).toBeTruthy();
-    expect(col(1, 'right').getByText('Samu')).toBeTruthy();
-    expect(col(2, 'right').getByText('Debast')).toBeTruthy();
-    expect(col(2, 'right').getByText('Autogolo')).toBeTruthy();
-    expect(col(3, 'right').getByText('Golo anulado')).toBeTruthy();
-    expect(col(3, 'right').getByText('fora de jogo de Samu')).toBeTruthy();
-    expect(within(rows[3]!).queryByLabelText('Golo')).toBeNull();
-    expect(within(rows[3]!).getByLabelText('VAR')).toBeTruthy();
+    expect(col(3, 'left').getByText('Suárez')).toBeTruthy();
+    expect(col(2, 'right').getByText('Samu')).toBeTruthy();
+    expect(col(1, 'right').getByText('Debast')).toBeTruthy();
+    expect(col(1, 'right').getByText('Autogolo')).toBeTruthy();
+    expect(col(0, 'right').getByText('Golo anulado')).toBeTruthy();
+    expect(col(0, 'right').getByText('fora de jogo de Samu')).toBeTruthy();
+    expect(within(rows[0]!).queryByLabelText('Golo')).toBeNull();
+    expect(within(rows[0]!).getByLabelText('VAR')).toBeTruthy();
+  });
+
+  it.each([['FT'], ['LIVE']] as const)('mais recente primeiro (%s): partes com a última no topo e tempo extra ordenado', async (status) => {
+    mockDetails.current = {
+      events: ready({
+        items: [
+          ev({ minute: 10, playerName: 'Primeiro', teamId: '228' }),
+          ev({ minute: 45, extra: 2, playerName: 'DescontoI', teamId: '217' }),
+          ev({ minute: 45, extra: null, playerName: 'Quarenta5', teamId: '228' }),
+          ev({ minute: 46, playerName: 'Segunda', teamId: '228' }),
+          ev({ minute: 90, extra: 3, playerName: 'DescontoII', teamId: '217' }),
+          ev({ minute: 90, extra: 1, playerName: 'Noventa1', teamId: '228' }),
+        ],
+      }),
+    };
+    await render(<SummaryTab match={match({ status, elapsed: 93 })} />);
+    const names = screen
+      .getAllByTestId('event-row')
+      .map((r) => within(r).getAllByText(/^(Primeiro|DescontoI|Quarenta5|Segunda|DescontoII|Noventa1)$/)[0]!.props.children);
+    expect(names).toEqual(['DescontoII', 'Noventa1', 'Segunda', 'DescontoI', 'Quarenta5', 'Primeiro']);
+    // Separadores: 2ª Parte antes da 1ª Parte.
+    const labels = screen.getAllByText(/^[12]ª Parte$/).map((n) => n.props.children);
+    expect(labels).toEqual(['2ª Parte', '1ª Parte']);
   });
 
   it('Sporting a jogar fora: os lances da equipa visitante ficam à esquerda', async () => {

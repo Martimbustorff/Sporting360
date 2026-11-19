@@ -1,8 +1,9 @@
 // Figma V7.1: 4933:7057 (08 Sumário terminado: cronologia em duas colunas, "Forma · últimos 5", "Confrontos diretos ·
 // últimos 5" em barra V/E/D e "Ausências" com o selo "Dúvida") e 4924:6268 (06, ao vivo, mesmos lances). Anteriores:
 // 655:31958 ("Informação do Jogo"), 500:28950 (jogo futuro sem dados: EmptyState do Plano 3).
-// Decisões: a cronologia mantém a ordem do jogo e os separadores por parte com o resultado (regra já testada; o Figma
-// mostra uma só lista "Cronologia"); cada bloco só aparece se houver dados (nunca marcadores de posição); numa barra de
+// Decisões: a cronologia mostra o mais recente primeiro (pedido do Martim, como nos frames 06/08), com os separadores
+// por parte e o resultado a seguir essa ordem (a última parte no topo; o resultado de cada parte calcula-se em ordem
+// cronológica em `groupEvents`); cada bloco só aparece se houver dados (nunca marcadores de posição); numa barra de
 // confrontos o segmento sem jogos não aparece; as ausências ficam agrupadas por equipa (Sporting primeiro).
 // SEM FIGMA: Previsão, o aviso "Pré-jogo ainda não disponível.", as mensagens de adiado, cancelado e sem lances
 // (EmptyState `info`), as linhas Capacidade e a fotografia do estádio. A barra "TV/Transmissão Online" (655:31954) fica de
@@ -259,10 +260,10 @@ function Events({ match, live, after }: { match: Match; live: boolean; after?: R
   if (groups.length === 0) return <><EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />{after}</>;
   return (
     <>
-      {groups.map((g) => (
+      {[...groups].reverse().map((g) => (
         <View key={g.label}>
           <SectionBar label={g.label} right={g.score} />
-          {g.events.map((e, i) => (
+          {[...g.events].reverse().map((e, i) => (
             <EventRow key={i} event={e} />
           ))}
         </View>
