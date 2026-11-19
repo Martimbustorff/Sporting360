@@ -4,6 +4,7 @@ import type { EventItem } from "../../src/football/mapFixture";
 import type { MatchDoc } from "../../src/model/types";
 import { sendOnce } from "../../src/push/markers";
 import { dispatchMatchPushes } from "../../src/push/matchPush";
+import { NEWS_DAILY_CAP, NEWS_MAX_AGE_MS, NEWS_MIN_GAP_MS, NEWS_QUIET_FROM, NEWS_QUIET_TO, pushLatestNews } from "../../src/push/newsPush";
 import { REMINDER_LATEST_MS, REMINDER_LEAD_MS, remindersOn, runPredictionReminder } from "../../src/push/predictionReminder";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import { fakeSender } from "../helpers/fakeSender";
@@ -345,5 +346,104 @@ describe("runPredictionReminder", () => {
     expect((await runPredictionReminder(db, f.sender, NOW_R)).count).toBe(0);
     expect(f.tokens).toEqual([]);
     expect((await db.doc("ingestState/match_9002").get()).get("push.reminderSentAt")).toBeUndefined();
+  });
+});
+
+describe("pushLatestNews", () => {
+  // Novembro: Lisboa está em UTC+0.
+  const T = (hhmm: string, day = "2026-11-23") => new Date(`${day}T${hhmm}:00Z`);
+  async function news(id: string, publishedAt: Date, sport = "football") {
+    await db.doc(`news/${id}`).set({ id, title: `Título ${id}`, summary: `Resumo ${id}`, sport, publishedAt, url: `https://x.pt/${id}` });
+  }
+
+  it("constantes", () => {
+    expect(NEWS_DAILY_CAP).toBe(2);
+    expect(NEWS_MAX_AGE_MS).toBe(2 * 60 * MIN);
+    expect(NEWS_MIN_GAP_MS).toBe(3 * 60 * MIN);
+    expect([NEWS_QUIET_FROM, NEWS_QUIET_TO]).toEqual([22, 9]);
+  });
+
+  it("envia a notícia de futebol mais recente com menos de 2 h para push_news", async () => {
+    await news("n-antiga", T("09:30"));
+    await news("n-recente", T("09:50"));
+    const f = fakeSender();
+    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(1);
+    expect(f.topics).toHaveLength(1);
+    expect(f.topics[0]).toMatchObject({ topic: "push_news", msg: { title: "Título n-recente", body: "Resumo n-recente", route: "/noticias?id=n-recente" } });
+    const day = (await db.doc("ingestState/push_news_2026-11-23").get()).data()!;
+    expect(day.count).toBe(1);
+    expect(Object.keys(day.sent)).toEqual(["n-recente"]);
+  });
+
+  it("ignora outras modalidades e notícias com mais de 2 h", async () => {
+    await news("futsal", T("09:55"), "futsal");
+    await news("velha", T("07:59"));
+    const f = fakeSender();
+    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(0);
+    expect(f.topics).toEqual([]);
+  });
+
+  it("a mesma notícia nunca sai duas vezes", async () => {
+    await news("n1", T("09:50"));
+    const f = fakeSender();
+    await pushLatestNews(db, f.sender, T("10:00"));
+    // Mesmo com o intervalo cumprido, não há notícia nova com menos de 2 h.
+    await news("n1", T("11:55"));
+    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(0);
+    expect(f.topics).toHaveLength(1);
+  });
+
+  it("no máximo 2 por dia, com 3 h entre elas", async () => {
+    const f = fakeSender();
+    await news("a", T("09:55"));
+    expect((await pushLatestNews(db, f.sender, T("10:00"))).count).toBe(1);
+    await news("b", T("10:55"));
+    expect((await pushLatestNews(db, f.sender, T("11:00"))).count).toBe(0);
+    await news("c", T("12:55"));
+    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(1);
+    await news("d", T("16:55"));
+    expect((await pushLatestNews(db, f.sender, T("17:00"))).count).toBe(0);
+    await news("e", T("09:55", "2026-11-24"));
+    expect((await pushLatestNews(db, f.sender, T("10:00", "2026-11-24"))).count).toBe(1);
+    expect(f.topics.map((t) => t.msg.route)).toEqual(["/noticias?id=a", "/noticias?id=c", "/noticias?id=e"]);
+  });
+
+  it("23:30 e 08:59 de Lisboa: não envia; 09:00 envia", async () => {
+    const f = fakeSender();
+    await news("noite", T("23:00"));
+    expect((await pushLatestNews(db, f.sender, T("23:30"))).count).toBe(0);
+    await news("manha", T("08:00", "2026-11-24"));
+    expect((await pushLatestNews(db, f.sender, T("08:59", "2026-11-24"))).count).toBe(0);
+    expect((await pushLatestNews(db, f.sender, T("09:00", "2026-11-24"))).count).toBe(1);
+    expect(f.topics[0].msg.route).toBe("/noticias?id=manha");
+  });
+
+  it("hora de verão: 21:30 UTC em julho são 22:30 em Lisboa e não envia", async () => {
+    const f = fakeSender();
+    await news("verao", new Date("2026-07-10T21:00:00Z"));
+    expect((await pushLatestNews(db, f.sender, new Date("2026-07-10T21:30:00Z"))).count).toBe(0);
+  });
+
+  it("FCM falha: count fica como estava e a execução seguinte envia", async () => {
+    const f = fakeSender();
+    await news("a", T("09:55"));
+    await pushLatestNews(db, f.sender, T("10:00"));
+    await news("b", T("12:55"));
+    f.failNext(1);
+    expect((await pushLatestNews(db, f.sender, T("13:00"))).count).toBe(0);
+    const day = (await db.doc("ingestState/push_news_2026-11-23").get()).data()!;
+    expect(day.count).toBe(1);
+    expect(Object.keys(day.sent)).toEqual(["a"]);
+    expect((day.lastAt as Timestamp).toDate()).toEqual(T("10:00"));
+    expect((await pushLatestNews(db, f.sender, T("13:15"))).count).toBe(1);
+    expect(f.topics.map((t) => t.msg.route)).toEqual(["/noticias?id=a", "/noticias?id=b"]);
+  });
+
+  it("duas execuções em paralelo enviam uma vez", async () => {
+    const f = fakeSender();
+    await news("a", T("09:55"));
+    const r = await Promise.all([pushLatestNews(db, f.sender, T("10:00")), pushLatestNews(db, f.sender, T("10:00"))]);
+    expect(r.map((x) => x.count).sort()).toEqual([0, 1]);
+    expect(f.topics).toHaveLength(1);
   });
 });

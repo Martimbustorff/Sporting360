@@ -11,6 +11,7 @@ import { refreshRecent, syncFixtures, type FootballDeps } from "./football/fixtu
 import { runApiSportsJob } from "./modalities/apiSportsSync";
 import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
+import { pushLatestNews } from "./push/newsPush";
 import { runPredictionReminder } from "./push/predictionReminder";
 import { fcmSender } from "./push/sender";
 import { syncTweets } from "./social/tweetsSync";
@@ -179,6 +180,10 @@ export const newsSync = onSchedule(
   { schedule: "every 15 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120 },
   async () => {
     await runJob(getFirestore(), "news", () => syncNews({ db: getFirestore(), fetch, now: () => new Date(), writeLegacyContent: NEWS_LEGACY_CONTENT.value() }));
+    // Push da notícia mais recente (no máximo 2 por dia), só com PUSH_ENABLED.
+    if (PUSH_ENABLED.value()) {
+      await runJob(getFirestore(), "push_news", () => pushLatestNews(getFirestore(), fcmSender(getMessaging()), new Date()));
+    }
   },
 );
 
