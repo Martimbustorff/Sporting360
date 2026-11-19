@@ -46,7 +46,7 @@ describe('AnalyticsConsentSheet no layout', () => {
     const overlay = screen.getByTestId('consent-overlay');
     expect(overlay.props.accessibilityViewIsModal).toBe(true);
     const sheet = overlay.children[0] as unknown as { props: { style: object } };
-    expect(StyleSheet.flatten(sheet.props.style) as { paddingBottom: number }).toMatchObject({ paddingBottom: 34 + layout.consentBottomExtra });
+    expect(StyleSheet.flatten(sheet.props.style) as { paddingBottom: number }).toMatchObject({ paddingBottom: layout.homeIndicator + layout.consentBottomExtra });
   });
 
   it('o título não é um botão (a folha não se fecha sem escolha) e é anunciado como cabeçalho', async () => {

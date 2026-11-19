@@ -211,7 +211,6 @@ function FavoritePlayerRow({ player }: { player: { id: string; name: string } | 
       }}
     >
       <Text71 variant="body14" color="textMuted" style={{ flexShrink: 0 }}>Jogador favorito</Text71>
-      <View style={{ flex: 1 }} />
       {player ? (
         <PlayerPhoto testID="favorite-player-photo" photo={found?.photo ?? null} size={layout.leaderRowPhoto} number={found?.number ?? null} />
       ) : null}

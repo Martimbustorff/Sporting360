@@ -106,7 +106,7 @@ export default function Estadio() {
           <Image
             source={LUZ}
             accessible={false}
-            style={{ position: 'absolute', left: layout.stadiumLuzLeft, top: layout.stadiumLuzTop - layout.stadiumLuz / 2 + layout.stadiumMap.height / 2, width: layout.stadiumLuz, height: layout.stadiumLuz }}
+            style={{ position: 'absolute', left: layout.stadiumLuzLeft, top: '50%', marginTop: layout.stadiumLuzTop - layout.stadiumLuz / 2, width: layout.stadiumLuz, height: layout.stadiumLuz }}
           />
           <Animated.View testID="estadio-mapa" style={{ transform: [{ scale }] }}>
             <Image source={MAP} contentFit="contain" accessibilityLabel={MAP_A11Y} accessible style={layout.stadiumMap} />

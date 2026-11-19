@@ -157,6 +157,11 @@ describe('Perfil: identidade', () => {
     const label = StyleSheet.flatten(screen.getByText('Jogador favorito').props.style);
     expect(label.flexShrink).toBe(0);
     expect(label.flex).toBeUndefined();
+    // Nenhum irmão com flex 1 além do nome (senão dividiria o espaço livre com ele).
+    const row = screen.getByText('Jogador favorito').parent;
+    const flexed = (row?.children ?? []).filter((c) => typeof c !== 'string' && StyleSheet.flatten(c.props.style)?.flex === 1);
+    expect(flexed).toHaveLength(1);
+    expect(flexed[0]).toBe(name);
   });
 
   it('o email (users e sessão) nunca aparece', async () => {
