@@ -11,6 +11,7 @@ import { colors, layout, space } from '@/theme/tokens';
 export function LeaderPlayerRow({
   testID,
   barTestID,
+  valueTestID,
   label,
   rank,
   photo,
@@ -22,6 +23,7 @@ export function LeaderPlayerRow({
 }: {
   testID?: string;
   barTestID?: string;
+  valueTestID?: string;
   /** Rótulo de acessibilidade da linha inteira. */
   label: string;
   rank: number;
@@ -61,7 +63,7 @@ export function LeaderPlayerRow({
           />
         </View>
       </View>
-      <Text71 variant="titleS20" style={{ flexShrink: 0 }}>{value}</Text71>
+      <Text71 variant="titleS20" testID={valueTestID} style={{ flexShrink: 0 }}>{value}</Text71>
     </>
   );
   if (!onPress) {

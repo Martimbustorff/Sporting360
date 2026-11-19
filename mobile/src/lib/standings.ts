@@ -71,13 +71,23 @@ export function aggregateText(tie: Tie): string | null {
  * `tie.home` é a casa da 1.ª mão (`buildTie`) e a 2.ª joga-se com a casa trocada (índice ímpar).
  * Penáltis com `penaltiesText`: "1-1 (4-3 g.p.)". Null se a mão ainda não tem resultado.
  */
-export function legScoreText(leg: Tie['legs'][number], index: number, tieHomeId: string): string | null {
+export function legSides(
+  leg: Tie['legs'][number],
+  index: number,
+  tieHomeId: string,
+): { home: number; away: number; penHome: number | null; penAway: number | null } | null {
   const { home, away, penaltyHome, penaltyAway } = leg.score;
   if (home == null || away == null) return null;
   const swap = leg.homeId != null ? leg.homeId !== tieHomeId : index % 2 === 1;
   const [l, r] = swap ? [away, home] : [home, away];
-  const base = `${l}-${r}`;
-  if (penaltyHome == null || penaltyAway == null) return base;
+  if (penaltyHome == null || penaltyAway == null) return { home: l, away: r, penHome: null, penAway: null };
   const [pl, pr] = swap ? [penaltyAway, penaltyHome] : [penaltyHome, penaltyAway];
-  return `${base} (${penaltiesText(pl, pr)})`;
+  return { home: l, away: r, penHome: pl, penAway: pr };
+}
+
+export function legScoreText(leg: Tie['legs'][number], index: number, tieHomeId: string): string | null {
+  const s = legSides(leg, index, tieHomeId);
+  if (!s) return null;
+  const base = `${s.home}-${s.away}`;
+  return s.penHome == null || s.penAway == null ? base : `${base} (${penaltiesText(s.penHome, s.penAway)})`;
 }

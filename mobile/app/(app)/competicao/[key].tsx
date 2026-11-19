@@ -1,26 +1,23 @@
-// Figma: Header com o nome da competição a primary (como "PRIMEIRA LIGA" em 500:30076, 500:30081); tabs com scroll
-// 500:28976 (`Tabs mode="scroll"`); Classificação = `CompetitionStandings` (500:29367 com os emblemas de 500:30076);
-// linhas das jornadas = `MatchRow` (500:28822 / 489:7038) com o separador 500:28839; posição dos tops no círculo
-// 500:29423 (`PositionCircle`).
-// SEM FIGMA: as tabs Jornadas, Marcadores, Assistências e Cartões; o seletor de ronda (setas Feather chevron-left/
-// chevron-right de 24 px com alvo de 44 px e o rótulo da ronda em DIN 18 ao centro, setas a 40 % nos extremos); as
-// linhas dos tops (círculo da posição, foto redonda de 32 px, nome numa linha com reticências e a equipa a muted por
-// baixo, valor em DIN 20 à direita, divisória de 1 px a 20 % como na tabela); o seletor Amarelos/Vermelhos
-// (`Tabs mode="equal"`); esqueleto em branco, erros, vazios e o aviso de cache.
-// Só os jogos do Sporting abrem o detalhe (só esses têm `matches/{id}`, preflight F9). Tops só em ligas e europeias
-// (competitionSync escreve-os só aí; taças e supertaça não têm essas tabs).
+// Figma V7.1: frames 36 (4948:8334, Jornadas) e 37 (4948:8461, Taça, quadro). Cabeçalho com o nome da competição; separadores com
+// scroll (Classificação ou Quadro, Jornadas e, só em ligas e europeias, Marcadores, Assistências, Cartões); seletor de
+// ronda com setas de 44 pt e o rótulo em Title S 20 (4948:8390); linhas de jogo = `MatchRow` (4948:8278); tops =
+// `LeaderPlayerRow` (4935:7488) com `PlayerPhoto`, a equipa ao lado do nome e a barra relativa ao líder.
+// SEM FIGMA: o seletor Amarelos/Vermelhos dos Cartões (`Tabs mode="equal"`); o separador de abertura chama-se "Quadro" quando o
+// servidor diz que a vista principal é o quadro (`view.primary`), como no frame 37; esqueleto em branco, erros, vazios e o
+// aviso de cache. Só os jogos do Sporting abrem o detalhe (só esses têm `matches/{id}`, preflight F9). Tops só em
+// ligas e europeias (competitionSync escreve-os só aí; taças e supertaça não têm essas tabs). Os jogadores dos tops não
+// abrem ecrã (só há ecrã de jogador para o plantel).
 import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import { Image } from 'expo-image';
 import { CompetitionStandings } from '@/components/CompetitionStandings';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
+import { LeaderPlayerRow } from '@/components/LeaderRows';
 import { MatchRow } from '@/components/MatchRow';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
-import { PositionCircle } from '@/components/StandingsTable';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
 import type { Loadable } from '@/data/hooks';
@@ -29,8 +26,8 @@ import { useCompetition, useCompetitionData } from '@/data/sports';
 import { formatRound } from '@/lib/formatRound';
 import { fixtureToMatch } from '@/lib/matchVM';
 import { SPORTING_API_ID } from '@/lib/teams';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 type TabKey = 'classificacao' | 'jornadas' | 'marcadores' | 'assistencias' | 'cartoes';
 type CardKind = 'yellow' | 'red';
@@ -68,10 +65,6 @@ const hasTops = (c: Competition) => c.type === 'league' || c.type === 'europe';
 
 /** SEM FIGMA: enquanto os dados não chegam, um espaço em branco (como na Classificação). */
 const Loading = ({ testID }: { testID: string }) => <View testID={testID} />;
-
-function Separator() {
-  return <View style={{ height: layout.separator, backgroundColor: colors.surface20, marginHorizontal: spacing.screenX }} />;
-}
 
 function Arrow({ dir, disabled, onPress }: { dir: 'left' | 'right'; disabled: boolean; onPress: () => void }) {
   return (
@@ -131,18 +124,18 @@ function RoundsTab({ competition }: { competition: SeasonCompetition }) {
     <View style={{ flex: 1 }}>
       <OfflineBanner visible={fromCache(rounds) || fromCache(fixtures)} />
       <View
-        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.screenX, paddingBottom: spacing.sm }}
+        style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s12, paddingBottom: space.s4 }}
       >
         <Arrow dir="left" disabled={index <= 0} onPress={() => go(-1)} />
-        <Display
-          variant="tableHead"
+        <Text71
+          variant="titleS20"
           testID="round-label"
           numberOfLines={1}
           ellipsizeMode="tail"
           style={{ flex: 1, textAlign: 'center' }}
         >
           {round.label || formatRound(round.raw)}
-        </Display>
+        </Text71>
         <Arrow dir="right" disabled={index >= items.length - 1} onPress={() => go(1)} />
       </View>
       <FlatList
@@ -154,52 +147,27 @@ function RoundsTab({ competition }: { competition: SeasonCompetition }) {
             onPress={isSportingGame(item) ? (id) => router.push(`/jogo/${id}`) : undefined}
           />
         )}
-        ItemSeparatorComponent={Separator}
         ListEmptyComponent={<EmptyState text={NO_GAMES} />}
-        contentContainerStyle={{ paddingBottom: spacing.xl }}
+        contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32 }}
       />
     </View>
   );
 }
 
-function TopRow({ item, rank }: { item: TopListItem; rank: number }) {
+function TopRow({ item, rank, top }: { item: TopListItem; rank: number; top: number }) {
   return (
-    <View
+    <LeaderPlayerRow
       testID={`top-row-${item.playerId}`}
-      accessible
-      accessibilityLabel={`${rank}.º ${item.name}, ${item.teamName}, ${item.value}`}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: layout.tableNameGap, minHeight: layout.rankingRowMinHeight }}
-    >
-      <PositionCircle rank={rank} />
-      {item.photo ? (
-        <Image
-          testID={`top-photo-${item.playerId}`}
-          source={{ uri: item.photo }}
-          contentFit="cover"
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-          style={{ width: layout.avatarSize, height: layout.avatarSize, borderRadius: radius.pill }}
-        />
-      ) : (
-        <View style={{ width: layout.avatarSize, height: layout.avatarSize, borderRadius: radius.pill, backgroundColor: colors.surface10 }} />
-      )}
-      <View style={{ flex: 1 }}>
-        <Body variant="tableTeam" numberOfLines={1} ellipsizeMode="tail">
-          {item.name}
-        </Body>
-        <Body variant="rowTeam" numberOfLines={1} ellipsizeMode="tail" style={{ opacity: layout.mutedOpacity }}>
-          {item.teamName}
-        </Body>
-      </View>
-      <Display
-        variant="tableValue"
-        testID={`top-value-${item.playerId}`}
-        numberOfLines={1}
-        style={{ width: layout.tablePointsWidth, flexShrink: 0 }}
-      >
-        {String(item.value)}
-      </Display>
-    </View>
+      barTestID={`top-bar-${item.playerId}`}
+      valueTestID={`top-value-${item.playerId}`}
+      label={`${rank}.º ${item.name}, ${item.teamName}, ${item.value}`}
+      rank={rank}
+      photo={item.photo}
+      name={item.name}
+      sub={item.teamName}
+      value={item.value}
+      top={top}
+    />
   );
 }
 
@@ -209,14 +177,11 @@ function TopList({ data }: { data: Loadable<TopListDoc> }) {
   const items = data.status === 'ready' ? data.data.items : [];
   if (items.length === 0) return <EmptyState icon="info" text={NO_TOPS} />;
   return (
-    <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.screenX, paddingBottom: spacing.xl }}>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32 }}>
       <OfflineBanner visible={fromCache(data)} />
+      {/* Posição pela ordem do documento (o servidor já ordena); a barra é relativa ao primeiro. */}
       {items.map((it, i) => (
-        <View key={`${it.playerId}-${i}`} style={{ gap: layout.tableRowGap, paddingBottom: layout.tableRowGap }}>
-          <View style={{ height: layout.separator, backgroundColor: colors.surface20 }} />
-          {/* Posição pela ordem do documento (o servidor já ordena). */}
-          <TopRow item={it} rank={i + 1} />
-        </View>
+        <TopRow key={`${it.playerId}-${i}`} item={it} rank={i + 1} top={items[0]?.value ?? 0} />
       ))}
     </ScrollView>
   );
@@ -235,8 +200,8 @@ function CardsTab({ competitionKey }: { competitionKey: string }) {
   const yellow = useCompetitionData(competitionKey, 'topyellowcards');
   const red = useCompetitionData(competitionKey, 'topredcards');
   return (
-    <View style={{ flex: 1, gap: spacing.md }}>
-      <View style={{ paddingHorizontal: spacing.screenX }}>
+    <View style={{ flex: 1, gap: space.s12 }}>
+      <View style={{ paddingHorizontal: space.s24 }}>
         <Tabs mode="equal" items={CARD_TABS} value={kind} onChange={setKind} />
       </View>
       <TopList data={kind === 'yellow' ? yellow : red} />
@@ -246,11 +211,13 @@ function CardsTab({ competitionKey }: { competitionKey: string }) {
 
 function CompetitionBody({ competition }: { competition: SeasonCompetition }) {
   const [tab, setTab] = useState<TabKey>('classificacao');
-  const tabs = hasTops(competition) ? [...BASE_TABS, ...TOP_TABS] : BASE_TABS;
+  const first = competition.view?.primary === 'bracket' ? 'Quadro' : 'Classificação';
+  const base = [{ key: 'classificacao' as TabKey, label: first }, BASE_TABS[1]!];
+  const tabs = hasTops(competition) ? [...base, ...TOP_TABS] : base;
   const shown = tabs.some((t) => t.key === tab) ? tab : 'classificacao';
   return (
-    <View style={{ flex: 1, paddingTop: spacing.md, gap: spacing.md }}>
-      <View style={{ paddingHorizontal: spacing.screenX }}>
+    <View style={{ flex: 1, paddingTop: space.s12, gap: space.s12 }}>
+      <View style={{ paddingHorizontal: space.s24 }}>
         <Tabs mode="scroll" items={tabs} value={shown} onChange={setTab} />
       </View>
       <View style={{ flex: 1 }}>

@@ -113,6 +113,14 @@ describe('estrutura', () => {
     for (const t of ['Marcadores', 'Assistências', 'Cartões']) expect(screen.queryByRole('tab', { name: t })).toBeNull();
   });
 
+  it('taça com quadro como vista principal: o primeiro separador chama-se Quadro', async () => {
+    mockParams.current = { key: 'football_96_2026' };
+    mockCompetition.current = ready({ sport: 'football', leagueId: '96', name: 'Taça de Portugal', type: 'cup', logo: null, view: { primary: 'bracket', hasTable: false, hasBracket: true } });
+    await render(ui());
+    expect(screen.getByRole('tab', { name: 'Quadro' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Classificação' })).toBeNull();
+  });
+
   it('competição em falta: mensagem; leitura falhada: erro', async () => {
     mockCompetition.current = { status: 'missing' };
     const { rerender } = await render(ui());
@@ -150,6 +158,14 @@ describe('Jornadas', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Ronda anterior' }));
     expect(roundLabel().props.children).toBe('J10');
     expect(screen.getByTestId('match-row-10a')).toBeTruthy();
+  });
+
+  it('as setas da ronda têm 44 x 44 pt', async () => {
+    await render(ui());
+    await openTab('Jornadas');
+    for (const name of ['Ronda anterior', 'Ronda seguinte']) {
+      expect(StyleSheet.flatten(screen.getByRole('button', { name }).props.style)).toMatchObject({ width: 44, height: 44 });
+    }
   });
 
   it('só os jogos do Sporting abrem o detalhe; os outros não são botão nem têm seta (F9)', async () => {
@@ -222,9 +238,40 @@ describe('tops', () => {
     expect(rows[0]!.props.accessibilityLabel).toBe('1.º Viktor Gyökeres, Sporting CP, 14');
     expect(within(rows[1]!).getByText('FC Porto')).toBeTruthy();
     expect(within(rows[2]!).getByText('9')).toBeTruthy();
-    expect(screen.getByTestId('top-photo-1', { includeHiddenElements: true }).props.source).toEqual({
+    // Foto com o PlayerPhoto partilhado (V7.1) em cada linha.
+    for (const r of rows) expect(within(r).getByTestId('player-photo-image', { includeHiddenElements: true })).toBeTruthy();
+    expect(within(rows[0]!).getByTestId('player-photo-image', { includeHiddenElements: true }).props.source).toEqual({
       uri: 'https://media.api-sports.io/football/players/1.png',
     });
+  });
+
+  it('usa a linha de líderes partilhada: barra do líder a 100 % e a dos outros proporcional', async () => {
+    mockData.topscorers = ready({ items: [top('1', 'Viktor Gyökeres', 14), top('2', 'Samu Aghehowa', 7)] });
+    await render(ui());
+    await openTab('Marcadores');
+    expect(StyleSheet.flatten(screen.getByTestId('top-bar-1').props.style).width).toBe('100%');
+    expect(StyleSheet.flatten(screen.getByTestId('top-bar-2').props.style).width).toBe('50%');
+  });
+
+  it('jogador sem foto: silhueta e nunca um espaço vazio', async () => {
+    mockData.topscorers = ready({ items: [{ ...top('1', 'Sem Foto', 3), photo: null }] });
+    await render(ui());
+    await openTab('Marcadores');
+    expect(within(screen.getByTestId('top-row-1')).getByTestId('player-silhouette', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('a 320 pt: nome muito longo e equipa longa numa linha, valor visível', async () => {
+    const long = 'Francisco Trincão Fernandes da Silva Junior de Almeida';
+    mockData.topscorers = ready({ items: [top('7', long, 12, 'Sporting Clube de Portugal B')] });
+    await render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 20, left: 0, right: 0, bottom: 0 } }}>
+        <Competicao />
+      </SafeAreaProvider>,
+    );
+    await openTab('Marcadores');
+    expect(screen.getByText(long).props.numberOfLines).toBe(1);
+    expect(screen.getByText('Sporting Clube de Portugal B').props.numberOfLines).toBe(1);
+    expect(screen.getByTestId('top-value-7').props.children).toBe(12);
   });
 
   it('nome longo numa linha com reticências; o valor não encolhe', async () => {

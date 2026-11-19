@@ -162,7 +162,8 @@ describe('CompetitionStandings: Review Focus 5 (tabela passa a eliminatórias em
     mockData.bracket = { status: 'ready', data: bracket };
     await render(<CompetitionStandings competitionKey={KEY} />);
     expect(screen.getByTestId('bracket-view')).toBeTruthy();
-    expect(screen.queryByRole('tab')).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Tabela' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Eliminatórias' })).toBeNull();
   });
 });
 
@@ -280,7 +281,8 @@ describe('StandingsTable', () => {
 describe('BracketView', () => {
   it('duas mãos 2-1 e 1-1: agregado 3-2 do servidor e vencedor a destaque', async () => {
     await render(<BracketView bracket={bracket} highlightTeamId="228" />);
-    expect(screen.getByText('Oitavos de final')).toBeTruthy();
+    expect(screen.getByTestId('stage-0-Round of 16')).toBeTruthy();
+    expect(screen.getByText('Oitavos')).toBeTruthy();
     expect(screen.getByText('Agregado 3-2')).toBeTruthy();
     expect(screen.getByText('2-1')).toBeTruthy();
     expect(screen.getByText('1-1')).toBeTruthy();
@@ -310,7 +312,8 @@ describe('BracketView', () => {
       ],
     };
     await render(<BracketView bracket={final} highlightTeamId="228" />);
-    expect(screen.getByText('1-1 (4-3 g.p.)')).toBeTruthy();
+    expect(screen.getByTestId('tie-score-f1-228').props.children).toBe('1');
+    expect(screen.getByTestId('tie-score-f1-212').props.children).toBe('1 (4-3 g.p.)');
     expect(screen.queryByText(/Agregado/)).toBeNull();
     expect(screen.getByTestId('tie-team-f1-228').props.accessibilityState).toEqual({ selected: true });
   });
@@ -337,7 +340,7 @@ describe('BracketView', () => {
       ],
     };
     await render(<BracketView bracket={open} highlightTeamId="228" />);
-    expect(screen.getByTestId('tie-leg-q1-0').props.children).toMatch(/7 abr/i);
+    expect(screen.getByTestId('tie-leg-q1-0').props.children).toBe('QUA 7 ABR · 20:00');
     expect(screen.getByTestId('tie-team-q1-228').props.accessibilityState).toEqual({ selected: false });
   });
 });
