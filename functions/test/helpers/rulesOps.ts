@@ -596,4 +596,17 @@ export const NEW_APP_OPS: RulesOp[] = [
       return deleteDoc(doc(as(env, ALICE), "gamebox/gb1"));
     },
   },
+  // Push (Plano 6)
+  {
+    name: "regista o dispositivo (services/push.ts)",
+    run: (env) =>
+      setDoc(doc(as(env, ALICE), `users/${ALICE}/devices/tok-alice`), { token: "tok-alice", platform: "android", updatedAt: serverTimestamp() }, { merge: true }),
+  },
+  {
+    name: "apaga o dispositivo ao sair (services/push.ts)",
+    run: async (env) => {
+      await seed(env, { [`users/${ALICE}/devices/tok-alice`]: { token: "tok-alice", platform: "ios" } });
+      return deleteDoc(doc(as(env, ALICE), `users/${ALICE}/devices/tok-alice`));
+    },
+  },
 ];

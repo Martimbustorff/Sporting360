@@ -49,6 +49,7 @@ export async function handleDeleteAccount(
     db.collection("pointEvents").where("uid", "==", uid),
     db.collection("point_events").where("userId", "==", uid),
     db.collectionGroup("entries").where("uid", "==", uid),
+    db.collection(`users/${uid}/devices`),
   ];
   for (const snap of await Promise.all(queries.map((q) => q.get()))) {
     for (const d of snap.docs) add(d.ref);

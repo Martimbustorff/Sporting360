@@ -194,6 +194,16 @@ describe("deleteAccount", () => {
 
   it("REAUTH_MAX_AGE_S is 300", () => expect(REAUTH_MAX_AGE_S).toBe(300));
 
+  it("apaga users/{uid}/devices/*", async () => {
+    await db.doc("users/alice/devices/tok-a1").set({ token: "tok-a1", platform: "ios" });
+    await db.doc("users/alice/devices/tok-a2").set({ token: "tok-a2", platform: "android" });
+    await db.doc("users/bob/devices/tok-b1").set({ token: "tok-b1", platform: "ios" });
+    await handleDeleteAccount(db, authAdmin, authFor("alice", 10), NOW_S);
+    expect((await db.collection("users/alice/devices").get()).empty).toBe(true);
+    expect((await db.doc("users/bob/devices/tok-b1").get()).exists).toBe(true);
+    await db.doc("users/bob/devices/tok-b1").delete();
+  });
+
   it("without a session -> unauthenticated", async () => {
     const r = await code(handleDeleteAccount(db, authAdmin, undefined, NOW_S));
     expect(r.code).toBe("unauthenticated");

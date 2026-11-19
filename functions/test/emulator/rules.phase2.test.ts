@@ -10,7 +10,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, runTransaction, increment, deleteField,
-  where,
+  serverTimestamp, where,
 } from "firebase/firestore";
 import { NEW_APP_OPS, V2_OPS } from "../helpers/rulesOps";
 
@@ -382,5 +382,42 @@ describe.each(V2_OPS)("V2: $name", (op) => {
 describe.each(NEW_APP_OPS)("app nova: $name", (op) => {
   it("allowed", async () => {
     await assertSucceeds(op.run(env));
+  });
+});
+
+describe("users/{uid}/devices", () => {
+  const DEV = "users/alice/devices/tok-1";
+  const dev = { token: "tok-1", platform: "ios", updatedAt: serverTimestamp() };
+
+  it("o dono cria, lê, lista e apaga o seu dispositivo", async () => {
+    await assertSucceeds(setDoc(doc(as("alice"), DEV), dev, { merge: true }));
+    await assertSucceeds(setDoc(doc(as("alice"), DEV), { ...dev, platform: "android" }, { merge: true }));
+    await assertSucceeds(getDoc(doc(as("alice"), DEV)));
+    await assertSucceeds(getDocs(collection(as("alice"), "users/alice/devices")));
+    await assertSucceeds(deleteDoc(doc(as("alice"), DEV)));
+  });
+
+  it("bob e anónimo não leem nem listam os dispositivos da alice (mesmo com users público na fase 2)", async () => {
+    await seed(DEV, { token: "tok-1", platform: "ios" });
+    await assertFails(getDoc(doc(as("bob"), DEV)));
+    await assertFails(getDoc(doc(anon(), DEV)));
+    await assertFails(getDocs(collection(as("bob"), "users/alice/devices")));
+    await assertFails(getDocs(collection(anon(), "users/alice/devices")));
+  });
+
+  it("bob não escreve nem apaga o dispositivo da alice", async () => {
+    await assertFails(setDoc(doc(as("bob"), DEV), dev));
+    await assertFails(setDoc(doc(anon(), DEV), dev));
+    await seed(DEV, { token: "tok-1", platform: "ios" });
+    await assertFails(setDoc(doc(as("bob"), DEV), dev, { merge: true }));
+    await assertFails(deleteDoc(doc(as("bob"), DEV)));
+  });
+
+  it("campos a mais, token diferente do id ou platform 'web': negado", async () => {
+    await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, email: "alice@example.pt" }));
+    await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, uid: "alice" }));
+    await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, token: "tok-2" }));
+    await assertFails(setDoc(doc(as("alice"), DEV), { ...dev, platform: "web" }));
+    await assertFails(setDoc(doc(as("alice"), "users/alice/devices/outro"), dev));
   });
 });
