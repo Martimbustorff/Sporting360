@@ -338,9 +338,30 @@ describe("syncFixtures: canal de TV", () => {
     expect(readSpy.mock.calls.filter(([p]) => p === "config/tvChannels")).toHaveLength(1);
     readSpy.mockRestore();
     expect((await db.doc("matches/1500003").get()).get("tv")).toBe("Canal 11");
+    const other = (await db.collection("matches").get()).docs.find((d) => d.id !== "1500003")!;
+    expect(other.get("tv")).toBe(other.get("home.id") === "228" ? "SPORT TV" : null);
     for (const d of (await db.collection("matches").get()).docs) {
-      if (d.id !== "1500003") expect(["SPORT TV", "BTV", "TVI / V+", null]).toContain(d.get("tv"));
       expect(d.data()).toHaveProperty("tv");
     }
+  });
+});
+
+describe("syncFixtures: leitura de config/tvChannels falha", () => {
+  it("os jogos escrevem-se na mesma, com tv pela regra e um aviso sem ids nem caminhos", async () => {
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const orig = db.doc.bind(db);
+    const spy = jest.spyOn(db, "doc").mockImplementation((p: string) => {
+      if (p === "config/tvChannels") throw new Error("boom projects/x/documents/config/tvChannels");
+      return orig(p);
+    });
+    const f = fakeFetch([[SEASON, "api-football/fixtures-team-season.json"]]);
+    const r = await syncFixtures(deps(f));
+    spy.mockRestore();
+    expect(r.count).toBe(4);
+    expect((await db.collection("matches").get()).size).toBe(4);
+    const tvWarns = warn.mock.calls.filter((c) => c[0] === "TV_OVERRIDES_UNAVAILABLE");
+    expect(tvWarns).toEqual([["TV_OVERRIDES_UNAVAILABLE"]]);
+    expect(JSON.stringify(warn.mock.calls.filter((c) => String(c[0]).startsWith("TV_")))).not.toContain("projects");
+    warn.mockRestore();
   });
 });

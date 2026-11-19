@@ -165,25 +165,32 @@ export async function maintainLoans(db: Firestore, now: Date): Promise<{ count: 
   return { count: changed + purged.deleted, failed: failed + purged.failed };
 }
 
+/** Máximo de empréstimos apagados por consulta e por execução: um atraso grande não passa o limite de tempo; a execução seguinte continua. */
+export const PURGE_CAP = 300;
+const PURGE_BATCH = 100;
+
 /** Apaga os empréstimos com now >= min(expiresAt, cancelledAt ?? expiresAt) + 7 dias, e o número. Duas consultas de campo único. */
-async function purgeOldLoans(db: Firestore, now: Date): Promise<{ deleted: number; failed: number }> {
+export async function purgeOldLoans(db: Firestore, now: Date, cap: number = PURGE_CAP): Promise<{ deleted: number; failed: number }> {
   const cutoff = Timestamp.fromMillis(now.getTime() - LOAN_RETENTION_MS);
   const [expired, cancelled] = await Promise.all([
-    db.collection("loans").where("expiresAt", "<=", cutoff).get(),
-    db.collection("loans").where("cancelledAt", "<=", cutoff).get(),
+    db.collection("loans").where("expiresAt", "<=", cutoff).limit(cap).get(),
+    db.collection("loans").where("cancelledAt", "<=", cutoff).limit(cap).get(),
   ]);
-  const byId = new Map([...expired.docs, ...cancelled.docs].map((d) => [d.id, d]));
+  const refs = [...new Map([...expired.docs, ...cancelled.docs].map((d) => [d.id, d])).values()];
   let deleted = 0;
   let failed = 0;
-  for (const d of byId.values()) {
+  for (let i = 0; i < refs.length; i += PURGE_BATCH) {
+    const part = refs.slice(i, i + PURGE_BATCH);
     try {
       const batch = db.batch();
-      batch.delete(secretRef(db, d.id));
-      batch.delete(d.ref);
+      for (const d of part) {
+        batch.delete(secretRef(db, d.id));
+        batch.delete(d.ref);
+      }
       await batch.commit();
-      deleted++;
+      deleted += part.length;
     } catch {
-      failed++;
+      failed += part.length;
     }
   }
   return { deleted, failed };

@@ -98,6 +98,26 @@ const competitionRoutes = (league: number): Array<[RegExp, any]> => [
   [new RegExp(`players/top(scorers|assists|yellowcards|redcards)\\?league=${league}&`), "api-football/topscorers-94.json"],
 ];
 
+describe("tick: config/tvChannels indisponível", () => {
+  it("o jogo escreve-se na mesma e sai um aviso sem ids nem caminhos", async () => {
+    clock = KO + 67 * MIN;
+    await seedFrom(fx("fixture-live-2h.json"), clock);
+    const warn = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
+    const orig = db.doc.bind(db);
+    const spy = jest.spyOn(db, "doc").mockImplementation((p: string) => {
+      if (p === "config/tvChannels") throw new Error("boom projects/x/documents/config/tvChannels");
+      return orig(p);
+    });
+    const f = fakeFetch([[byIds, (_u, n) => envelope([fx("fixture-live-2h.json", { elapsed: 67 + n })])]]);
+    await tick(deps(f));
+    spy.mockRestore();
+    expect((await db.doc(`matches/${ID}`).get()).get("elapsed")).toBe(70);
+    expect((await db.doc(`matches/${ID}`).get()).get("tv")).toBe("SPORT TV");
+    expect(warn.mock.calls.filter((c) => c[0] === "TV_OVERRIDES_UNAVAILABLE")).toEqual([["TV_OVERRIDES_UNAVAILABLE"]]);
+    warn.mockRestore();
+  });
+});
+
 describe("tick: sem nada a fazer", () => {
   it("sem jogos na janela → calls 0 e nenhum pedido", async () => {
     const f = fakeFetch([]);

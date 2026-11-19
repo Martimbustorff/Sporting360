@@ -1,4 +1,5 @@
 import type { Firestore } from "firebase-admin/firestore";
+import { logger } from "firebase-functions";
 import { SPORTING_TEAM_ID } from "../config/brand";
 
 // Canal de TV do jogo (Plano 9). Sem pedidos à API: sai da liga, da época, do nome da equipa da casa e das exceções
@@ -9,7 +10,7 @@ export const TV_SEASON = 2026;
 const DEFAULT_CHANNEL = "SPORT TV";
 
 const norm = (s: string): string =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 /**
  * Canal de um jogo do Sporting. Exceção (qualquer jogo, qualquer competição) ganha à regra; texto vazio dá null.
@@ -51,4 +52,14 @@ export async function loadTvOverrides(db: Firestore): Promise<Record<string, str
   const raw = (await db.doc("config/tvChannels").get()).get("overrides") as unknown;
   if (typeof raw !== "object" || raw === null) return {};
   return Object.fromEntries(Object.entries(raw as Record<string, unknown>).filter(([, v]) => typeof v === "string")) as Record<string, string>;
+}
+
+/** Como loadTvOverrides, mas nunca bloqueia os resultados: se a leitura falhar, um aviso sem ids nem caminhos e segue sem exceções. */
+export async function loadTvOverridesSafe(db: Firestore): Promise<Record<string, string>> {
+  try {
+    return await loadTvOverrides(db);
+  } catch {
+    logger.warn("TV_OVERRIDES_UNAVAILABLE");
+    return {};
+  }
 }

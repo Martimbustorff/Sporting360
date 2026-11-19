@@ -366,7 +366,7 @@ describe("mapFixture: jogo por começar", () => {
 describe("mapFixture: canal de TV", () => {
   it("grava tv com a regra e com as exceções, sem pedidos novos", () => {
     const f = load("fixture-live-2h");
-    expect(mapFixture(f, noPrev).match.tv).toBe(f.teams.home.id === 228 ? "SPORT TV" : f.teams.home.name.toLowerCase().includes("benfica") ? "BTV" : "SPORT TV");
+    expect(mapFixture(f, noPrev).match.tv).toBe("SPORT TV");
     expect(mapFixture(f, { ...noPrev, tvOverrides: { [String(f.fixture.id)]: "Canal 11" } }).match.tv).toBe("Canal 11");
     expect(mapFixture(f, { ...noPrev, tvOverrides: { [String(f.fixture.id)]: "" } }).match.tv).toBeNull();
   });

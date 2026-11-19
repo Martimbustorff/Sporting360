@@ -4,7 +4,7 @@ import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import type { MatchDoc } from "../../src/model/types";
 import { handleCreateLoan, handleClaimLoan } from "../../src/callables/loans";
-import { cancelLoansForGamebox, cancelLoansForUser, cancelLoansOnGameboxEdit, maintainLoans } from "../../src/loans/lifecycle";
+import { cancelLoansForGamebox, cancelLoansForUser, cancelLoansOnGameboxEdit, maintainLoans, purgeOldLoans } from "../../src/loans/lifecycle";
 
 let db: Firestore;
 const NOW = new Date("2026-11-19T12:00:00Z");
@@ -288,5 +288,21 @@ describe("limpeza dos empréstimos (7 dias)", () => {
     await age(a, 9 * D, null);
     await maintainLoans(db, NOW);
     expect(await maintainLoans(db, NOW)).toEqual({ count: 0, failed: 0 });
+  });
+
+  it("um atraso grande: cada execução apaga no máximo o limite por consulta e a seguinte continua", async () => {
+    const ids: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const id = `old${i}_${seq}_${Date.now()}`.padEnd(22, "x");
+      ids.push(id);
+      await db.doc(`loans/${id}`).set({ expiresAt: Timestamp.fromMillis(NOW.getTime() - 9 * D), cancelledAt: null });
+      await db.doc(`loans/${id}/secret/number`).set({ number: NUM });
+    }
+    expect(await purgeOldLoans(db, NOW, 2)).toEqual({ deleted: 2, failed: 0 });
+    expect((await db.collection("loans").get()).size).toBe(3);
+    expect(await purgeOldLoans(db, NOW, 2)).toEqual({ deleted: 2, failed: 0 });
+    expect(await purgeOldLoans(db, NOW, 2)).toEqual({ deleted: 1, failed: 0 });
+    expect((await db.collection("loans").get()).size).toBe(0);
+    for (const id of ids) expect(await hasSecret(id)).toBe(false);
   });
 });
