@@ -249,6 +249,20 @@ describe('cronologia em duas colunas', () => {
     expect(within(rows[0]!).getByLabelText('VAR')).toBeTruthy();
   });
 
+  it('dois lances no mesmo minuto e tempo extra: mais recente primeiro é a ordem inversa da API', async () => {
+    mockDetails.current = {
+      events: ready({
+        items: [
+          ev({ minute: 30, extra: 2, playerName: 'PrimeiroDaApi', teamId: '228' }),
+          ev({ minute: 30, extra: 2, playerName: 'SegundoDaApi', teamId: '217' }),
+        ],
+      }),
+    };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    const names = screen.getAllByTestId('event-row').map((r) => within(r).getAllByText(/DaApi$/)[0]!.props.children);
+    expect(names).toEqual(['SegundoDaApi', 'PrimeiroDaApi']);
+  });
+
   it.each([['FT'], ['LIVE']] as const)('mais recente primeiro (%s): partes com a última no topo e tempo extra ordenado', async (status) => {
     mockDetails.current = {
       events: ready({

@@ -259,4 +259,40 @@ describe('Estatísticas por parte', () => {
     expect(screen.queryByTestId('stats-part-selector')).toBeNull();
     expect(screen.getAllByTestId('stat-row')).toHaveLength(8);
   });
+
+  it('intervalo: sem a opção "2.ª parte" e uma 2.ª parte guardada volta ao Total', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    const view = await render(<StatsTab match={match('LIVE')} />);
+    await fireEvent.press(screen.getByLabelText('2.ª parte'));
+    expect(texts('stat-home')[1]).toBe('7');
+    await view.rerender(<StatsTab match={match('HT')} />);
+    expect(screen.queryByLabelText('2.ª parte')).toBeNull();
+    expect(screen.getByLabelText('1.ª parte')).toBeTruthy();
+    expect(texts('stat-home').slice(0, 3)).toEqual(['55%', '1,4', '12']);
+  });
+
+  it('depois do prolongamento (AET e PEN) não há "2.ª parte": o total inclui o prolongamento', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    for (const status of ['AET', 'PEN'] as const) {
+      const view = await render(<StatsTab match={match(status)} />);
+      expect(screen.getByLabelText('1.ª parte')).toBeTruthy();
+      expect(screen.queryByLabelText('2.ª parte')).toBeNull();
+      await view.unmount();
+    }
+  });
+
+  it('prolongamento em curso (estado ET, BT ou P) não mostra "2.ª parte"', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    for (const statusRaw of ['ET', 'BT', 'P']) {
+      const view = await render(<StatsTab match={{ ...match('LIVE'), statusRaw } as Match} />);
+      expect(screen.queryByLabelText('2.ª parte')).toBeNull();
+      await view.unmount();
+    }
+  });
+
+  it('na 2.ª parte (2H) a opção aparece', async () => {
+    mockDetails.current = { statistics: { status: 'ready', data: withHalves() } };
+    await render(<StatsTab match={{ ...match('LIVE'), statusRaw: '2H' } as Match} />);
+    expect(screen.getByLabelText('2.ª parte')).toBeTruthy();
+  });
 });

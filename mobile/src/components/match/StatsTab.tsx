@@ -28,6 +28,17 @@ const PARTS: { key: StatPart; label: string }[] = [
   { key: 'second', label: '2.ª parte' },
 ];
 
+/**
+ * "2.ª parte" (total menos 1.ª) só vale com a 2.ª parte a decorrer ou o jogo terminado nos 90': no intervalo seria tudo
+ * zero e, com prolongamento (AET, PEN ou estados ET, BT, P), o total da API inclui-o e não seria só a 2.ª parte.
+ */
+function secondHalfAvailable(match: Match): boolean {
+  if (match.status === 'HT' || match.status === 'AET' || match.status === 'PEN') return false;
+  const raw = (match as { statusRaw?: string | null }).statusRaw;
+  if (raw === 'ET' || raw === 'BT' || raw === 'P') return false;
+  return match.score.extratime == null;
+}
+
 export function StatsTab({ match }: { match: Match }) {
   const [part, setPart] = useState<StatPart>('total');
   const stats = useMatchDetail(match.id, 'statistics');
@@ -40,7 +51,10 @@ export function StatsTab({ match }: { match: Match }) {
   if (!doc && !preGame && state !== 'live' && state !== 'halftime') return <EmptyState icon="info" text={NO_STATS} />;
 
   const halves = !preGame && hasHalves(doc);
-  const rows = partRows(doc, halves ? part : 'total', match.home.id, match.away.id);
+  const items = secondHalfAvailable(match) ? PARTS : PARTS.filter((p) => p.key !== 'second');
+  // Uma 2.ª parte escolhida que deixou de existir (intervalo, prolongamento) volta ao Total.
+  const shown: StatPart = halves && items.some((p) => p.key === part) ? part : 'total';
+  const rows = partRows(doc, shown, match.home.id, match.away.id);
   const byKey = (key: string) => rows.find((r) => r.key === key) ?? { label: '', home: '0', away: '0' };
   const bars = rows.filter((r) => r.key !== 'Yellow Cards' && r.key !== 'Red Cards');
   const yellow = byKey('Yellow Cards');
@@ -55,7 +69,7 @@ export function StatsTab({ match }: { match: Match }) {
       }}
     >
       <OfflineBanner visible={stats.status === 'ready' && stats.fromCache === true} />
-      {halves ? <Segmented testID="stats-part-selector" items={PARTS} value={part} onChange={setPart} /> : null}
+      {halves ? <Segmented testID="stats-part-selector" items={items} value={shown} onChange={setPart} /> : null}
       {bars.map((r) => (
         <StatRow key={r.key} label={r.label} home={r.home} away={r.away} muted={preGame} />
       ))}

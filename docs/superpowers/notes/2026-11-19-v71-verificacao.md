@@ -43,7 +43,7 @@ Legenda: "intencional" = decisão já tomada (não se muda); "corrigido" = difer
 | 12 | `app/(app)/gamebox/bilhete.tsx` | Deslizar entre as GameBox do utilizador (pela ordem guardada, a abrir na do `id`) com pontos de página; o frame não os tem | acrescentado: pontos de página, pedido do Martim; frame por desenhar |
 | 29 Prognóstico | `PredictionTab.tsx`, `Stepper.tsx` | Chip do canal de TV não aparece; emblema escondido abaixo de 360 pt | intencional |
 | 30 Partilha | `ShareCard.tsx`, `ModalSheet.tsx` | Folha escura em Modal sem título e grabber ao centro; QR escuro sobre branco com margem branca (bloco de 60 pt) | intencional |
-| 31 Estatísticas | `StatsTab.tsx`, `StatRow.tsx` | Alternador Jogo / 1.ª parte / 2.ª parte escondido; conjunto de 10 estatísticas (xG e Faltas) em vez de "Passes certos" | intencional: o servidor não grava as partes (pendente Martim); a regra de negócio das estatísticas ganha |
+| 31 Estatísticas | `StatsTab.tsx`, `StatRow.tsx` | Alternador Jogo / 1.ª parte / 2.ª parte escondido; conjunto de 10 estatísticas (xG e Faltas) em vez de "Passes certos" | corrigido (Martim), sem pedido extra à API: alternador Total / 1.ª parte / 2.ª parte a partir do instantâneo do intervalo (`firstHalf`, gravado pelo ticker em HT); só com `firstHalf`; "2.ª parte" = total menos 1.ª nas contagens, sem posse, e escondida no intervalo e com prolongamento. O conjunto de 10 estatísticas mantém-se (a regra de negócio ganha) |
 | 32 Formações | `LineupsTab.tsx`, `Pitch.tsx` | Linha "Treinador" e textos de estado extra; resto igual | intencional (sem Figma) |
 | 33 Vídeos | `VideosTab.tsx`, `VideoPlayer.tsx` | Rótulo do vídeo de golo era "Golo"; o frame diz "LANCE" | corrigido (teste atualizado) |
 | 33 | `VideoPlayer.tsx` | Duração do vídeo escondida | intencional: o servidor não grava `duration`; decidido fora (Martim, 19/11) |
@@ -140,12 +140,12 @@ Método: leitura do código contra o frame, sem build nem simulador; a verifica�
 
 | | Frames verificados | Correções | Pendentes Martim |
 |---|---|---|---|
-| Grupo A | 22 | 8 | 6 |
+| Grupo A | 22 | 9 | 5 |
 | Grupo B | 22 | 6 | 1 |
 | Grupo C | 12 | 9 | 1 |
-| Total | 56 | 23 | 8 |
+| Total | 56 | 24 | 7 |
 
-Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Dois dos pendentes (09, 31) estão dentro de linhas marcadas como intencionais: a diferença é intencional hoje, mas a decisão de produto fica por tomar. Decididos a 19/11: 03 Gameback (corrigido), 02 "Termos e privacidade" (mantém-se como no design), 10 desempate (corrigido com confronto direto), 33 duração do vídeo (fora).
+Diferenças intencionais registadas: 52 (decididas pelo Martim ou equivalentes nativos, não se mudam). Um dos pendentes (09) está dentro de uma linha marcada como intencional: a diferença é intencional hoje, mas a decisão de produto fica por tomar. Decididos a 19/11: 03 Gameback (corrigido), 02 "Termos e privacidade" (mantém-se como no design), 10 desempate (corrigido com confronto direto), 31 alternador de partes (corrigido com o instantâneo do intervalo), 33 duração do vídeo (fora).
 
 Testes finais: npx jest 133 suites, 2044 ok; tsc limpo; check:tokens ok.
 
