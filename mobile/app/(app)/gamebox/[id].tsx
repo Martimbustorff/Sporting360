@@ -106,6 +106,7 @@ function LoanSection({ gameboxId, number, venue }: { gameboxId: string; number: 
               </Text71>
             </View>
           </View>
+          <Text71 variant="caption12" color="textMuted">{LOAN_TEXT.editNote}</Text71>
           {active.openedAt ? null : (
             <PrimaryButton
               label={LOAN_TEXT.shareAgain}

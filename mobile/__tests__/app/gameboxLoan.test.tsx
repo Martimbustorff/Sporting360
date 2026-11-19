@@ -221,7 +221,7 @@ describe('Emprestar: criar e partilhar', () => {
     await fireEvent.press(lendButton());
     await fireEvent.press(screen.getByRole('button', { name: 'Emprestar' }));
     await flush();
-    expect(screen.getByText('Já tens um empréstimo ativo para este jogo.')).toBeTruthy();
+    expect(screen.getByText('Esta GameBox já está emprestada.')).toBeTruthy();
     expect(share).not.toHaveBeenCalled();
     expect(screen.getByTestId('modal-sheet')).toBeTruthy();
   });
@@ -248,6 +248,16 @@ describe('Empréstimo ativo', () => {
     expect(screen.getByText('Ainda não aberto')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cancelar empréstimo' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Emprestar para o próximo jogo' })).toBeNull();
+  });
+
+  it('mostra o aviso de que alterar o número ou o lugar cancela o empréstimo; sem empréstimo ativo não aparece', async () => {
+    mockLoans.current = { status: 'ready', data: [loan()] };
+    const { unmount } = await render(ui());
+    expect(screen.getByText('Se alterares o número ou o lugar, o empréstimo é cancelado.')).toBeTruthy();
+    await unmount();
+    mockLoans.current = { status: 'ready', data: [] };
+    await render(ui());
+    expect(screen.queryByText('Se alterares o número ou o lugar, o empréstimo é cancelado.')).toBeNull();
   });
 
   it('aberto: "Aberto por {nome} às {HH:MM}"', async () => {

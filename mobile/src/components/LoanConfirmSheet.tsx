@@ -27,16 +27,17 @@ export const LOAN_TEXT = {
   lentFor: 'Emprestada para',
   notOpened: 'Ainda não aberto',
   cancel: 'Cancelar empréstimo',
-  // SEM FIGMA, por desenhar: botão de partilhar o link outra vez (empréstimo ainda não aberto).
+  // Figma 45Lc (botão 4989:11988): partilhar o link outra vez (empréstimo ainda não aberto).
   shareAgain: 'Partilhar link outra vez',
   cancelTitle: 'Cancelar empréstimo?',
   cancelBody: 'Quem recebeu deixa de ver a GameBox para este jogo.',
   back: 'Voltar',
   lentForThisGame: 'Emprestada para este jogo',
+  editNote: 'Se alterares o número ou o lugar, o empréstimo é cancelado.',
   lentForThisGameHint: 'Cancela o empréstimo para voltares a usar o código.',
   venue: { stadium: `Estádio ${VENUE_NAMES.stadium}`, pavilion: `Pavilhão ${VENUE_NAMES.pavilion}` },
   errors: {
-    exists: 'Já tens um empréstimo ativo para este jogo.',
+    exists: 'Esta GameBox já está emprestada.',
     offline: 'Sem ligação. Tenta outra vez quando houver rede.',
     'not-next': 'Este jogo já não está disponível para empréstimo.',
     'not-home': 'Este jogo já não está disponível para empréstimo.',

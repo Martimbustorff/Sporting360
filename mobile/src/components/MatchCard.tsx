@@ -3,7 +3,7 @@
 // opcional entre eles: o prognóstico põe aí as caixas do resultado) e, por baixo, o recinto e os `children` de cada ecrã.
 // A View do cartão vai por ref (captura do ShareCard com react-native-view-shot); `collapsable={false}` para o Android não
 // a achatar. A largura é a do design quando se passa `width`; sem ela o cartão ocupa a largura do contentor.
-import { forwardRef, type ComponentRef, type ReactNode } from 'react';
+import { forwardRef, useId, type ComponentRef, type ReactNode } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
@@ -48,6 +48,8 @@ export const MatchCard = forwardRef<ComponentRef<typeof View>, MatchCardProps>(f
   { home, away, competition, round, kickoff, venue, center, header, children, width, onLayout, testID, kickoffTestID, crestTestIDPrefix },
   ref,
 ) {
+  // Um id por instância: com vários cartões no ecrã, ids iguais fariam um degradê referir-se ao de outro cartão.
+  const gradId = `matchCardGrad${useId().replace(/[^A-Za-z0-9_-]/g, '')}`;
   return (
     <View
       ref={ref}
@@ -68,12 +70,12 @@ export const MatchCard = forwardRef<ComponentRef<typeof View>, MatchCardProps>(f
     >
       <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" pointerEvents="none">
         <Defs>
-          <LinearGradient id="matchCardGrad" x1="0" y1="0" x2="0" y2="1">
+          <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={colors.shareCardTop} />
             <Stop offset="1" stopColor={colors.bg} />
           </LinearGradient>
         </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#matchCardGrad)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradId})`} />
       </Svg>
 
       {header}
