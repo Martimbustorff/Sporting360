@@ -16,7 +16,7 @@ import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
 import { NextMatchCard } from '@/components/NextMatchCard';
 import { Touchable } from '@/components/Touchable';
-import { useNow, useSecondNow } from '@/data/clock';
+import { useNow } from '@/data/clock';
 import { useAppConfig, useMyUser, usePublicProfile } from '@/data/hooks';
 import { useHomeMatches } from '@/data/sports';
 import { useMyMvpVote } from '@/data/user';
@@ -78,13 +78,13 @@ export default function Home() {
   const started = match !== null && match.status !== 'NS' && match.status !== 'PST' && match.status !== 'CANC';
   const vote = useMyMvpVote(match?.id ?? '', started ? uid : null);
   const votedMvp = vote.status === 'ready';
-  const coarse = homeMatchMoment({ match, now: minute, predictionOpen: false, mvpOpen: false, votedMvp, loading });
-  const now = useSecondNow(focused && coarse.state === 'matchday', minute);
+  // Enquanto o voto carrega é desconhecido: mostra "Ver jogo" e não "Vota no MVP".
+  const voteKnown = vote.status !== 'loading';
   const moment = homeMatchMoment({
     match,
-    now,
-    predictionOpen: match ? predictionOpen(match, now) : false,
-    mvpOpen: match ? mvpWindow(match, now).state === 'open' : false,
+    now: minute,
+    predictionOpen: match ? predictionOpen(match, minute) : false,
+    mvpOpen: match && voteKnown ? mvpWindow(match, minute).state === 'open' : false,
     votedMvp,
     loading,
   });
@@ -144,7 +144,8 @@ export default function Home() {
         <NextMatchCard
           moment={moment}
           match={match}
-          now={now}
+          now={minute}
+          ticking={focused}
           error={matches.status === 'error'}
           onOpenMatch={(id) => router.push(`/jogo/${id}`)}
           onAction={(href) => router.push(href as Href)}

@@ -6,12 +6,13 @@
 // estado no lugar da hora, como o GameHeader). O brilho do esqueleto é um pulsar de opacidade (sem gradiente).
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
 import type { Match } from '@/data/schemas';
+import { useSecondNow } from '@/data/clock';
 import { countdownClock, type HomeMoment } from '@/lib/homeMatchMoment';
 import { competitionText, minuteText, stateLabel, toGameHeaderVM, uiState } from '@/lib/matchVM';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
@@ -42,8 +43,10 @@ const ACCESS_LABEL = { next: 'Próximo jogo', matchday: 'Próximo jogo', live: '
 export type NextMatchCardProps = {
   moment: HomeMoment;
   match: Match | null;
-  /** Relógio da contagem (ao segundo em "Dia de jogo"). */
+  /** Relógio de base (ao minuto). A contagem do "Dia de jogo" anda ao segundo sozinha, em `ticking`. */
   now: Date;
+  /** Ecrã visível: só então a contagem tica ao segundo (fora disto fica no relógio de base). */
+  ticking?: boolean;
   /** Falha de leitura: o estado "sem jogo" com "Tentar outra vez". */
   error?: boolean;
   onOpenMatch: (id: string) => void;
@@ -140,11 +143,32 @@ function Chip({ label, tone, onPress }: { label: string; tone: 'primary' | 'subt
   );
 }
 
+/** Contagem ao segundo isolada: só esta folha volta a desenhar-se a cada segundo, não a Home. */
+function Countdown({ to, base, ticking }: { to: Date; base: Date; ticking: boolean }) {
+  const [running, setRunning] = useState(true);
+  const now = useSecondNow(ticking && running, base);
+  const left = to.getTime() - now.getTime();
+  useEffect(() => {
+    if (left <= 0) setRunning(false);
+  }, [left]);
+  return (
+    <Text71
+      variant="countdown32"
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      minimumFontScale={layout.matchCardCountdownMinScale}
+      testID="next-countdown"
+    >
+      {countdownClock(running ? left : 0)}
+    </Text71>
+  );
+}
+
 function scoreLine(m: Match): string {
   return `${m.score.home ?? 0} - ${m.score.away ?? 0}`;
 }
 
-function Teams({ vm, children }: { vm: ReturnType<typeof toGameHeaderVM>; children: ReactNode }) {
+function Teams({ vm, wide, children }: { vm: ReturnType<typeof toGameHeaderVM>; wide?: boolean; children: ReactNode }) {
   const team = (t: TeamVM, side: 'home' | 'away') => (
     <View style={styles.team}>
       <TeamCrest team={t} size="md" testID={`next-crest-${side}`} />
@@ -154,15 +178,16 @@ function Teams({ vm, children }: { vm: ReturnType<typeof toGameHeaderVM>; childr
   return (
     <>
       {team(vm.home, 'home')}
-      <View style={styles.center}>{children}</View>
+      <View style={[styles.center, wide ? { flexGrow: layout.matchCardCenterWideGrow } : null]}>{children}</View>
       {team(vm.away, 'away')}
     </>
   );
 }
 
-export function NextMatchCard({ moment, match, now, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry }: NextMatchCardProps) {
+export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry }: NextMatchCardProps) {
   const { state, action } = moment;
   let content: ReactNode;
+  let summary = '';
 
   if (state === 'loading') {
     content = <Loading />;
@@ -180,6 +205,17 @@ export function NextMatchCard({ moment, match, now, error = false, onOpenMatch, 
     const badge =
       state === 'live' ? NEXT_MATCH_TEXT.live : state === 'finished' ? NEXT_MATCH_TEXT.finished : comp.round;
     const kick = formatTime(match.kickoff);
+    const names = `${vm.home.name} contra ${vm.away.name}`;
+    summary =
+      state === 'live'
+        ? `${names}, ao vivo, ${scoreLine(match)}`
+        : state === 'finished'
+          ? `${names}, terminado, ${scoreLine(match)}`
+          : state === 'matchday'
+            ? `${names}, hoje às ${kick}`
+            : off
+              ? `${names}, ${stateLabel(ui).toLowerCase()}`
+              : `${names}, ${formatCardDate(match.kickoff)} às ${kick}`;
     let eyebrow: string;
     let eyebrowColor: 'textMuted' | 'primaryOnDark' = 'textMuted';
     let main: ReactNode;
@@ -192,11 +228,7 @@ export function NextMatchCard({ moment, match, now, error = false, onOpenMatch, 
       main = <Text71 variant="display40" numberOfLines={1} testID="next-score">{scoreLine(match)}</Text71>;
     } else if (state === 'matchday') {
       eyebrow = `${NEXT_MATCH_TEXT.today} · ${kick}`;
-      main = (
-        <Text71 variant="countdown32" numberOfLines={1} testID="next-countdown">
-          {countdownClock((moment.countdownTo ?? match.kickoff).getTime() - now.getTime())}
-        </Text71>
-      );
+      main = <Countdown to={moment.countdownTo ?? match.kickoff} base={now} ticking={ticking} />;
     } else {
       eyebrow = formatCardDate(match.kickoff);
       main = off ? (
@@ -216,7 +248,7 @@ export function NextMatchCard({ moment, match, now, error = false, onOpenMatch, 
           ) : null}
         </View>
         <View style={styles.body} pointerEvents="box-none">
-          <Teams vm={vm}>
+          <Teams vm={vm} wide={state === 'matchday'}>
             <Text71 variant="eyebrow13" color={eyebrowColor} numberOfLines={1}>{eyebrow}</Text71>
             {main}
             {action ? (
@@ -239,7 +271,7 @@ export function NextMatchCard({ moment, match, now, error = false, onOpenMatch, 
         {tappable ? (
           <Touchable
             accessibilityRole="button"
-            accessibilityLabel={ACCESS_LABEL[state as keyof typeof ACCESS_LABEL]}
+            accessibilityLabel={`${ACCESS_LABEL[state as keyof typeof ACCESS_LABEL]}: ${summary}`}
             onPress={() => onOpenMatch(match.id)}
             feedback="none"
             style={StyleSheet.absoluteFill}

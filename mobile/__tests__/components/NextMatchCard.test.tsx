@@ -1,6 +1,7 @@
 // Plano 7, Tarefa 4: cartão do próximo jogo (Figma 4920:5140), todos os estados, altura fixa e nomes longos.
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NextMatchCard, NEXT_MATCH_TEXT } from '@/components/NextMatchCard';
 import type { GameStatus, Match } from '@/data/schemas';
 import { homeMatchMoment, type HomeMoment } from '@/lib/homeMatchMoment';
@@ -46,7 +47,7 @@ it('Próximo: competição, ronda, data, hora e equipas; tocar abre o jogo', asy
   expect(screen.getByText('Sporting CP')).toBeTruthy();
   expect(screen.getByText('SC Braga')).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'PROGNÓSTICO' })).toBeNull();
-  await fireEvent.press(screen.getByRole('button', { name: 'Próximo jogo' }));
+  await fireEvent.press(screen.getByRole('button', { name: /^Próximo jogo/ }));
   expect(handlers.onOpenMatch).toHaveBeenCalledWith('1001');
 });
 
@@ -82,7 +83,7 @@ it('Ao vivo: badge, minuto, resultado e Ver jogo', async () => {
   expect(screen.getByTestId('next-score').props.children).toBe('2 - 1');
   await fireEvent.press(screen.getByRole('button', { name: 'VER JOGO' }));
   expect(handlers.onAction).toHaveBeenCalledWith('/jogo/1001');
-  expect(screen.getByRole('button', { name: 'Jogo ao vivo' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Jogo ao vivo/ })).toBeTruthy();
 });
 
 it('Intervalo mostra "Intervalo" no lugar do minuto', async () => {
@@ -114,7 +115,7 @@ it('Sem jogo: mensagem e Ver Agenda (o cartão não é um botão de jogo)', asyn
   await view(null, moment(null));
   expect(screen.getByText(NEXT_MATCH_TEXT.none)).toBeTruthy();
   expect(screen.getByText(NEXT_MATCH_TEXT.noneHint)).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Próximo jogo' })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Próximo jogo/ })).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: NEXT_MATCH_TEXT.agenda }));
   expect(handlers.onOpenAgenda).toHaveBeenCalled();
 });
@@ -154,5 +155,47 @@ describe('altura fixa de 192 pt e nomes longos', () => {
     for (const name of ['Gil Vicente Futebol Clube', 'Taça da Liga Portugal Betclic Feminina']) {
       for (const t of screen.queryAllByText(name)) expect(t.props.numberOfLines).toBe(name.startsWith('Gil') ? 1 : 1);
     }
+  });
+});
+
+describe('largura 320 pt e acessibilidade do cartão', () => {
+  const small = (ui: React.ReactElement) => (
+    <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+      <View style={{ width: 320 }}>{ui}</View>
+    </SafeAreaProvider>
+  );
+  it('dia de jogo: contagem numa linha que encolhe; nomes longos continuam a cortar', async () => {
+    const m = match('NS', { away: { id: '300', name: 'Gil Vicente Futebol Clube', logo: null } } as Partial<Match>);
+    const now = new Date('2026-12-21T15:45:23Z');
+    await render(small(<NextMatchCard moment={moment(m, { predictionOpen: true }, now)} match={m} now={now} {...handlers} />));
+    const c = screen.getByTestId('next-countdown');
+    expect(c.props.numberOfLines).toBe(1);
+    expect(c.props.adjustsFontSizeToFit).toBe(true);
+    expect(c.props.minimumFontScale).toBe(layout.matchCardCountdownMinScale);
+    expect(screen.getByText('Gil Vicente Futebol Clube').props.numberOfLines).toBe(1);
+  });
+  it('a contagem ao segundo para quando chega ao apito', async () => {
+    jest.useFakeTimers({ now: new Date('2026-12-21T17:59:58Z') });
+    try {
+      const m = match('NS');
+      const now = new Date('2026-12-21T17:59:58Z');
+      await render(<NextMatchCard moment={moment(m, {}, now)} match={m} now={now} ticking {...handlers} />);
+      expect(screen.getByTestId('next-countdown').props.children).toBe('00:00:02');
+      await act(async () => {
+        jest.advanceTimersByTime(5000);
+      });
+      expect(screen.getByTestId('next-countdown').props.children).toBe('00:00:00');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+  it('a etiqueta do cartão inclui equipas e hora, resultado ou estado', async () => {
+    const m = match('NS', {}, '2026-12-26T18:00:00Z');
+    const r = await view(m, moment(m));
+    expect(screen.getByRole('button', { name: 'Próximo jogo: Sporting CP contra SC Braga, SÁB 26 DEZ às 18:00' })).toBeTruthy();
+    r.unmount();
+    const l = match('LIVE', { elapsed: 10, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } as Match['score'] });
+    await view(l, moment(l, {}, new Date('2026-12-21T18:20:00Z')));
+    expect(screen.getByRole('button', { name: 'Jogo ao vivo: Sporting CP contra SC Braga, ao vivo, 1 - 0' })).toBeTruthy();
   });
 });

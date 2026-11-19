@@ -286,7 +286,7 @@ export const layout = {
   settingsFooterBottom: 24, // "Log Out" (733) acima do indicador de início; o Screen já aplica a safe area
   settingsFormGap: 32, // Mudar password 348:26562: campos a 32 entre si
   settingsButtonTop: 48, // SEM FIGMA no ecrã (teclado no frame): folga do último campo ao "Guardar"
-  sheetShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
+  sheetShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
   // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
   emptyIcon: 122,
   emptyGap: 16,
@@ -371,7 +371,9 @@ export const layout = {
   matchCardIcon: 28, // calendário do estado "Sem jogo" (4920:5117)
   matchCardIconOpacity: 0.4, // nota 01b: ícone a 40 %
   matchCardBadgePadY: 3, // badge da ronda e canal de TV (4920:5094)
-  matchCardShadow: { shadowColor: '#000000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 12 },
+  matchCardShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 12 },
+  matchCardCenterWideGrow: 2, // dia de jogo: a coluna central ganha espaço para a contagem a 320 pt
+  matchCardCountdownMinScale: 0.75, // a contagem encolhe até 75 % em vez de cortar
   shimmerMin: 0.55, // esqueleto: opacidade mínima do brilho
   shimmerMs: 900,
   // V7.1 Home backdrop (Figma 4920:5141)

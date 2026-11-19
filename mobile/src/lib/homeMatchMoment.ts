@@ -57,7 +57,10 @@ export function homeMatchMoment(input: HomeMomentInput): HomeMoment {
     };
   }
 
-  // NS: dia de jogo só no próprio dia, em Lisboa.
+  // NS com o apito já passado (o feed ainda não passou a LIVE): "próximo" com Ver jogo, sem contagem (o relógio pára).
+  if (m.kickoff.getTime() <= now.getTime()) return { state: 'next', action: open(m), countdownTo: null };
+
+  // NS: dia de jogo só no próprio dia, em Lisboa, e antes do apito.
   if (sameLisbonDay(m.kickoff, now)) {
     return {
       state: 'matchday',

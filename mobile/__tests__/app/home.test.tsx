@@ -188,14 +188,14 @@ describe('próximo jogo', () => {
     await render(ui());
     expect(screen.getByText('Liga Portugal')).toBeTruthy();
     expect(screen.getByText('J11')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Próximo jogo' }));
+    await fireEvent.press(screen.getByRole('button', { name: /^Próximo jogo/ }));
     expect(router.push).toHaveBeenCalledWith('/jogo/1001');
   });
 
   it('sem jogos mostra o cartão vazio e Ver agenda abre /agenda', async () => {
     await render(ui());
     expect(screen.getByTestId('next-match-card')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Próximo jogo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Próximo jogo/ })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'VER AGENDA' }));
     expect(router.push).toHaveBeenCalledWith('/agenda');
   });
@@ -234,6 +234,27 @@ describe('próximo jogo', () => {
       jest.advanceTimersByTime(3000);
     });
     expect(screen.getByTestId('next-countdown').props.children).toBe('03:29:57');
+  });
+
+  it('terminado com o voto ainda a carregar: Ver jogo (desconhecido), não Vota no MVP', async () => {
+    at('2026-11-22T22:40:00Z');
+    mockVote.current = { status: 'loading' };
+    ready({ ...MATCH, status: 'FT', finishedAt: new Date('2026-11-22T22:30:00Z') } as Match);
+    await render(ui());
+    expect(screen.getByRole('button', { name: 'VER JOGO' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'VOTA NO MVP' })).toBeNull();
+  });
+
+  it('a contagem tica sem voltar a desenhar a Home a cada segundo', async () => {
+    at('2026-11-22T17:00:00Z');
+    ready(MATCH);
+    await render(ui());
+    const before = (useHomeMatches as jest.Mock).mock.calls.length;
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    expect((useHomeMatches as jest.Mock).mock.calls.length).toBe(before);
+    expect(screen.getByTestId('next-countdown').props.children).toBe('03:29:55');
   });
 
   it('ao vivo: AO VIVO e Ver jogo', async () => {
@@ -275,11 +296,11 @@ describe('próximo jogo', () => {
       now.getTime() >= after ? { status: 'ready', data: [MATCH] } : { status: 'ready', data: [] },
     );
     await render(ui());
-    expect(screen.queryByRole('button', { name: 'Próximo jogo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Próximo jogo/ })).toBeNull();
     await act(async () => {
       jest.advanceTimersByTime(5 * 60_000);
     });
-    expect(screen.getByRole('button', { name: 'Próximo jogo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Próximo jogo/ })).toBeTruthy();
   });
 });
 

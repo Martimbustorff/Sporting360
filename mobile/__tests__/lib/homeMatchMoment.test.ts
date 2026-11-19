@@ -77,9 +77,15 @@ describe('homeMatchMoment', () => {
       expect(homeMatchMoment({ ...base, match: late, now: at('2026-11-21T23:59:00Z') }).state).toBe('next');
       expect(homeMatchMoment({ ...base, match: late, now: at('2026-11-22T00:01:00Z') }).state).toBe('matchday');
     });
-    it('hora do apito passada mas ainda NS no mesmo dia: continua dia de jogo (contagem a zero)', () => {
-      const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T20:31:00Z') });
-      expect(r.state).toBe('matchday');
+    it('NS com o apito passado (feed ainda não LIVE): próximo com Ver jogo e sem contagem', () => {
+      const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T20:35:00Z'), predictionOpen: true });
+      expect(r).toEqual({ state: 'next', action: { label: 'VER JOGO', href: '/jogo/1001' }, countdownTo: null });
+    });
+    it('NS exatamente à hora do apito já não é dia de jogo', () => {
+      expect(homeMatchMoment({ ...base, match: m, now: at('2026-11-22T20:30:00Z') }).state).toBe('next');
+    });
+    it('NS um segundo antes do apito ainda é dia de jogo', () => {
+      expect(homeMatchMoment({ ...base, match: m, now: at('2026-11-22T20:29:59Z') }).state).toBe('matchday');
     });
   });
 
