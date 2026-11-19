@@ -20,7 +20,7 @@ const BODY_MAX = 140;
 
 /** Troca travessões e meias-riscas por hífen, junta espaços e corta em `max`. */
 export function cleanText(s: string, max: number): string {
-  return summarize(s.replace(/[–—]/g, "-").replace(/\s+/g, " ").trim(), max);
+  return summarize(s.replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim(), max);
 }
 
 function msg(title: string, body: string, route: string): PushMessage {

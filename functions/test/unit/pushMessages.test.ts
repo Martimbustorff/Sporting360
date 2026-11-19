@@ -46,7 +46,7 @@ function goal(over: Partial<EventItem> = {}): EventItem {
   };
 }
 
-const DASHES = /[–—]/;
+const DASHES = /[\u2013\u2014]/;
 
 describe("push messages", () => {
   it("início do jogo", () =>
@@ -98,7 +98,7 @@ describe("push messages", () => {
   });
 
   it("notícia: título limpo e cortado, resumo ou texto de recurso", () => {
-    const n = newsMessage({ id: "record-pt-abc", title: "Rúben — o regresso", summary: "x".repeat(300) });
+    const n = newsMessage({ id: "record-pt-abc", title: "Rúben \u2014 o regresso", summary: "x".repeat(300) });
     expect(n.title).toBe("Rúben - o regresso");
     expect(n.body.length).toBeLessThanOrEqual(141);
     expect(n.route).toBe("/noticias?id=record-pt-abc");
@@ -110,18 +110,18 @@ describe("push messages", () => {
   });
 
   it("cleanText troca travessões e junta espaços", () => {
-    expect(cleanText("  a – b\n\n c  ", 100)).toBe("a - b c");
+    expect(cleanText("  a \u2013 b\n\n c  ", 100)).toBe("a - b c");
   });
 
   it("nenhum texto tem travessões", () => {
     const all = [
       matchStartMessage(m),
-      goalMessage(m, goal({ minute: 23, playerName: "Pedro — Gonçalves" })),
+      goalMessage(m, goal({ minute: 23, playerName: "Pedro \u2014 Gonçalves" })),
       goalMessage(m, goal({ minute: 10, detail: "Own Goal", teamId: "211" })),
       mvpOpenMessage(m),
       predictionReminderMessage(m),
-      newsMessage({ id: "x", title: "A – B — C", summary: "d — e" }),
-      matchStartMessage({ ...m, away: { id: "1", name: "Clube – Teste", logo: null } }),
+      newsMessage({ id: "x", title: "A \u2013 B \u2014 C", summary: "d \u2014 e" }),
+      matchStartMessage({ ...m, away: { id: "1", name: "Clube \u2013 Teste", logo: null } }),
     ];
     for (const msg of all) {
       expect(msg.title).not.toMatch(DASHES);
