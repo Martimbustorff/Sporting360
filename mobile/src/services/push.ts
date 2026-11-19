@@ -7,6 +7,7 @@ import {
   getMessaging,
   getToken,
   hasPermission,
+  onMessage,
   onNotificationOpenedApp,
   onTokenRefresh,
   requestPermission,
@@ -184,6 +185,33 @@ export function onPushOpen(handler: (route: string) => void): () => void {
     return unsubscribe;
   } catch (e) {
     reportCode('push.open', e);
+    return () => undefined;
+  }
+}
+
+/** Notificação recebida com a app aberta; `route` já validada (ou null). */
+export interface ForegroundPush {
+  title: string;
+  body: string;
+  route: string | null;
+}
+
+/**
+ * Android com a app aberta: o sistema não mostra a notificação, por isso o handler recebe-a para um aviso
+ * dentro da app. No iOS o sistema já a mostra (firebase.json): aqui não faz nada, para não aparecer duas vezes.
+ */
+export function onPushForeground(handler: (push: ForegroundPush) => void): () => void {
+  if (Platform.OS !== 'android') return () => undefined;
+  try {
+    return onMessage(messaging(), (msg) => {
+      const n = (msg as { notification?: { title?: unknown; body?: unknown } } | null | undefined)?.notification;
+      const title = typeof n?.title === 'string' ? n.title.trim() : '';
+      if (!title) return;
+      const body = typeof n?.body === 'string' ? n.body.trim() : '';
+      handler({ title, body, route: routeFromData((msg as { data?: unknown }).data) });
+    });
+  } catch (e) {
+    reportCode('push.foreground', e);
     return () => undefined;
   }
 }

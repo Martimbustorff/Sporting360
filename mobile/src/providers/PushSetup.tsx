@@ -1,20 +1,24 @@
 // Plano 6: depois do login (dentro de (app) e da folha de consentimento), pede a permissão, regista o
 // dispositivo e mantém os tópicos FCM iguais às preferências de users/{uid}. O toque abre a rota da notificação.
+// No Android, com a app aberta, mostra o aviso PushBanner (a rota passa pela mesma lista de rotas aceites).
 import { router, type Href } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
+import { PUSH_BANNER_MS, PushBanner } from '@/components/PushBanner';
 import { useMyUser } from '@/data/hooks';
 import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
 import {
+  onPushForeground,
   onPushOpen,
   onPushTokenRefresh,
   pushPermissionGranted,
   registerDevice,
   requestPushPermission,
   syncTopics,
+  type ForegroundPush,
 } from '@/services/push';
 
-export function PushSetup({ uid, ready }: { uid: string; ready: boolean }): null {
+export function PushSetup({ uid, ready }: { uid: string; ready: boolean }) {
   const user = useMyUser(uid);
 
   useEffect(() => {
@@ -56,5 +60,30 @@ export function PushSetup({ uid, ready }: { uid: string; ready: boolean }): null
 
   useEffect(() => onPushOpen((route) => router.push(route as Href)), []);
 
-  return null;
+  // Android com a app aberta: aviso dentro da app (no iOS o sistema já mostra a notificação).
+  const [banner, setBanner] = useState<{ push: ForegroundPush; seq: number } | null>(null);
+  useEffect(() => {
+    let seq = 0;
+    return onPushForeground((push) => {
+      seq += 1;
+      setBanner({ push, seq });
+    });
+  }, []);
+  useEffect(() => {
+    if (!banner) return undefined;
+    const t = setTimeout(() => setBanner(null), PUSH_BANNER_MS);
+    return () => clearTimeout(t);
+  }, [banner]);
+
+  if (!banner) return null;
+  return (
+    <PushBanner
+      push={banner.push}
+      onPress={() => {
+        const route = banner.push.route;
+        setBanner(null);
+        if (route) router.push(route as Href);
+      }}
+    />
+  );
 }

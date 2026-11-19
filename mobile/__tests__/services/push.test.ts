@@ -5,6 +5,7 @@ import { recordError } from '@react-native-firebase/crashlytics';
 import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
 import {
   PUSH_UNREGISTER_TIMEOUT_MS,
+  onPushForeground,
   onPushOpen,
   onPushTokenRefresh,
   pushPermissionGranted,
@@ -211,5 +212,38 @@ describe('módulo nativo em falta', () => {
     } finally {
       m.getMessaging.mockImplementation((() => ({ __mock: 'messaging' })) as never);
     }
+  });
+});
+
+describe('notificação com a app aberta', () => {
+  it('Android: onMessage chama o handler com título, corpo e rota validada', () => {
+    setPlatform('android', 34);
+    const handler = jest.fn();
+    const stop = onPushForeground(handler);
+    const listener = m.onMessage.mock.calls[0]![1];
+    listener({ notification: { title: 'Golo do Sporting!', body: 'Pote (30\').' }, data: { route: '/jogo/9002' } });
+    listener({ notification: { title: 'Notícia', body: 'x' }, data: { route: 'https://evil.pt' } });
+    listener({ notification: { title: '  ' }, data: { route: '/jogo/1' } });
+    listener({ data: { route: '/jogo/1' } });
+    expect(handler.mock.calls).toEqual([
+      [{ title: 'Golo do Sporting!', body: "Pote (30').", route: '/jogo/9002' }],
+      [{ title: 'Notícia', body: 'x', route: null }],
+    ]);
+    expect(typeof stop).toBe('function');
+  });
+
+  it('iOS: não ouve onMessage (o sistema já mostra a notificação)', () => {
+    setPlatform('ios', '18.0');
+    const stop = onPushForeground(jest.fn());
+    expect(m.onMessage).not.toHaveBeenCalled();
+    expect(() => stop()).not.toThrow();
+  });
+
+  it('Android com o módulo nativo a falhar: não lança', () => {
+    setPlatform('android', 34);
+    m.getMessaging.mockImplementationOnce((() => {
+      throw new Error('native');
+    }) as never);
+    expect(() => onPushForeground(jest.fn())()).not.toThrow();
   });
 });

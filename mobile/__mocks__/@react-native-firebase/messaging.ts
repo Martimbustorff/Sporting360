@@ -16,4 +16,4 @@ export const unsubscribeFromTopic = jest.fn(() => Promise.resolve());
 export const onTokenRefresh = jest.fn((_m: unknown, _listener: (token: string) => void) => jest.fn());
 export const onNotificationOpenedApp = jest.fn((_m: unknown, _listener: (msg: unknown) => void) => jest.fn());
 export const getInitialNotification = jest.fn(() => Promise.resolve(null as unknown));
-export const onMessage = jest.fn(() => jest.fn());
+export const onMessage = jest.fn((_m: unknown, _listener: (msg: unknown) => void) => jest.fn());

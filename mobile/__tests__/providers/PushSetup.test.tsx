@@ -1,5 +1,6 @@
 import React from 'react';
-import { act, render } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppState } from 'react-native';
 import { router } from 'expo-router';
 
@@ -11,10 +12,12 @@ jest.mock('@/services/push', () => ({
   onPushTokenRefresh: jest.fn(() => jest.fn()),
   syncTopics: jest.fn(() => Promise.resolve()),
   onPushOpen: jest.fn(() => jest.fn()),
+  onPushForeground: jest.fn(() => jest.fn()),
 }));
 
 import { useMyUser } from '@/data/hooks';
 import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
+import { PUSH_BANNER_MS, PUSH_BANNER_TEXT } from '@/components/PushBanner';
 import { PushSetup } from '@/providers/PushSetup';
 import * as push from '@/services/push';
 
@@ -188,5 +191,76 @@ describe('PushSetup: permissão ligada mais tarde nas definições', () => {
     await emit('active');
     expect(p.registerDevice).not.toHaveBeenCalled();
     expect(p.pushPermissionGranted).not.toHaveBeenCalled();
+  });
+});
+
+describe('PushSetup: aviso com a app aberta (Android)', () => {
+  const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
+  const tree = () => (
+    <SafeAreaProvider initialMetrics={METRICS}>
+      <PushSetup uid="alice" ready />
+    </SafeAreaProvider>
+  );
+  const arrive = (n: { title: string; body: string; route: string | null }) =>
+    act(async () => {
+      p.onPushForeground.mock.calls[0]![0](n);
+    });
+
+  it('mostra título e corpo; tocar segue a rota e fecha o aviso', async () => {
+    await render(tree());
+    await flush();
+    expect(p.onPushForeground).toHaveBeenCalledTimes(1);
+    await arrive({ title: 'Golo do Sporting!', body: "Pote (30'). Sporting CP 2-0 Benfica", route: '/jogo/9002' });
+    expect(screen.getByText('Golo do Sporting!')).toBeTruthy();
+    expect(screen.getByText("Pote (30'). Sporting CP 2-0 Benfica")).toBeTruthy();
+    const banner = screen.getByRole('button', { name: "Golo do Sporting!. Pote (30'). Sporting CP 2-0 Benfica" });
+    expect(banner.props.accessibilityHint).toBe(PUSH_BANNER_TEXT.openHint);
+    await fireEvent.press(banner);
+    expect(router.push).toHaveBeenCalledWith('/jogo/9002');
+    expect(screen.queryByText('Golo do Sporting!')).toBeNull();
+  });
+
+  it('sem rota válida: tocar só fecha o aviso', async () => {
+    await render(tree());
+    await flush();
+    await arrive({ title: 'Notícia', body: 'Resumo', route: null });
+    const banner = screen.getByRole('button', { name: 'Notícia. Resumo' });
+    expect(banner.props.accessibilityHint).toBe(PUSH_BANNER_TEXT.closeHint);
+    await fireEvent.press(banner);
+    expect(router.push).not.toHaveBeenCalled();
+    expect(screen.queryByText('Notícia')).toBeNull();
+  });
+
+  it(`fecha sozinho ao fim de ${PUSH_BANNER_MS} ms; um aviso novo substitui o anterior`, async () => {
+    jest.useFakeTimers();
+    try {
+      await render(tree());
+      await act(async () => undefined);
+      await arrive({ title: 'Primeiro', body: 'a', route: null });
+      await act(async () => {
+        jest.advanceTimersByTime(PUSH_BANNER_MS - 1000);
+      });
+      await arrive({ title: 'Segundo', body: 'b', route: null });
+      expect(screen.queryByText('Primeiro')).toBeNull();
+      await act(async () => {
+        jest.advanceTimersByTime(PUSH_BANNER_MS - 1);
+      });
+      expect(screen.getByText('Segundo')).toBeTruthy();
+      await act(async () => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(screen.queryByText('Segundo')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('ao desmontar deixa de ouvir', async () => {
+    const stop = jest.fn();
+    p.onPushForeground.mockReturnValue(stop);
+    const view = await render(tree());
+    await flush();
+    await view.unmount();
+    expect(stop).toHaveBeenCalled();
   });
 });

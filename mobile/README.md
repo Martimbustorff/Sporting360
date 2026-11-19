@@ -85,6 +85,8 @@ O envio fica desligado (`PUSH_ENABLED=false` nos dois `.env` das functions) até
   - [ ] os 5 tipos chegam: início do jogo, golo do Sporting, abertura do MVP, lembrete de prognóstico (2 h antes, só sem prognóstico feito) e notícia;
   - [ ] tocar em cada um abre o ecrã certo (jogo, tab MVP, tab Prognóstico, notícia), com a app fechada e em segundo plano;
   - [ ] desligar um interruptor no ecrã Notificações deixa de receber esse tipo;
+  - [ ] com a app aberta: no iOS aparece a notificação do sistema; no Android aparece o aviso dentro da app (uma só vez) e tocar abre o ecrã certo;
+  - [ ] recusar a permissão, ligá-la nas definições e voltar à app: o lembrete de prognóstico passa a chegar sem fechar a app;
   - [ ] com a permissão recusada nas definições do telemóvel, o ecrã Notificações mostra o aviso e o botão "Abrir definições";
   - [ ] sair da conta deixa de receber; entrar com outra conta no mesmo telemóvel segue as preferências da conta nova.
 - [ ] **Publicação, só com OK do Martim, por esta ordem:**
