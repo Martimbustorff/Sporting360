@@ -16,13 +16,11 @@ export async function seedConfig(
   o: { force: boolean },
 ): Promise<"created" | "exists" | "overwritten"> {
   const ref = db.doc("config/app");
-  const doc: Record<string, unknown> = { ...data, updatedAt: FieldValue.serverTimestamp() };
+  const doc = { ...data, updatedAt: FieldValue.serverTimestamp() };
   if (o.force) {
-    const before = await ref.get();
-    // Um interruptor já ligado nunca é desligado por um novo seed.
-    if (before.get("loansEnabled") === true) doc.loansEnabled = true;
+    const existed = (await ref.get()).exists;
     await ref.set(doc);
-    return before.exists ? "overwritten" : "created";
+    return existed ? "overwritten" : "created";
   }
   try {
     await ref.create(doc);

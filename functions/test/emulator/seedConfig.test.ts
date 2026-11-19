@@ -42,17 +42,6 @@ describe("seedConfig", () => {
     expect(d.texts).toEqual(seed.texts);
   });
 
-  it("o seed traz loansEnabled false; um true existente nunca é desligado por um novo seed", async () => {
-    expect(seed.loansEnabled).toBe(false);
-    expect(await seedConfig(db, seed, { force: false })).toBe("created");
-    expect((await db.doc("config/app").get()).get("loansEnabled")).toBe(false);
-    await db.doc("config/app").update({ loansEnabled: true });
-    expect(await seedConfig(db, seed, { force: false })).toBe("exists");
-    expect((await db.doc("config/app").get()).get("loansEnabled")).toBe(true);
-    expect(await seedConfig(db, seed, { force: true })).toBe("overwritten");
-    expect((await db.doc("config/app").get()).get("loansEnabled")).toBe(true);
-  });
-
   it("o JSON de seed tem os textos esperados pela app", () => {
     expect(seed.texts).toEqual({
       updateRequiredTitle: "Atualização obrigatória",

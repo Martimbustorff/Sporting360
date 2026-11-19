@@ -32,7 +32,6 @@ beforeEach(async () => {
   G1 = `g1_${seq}_${Date.now()}`;
   G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
-  await db.doc("config/app").set({ loansEnabled: true });
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc(`gamebox/${G1}`).set({
@@ -65,28 +64,6 @@ const create = (auth: { uid: string } | undefined, over: Record<string, unknown>
   handleCreateLoan(db, auth, { gameboxId: G1, matchId: "m1", number: NUM, ...over }, NOW);
 const loanOf = async (id: string) => (await db.doc(`loans/${id}`).get()).data()!;
 const secretOf = async (id: string) => (await db.doc(`loans/${id}/secret/number`).get()).data();
-
-describe("createLoan: interruptor loansEnabled", () => {
-  it("desligado (false) ou ausente: failed-precondition com reason disabled, nada criado", async () => {
-    await db.doc("config/app").set({ loansEnabled: false });
-    expect(await code(create(alice))).toEqual({ code: "failed-precondition", reason: "disabled" });
-    await db.doc("config/app").delete();
-    expect(await code(create(alice))).toEqual({ code: "failed-precondition", reason: "disabled" });
-    await db.doc("config/app").set({ loansEnabled: "true" });
-    expect((await code(create(alice)))?.reason).toBe("disabled");
-    expect((await db.collection("loans").get()).size).toBe(0);
-  });
-  it("ligado (true): cria", async () => {
-    const r = await create(alice);
-    expect((await loanOf(r.loanId)).ownerUid).toBe("alice");
-  });
-  it("desligado depois de criar: claim e cancel continuam a funcionar", async () => {
-    const { loanId } = await create(alice);
-    await db.doc("config/app").set({ loansEnabled: false });
-    expect(await handleClaimLoan(db, bob, { loanId }, NOW)).toEqual({ status: "claimed" });
-    expect(await handleCancelLoan(db, alice, { loanId }, NOW)).toEqual({ ok: true });
-  });
-});
 
 describe("createLoan: validação", () => {
   it("sem sessão: unauthenticated", async () => {

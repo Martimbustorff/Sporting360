@@ -91,9 +91,6 @@ export async function handleCreateLoan(
   now: Date,
 ): Promise<{ loanId: string; url: string }> {
   const uid = requireUid(auth);
-  // Interruptor `config/app.loansEnabled` (por omissão desligado): até as regras finais estarem publicadas, `gamebox` e `users`
-  // são públicos e a garantia "só o destinatário preso lê o número" não se cumpre. Só o createLoan é travado.
-  if ((await db.doc("config/app").get()).get("loansEnabled") !== true) throw denied("disabled", "Os empréstimos não estão disponíveis.");
   const d = asObj(data);
   const number = typeof d.number === "string" ? normalizeGameboxNumber(d.number) : null;
   if (!validGameId(d.gameboxId) || !validGameId(d.matchId) || !number) throw new HttpsError("invalid-argument", "Dados inválidos.");

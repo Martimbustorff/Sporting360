@@ -30,7 +30,6 @@ beforeEach(async () => {
   G1 = `g1_${seq}_${Date.now()}`;
   G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
-  await db.doc("config/app").set({ loansEnabled: true });
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc(`gamebox/${G1}`).set({ userid: "alice", gameboxNumber: "cifrado", gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7" });
