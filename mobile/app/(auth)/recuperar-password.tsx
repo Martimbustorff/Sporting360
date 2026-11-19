@@ -50,7 +50,7 @@ export default function RecuperarPassword() {
 
   return (
     <AuthScaffold
-      title="Recuperar Pass"
+      title="Recuperar Password"
       contentTop={layout.authIntroTop}
       fieldsGap={layout.authIntroGap}
       footer={<PrimaryButton label="Enviar" variant="white" onPress={() => void submit()} loading={loading} />}
