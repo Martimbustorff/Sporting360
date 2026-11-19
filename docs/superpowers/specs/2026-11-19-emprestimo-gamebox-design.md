@@ -54,7 +54,7 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 1. Toca no link. Se tiver a app, abre-a (link universal no caminho `/e/{token}`, tal como `/j*` hoje). Sem app, o link reencaminha logo para a loja do telemóvel (App Store no iPhone, Play Store no Android), sem página.
 2. Sem sessão: entra ou cria conta e volta ao empréstimo.
 3. Primeira abertura: o empréstimo prende-se a esta conta. Outra conta que abra o mesmo link vê "Este empréstimo já foi aberto noutra conta."
-4. Ecrã do empréstimo, layout do cartão do frame 30: emblemas e nomes das equipas, competição, data e hora, recinto e o bloco com porta, sector, fila, lugar e QR. Brilho no máximo e ecrã sempre ligado, como o modo bilhete. Capturas bloqueadas enquanto o ecrã está aberto.
+4. Ecrã do empréstimo, layout do cartão do frame 30: emblemas e nomes das equipas, competição, data e hora, recinto e o bloco com porta, sector, fila, lugar e QR. O número da GameBox nunca aparece em texto, só a imagem do QR (decisão do Martim, 19/11 21:03), nem no rótulo de acessibilidade. Brilho no máximo e ecrã sempre ligado, como o modo bilhete. Capturas bloqueadas enquanto o ecrã está aberto.
 5. Também aparece na lista de GameBox de quem recebe, marcada "Emprestada por {nome público}", até expirar.
 6. Expirado ou cancelado: "Este empréstimo já não está ativo." sem QR.
 

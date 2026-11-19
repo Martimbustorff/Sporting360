@@ -161,7 +161,7 @@
   - Rota `/emprestimo/[id]` (o link `/e/{id}` entra pelo Task 7).
 
 - [ ] **Step 1: Testes:**
-  - Abrir com sessão chama `claimLoan` uma vez; com `claimed` mostra o cartão (equipas, competição, data e hora, recinto, porta/sector/fila/lugar só os preenchidos, QR do segredo, "Emprestada por {nome}").
+  - Abrir com sessão chama `claimLoan` uma vez; com `claimed` mostra o cartão (equipas, competição, data e hora, recinto, porta/sector/fila/lugar só os preenchidos, QR do segredo, "Emprestada por {nome}"); o número da GameBox nunca aparece em texto nem em `accessibilityLabel`, só a imagem do QR (decisão do Martim, 19/11 21:03).
   - `claimed-by-other`: "Este empréstimo já foi aberto noutra conta." sem QR; `inactive`: "Este empréstimo já não está ativo." sem QR; `owner`: redireciona para `/gamebox/{gameboxId}`.
   - O listener do segredo a falhar por permissão (cancelado ou expirado com o ecrã aberto) troca para "Este empréstimo já não está ativo." sem reabrir.
   - `usePreventScreenCapture` e o `ticketMode` estão ativos enquanto o ecrã está montado e libertam-se ao sair.
