@@ -179,7 +179,7 @@ describe('/gamebox/bilhete', () => {
     mockBoxes.current = { status: 'ready', data: [box('g1', { gameboxNumber: 'lixo' })] };
     await render(ui());
     await flush();
-    expect(screen.getByText('Não foi possível ler o número desta GameBox. Corrige-o em Gestão de Gamebox.')).toBeTruthy();
+    expect(screen.getByText('Não foi possível ler o número desta GameBox. Corrige-o em Gestão de GameBox.')).toBeTruthy();
     expect(screen.queryByText('Mostra este código na porta')).toBeNull();
   });
 

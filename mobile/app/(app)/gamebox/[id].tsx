@@ -1,6 +1,6 @@
-// Figma V7.1: 45 Editar Gamebox (4951:9265) e 49b Apagar (alerta nativo, ação a vermelho). Título "GAMEBOX", visto (Check) no
+// Figma V7.1: 45 Editar GameBox (4951:9265) e 49b Apagar (alerta nativo, ação a vermelho). Título "GAMEBOX", visto (Check) no
 // cabeçalho para guardar; número (TextField) com botão de ler o código 48x48 (surface-10, raio 12), nome, cartão com contorno
-// branco e raio 16 com tabs Estádio / Pavilhão e Porta, Sector, Fila, Lugar em quatro campos; "Apagar Gamebox" a danger
+// branco e raio 16 com tabs Estádio / Pavilhão e Porta, Sector, Fila, Lugar em quatro campos; "Apagar GameBox" a danger
 // (Caption Strong 12). Ícones qr-code.svg e check-big.svg do Figma. O alerta de apagar é o nativo (Alert) com estilo destrutivo.
 // SEM FIGMA: mensagens de erro e de rede, estados de carregamento e "já não existe".
 // Task 23: /gamebox/nova cria, /gamebox/{id} edita. Lê `?numero=` (vindo do leitor, Task 24) para preencher o número;
@@ -39,16 +39,16 @@ const QR_CODE = require('../../../assets/icons/qr-code.svg');
 const CHECK = require('../../../assets/icons/check-big.svg');
 
 export const FORM_TEXT = {
-  title: 'Gamebox',
-  newTitle: 'Nova Gamebox',
+  title: 'GameBox',
+  newTitle: 'Nova GameBox',
   number: 'Número da GameBox',
   name: 'Nome',
   scan: 'Ler código da GameBox',
   save: 'Guardar',
-  delete: 'Apagar Gamebox',
+  delete: 'Apagar GameBox',
   digits: 'O número da GameBox tem só algarismos.',
   length: 'O número da GameBox tem entre 6 e 20 algarismos.',
-  confirmTitle: 'Apagar Gamebox',
+  confirmTitle: 'Apagar GameBox',
   confirmBody: 'Queres mesmo apagar esta GameBox? Esta ação não se pode desfazer.',
   cancel: 'Cancelar',
   confirm: 'Apagar',

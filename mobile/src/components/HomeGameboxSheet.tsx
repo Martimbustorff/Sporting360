@@ -25,7 +25,7 @@ const CAMERA = require('../../assets/icons/camera-large.svg');
 export const SHEET_TEXT = {
   title: 'GameBox Digital',
   scan: 'Digitalizar',
-  emptyBefore: 'Digitaliza o código de barras da tua Gamebox ou ',
+  emptyBefore: 'Digitaliza o código de barras da tua GameBox ou ',
   manual: 'insere manualmente',
   emptyAfter: ' o número.',
   loadError: 'Não foi possível carregar as tuas GameBox.',

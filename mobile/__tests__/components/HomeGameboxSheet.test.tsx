@@ -60,7 +60,7 @@ describe('HomeGameboxSheet', () => {
     mockBoxes.current = { status: 'ready', data: [] };
     await render(ui());
     await open();
-    expect(screen.getByText(/Digitaliza o código de barras da tua Gamebox ou/)).toBeTruthy();
+    expect(screen.getByText(/Digitaliza o código de barras da tua GameBox ou/)).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: SHEET_TEXT.scan }));
     expect(mockPush).toHaveBeenCalledWith('/gamebox/ler');
     await fireEvent.press(screen.getByRole('link', { name: SHEET_TEXT.manual }));
@@ -83,7 +83,7 @@ describe('HomeGameboxSheet', () => {
     expect(qrs[0]?.props.value).toBe('266571276572');
     expect((QRCode as unknown as jest.Mock).mock.calls.every(([p]) => p.value === '266571276572')).toBe(true);
     expect(screen.getByText('João')).toBeTruthy();
-    expect(screen.getByText('Gamebox 2')).toBeTruthy();
+    expect(screen.getByText('GameBox 2')).toBeTruthy();
     expect(screen.getAllByText('266571276572')).toHaveLength(2);
     expect(screen.getAllByText('Estádio')).toHaveLength(2);
     expect(screen.getAllByText('Pavilhão')).toHaveLength(1);

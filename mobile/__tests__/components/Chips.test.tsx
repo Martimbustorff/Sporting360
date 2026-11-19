@@ -16,8 +16,8 @@ describe('Chips', () => {
     await render(<Chips items={items} value="a" onChange={onChange} wrap={wrap} />);
     const chip = screen.getByTestId('chip-b');
     expect(StyleSheet.flatten(chip.props.style).minHeight).toBe(layout.minTouch);
-    const pill = chip.children[0] as unknown as { props: { style: object } };
-    expect(StyleSheet.flatten(pill.props.style).backgroundColor).toBe(colors.surface10);
+    const pill = chip.children[0] as unknown as { props: { style: Parameters<typeof StyleSheet.flatten>[0] } };
+    expect((StyleSheet.flatten(pill.props.style) as { backgroundColor?: string }).backgroundColor).toBe(colors.surface10);
     await fireEvent.press(chip);
     expect(onChange).toHaveBeenCalledWith('b');
     expect(screen.getByTestId('chip-a').props.accessibilityState).toEqual(expect.objectContaining({ selected: true }));

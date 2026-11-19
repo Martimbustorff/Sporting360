@@ -1,4 +1,4 @@
-// Figma V7.1: 44 Gestão de Gamebox (4951:9204). Linhas com arrastar (24), nome Title S 20 e seta (20), 18 pt acima e abaixo,
+// Figma V7.1: 44 Gestão de GameBox (4951:9204). Linhas com arrastar (24), nome Title S 20 e seta (20), 18 pt acima e abaixo,
 // separador de 1 pt; "+" branco de 60 a 24 pt da direita e de baixo. Lista por ordem, com arrastar: a pega à esquerda
 // move a linha (PanResponder) e as ações de acessibilidade "Mover para cima/baixo" fazem o mesmo; só o campo `order` se grava.
 // "Principal" é a GameBox antiga da V2 (users/{uid}.gameboxNumber): etiqueta e número, com opção de a copiar para a lista.
@@ -31,10 +31,10 @@ const MENU_DUO = require('../../../assets/icons/menu-duo.svg');
 const FAB_PLUS = require('../../../assets/icons/fab-plus.svg');
 
 export const GAMEBOX_TEXT = {
-  title: 'Gestão de Gamebox',
+  title: 'Gestão de GameBox',
   loadError: 'Não foi possível carregar as tuas GameBox.',
   empty: 'Ainda não tens nenhuma GameBox. Toca em + para adicionar.',
-  add: 'Adicionar Gamebox',
+  add: 'Adicionar GameBox',
   legacyHint: 'Esta GameBox está guardada no teu perfil da versão anterior.',
   legacySave: 'Guardar na minha GameBox',
   OFFLINE: 'Sem ligação. A GameBox não foi confirmada; tenta outra vez quando houver rede.',

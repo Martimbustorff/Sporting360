@@ -43,9 +43,9 @@ export function isEmptySeat(s: Seat): boolean {
   return !s.port.trim() && !s.sector.trim() && !s.line.trim() && !s.seat.trim();
 }
 
-/** Nome a mostrar: o guardado ou "Gamebox N" (N a partir de 1). */
+/** Nome a mostrar: o guardado ou "GameBox N" (N a partir de 1). */
 export function gameboxLabel(name: string, index: number): string {
-  return name.trim() || `Gamebox ${index + 1}`;
+  return name.trim() || `GameBox ${index + 1}`;
 }
 
 const trimSeat = (s: Seat): Seat => ({ port: s.port.trim(), sector: s.sector.trim(), line: s.line.trim(), seat: s.seat.trim() });
@@ -72,7 +72,7 @@ export function toGameboxDoc(uid: string, input: GameboxInput, order: number): G
   const st = trimSeat(input.stadium);
   const d: GameboxWrite = {
     gameboxNumber: encryptGameboxNumber(number, uid),
-    // Vazio grava-se vazio (como a V2 faz); "Gamebox N" é só a etiqueta mostrada (gameboxLabel).
+    // Vazio grava-se vazio (como a V2 faz); "GameBox N" é só a etiqueta mostrada (gameboxLabel).
     gameboxName: input.name.trim(),
     gameboxPort: st.port,
     gameboxSector: st.sector,

@@ -14,7 +14,7 @@ import { colors, layout, radii, space } from '@/theme/tokens';
 export const CARD_TEXT = {
   stadium: 'Estádio',
   pavilion: 'Pavilhão',
-  unreadable: 'Não foi possível ler o número desta GameBox. Corrige-o em Gestão de Gamebox.',
+  unreadable: 'Não foi possível ler o número desta GameBox. Corrige-o em Gestão de GameBox.',
   ticketHint: 'Toca no código para o modo bilhete',
 } as const;
 

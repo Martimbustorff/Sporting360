@@ -65,23 +65,23 @@ beforeEach(() => {
   mockUser.current = ready({ name: 'Maria' });
 });
 
-describe('Gestão de Gamebox', () => {
-  it('lista "Gamebox N" ou o nome e abre cada uma', async () => {
+describe('Gestão de GameBox', () => {
+  it('lista "GameBox N" ou o nome e abre cada uma', async () => {
     mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' }), box('g2', 2)]);
     await render(wrap(<GameboxList />));
-    expect(screen.getByText('Gestão de Gamebox')).toBeTruthy();
+    expect(screen.getByText('Gestão de GameBox')).toBeTruthy();
     expect(screen.getByText('João')).toBeTruthy();
-    expect(screen.getByText('Gamebox 2')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Gamebox 2' }));
+    expect(screen.getByText('GameBox 2')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'GameBox 2' }));
     expect(mockRouter.push).toHaveBeenCalledWith('/gamebox/g2');
   });
 
   describe('arrastar para reordenar', () => {
-    const labels = () => screen.getAllByRole('button').map((b) => b.props.accessibilityLabel).filter((l: string) => /^(João|Gamebox|Ana)/.test(l));
+    const labels = () => screen.getAllByRole('button').map((b) => b.props.accessibilityLabel).filter((l: string) => /^(João|GameBox|Ana)/.test(l));
     const act1 = (name: string, action: string) =>
       fireEvent(screen.getByRole('button', { name }), 'accessibilityAction', { nativeEvent: { actionName: action } });
     beforeEach(() => {
-      mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' }), box('g2', 2, { gameboxName: 'Ana' }), box('g3', 3, { gameboxName: 'Gamebox X' })]);
+      mockBoxes.current = ready([box('g1', 1, { gameboxName: 'João' }), box('g2', 2, { gameboxName: 'Ana' }), box('g3', 3, { gameboxName: 'GameBox X' })]);
     });
 
     it('cada linha tem pega de arrastar e ações de mover', async () => {
@@ -97,13 +97,13 @@ describe('Gestão de Gamebox', () => {
       await render(wrap(<GameboxList />));
       await act1('João', 'moveDown');
       expect(reorderGameboxes).toHaveBeenCalledWith(['g2', 'g1', 'g3'], { g1: 1, g2: 2, g3: 3 });
-      expect(labels()).toEqual(['Ana', 'João', 'Gamebox X']);
+      expect(labels()).toEqual(['Ana', 'João', 'GameBox X']);
     });
 
     it('a primeira não sobe e a última não desce', async () => {
       await render(wrap(<GameboxList />));
       await act1('João', 'moveUp');
-      await act1('Gamebox X', 'moveDown');
+      await act1('GameBox X', 'moveDown');
       expect(reorderGameboxes).not.toHaveBeenCalled();
     });
 
@@ -112,13 +112,13 @@ describe('Gestão de Gamebox', () => {
       await render(wrap(<GameboxList />));
       await act1('Ana', 'moveUp');
       expect(await screen.findByText('Não foi possível guardar a nova ordem. Tenta outra vez.')).toBeTruthy();
-      expect(labels()).toEqual(['João', 'Ana', 'Gamebox X']);
+      expect(labels()).toEqual(['João', 'Ana', 'GameBox X']);
     });
   });
 
   it('o "+" abre a nova', async () => {
     await render(wrap(<GameboxList />));
-    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar Gamebox' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Adicionar GameBox' }));
     expect(mockRouter.push).toHaveBeenCalledWith('/gamebox/nova');
   });
 
@@ -201,7 +201,7 @@ describe('Gestão de Gamebox', () => {
   });
 });
 
-describe('Formulário da Gamebox', () => {
+describe('Formulário da GameBox', () => {
   it('nova: Guardar desativado até haver número válido', async () => {
     mockParams.current = { id: 'nova' };
     await render(wrap(<GameboxForm />));
@@ -221,7 +221,7 @@ describe('Formulário da Gamebox', () => {
     mockParams.current = { id: 'nova' };
     mockBoxes.current = ready([box('g1', 1)]);
     await render(wrap(<GameboxForm />));
-    expect(screen.queryByText('Apagar Gamebox')).toBeNull();
+    expect(screen.queryByText('Apagar GameBox')).toBeNull();
     await fireEvent.changeText(screen.getByLabelText('Número da GameBox'), '266571276572');
     await fireEvent.changeText(screen.getByLabelText('Nome'), 'João');
     await fireEvent.changeText(screen.getByLabelText('Porta'), '5');
@@ -325,14 +325,14 @@ describe('Formulário da Gamebox', () => {
     expect(screen.getByLabelText('Número da GameBox').props.value).toBe('123456');
   });
 
-  it('editar: título GAMEBOX, quatro campos do lugar e "Apagar Gamebox" a vermelho', async () => {
+  it('editar: título GAMEBOX, quatro campos do lugar e "Apagar GameBox" a vermelho', async () => {
     mockParams.current = { id: 'g1' };
     mockBoxes.current = ready([box('g1', 1, { gameboxName: 'Lugar anual' })]);
     await render(wrap(<GameboxForm />));
-    expect(screen.getByText('Gamebox')).toBeTruthy();
+    expect(screen.getByText('GameBox')).toBeTruthy();
     for (const l of ['Porta', 'Sector', 'Fila', 'Lugar']) expect(screen.getByLabelText(l)).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Estádio' }).props.accessibilityState.selected).toBe(true);
-    expect(screen.getByText('Apagar Gamebox')).toHaveStyle({ color: '#F74C66' });
+    expect(screen.getByText('Apagar GameBox')).toHaveStyle({ color: '#F74C66' });
   });
 
   it('apagar pede confirmação e só apaga depois de confirmar', async () => {
@@ -340,7 +340,7 @@ describe('Formulário da Gamebox', () => {
     mockParams.current = { id: 'g1' };
     mockBoxes.current = ready([box('g1', 1)]);
     await render(wrap(<GameboxForm />));
-    await fireEvent.press(screen.getByRole('button', { name: 'Apagar Gamebox' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Apagar GameBox' }));
     expect(alert).toHaveBeenCalledTimes(1);
     expect(deleteGamebox).not.toHaveBeenCalled();
     const buttons = alert.mock.calls[0]?.[2] as { text: string; style?: string; onPress?: () => void }[];
@@ -386,7 +386,7 @@ describe('Formulário da Gamebox', () => {
     mockParams.current = { id: 'g1' };
     mockBoxes.current = ready([box('g1', 1)]);
     await render(wrap(<GameboxForm />));
-    await fireEvent.press(screen.getByRole('button', { name: 'Apagar Gamebox' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Apagar GameBox' }));
     const buttons = alert.mock.calls[0]?.[2] as { onPress?: () => void }[];
     await act(async () => {
       await buttons[1]?.onPress?.();

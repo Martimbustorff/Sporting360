@@ -54,7 +54,7 @@ describe('toGameboxDoc', () => {
     expect(d).toMatchObject({ pavilionPort: '1', pavilionSector: 'A1', pavilionLine: '5', pavilionSeat: '5' });
   });
 
-  it('limpa espaços e grava nome vazio quando vem vazio (a etiqueta "Gamebox N" é só da interface)', () => {
+  it('limpa espaços e grava nome vazio quando vem vazio (a etiqueta "GameBox N" é só da interface)', () => {
     const d = toGameboxDoc('u1', { number: ' 2665 7127 6572 ', name: '  ', stadium: { port: ' 5 ', sector: '', line: '', seat: '' }, pavilion: null }, 3);
     expect(d.gameboxName).toBe('');
     expect(d.gameboxPort).toBe('5');
@@ -174,10 +174,10 @@ describe('resolveGameboxList', () => {
 });
 
 describe('gameboxLabel', () => {
-  it('usa o nome ou "Gamebox N"', () => {
+  it('usa o nome ou "GameBox N"', () => {
     expect(gameboxLabel('João', 0)).toBe('João');
-    expect(gameboxLabel('', 1)).toBe('Gamebox 2');
-    expect(gameboxLabel('   ', 0)).toBe('Gamebox 1');
+    expect(gameboxLabel('', 1)).toBe('GameBox 2');
+    expect(gameboxLabel('   ', 0)).toBe('GameBox 1');
   });
 });
 

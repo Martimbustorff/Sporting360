@@ -41,7 +41,7 @@ import { colors, layout, radii, space } from '@/theme/tokens';
 const CREST = require('../../../assets/images/sporting-cp-2026.png');
 
 export const TICKET_TEXT = {
-  title: 'Gamebox',
+  title: 'GameBox',
   hint: 'Mostra este código na porta',
   brightness: 'Brilho no máximo enquanto este ecrã está aberto',
   memberPrefix: 'Sócio n.º',

@@ -596,7 +596,7 @@ export const layout = {
   gameboxCardPadX: 24,
   gameboxCardPadTop: 16,
   gameboxCardPadBottom: 24,
-  gameboxDeleteTop: 32, // SEM FIGMA exato: cartão ao "Apagar Gamebox" (450:5636, ~32 px abaixo do cartão)
+  gameboxDeleteTop: 32, // SEM FIGMA exato: cartão ao "Apagar GameBox" (450:5636, ~32 px abaixo do cartão)
   // Folha GameBox Digital (Figma 450:5419 com GameBox, 348:39454 vazia, 348:40189 só Estádio)
   gameboxSheetGap: 24, // título, QR, blocos e paginação (450:5521)
   gameboxSheetEmptyGap: 32, // título, botão e texto (348:39556)
