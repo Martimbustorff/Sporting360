@@ -17,7 +17,7 @@
 - O cliente nunca escreve em `loans` nem em `loans/{id}/secret/*`.
 - O número da GameBox só é legível pelo destinatário preso, com o empréstimo ativo (`cancelledAt == null` e `expiresAt > request.time`). O dono lê o empréstimo sem o número.
 - Validade: início marcado + 4 h; com FT, AET ou PEN: fim + 2 h; adiado sem nova data: hora original + 2 h; segue a hora remarcada enquanto o jogo não começa.
-- Um empréstimo ativo no máximo por GameBox e jogo; um cancelado pode ser substituído.
+- Só se empresta para o próximo jogo em casa do recinto da GameBox (decisão do Martim, 19/11 20:38: o QR é sempre o mesmo). Um empréstimo ativo no máximo por GameBox; um cancelado pode ser substituído.
 - Nomes mostrados: só o nome público (`publicProfiles/{uid}.displayName`), nunca nome completo nem email.
 - Sem push (regra do Martim: push só para prognóstico e MVP). Sem pedidos novos à API desportiva.
 - Link: `https://s360-prognostico-download.web.app/e/{loanId}` (host de `mobile/share.config.json`).
@@ -32,7 +32,7 @@
 1. Link aberto por uma segunda conta depois de preso: vê "Este empréstimo já foi aberto noutra conta." e nunca o QR (teste no Task 3 e no Task 6).
 2. Empréstimo cancelado ou expirado com o ecrã do destinatário aberto: o QR desaparece sem reabrir (o listener do segredo falha por regras e o ecrã passa a "já não está ativo") (teste no Task 6).
 3. Destinatário sem sessão, ou acabado de instalar no Android: entra ou cria conta e cai no empréstimo, não na Home; o referrer da Play Store só se usa uma vez (testes no Task 6 e no Task 7).
-4. GameBox sem jogos em casa da sua modalidade (ou calendário por carregar): a escolha de jogo mostra um vazio claro e não deixa criar (teste no Task 5).
+4. GameBox sem próximo jogo em casa no seu recinto (ou calendário por carregar): a folha mostra um vazio claro e não deixa criar; o servidor recusa jogos que não sejam o próximo (testes no Task 3 e no Task 5).
 5. Dono no modo bilhete com a GameBox emprestada para o jogo da faixa: mostra "Emprestada para este jogo", sem QR; noutro jogo mostra o QR normal (teste no Task 5).
 
 ---
@@ -45,7 +45,7 @@
 - Produces: frames com nome "45L ..." (dono) e "50 ..." (destinatário) e os node ids no relatório, usados pelos Tasks 5 a 7.
 
 - [ ] **Step 1:** Carregar `figma:figma-use` e `figma:figma-generate-design`; reutilizar os componentes do quadro 4918:5041 (Button, Header, List row, Foto do jogador, Crest, ModalSheet escuro do frame 30) e as variáveis e estilos V7.1.
-- [ ] **Step 2:** Desenhar, ao lado do 45: 45La detalhe com "Emprestar para um jogo"; 45Lb folha de escolha do jogo (lista de jogos em casa, vazio "Sem jogos em casa marcados para esta GameBox."); 45Lc detalhe com empréstimo ativo ("Emprestada para {casa} - {fora}", "Ainda não aberto" / "Aberto por {nome} às {HH:MM}", botão "Cancelar empréstimo"); 12L modo bilhete "Emprestada para este jogo".
+- [ ] **Step 2:** Desenhar, ao lado do 45: 45La detalhe com "Emprestar para um jogo"; 45Lb folha de confirmação com o próximo jogo em casa (sem lista nem escolha), vazio "Sem jogos em casa marcados para esta GameBox."; 45Lc detalhe com empréstimo ativo ("Emprestada para {casa} - {fora}", "Ainda não aberto" / "Aberto por {nome} às {HH:MM}", botão "Cancelar empréstimo"); 12L modo bilhete "Emprestada para este jogo".
 - [ ] **Step 3:** Desenhar o destinatário: 50 ecrã do empréstimo (cartão do frame 30 com equipas, competição, data e hora, recinto, porta/sector/fila/lugar, QR, "Emprestada por {nome}"); 50b já aberto noutra conta; 50c já não está ativo; 44L linha "Emprestada por {nome}" na lista de GameBox.
 - [ ] **Step 4:** Captura de cada frame, uma correção visual no máximo; atualizar o mapa de cobertura; escrever os node ids no relatório.
 
@@ -86,17 +86,17 @@
   - `createLoan({ gameboxId: string, matchId: string, number: string }) -> { loanId: string, url: string }`
   - `claimLoan({ loanId: string }) -> { status: 'claimed' | 'owner' }`
   - `cancelLoan({ loanId: string }) -> { ok: true }`
-  - Códigos de erro `HttpsError`: `unauthenticated`, `invalid-argument`, `not-found` (empréstimo ou GameBox), `permission-denied` (GameBox de outro dono), `already-exists` (empréstimo ativo para a GameBox e o jogo), `failed-precondition` com `details.reason` em `'claimed-by-other' | 'inactive' | 'not-home' | 'finished'`.
+  - Códigos de erro `HttpsError`: `unauthenticated`, `invalid-argument`, `not-found` (empréstimo ou GameBox), `permission-denied` (GameBox de outro dono), `already-exists` (empréstimo ativo para a GameBox e o jogo), `failed-precondition` com `details.reason` em `'claimed-by-other' | 'inactive' | 'not-home' | 'not-next' | 'finished'`.
 
 - [ ] **Step 1: Testes no emulador:**
-  - `createLoan` sem sessão: `unauthenticated`; GameBox de outro `userid`: `permission-denied`; jogo inexistente: `not-found`; jogo terminado: `failed-precondition` `finished`; jogo fora de casa (equipa 228 não é a da casa): `not-home`; número vazio ou fora do formato da app: `invalid-argument`.
+  - `createLoan` sem sessão: `unauthenticated`; GameBox de outro `userid`: `permission-denied`; jogo inexistente: `not-found`; jogo terminado: `failed-precondition` `finished`; jogo fora de casa (equipa 228 não é a da casa): `not-home`; jogo em casa que não é o próximo não terminado do recinto da GameBox (Estádio: futebol; Pavilhão: as outras modalidades): `not-next`; número vazio ou fora do formato da app: `invalid-argument`.
   - `createLoan` válido: cria `loans/{id}` com `ownerName` do `publicProfiles`, `match` e `seat` congelados (Estádio para futebol, Pavilhão para as outras modalidades, campos vazios a `null`), `expiresAt` de `computeExpiresAt`, e `secret/number`; devolve `url` `https://s360-prognostico-download.web.app/e/{loanId}`.
-  - Segundo `createLoan` para a mesma GameBox e jogo com um ativo: `already-exists`; depois de `cancelLoan`: cria outro.
+  - Segundo `createLoan` para a mesma GameBox com um ativo: `already-exists`; depois de `cancelLoan`: cria outro.
   - `claimLoan` pela primeira conta: prende `recipientUid`, `recipientName`, `openedAt`; segunda chamada da mesma conta: `claimed` sem mudar `openedAt`; outra conta: `failed-precondition` `claimed-by-other`; o dono: `{ status: 'owner' }` sem prender; cancelado ou expirado: `inactive`.
   - `cancelLoan` por outra conta: `permission-denied`; pelo dono: `cancelledAt` posto e `secret/number` apagado.
   - Nenhum log com uid, email ou nome (spy no `logger`).
 - [ ] **Step 2:** Correr `cd functions && npm run test:emulator -- loans`; esperar FALHA.
-- [ ] **Step 3:** O formato válido do número é a mesma regra que `mobile/src/lib/gamebox.ts` aplica antes de cifrar, copiada para o servidor com teste de paridade no estilo de `mobile/__tests__/lib/serverParity.test.ts`. Implementar as três callables em `loans.ts` com transações Firestore (verificação de "um ativo por GameBox e jogo" dentro da transação, por consulta `gameboxId == x && matchId == y`); exportar em `index.ts`; acrescentar a `DEPLOY_ENGINE_FUNCTIONS`.
+- [ ] **Step 3:** O formato válido do número é a mesma regra que `mobile/src/lib/gamebox.ts` aplica antes de cifrar, copiada para o servidor com teste de paridade no estilo de `mobile/__tests__/lib/serverParity.test.ts`. Implementar as três callables em `loans.ts` com transações Firestore (verificação de "um ativo por GameBox" dentro da transação, por consulta `gameboxId == x`); exportar em `index.ts`; acrescentar a `DEPLOY_ENGINE_FUNCTIONS`.
 - [ ] **Step 4:** Correr o teste do emulador e `npm test` (inclui `exports.test.ts`); esperar PASSA.
 - [ ] **Step 5: Commit** `feat(emprestimo): callables criar, abrir e cancelar empréstimo`.
 
@@ -123,7 +123,7 @@
 ### Task 5: App do dono
 
 **Files:**
-- Create: `mobile/src/services/loans.ts`, `mobile/src/data/loans.ts`, `mobile/src/components/LoanGamePicker.tsx`
+- Create: `mobile/src/services/loans.ts`, `mobile/src/data/loans.ts`, `mobile/src/components/LoanConfirmSheet.tsx`
 - Modify: `mobile/src/data/schemas.ts`, `mobile/app/(app)/gamebox/[id].tsx`, `mobile/app/(app)/gamebox/bilhete.tsx`
 - Test: `mobile/__tests__/app/gameboxLoan.test.tsx`, `mobile/__tests__/app/gameboxBilhete.test.tsx`, `mobile/__tests__/services/loans.test.ts`
 
@@ -131,13 +131,13 @@
 - Consumes: callables do Task 3; frames 45La, 45Lb, 45Lc e 12L do Task 1.
 - Produces:
   - `LoanSchema` (zod, campos do `LoanDoc` com `.catch` como os outros esquemas) e `type Loan`.
-  - `createLoan(gameboxId, matchId, number): Promise<{ loanId: string; url: string }>`, `claimLoan(loanId): Promise<'claimed' | 'owner'>`, `cancelLoan(loanId): Promise<void>`, com erros mapeados para `LoanError` (`'claimed-by-other' | 'inactive' | 'not-home' | 'finished' | 'exists' | 'offline' | 'unknown'`).
+  - `createLoan(gameboxId, matchId, number): Promise<{ loanId: string; url: string }>`, `claimLoan(loanId): Promise<'claimed' | 'owner'>`, `cancelLoan(loanId): Promise<void>`, com erros mapeados para `LoanError` (`'claimed-by-other' | 'inactive' | 'not-home' | 'not-next' | 'finished' | 'exists' | 'offline' | 'unknown'`).
   - `useOwnerLoans(gameboxId: string)`: empréstimos ativos dessa GameBox (consulta `ownerUid == eu`, filtrada por `gameboxId` e `isLoanActive` com relógio de 30 s).
   - `useRecipientLoans()`: empréstimos ativos com `recipientUid == eu`.
   - `loanShareText(loan): string` = `Empresto-te a minha GameBox para o {casa} - {fora}. Abre na app S360: {url}`.
 
 - [ ] **Step 1: Testes:**
-  - O detalhe mostra "Emprestar para um jogo"; a folha lista só jogos em casa não terminados da modalidade da GameBox (Estádio: futebol; Pavilhão: as outras), o próximo marcado por defeito; sem jogos mostra "Sem jogos em casa marcados para esta GameBox." e não há botão de criar.
+  - O detalhe mostra "Emprestar para um jogo"; a folha mostra só o próximo jogo em casa não terminado do recinto da GameBox (Estádio: futebol; Pavilhão: as outras), sem lista nem escolha; sem jogo mostra "Sem jogos em casa marcados para esta GameBox." e não há botão de criar.
   - Criar chama `createLoan` com o número decifrado e abre `Share.share` com `loanShareText`; erro `exists` mostra "Já tens um empréstimo ativo para este jogo."
   - Com empréstimo ativo: "Emprestada para {casa} - {fora}", "Ainda não aberto" ou "Aberto por {nome} às {HH:MM}", e "Cancelar empréstimo" (confirmação em ModalSheet) chama `cancelLoan`.
   - Modo bilhete: GameBox emprestada para o jogo da faixa mostra "Emprestada para este jogo" sem QR; noutro jogo mostra o QR.

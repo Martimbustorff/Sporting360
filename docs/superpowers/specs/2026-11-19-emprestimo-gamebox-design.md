@@ -18,7 +18,7 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 ## Não objetivos
 
 - Abrir o empréstimo numa página web. Não há página: quem não tem a app é reencaminhado para a App Store ou para a Play Store (decisão do Martim, 19/11 20:24).
-- Empréstimos para vários jogos ou por tempo.
+- Empréstimos para vários jogos, para jogos que não sejam o próximo em casa, ou por tempo.
 - Notificações push (regra do Martim: push só para prognóstico e MVP). O estado do empréstimo vê-se dentro da app.
 - Ceder o lugar de forma oficial junto do clube. Isto é só a partilha do código que o dono já tem.
 
@@ -46,7 +46,7 @@ Quem tem GameBox quer emprestá-la a alguém para um jogo sem que o QR fique a c
 
 ### Fluxo do dono
 1. Em GameBox (frame 45), botão "Emprestar para um jogo".
-2. Escolhe o jogo: lista dos próximos jogos em casa da modalidade/recinto dessa GameBox (mesma lógica do modo bilhete: equipa 228 em casa, não terminado). Por defeito o próximo.
+2. Confirma o jogo: só se pode emprestar para o próximo jogo em casa do recinto dessa GameBox (mesma lógica do modo bilhete: equipa 228 em casa, não terminado), porque o QR é sempre o mesmo (decisão do Martim, 19/11 20:38). Sem jogos futuros nem escolha.
 3. A app cria o empréstimo no servidor e abre a folha de partilha do sistema com o link e uma frase curta, por exemplo: "Empresto-te a minha GameBox para o Sporting CP - FC Porto. Abre na app S360: <link>".
 4. No detalhe da GameBox fica o estado: "Emprestada para Sporting CP - FC Porto", "Ainda não aberto" ou "Aberto às 18:42", e o botão "Cancelar empréstimo".
 
