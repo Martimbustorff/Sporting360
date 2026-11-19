@@ -78,10 +78,28 @@ describe('Definições', () => {
       ['Termos e privacidade', '/definicoes/termos'],
       ['Apagar conta', '/apagar-conta'],
     ]) {
-      await fireEvent.press(screen.getByRole('button', { name: label }));
+      await fireEvent.press(screen.getByRole('button', { name: label === 'Conta S360' ? /^Conta S360/ : label }));
       expect(mockPush).toHaveBeenLastCalledWith(href);
     }
-    expect(screen.getByText('Versão 7.0.0')).toBeTruthy();
+    expect(screen.getByText('S360 · Versão 7.0.0 (42)')).toBeTruthy();
+    expect(screen.getByText('App de adeptos, não oficial.')).toBeTruthy();
+  });
+
+  it('cartão da conta mostra o nome completo e "sócio desde", e abre a Conta', async () => {
+    mockMyUser.current = { status: 'ready', data: { name: 'Maria Albuquerque Costa', partnerNumber: '03/1998' } };
+    await render(wrap(<Definicoes />));
+    await flush();
+    expect(screen.getByText('Maria Albuquerque Costa')).toBeTruthy();
+    expect(screen.getByText('Conta S360 · sócio desde 03/1998')).toBeTruthy();
+    expect(screen.getByTestId('conta-card-initial').props.children).toBe('M');
+  });
+
+  it('"Apagar conta" é a última linha, em danger, e "Terminar sessão" não tem seta', async () => {
+    await render(wrap(<Definicoes />));
+    await flush();
+    const rows = screen.getAllByTestId('list-row');
+    expect(rows[rows.length - 1]?.props.accessibilityLabel).toBe('Apagar conta');
+    expect(screen.getAllByTestId('list-row-separator').length).toBe(rows.length - 1);
   });
 
   it('nunca mostra o email (só na Conta)', async () => {

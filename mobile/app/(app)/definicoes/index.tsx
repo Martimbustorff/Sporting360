@@ -1,13 +1,9 @@
-// Figma: nó 323:11630 (Definições: fundo "image 2" desfocado 323:11631 com a tinta 323:11632, lista a 128 com linhas
-// ícone 24 + gap 16 + etiqueta DIN 18 maiúsculas + seta, separadas por linha; "Notificações" com interruptor 323:11790;
-// "Log Out" 323:11666 em corpo semibold 12 primary ao centro, em baixo). Linhas com MenuRow e ToggleRow; ícones
-// User_03 323:11823, Qr_Code 309:9328, Lock 348:37930 e Bell 302:4152 exportados do frame.
-// Diferenças ao frame (Plano 4, Task 26): "Definir Passcode" passa a "Desbloquear com {label}" (interruptor, com o ícone
-// do cadeado); "Notificações" abre as preferências (/perfil/notificacoes) em vez de um interruptor só.
-// SEM FIGMA: "Análise de utilização", "Ligar conta Apple", "Termos e privacidade" (mesmas linhas, ícones Feather/Ionicons),
-// "Ligar conta Apple" é só a sugestão nas definições (HIG): abre /ligar-apple, onde está o botão oficial da Apple. Sem
-// logótipo da Apple na linha (ícone de ligação do sistema).
-// "Apagar conta" e a versão (mesmo estilo do "Log Out"), a explicação sem biometria e as mensagens.
+// Figma V7.1: 02 Definições 4922:5841 (alerta 49 4953:9504 = Alert.alert do sistema, copy igual). Sem fundo de leão:
+// cartão da conta (surface-06, borda surface-10, raio 12) + três secções (CONTA, PRIVACIDADE E SEGURANÇA, SESSÃO)
+// com Eyebrow 13 e linhas M 52; "Apagar conta" em danger; rodapé centrado com a versão.
+// Diferenças ao frame: "Termos e privacidade" mostra a seta externa mas continua a abrir /definicoes/termos (página
+// dentro da app); "Ligar conta Apple" só aparece em iOS sem conta ligada (frame mostra o caso ligado a nada).
+// SEM FIGMA (copy mantida): "Análise de utilização", explicação sem biometria, mensagens de erro, "Ligar conta Apple".
 // O email nunca aparece aqui (só em Conta).
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -18,17 +14,19 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, ScrollView, View } from 'react-native';
 import { FormMessage } from '@/components/AuthForm';
 import { Header } from '@/components/Header';
-import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
 import { Screen } from '@/components/Screen';
 import { ToggleRow } from '@/components/ToggleRow';
-import { Touchable } from '@/components/Touchable';
+import { useMyUser } from '@/data/hooks';
+import { initialOf } from '@/components/RankingRow';
 import { useBiometricControl } from '@/providers/BiometricGate';
 import { useSession } from '@/providers/SessionProvider';
 import { getAnalyticsConsent, setAnalyticsConsent } from '@/services/analytics';
 import { signOut } from '@/services/auth';
-import { Body } from '@/theme/typography';
-import { colors, layout, spacing } from '@/theme/tokens';
+import { publicName } from '@/lib/publicName';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
+import { Touchable } from '@/components/Touchable';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const ICONS = {
@@ -51,17 +49,56 @@ type Message = { text: string; tone: 'error' | 'info' };
 
 const iconStyle = { width: layout.menuRowIcon, height: layout.menuRowIcon };
 const svg = (source: number) => <Image source={source} style={iconStyle} accessible={false} />;
+const feather = (name: React.ComponentProps<typeof Feather>['name'], color: keyof typeof colors = 'white') => (
+  <Feather name={name} size={layout.menuRowIcon} color={colors[color]} accessibilityElementsHidden importantForAccessibility="no" />
+);
 
-function FooterLink({ label, onPress }: { label: string; onPress: () => void }) {
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={{ gap: space.s4 }}>
+      <Text71 variant="eyebrow13" color="textSubtle" accessibilityRole="header">{label}</Text71>
+      <View>{children}</View>
+    </View>
+  );
+}
+
+function AccountCard({ name, since, onPress }: { name: string; since: string; onPress: () => void }) {
   return (
     <Touchable
+      testID="conta-card"
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={`Conta S360. ${name}`}
       onPress={onPress}
-      hitSlop={spacing.sm}
-      style={{ minHeight: layout.minTouch, justifyContent: 'center' }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: space.s16,
+        paddingLeft: layout.settingsCardPadLeft,
+        paddingRight: layout.settingsCardPadRight,
+        paddingVertical: space.s16,
+        backgroundColor: colors.surface06,
+        borderWidth: layout.separator,
+        borderColor: colors.surface10,
+        borderRadius: radii.r12,
+      }}
     >
-      <Body variant="badgeSmall" style={{ color: colors.primary, textAlign: 'center' }}>{label}</Body>
+      <View
+        style={{
+          width: layout.settingsCardAvatar,
+          height: layout.settingsCardAvatar,
+          borderRadius: layout.settingsCardAvatar / 2,
+          backgroundColor: colors.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Text71 variant="titleS20" testID="conta-card-initial">{name ? initialOf(name) : ''}</Text71>
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: layout.settingsCardGap }}>
+        <Text71 variant="titleS20" numberOfLines={1} ellipsizeMode="tail" testID="conta-card-name">{name || 'Conta S360'}</Text71>
+        <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{since}</Text71>
+      </View>
+      {feather('arrow-right')}
     </Touchable>
   );
 }
@@ -71,6 +108,8 @@ export default function Definicoes() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const session = useSession();
   const providers = session.status === 'signedIn' ? session.user.providers : [];
+  const uid = session.status === 'signedIn' ? session.user.uid : null;
+  const user = useMyUser(uid);
   const bio = useBiometricControl();
   const [analytics, setAnalytics] = useState<boolean | null>(null);
   const [bioMessage, setBioMessage] = useState<string | null>(null);
@@ -88,6 +127,7 @@ export default function Definicoes() {
   const bioUnavailable = bio.status === 'notEnrolled' || bio.status === 'noHardware';
   const showApple = Platform.OS === 'ios' && !providers.includes('apple.com');
   const version = Application.nativeApplicationVersion;
+  const build = Application.nativeBuildVersion;
 
   const toggleBiometric = async (on: boolean) => {
     if (bioBusy.current) return;
@@ -134,63 +174,62 @@ export default function Definicoes() {
 
   const bioNote = bioUnavailable ? DEFINICOES_TEXT.noBiometric(bio.label) : bioMessage;
 
+  const u = user.status === 'ready' ? user.data : null;
+  const fullName = u ? (u.name ?? u.displayName ?? '').trim() || (uid ? publicName({ displayName: u.displayName ?? null, name: u.name ?? null }, uid) : '') : '';
+  const since = u?.partnerNumber != null && String(u.partnerNumber).trim() !== '' ? `Conta S360 · sócio desde ${String(u.partnerNumber).trim()}` : 'Conta S360';
+
   return (
     <Screen padded="none">
-      <LionBackdrop blurred />
       <Header title="Definições" onBack={back} />
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
-          paddingHorizontal: spacing.screenXWide,
-          paddingTop: layout.settingsListTop,
+          paddingHorizontal: space.s24,
+          paddingTop: space.s8,
           paddingBottom: layout.settingsFooterBottom,
+          gap: space.s24,
         }}
       >
-        <View style={{ gap: layout.settingsRowGap }}>
-          <MenuRow label="Conta S360" icon={svg(ICONS.conta)} onPress={() => router.push('/definicoes/conta')} />
-          <MenuRow label="Gestão de GameBox" icon={svg(ICONS.gamebox)} onPress={() => router.push('/gamebox')} />
-          <View style={{ gap: spacing.sm }}>
-            <ToggleRow
-              icon={svg(ICONS.lock)}
-              label={`Desbloquear com ${bio.label}`}
-              value={bio.enabled}
-              disabled={bioUnavailable}
-              onChange={(v) => void toggleBiometric(v)}
-            />
-            {bioNote ? (
-              <Body variant="body" accessibilityLiveRegion="polite" style={{ color: bioMessage && !bioUnavailable ? colors.cardRed : colors.textMuted }}>
-                {bioNote}
-              </Body>
-            ) : null}
-          </View>
-          <MenuRow label="Notificações" icon={svg(ICONS.bell)} onPress={() => router.push('/perfil/notificacoes')} />
+        <AccountCard name={fullName} since={since} onPress={() => router.push('/definicoes/conta')} />
+        <Section label="CONTA">
+          <MenuRow size="M" label="Gestão de GameBox" icon={svg(ICONS.gamebox)} onPress={() => router.push('/gamebox')} />
+          {showApple ? (
+            <MenuRow size="M" label="Ligar conta Apple" icon={feather('link')} onPress={() => router.push('/ligar-apple')} />
+          ) : null}
+        </Section>
+        <Section label="PRIVACIDADE E SEGURANÇA">
           <ToggleRow
-            icon={<Feather name="bar-chart-2" size={layout.menuRowIcon} color={colors.white} />}
+            size="M"
+            icon={svg(ICONS.lock)}
+            label={`Desbloquear com ${bio.label}`}
+            value={bio.enabled}
+            disabled={bioUnavailable}
+            onChange={(v) => void toggleBiometric(v)}
+          />
+          {bioNote ? (
+            <Text71 variant="body14" accessibilityLiveRegion="polite" color={bioMessage && !bioUnavailable ? 'danger' : 'textMuted'} style={{ paddingVertical: space.s8 }}>
+              {bioNote}
+            </Text71>
+          ) : null}
+          <ToggleRow
+            size="M"
+            icon={feather('bar-chart-2')}
             label="Análise de utilização"
             value={analytics === true}
             disabled={analytics === null}
             onChange={(v) => void toggleAnalytics(v)}
           />
-          {showApple ? (
-            <MenuRow
-              label="Ligar conta Apple"
-              icon={<Ionicons name="link" size={layout.menuRowIcon} color={colors.white} />}
-              onPress={() => router.push('/ligar-apple')}
-            />
-          ) : null}
-          <MenuRow
-            label="Termos e privacidade"
-            icon={<Feather name="file-text" size={layout.menuRowIcon} color={colors.white} />}
-            onPress={() => router.push('/definicoes/termos')}
-          />
-          {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
-        </View>
-        <View style={{ marginTop: 'auto', paddingTop: layout.settingsRowGap, gap: layout.settingsFooterGap, alignItems: 'center' }}>
-          <FooterLink label="Terminar sessão" onPress={confirmSignOut} />
-          <FooterLink label="Apagar conta" onPress={() => router.push('/apagar-conta')} />
-          {version ? (
-            <Body variant="badgeSmall" style={{ color: colors.textMuted }}>{`Versão ${version}`}</Body>
-          ) : null}
+          <MenuRow size="M" label="Notificações" icon={svg(ICONS.bell)} onPress={() => router.push('/perfil/notificacoes')} />
+          <MenuRow size="M" label="Termos e privacidade" icon={feather('file-text')} trailing="external" onPress={() => router.push('/definicoes/termos')} />
+        </Section>
+        <Section label="SESSÃO">
+          <MenuRow size="M" label="Terminar sessão" icon={feather('log-out')} trailing="none" onPress={confirmSignOut} />
+          <MenuRow size="M" label="Apagar conta" tone="danger" icon={feather('trash-2', 'danger')} trailing="none" separator={false} onPress={() => router.push('/apagar-conta')} />
+        </Section>
+        {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
+        <View style={{ marginTop: 'auto', alignItems: 'center', gap: space.s4 }}>
+          <Text71 variant="eyebrow13" color="textSubtle">{version ? `S360 · Versão ${version}${build ? ` (${build})` : ''}` : 'S360'}</Text71>
+          <Text71 variant="caption12" color="textSubtle">App de adeptos, não oficial.</Text71>
         </View>
       </ScrollView>
     </Screen>

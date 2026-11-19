@@ -17,6 +17,7 @@ export function ListRow({
   disabled = false,
   accessibilityRole,
   accessibilityState,
+  tone = 'default',
 }: {
   icon: ReactNode;
   label: string;
@@ -27,6 +28,8 @@ export function ListRow({
   disabled?: boolean;
   accessibilityRole: AccessibilityRole;
   accessibilityState?: AccessibilityState;
+  /** `danger`: etiqueta em danger (Apagar conta, 4922:5949). */
+  tone?: 'default' | 'danger';
 }) {
   return (
     <Touchable
@@ -40,7 +43,7 @@ export function ListRow({
     >
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.s16 }}>
         <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>{icon}</View>
-        <Text71 variant="menu15" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>
+        <Text71 variant="menu15" color={tone === 'danger' ? 'danger' : 'white'} numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>
           {label}
         </Text71>
         {trailing}

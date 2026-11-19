@@ -11,7 +11,7 @@ jest.mock('@/providers/SessionProvider', () => ({
 jest.mock('@/providers/BiometricGate', () => ({ BiometricGate: ({ children }: { children: unknown }) => children }));
 
 import { setAnalyticsCollectionEnabled } from '@react-native-firebase/analytics';
-import { CONSENT_TEXT, CONSENT_TITLE } from '@/components/AnalyticsConsentSheet';
+import { CONSENT_POINTS, CONSENT_POLICY, CONSENT_TEXT, CONSENT_TITLE } from '@/components/AnalyticsConsentSheet';
 import AppLayout from '../../app/(app)/_layout';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
@@ -32,6 +32,8 @@ describe('AnalyticsConsentSheet no layout', () => {
     await render(wrap(<AppLayout />));
     expect(await screen.findByText(CONSENT_TITLE)).toBeTruthy();
     expect(screen.getByText(CONSENT_TEXT)).toBeTruthy();
+    for (const p of CONSENT_POINTS) expect(screen.getByText(p)).toBeTruthy();
+    expect(screen.getByRole('link', { name: CONSENT_POLICY })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Aceitar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Agora não' })).toBeTruthy();
   });

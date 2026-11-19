@@ -1,4 +1,4 @@
-import { Redirect, Stack } from 'expo-router';
+import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AnalyticsConsentSheet } from '@/components/AnalyticsConsentSheet';
 import { peekSignOutNotice } from '@/lib/signOutNotice';
@@ -11,6 +11,7 @@ import { getAnalyticsConsent } from '@/services/analytics';
 // enquanto não houver escolha guardada. Mudar de ideias é nas Definições (Task 26).
 // Plano 6: `onSettled` avisa quando a folha fecha ou não é precisa (o pedido de notificações vem depois).
 function AnalyticsConsentGate({ onSettled }: { onSettled: () => void }) {
+  const router = useRouter();
   const [show, setShow] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -27,8 +28,11 @@ function AnalyticsConsentGate({ onSettled }: { onSettled: () => void }) {
       alive = false;
     };
   }, []);
-  return show ? (
+  // A página de privacidade abre por cima: a folha fica escondida (mas montada, a escolha continua pendente) enquanto lá está.
+  const onTerms = usePathname().includes('/definicoes/termos');
+  return show && !onTerms ? (
     <AnalyticsConsentSheet
+      onPrivacy={() => router.push('/definicoes/termos')}
       onDone={() => {
         setShow(false);
         onSettled();

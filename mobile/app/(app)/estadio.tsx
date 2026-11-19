@@ -1,29 +1,63 @@
-// Figma: nós 450:5254 (mapa normal, 359 de largura) e 450:5095 (ampliado, 585 de largura, cortado pelo ecrã); mapa exportado
-// do nó 445:4511 (assets/images/estadio-mapa.png, com os sectores, NORTE/SUL e os três ícones). Botão Expand/Shrink 450:5414 /
-// 450:5416 no canto direito do Header; ligações 450:5379 (ícone 21.17 + gap 15 + etiqueta DIN 18) em baixo à esquerda.
-// SEM FIGMA: a animação entre os dois estados (escala em `layout.stadiumZoomMs`). O Museu saiu da lista (decisão do Martim).
-// Usa o `Animated` do React Native (não o Reanimated) para as rotas continuarem a montar no teste de rotas.
+// Figma V7.1: 04 Estádio 4923:5983. Mapa sobre a "luz do relvado" (estadio-luz.svg), legenda (Portas 1 a 12 / Sectores A e B /
+// Museu) e linhas L externas (Loja Verde, Bilheteira; a última sem separador). Botão Expandir/Reduzir no Header.
+// Museu (decisão do Martim): só o marcador no mapa (já vem desenhado no PNG estadio-mapa.png) e a entrada "Museu" na
+// legenda; sem ligação e sem linha a ligar. Mapa exportado do nó 445:4511; a animação de zoom (escala em `layout.stadiumZoomMs`)
+// é SEM FIGMA. Usa o `Animated` do React Native (não o Reanimated) para as rotas continuarem a montar no teste de rotas.
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, View } from 'react-native';
+import { Animated, Easing, ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
+import { MenuRow } from '@/components/MenuRow';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { STADIUM_LINKS, type StadiumLink } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
-import { layout, type } from '@/theme/tokens';
-import { Display } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const MAP = require('../../assets/images/estadio-mapa.png'); // nó 445:4511
-const ICONS: Record<StadiumLink['id'] | 'expand' | 'shrink', number> = {
-  loja: require('../../assets/icons/cart.svg'), // 450:5385
-  bilheteira: require('../../assets/icons/ticket.svg'), // 450:5388
-  expand: require('../../assets/icons/expand.svg'), // 450:5414
-  shrink: require('../../assets/icons/shrink.svg'), // 450:5416
+const LUZ = require('../../assets/images/estadio-luz.svg'); // 4923:5984
+const ICONS: Record<StadiumLink['id'] | 'expand' | 'shrink' | 'museum', number> = {
+  loja: require('../../assets/icons/cart.svg'),
+  bilheteira: require('../../assets/icons/ticket.svg'),
+  expand: require('../../assets/icons/expand.svg'),
+  shrink: require('../../assets/icons/shrink.svg'),
+  museum: require('../../assets/icons/museum.svg'),
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+export const MAP_A11Y = 'Mapa do estádio com os sectores, a Loja Verde, o Museu e a Bilheteira';
+
+function Legend() {
+  const item = { flexDirection: 'row', alignItems: 'center', gap: layout.stadiumLegendGap } as const;
+  return (
+    <View testID="estadio-legenda" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space.s16, rowGap: space.s8 }}>
+      <View style={item}>
+        <View style={{ width: layout.stadiumLegendDoor, height: layout.stadiumLegendDoor, borderRadius: layout.stadiumLegendDoor / 2, backgroundColor: colors.white }} />
+        <Text71 variant="caption12" color="textMuted">Portas 1 a 12</Text71>
+      </View>
+      <View style={item}>
+        <View
+          style={{
+            width: layout.stadiumLegendSectorWidth,
+            height: layout.stadiumLegendSectorHeight,
+            borderRadius: layout.stadiumLegendSectorRadius,
+            backgroundColor: colors.stadiumSector,
+          }}
+        />
+        <Text71 variant="caption12" color="textMuted">Sectores A e B</Text71>
+      </View>
+      <View testID="legenda-museu" style={item}>
+        <View style={{ padding: layout.stadiumLegendMuseumPad, borderRadius: layout.stadiumLegendMuseumRadius, backgroundColor: colors.white }}>
+          <Image source={ICONS.museum} style={{ width: layout.stadiumLegendMuseumIcon, height: layout.stadiumLegendMuseumIcon }} accessible={false} />
+        </View>
+        <Text71 variant="caption12" color="textMuted">Museu</Text71>
+      </View>
+    </View>
+  );
+}
 
 export default function Estadio() {
   const router = useRouter();
@@ -48,49 +82,43 @@ export default function Estadio() {
         title="Estádio"
         onBack={back}
         right={
-          <Touchable accessibilityRole="button" accessibilityLabel={label} onPress={() => setZoomed((z) => !z)} hitSlop={12}>
-            <Image
-              source={zoomed ? ICONS.shrink : ICONS.expand}
-              style={{ width: layout.headerIcon, height: layout.headerIcon }}
-              accessible={false}
-            />
+          <Touchable
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            onPress={() => setZoomed((z) => !z)}
+            style={{ minWidth: layout.minTouch, minHeight: layout.minTouch, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Image source={zoomed ? ICONS.shrink : ICONS.expand} style={{ width: layout.headerIcon, height: layout.headerIcon }} accessible={false} />
           </Touchable>
         }
       />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <Animated.View testID="estadio-mapa" style={{ transform: [{ scale }] }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: space.s24 }}>
+        <View style={{ alignItems: 'center', overflow: 'hidden' }}>
           <Image
-            source={MAP}
-            contentFit="contain"
-            accessibilityLabel="Mapa do estádio com os sectores, a Loja Verde, o Museu e a Bilheteira"
-            accessible
-            style={layout.stadiumMap}
+            source={LUZ}
+            accessible={false}
+            style={{ position: 'absolute', left: layout.stadiumLuzLeft, top: layout.stadiumLuzTop - layout.stadiumLuz / 2 + layout.stadiumMap.height / 2, width: layout.stadiumLuz, height: layout.stadiumLuz }}
           />
-        </Animated.View>
-      </View>
-      <View style={{ position: 'absolute', left: layout.stadiumLinksX, bottom: layout.stadiumLinksBottom, gap: layout.stadiumLinksGap }}>
-        {STADIUM_LINKS.map((l) => (
-          <Touchable
-            key={l.id}
-            accessibilityRole="link"
-            accessibilityLabel={l.label}
-            onPress={() => void openLink(l.url)}
-            hitSlop={8}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: layout.stadiumLinkIconGap,
-            }}
-          >
-            <Image
-              source={ICONS[l.id]}
-              style={{ width: layout.stadiumLinkIcon, height: layout.stadiumLinkIcon }}
-              accessible={false}
-            />
-            <Display variant="menuItem" style={type.menuRow}>{l.label}</Display>
-          </Touchable>
-        ))}
-      </View>
+          <Animated.View testID="estadio-mapa" style={{ transform: [{ scale }] }}>
+            <Image source={MAP} contentFit="contain" accessibilityLabel={MAP_A11Y} accessible style={layout.stadiumMap} />
+          </Animated.View>
+        </View>
+        <View style={{ paddingHorizontal: space.s24, paddingTop: layout.stadiumBelowTop, gap: space.s16 }}>
+          <Legend />
+          <View>
+            {STADIUM_LINKS.map((l, i) => (
+              <MenuRow
+                key={l.id}
+                external
+                label={l.label}
+                separator={i < STADIUM_LINKS.length - 1}
+                icon={<Image source={ICONS[l.id]} style={{ width: layout.menuRowIcon, height: layout.menuRowIcon }} accessible={false} />}
+                onPress={() => void openLink(l.url)}
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </Screen>
   );
 }

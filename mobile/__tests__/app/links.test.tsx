@@ -1,5 +1,5 @@
 // Task 25: Mapa do estádio, Sites do clube e Comunidade Leonina (escondida pela flag). Hooks mockados, browser = mock.
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -21,8 +21,8 @@ jest.mock('expo-image', () => {
 
 import { CLUB_SITES, STADIUM_LINKS } from '@/content/clubLinks';
 import Comunidade from '../../app/(app)/comunidade';
-import Estadio from '../../app/(app)/estadio';
-import Sites from '../../app/(app)/sites';
+import Estadio, { MAP_A11Y } from '../../app/(app)/estadio';
+import Sites, { SITES_NOTE } from '../../app/(app)/sites';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
 const wrap = (ui: React.JSX.Element) => <SafeAreaProvider initialMetrics={METRICS}>{ui}</SafeAreaProvider>;
@@ -41,8 +41,14 @@ describe('Sites do clube', () => {
     await render(wrap(<Sites />));
     expect(CLUB_SITES.map((s) => s.label)).toEqual(['Site do Sporting', 'Sporting num Minuto', 'Loja Verde', 'Bilheteira Online']);
     expect(screen.getByText('Aqui podes encontrar ligações diretas para os sites oficiais do clube.')).toBeTruthy();
+    expect(screen.getByText(SITES_NOTE)).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Loja Verde'));
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://lojaverde.sporting.pt/pt');
+  });
+
+  it('a última linha não tem separador', async () => {
+    await render(wrap(<Sites />));
+    expect(screen.getAllByTestId('list-row-separator')).toHaveLength(CLUB_SITES.length - 1);
   });
 
   it('todas as ligações são https', async () => {
@@ -59,6 +65,20 @@ describe('Mapa do estádio', () => {
     expect(screen.queryByLabelText('Ampliar mapa')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Reduzir mapa'));
     expect(screen.getByLabelText('Ampliar mapa')).toBeTruthy();
+  });
+
+  it('Museu: marcador no mapa e entrada na legenda, sem ligação nem linha de lista', async () => {
+    await render(wrap(<Estadio />));
+    expect(screen.getByLabelText(MAP_A11Y)).toBeTruthy();
+    expect(MAP_A11Y).toMatch(/Museu/);
+    const legend = screen.getByTestId('estadio-legenda');
+    expect(within(legend).getByText('Museu')).toBeTruthy();
+    expect(within(legend).getByText('Portas 1 a 12')).toBeTruthy();
+    expect(within(legend).getByText('Sectores A e B')).toBeTruthy();
+    // a legenda não é tocável e o Museu não tem papel de ligação nem botão
+    expect(screen.queryByRole('link', { name: /Museu/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Museu/ })).toBeNull();
+    expect(screen.getAllByTestId('list-row')).toHaveLength(STADIUM_LINKS.length);
   });
 
   it('abre Loja Verde e Bilheteira no browser da app; sem Museu', async () => {

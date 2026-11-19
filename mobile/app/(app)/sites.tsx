@@ -1,18 +1,17 @@
-// Figma: nó 348:44569 (Sites do clube: fundo "image 2" desfocado 348:44570, texto 348:44577 em corpo leve 14/22,
-// quatro linhas ícone 24 + gap 16 + etiqueta DIN 18 maiúsculas + seta diagonal, separadas por linha). Linhas com MenuRow external.
-// O título do frame diz "Sites do Cube" (gralha): usa-se "Sites do clube". "directas" passa a "diretas" (pt-PT atual).
-// Os ícones do carrinho e do bilhete são os do mapa do estádio, desenhados a 24 (vetor, sem perda).
+// Figma V7.1: 03 Sites 4922:5959. Fundo liso (sem leão), intro Body Light 14, linhas L externas (a última sem separador) e
+// nota com seta externa "Abre no navegador, fora da app.". Diferença ao frame: o frame traz uma 5.ª linha "Gameback";
+// fica de fora (a V2 excluiu-a de propósito, clubLinks.ts) e não se inventa URL. Texto da intro e nota mantidos.
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
-import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
 import { Screen } from '@/components/Screen';
 import { CLUB_SITES, type ClubSite } from '@/content/clubLinks';
 import { openLink } from '@/lib/openLink';
-import { Body } from '@/theme/typography';
-import { layout, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
+import Feather from '@expo/vector-icons/Feather';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
 const ICONS: Record<ClubSite['id'], number> = {
@@ -23,6 +22,7 @@ const ICONS: Record<ClubSite['id'], number> = {
 };
 /* eslint-enable @typescript-eslint/no-require-imports */
 
+export const SITES_NOTE = 'Abre no navegador, fora da app.';
 export const SITES_INTRO = 'Aqui podes encontrar ligações diretas para os sites oficiais do clube.';
 const iconStyle = { width: layout.menuRowIcon, height: layout.menuRowIcon };
 
@@ -31,20 +31,24 @@ export default function Sites() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   return (
     <Screen padded="none">
-      <LionBackdrop blurred />
       <Header title="Sites do clube" onBack={back} />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.screenXWide, paddingTop: spacing.sm }}>
-        <Body variant="body" style={type.authIntro}>{SITES_INTRO}</Body>
-        <View style={{ marginTop: layout.sitesListTop, gap: layout.sitesRowGap }}>
-          {CLUB_SITES.map((s) => (
+      <ScrollView contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: space.s8, paddingBottom: space.s24, gap: space.s16 }}>
+        <Text71 variant="bodyLight14" color="textMuted">{SITES_INTRO}</Text71>
+        <View>
+          {CLUB_SITES.map((s, i) => (
             <MenuRow
               key={s.id}
               external
               label={s.label}
+              separator={i < CLUB_SITES.length - 1}
               icon={<Image source={ICONS[s.id]} style={iconStyle} accessible={false} />}
               onPress={() => void openLink(s.url)}
             />
           ))}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.linkNoteGap }}>
+          <Feather name="arrow-up-right" size={layout.linkNoteIcon} color={colors.textSubtle} accessibilityElementsHidden importantForAccessibility="no" />
+          <Text71 variant="caption12" color="textSubtle">{SITES_NOTE}</Text71>
         </View>
       </ScrollView>
     </Screen>

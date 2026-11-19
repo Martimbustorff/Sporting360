@@ -12,6 +12,7 @@ export function MenuRow({
   size = 'L',
   separator = true,
   trailing = external ? 'external' : 'arrow',
+  tone = 'default',
 }: {
   icon: ReactNode;
   label: string;
@@ -20,6 +21,7 @@ export function MenuRow({
   size?: ListRowSize;
   separator?: boolean;
   trailing?: 'arrow' | 'external' | 'none';
+  tone?: 'default' | 'danger';
 }) {
   return (
     <ListRow
@@ -28,6 +30,7 @@ export function MenuRow({
       size={size}
       separator={separator}
       onPress={onPress}
+      tone={tone}
       accessibilityRole={external ? 'link' : 'button'}
       trailing={
         trailing === 'none' ? null : (
