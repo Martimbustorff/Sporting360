@@ -3,12 +3,11 @@
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthLinkRow, AuthScaffold } from '@/components/AuthForm';
+import { AUTH_LINK_ROWS_GAP, AuthLinkRow, AuthScaffold } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SocialButtons } from '@/components/SocialButtons';
 import { TextField } from '@/components/TextField';
 import { signInEmail } from '@/services/auth';
-import { layout } from '@/theme/tokens';
 
 export default function Entrar() {
   const router = useRouter();
@@ -48,7 +47,7 @@ export default function Entrar() {
         <>
           <PrimaryButton label="Entrar" variant="white" onPress={() => void submit()} loading={loading} />
           <SocialButtons />
-          <View style={{ gap: layout.authLinksRowGap }}>
+          <View style={{ gap: AUTH_LINK_ROWS_GAP }}>
             <AuthLinkRow
               text="Esqueceste-te da password?"
               action="Recupera-a"

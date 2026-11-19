@@ -69,6 +69,12 @@ export function AuthScaffold({
 /** Excesso do alvo de 44 pt sobre a linha de texto, por cada lado: devolve-se com margem negativa (o frame tem as linhas a `authLinksRowGap`). */
 const LINK_ROW_OVERHANG = (layout.minTouch - text71.captionStrong12.lineHeight) / 2;
 
+/**
+ * Espaço entre `AuthLinkRow` empilhadas: pelo menos o excesso de alvo das duas (44 menos a linha de texto), para as caixas de
+ * 44 pt nunca se sobreporem e cada ligação manter os 44 pt inteiros. Prevalece sobre os 12 pt do frame (`authLinksRowGap`).
+ */
+export const AUTH_LINK_ROWS_GAP = Math.max(layout.authLinksRowGap, layout.minTouch - text71.captionStrong12.lineHeight);
+
 /** Linha "texto Caption 12 text-muted + ação Caption Strong primary-on-dark" (Figma 4940:7374). */
 export function AuthLinkRow({ text, action, onPress }: { text: string; action: string; onPress: () => void }) {
   return (

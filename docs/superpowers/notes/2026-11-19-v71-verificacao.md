@@ -71,6 +71,7 @@ Frames: 02, 03, 04, 05, 13 a 27 (com 21b), 48 e 49. Método e legenda como no Gr
 | 13 Welcome | `app/(auth)/welcome.tsx` | Grupo S360 + frase centrado no espaço livre (no frame fica a 280 pt fixos) | intencional: evita sobrepor os botões no iPhone SE |
 | 13 | `welcome.tsx`, `SocialButtons.tsx` | Resto igual (anéis a 22 %, Title L 28, Branco, Contorno, Google e Apple a 12) | sem diferenças |
 | 14 Entrar | `app/(auth)/entrar.tsx` | Sem diferenças (Branco, Google/Apple, ligações Caption 12, erro por baixo da password) | sem diferenças |
+| 14 | `AuthForm.tsx`, `entrar.tsx` | As duas ligações empilhadas ficam a `AUTH_LINK_ROWS_GAP` (44 menos a linha de texto, cerca de 27 pt) e não aos 12 pt do frame | intencional: 44 pt de toque prevalece sobre os 12 pt do frame |
 | 15 Criar conta | `app/(auth)/criar-conta.tsx` | Sem diferenças (botões Google/Apple e "Pelo menos 6 caracteres." presentes; nota dos termos toda ligação) | sem diferenças (decisão do Martim) |
 | 16 Recuperar password | `app/(auth)/recuperar-password.tsx` | Título abreviado "Recuperar Pass"; o frame diz "RECUPERAR PASSWORD" | corrigido em cd72fef |
 | 17 Termos e condições | `TermsView.tsx`, `definicoes/termos.tsx`, `(auth)/termos.tsx` | Sem diferenças de estilo (Label 16 primary-on-dark, Body Light 14); o corpo vem de `content/termos.ts` (o frame tem texto de exemplo) | sem diferenças |

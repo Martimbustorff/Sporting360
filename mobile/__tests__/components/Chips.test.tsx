@@ -2,7 +2,7 @@
 import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Chips } from '@/components/Chips';
-import { AuthLinkRow } from '@/components/AuthForm';
+import { AUTH_LINK_ROWS_GAP, AuthLinkRow } from '@/components/AuthForm';
 import { colors, layout, space, text71 } from '@/theme/tokens';
 
 const items = [
@@ -44,6 +44,16 @@ describe('Chips: espaço visível igual ao frame', () => {
     const chip = StyleSheet.flatten(screen.getByTestId('chip-a').props.style);
     expect(chip.minHeight).toBe(layout.minTouch);
     expect(chip.marginVertical).toBe(-overhang);
+  });
+});
+
+describe('AuthLinkRow: ligações empilhadas', () => {
+  it('o espaço entre linhas impede a sobreposição das caixas de 44 pt (44 pt prevalece sobre os 12 pt do frame)', () => {
+    const overhang = (layout.minTouch - text71.captionStrong12.lineHeight) / 2;
+    expect(AUTH_LINK_ROWS_GAP).toBeGreaterThanOrEqual(layout.minTouch - text71.captionStrong12.lineHeight);
+    expect(AUTH_LINK_ROWS_GAP).toBeGreaterThan(layout.authLinksRowGap);
+    // Folga entre a base da caixa de cima e o topo da de baixo.
+    expect(AUTH_LINK_ROWS_GAP - 2 * overhang).toBeGreaterThanOrEqual(0);
   });
 });
 
