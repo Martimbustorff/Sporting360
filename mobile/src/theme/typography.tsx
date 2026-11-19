@@ -1,7 +1,7 @@
 import { Text, type TextProps } from 'react-native';
 import { colors, text71, type } from './tokens';
 
-type DisplayVariant = 'screenTitle' | 'heroTitle' | 'menuItem' | 'minute' | 'sectionScore' | 'scoreBox' | 'rowScore' | 'tableHead' | 'tableValue' | 'tablePosition';
+type DisplayVariant = 'screenTitle' | 'heroTitle' | 'menuItem' | 'minute' | 'sectionScore' | 'rowScore' | 'tableHead' | 'tableValue' | 'tablePosition';
 type BodyVariant = 'body' | 'strip' | 'sectionLabel' | 'tab' | 'badge' | 'badgeSmall' | 'rowTeam' | 'tableTeam' | 'standingsTeam';
 
 export function Display({ variant, style, ...rest }: TextProps & { variant: DisplayVariant }) {

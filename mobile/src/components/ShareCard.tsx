@@ -24,8 +24,8 @@ export const SHARE_CARD_TEXT = {
   invite: 'Partilha o teu prognóstico',
 } as const;
 
-type Props = { match: Match; home: number; away: number };
-type CardProps = Props & { onLayout: (e: LayoutChangeEvent) => void };
+type Props = { match: Match; home: number; away: number; onCardHeight?: (height: number) => void };
+type CardProps = Omit<Props, 'onCardHeight'> & { onLayout: (e: LayoutChangeEvent) => void };
 
 function Team({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   return (
@@ -70,12 +70,15 @@ function Fit({ scale, height, children }: { scale: number; height: number | null
   );
 }
 
-export const ShareCard = forwardRef<ComponentRef<typeof View>, Props>(function ShareCard(props, ref) {
+export const ShareCard = forwardRef<ComponentRef<typeof View>, Props>(function ShareCard({ onCardHeight, ...props }, ref) {
   const scale = shareCardScale(useWindowDimensions().width);
   const [height, setHeight] = useState<number | null>(null);
   return (
     <Fit scale={scale} height={height}>
-      <Card ref={ref} {...props} onLayout={(e) => setHeight(e.nativeEvent.layout.height)} />
+      <Card ref={ref} {...props} onLayout={(e) => {
+          setHeight(e.nativeEvent.layout.height);
+          onCardHeight?.(e.nativeEvent.layout.height);
+        }} />
     </Fit>
   );
 });
@@ -176,13 +179,16 @@ const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ ma
             {SHARE_SHORT_TEXT}
           </Text71>
         </View>
-        <QRCode
-          value={shareLink(match.id)}
-          size={layout.shareQr}
-          color={colors.bg}
-          backgroundColor={colors.white}
-          quietZone={layout.shareQrQuietZone}
-        />
+        <View testID="share-qr-box" style={{ backgroundColor: colors.white, padding: layout.shareQrPad }}>
+          <QRCode
+            value={shareLink(match.id)}
+            size={layout.shareQr}
+            ecl="L"
+            color={colors.bg}
+            backgroundColor={colors.white}
+            quietZone={0}
+          />
+        </View>
       </View>
     </View>
   );

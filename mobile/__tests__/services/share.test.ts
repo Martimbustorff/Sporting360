@@ -30,6 +30,11 @@ describe('shareMatchday', () => {
     expect(track).toHaveBeenCalledWith('share_prediction', { game: '1001' });
   });
 
+  it('captura a 3x (1041 px de largura) quando se conhece a altura do cartão', async () => {
+    await shareMatchday(ref, MATCH, 2, 1, 500);
+    expect(captureRef).toHaveBeenCalledWith(ref, { format: 'png', quality: 1, result: 'tmpfile', width: 1041, height: 1500 });
+  });
+
   it('fechar a folha de partilha devolve dismissed e não conta como partilha', async () => {
     (Share.open as jest.Mock).mockResolvedValueOnce({ success: false, dismissedAction: true, message: '' });
     await expect(shareMatchday(ref, MATCH, 2, 1)).resolves.toBe('dismissed');

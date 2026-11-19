@@ -118,7 +118,6 @@ export const type = {
   menuItem: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase' },
   minute: { fontFamily: fonts.display, fontSize: 20, color: colors.white, textTransform: 'uppercase' },
   sectionScore: { fontFamily: fonts.display, fontSize: 24, color: colors.white },
-  scoreBox: { fontFamily: fonts.display, fontSize: 40, color: colors.bg },
   strip: { fontFamily: fonts.bodyMedium, fontSize: 16, color: colors.white },
   sectionLabel: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
   tab: { fontFamily: fonts.bodyMedium, fontSize: 14, color: colors.white },
@@ -530,7 +529,10 @@ export const layout = {
   shareCardWidth: 347,
   shareCardInset: 8, // SEM FIGMA: folga mínima entre o cartão e a borda do ecrã; abaixo de 363 pt o cartão encolhe
   shareQr: 48, // V7.1 4946:8227
-  shareQrQuietZone: 2,
+  shareQrPad: 6, // caixa branca à volta do QR: 4 módulos de zona de silêncio (~1,5 pt cada), o degradê nunca toca o código
+  shareCaptureScale: 3, // o cartão exportado sai sempre a 3x (1041 px de largura)
+  stepCompactBelow: 360, // abaixo desta largura de janela o seletor esconde o emblema (nomes longos a 320 pt)
+  predictionTabTop: 20, // 4945:8053: do fim dos separadores (348) ao conteúdo (368)
   // V7.1 Prognóstico (4945:8059) e cartão S360 MATCHDAY (4946:8197)
   stepValue: { width: 52, height: 60 }, // caixa branca do seletor
   stepValueRadius: 8,

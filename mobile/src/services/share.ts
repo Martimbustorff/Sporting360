@@ -6,6 +6,7 @@ import Share from 'react-native-share';
 import { captureRef } from 'react-native-view-shot';
 import type { Match } from '@/data/schemas';
 import { shareLink } from '@/lib/shareLink';
+import { layout } from '@/theme/tokens';
 import { track } from '@/services/analytics';
 
 export function shareMessage(match: Pick<Match, 'id' | 'home' | 'away'>, home: number, away: number): string {
@@ -21,8 +22,13 @@ export async function shareMatchday(
   match: Pick<Match, 'id' | 'home' | 'away'>,
   home: number,
   away: number,
+  cardHeight?: number,
 ): Promise<'shared' | 'dismissed'> {
-  const url = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile' });
+  // Sempre a 3x (1041 px de largura), seja qual for a densidade do ecrã: o QR sai nítido.
+  const size = cardHeight
+    ? { width: layout.shareCardWidth * layout.shareCaptureScale, height: Math.round(cardHeight * layout.shareCaptureScale) }
+    : null;
+  const url = await captureRef(ref, { format: 'png', quality: 1, result: 'tmpfile', ...size });
   const res = await Share.open({ url, type: 'image/png', message: shareMessage(match, home, away), failOnCancel: false });
   if (!res.success || res.dismissedAction) return 'dismissed';
   track('share_prediction', { game: match.id });

@@ -1,5 +1,10 @@
 // Task 16: tab Prognóstico. Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__),
 // chamada pelo services/game real, para testar o caminho completo até ao código de erro do servidor.
+const mockWindow = { width: 375, height: 812, scale: 2, fontScale: 1 };
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => mockWindow,
+}));
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import type { CompetitionType, GameStatus, Match } from '@/data/schemas';
 
@@ -82,6 +87,7 @@ const tick = (ms: number) =>
 const flush = () => act(async () => {});
 
 beforeEach(() => {
+  mockWindow.width = 375;
   jest.useFakeTimers();
   jest.setSystemTime(NOW);
   jest.clearAllMocks();
@@ -119,6 +125,23 @@ describe('Stepper V7.1', () => {
     const name = screen.getByText('Sporting de Braga B Futebol Clube');
     expect(name.props.numberOfLines).toBe(1);
     expect(screen.getByLabelText('Menos um golo para Sporting de Braga B Futebol Clube')).toBeTruthy();
+  });
+
+  it('a 320 pt o emblema esconde-se e o nome ocupa o espaço que sobra', async () => {
+    mockWindow.width = 320;
+    await render(<PredictionTab match={match()} />, { wrapper });
+    expect(screen.queryByTestId('prediction-crest-home', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('prediction-crest-away', { includeHiddenElements: true })).toBeNull();
+    const name = screen.getByText('Sporting CP');
+    expect(name.props.numberOfLines).toBe(1);
+    const style = JSON.stringify(name.props.style);
+    expect(style).toContain('"flex":1');
+    expect(style).not.toContain('"width"');
+  });
+
+  it('a 375 pt mantém o emblema', async () => {
+    await render(<PredictionTab match={match()} />, { wrapper });
+    expect(screen.getByTestId('prediction-crest-home', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('só de leitura: mostra o valor e não tem botões', async () => {

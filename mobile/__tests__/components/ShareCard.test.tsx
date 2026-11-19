@@ -1,4 +1,4 @@
-// Task 9 (V7.1, frame 30 4946:7934): cartão "S360 MATCHDAY" (SEM FIGMA; referência 818:20427).
+// Task 9 (V7.1, frame 30 4946:7934): cartão "S360 MATCHDAY" (Figma 4946:8197).
 import { createRef, type ComponentRef } from 'react';
 import { View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -61,7 +61,11 @@ describe('ShareCard', () => {
     expect(JSON.stringify(box.props.style)).toContain('"width":48');
     expect(JSON.stringify(box.props.style)).toContain('"height":58');
     expect(screen.getByText('Partilha o teu prognóstico')).toBeTruthy();
-    expect(screen.getByTestId('qrcode').props.size).toBe(48);
+    const qr = screen.getByTestId('qrcode');
+    expect(qr.props.size).toBe(48);
+    expect(qr.props.ecl).toBe('L');
+    expect(qr.props.quietZone).toBe(0);
+    expect(JSON.stringify(screen.getByTestId('share-qr-box').props.style)).toContain('"padding":6');
   });
 
   it('QR com o link do jogo e o link curto em texto', async () => {

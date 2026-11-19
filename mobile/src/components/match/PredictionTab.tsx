@@ -198,12 +198,13 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
   const card = useRef<ComponentRef<typeof View>>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cardHeight = useRef<number | undefined>(undefined);
 
   const share = async () => {
     setSending(true);
     setError(null);
     try {
-      const result = await shareMatchday(card, match, home, away);
+      const result = await shareMatchday(card, match, home, away, cardHeight.current);
       if (result === 'shared') onClose();
     } catch (e) {
       reportCode('SHARE_FAILED', e);
@@ -218,7 +219,7 @@ function ShareSheet({ match, home, away, onClose }: { match: Match; home: number
       {/* A área do cartão vai até `shareCardInset` da borda do ecrã (o padding da folha é maior); o cartão
           escala-se sozinho para caber nela (ShareCard.shareCardScale). */}
       <View style={{ alignItems: 'center', marginHorizontal: layout.shareCardInset - space.s24 }}>
-        <ShareCard ref={card} match={match} home={home} away={away} />
+        <ShareCard ref={card} match={match} home={home} away={away} onCardHeight={(h) => (cardHeight.current = h)} />
       </View>
       {error ? <FormMessage text={error} /> : null}
       <View style={{ gap: space.s12 }}>
@@ -392,7 +393,7 @@ export function PredictionTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="prediction-tab"
-      contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: space.s16 + space.s4, paddingBottom: space.s32, gap: space.s16 }}
+      contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.predictionTabTop, paddingBottom: space.s32, gap: space.s16 }}
     >
       <OfflineBanner visible={offline} />
       {body}
