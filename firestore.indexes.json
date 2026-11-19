@@ -83,34 +83,6 @@
           "order": "DESCENDING"
         }
       ]
-    },
-    {
-      "collectionGroup": "loans",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "ownerUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "loans",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "recipientUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "expiresAt",
-          "order": "DESCENDING"
-        }
-      ]
     }
   ],
   "fieldOverrides": [

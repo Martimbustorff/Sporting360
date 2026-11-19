@@ -4,7 +4,7 @@ import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import type { MatchDoc } from "../../src/model/types";
 import { handleCreateLoan, handleClaimLoan } from "../../src/callables/loans";
-import { cancelLoansForGamebox, cancelLoansForUser, maintainLoans } from "../../src/loans/lifecycle";
+import { cancelLoansForGamebox, cancelLoansForUser, cancelLoansOnGameboxEdit, maintainLoans } from "../../src/loans/lifecycle";
 
 let db: Firestore;
 const NOW = new Date("2026-11-19T12:00:00Z");
@@ -30,6 +30,7 @@ beforeEach(async () => {
   G1 = `g1_${seq}_${Date.now()}`;
   G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
+  await db.doc("config/app").set({ loansEnabled: true });
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc(`gamebox/${G1}`).set({ userid: "alice", gameboxNumber: "cifrado", gameboxPort: "10", gameboxSector: "A", gameboxLine: "3", gameboxSeat: "7" });
@@ -56,6 +57,22 @@ describe("maintainLoans", () => {
     await maintainLoans(db, NOW);
     expect(await expiry(id)).toEqual(new Date(moved.getTime() + 4 * H));
     expect(await hasSecret(id)).toBe(true);
+  });
+
+  it("jogo remarcado: match.kickoff do cartão segue a hora nova (e só os campos de apresentação)", async () => {
+    const id = await create();
+    const before = await loanOf(id);
+    const moved = new Date("2026-11-22T18:00:00Z");
+    await db.doc("matches/m1").update({ kickoff: Timestamp.fromDate(moved), home: { id: "228", name: "Outro nome", logo: null } });
+    await maintainLoans(db, NOW);
+    const after = await loanOf(id);
+    expect(after.match.kickoff.toDate()).toEqual(moved);
+    expect(after.match.homeName).toBe(before.match.homeName);
+    expect(after.seat).toEqual(before.seat);
+    expect(await expiry(id)).toEqual(new Date(moved.getTime() + 4 * H));
+    // idempotente
+    const again = await maintainLoans(db, NOW);
+    expect(again.count).toBe(0);
   });
 
   it("jogo FT com finishedAt: fim + 2 h; número mantido enquanto dentro da validade", async () => {
@@ -156,5 +173,63 @@ describe("cancelamentos", () => {
     expect(l.cancelledAt).toBeNull();
     expect(await hasSecret(id)).toBe(false);
     expect(await cancelLoansForUser(db, "alice", NOW)).toBe(0);
+  });
+});
+
+describe("GameBox editada (onGameboxUpdated)", () => {
+  const edit = async (patch: Record<string, unknown>) => {
+    // Em memória: não se escreve em `gamebox` para o gatilho real do emulador não correr em paralelo com o teste.
+    const before = (await db.doc(`gamebox/${G1}`).get()).data()!;
+    const after = { ...before, ...patch };
+    cur = after;
+    return cancelLoansOnGameboxEdit(db, G1, before, after, NOW);
+  };
+  let cur: Record<string, unknown> = {};
+
+  it.each([
+    ["gameboxPort", "11"],
+    ["gameboxSector", "B"],
+    ["gameboxLine", "4"],
+    ["gameboxSeat", "8"],
+    ["pavilionPort", "P2"],
+    ["pavilionSector", "S1"],
+    ["pavilionLine", "1"],
+    ["pavilionSeat", "5"],
+  ])("alterar %s cancela o empréstimo ativo e apaga o número", async (field, value) => {
+    const id = await create();
+    expect(await edit({ [field]: value })).toBe(1);
+    expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
+    expect(await hasSecret(id)).toBe(false);
+  });
+
+  it("alterar o número (decifrado diferente) cancela; o mesmo número recifrado com outro sal não", async () => {
+    // Textos cifrados como a app os grava (uid alice, passphrase da V2): "123456" com dois sais e "99887766".
+    const A1 = "U2FsdGVkX1/vd1DTYimXqOeGA+i/5z4NUrPxrQBzVOs=";
+    const A2 = "U2FsdGVkX19liQxttLz4O060jf8EJnATmLGdShr22Xg=";
+    const B = "U2FsdGVkX1+QuCRwjCR1Tnxd8/1kNV0FtKlekKh2Sx8=";
+    const id = await create();
+    const base = { userid: "alice", gameboxNumber: A1, gameboxPort: "10" };
+    expect(await cancelLoansOnGameboxEdit(db, G1, base, { ...base, gameboxNumber: A2 }, NOW)).toBe(0);
+    expect((await loanOf(id)).cancelledAt).toBeNull();
+    expect(await hasSecret(id)).toBe(true);
+    expect(await cancelLoansOnGameboxEdit(db, G1, base, { ...base, gameboxNumber: B }, NOW)).toBe(1);
+    expect((await loanOf(id)).cancelledAt?.toDate()).toEqual(NOW);
+    expect(await hasSecret(id)).toBe(false);
+  });
+
+  it("nome, ordem e valores equivalentes (vazio, espaços) não cancelam", async () => {
+    const id = await create();
+    expect(await edit({ gameboxName: "Outro nome", order: 7 })).toBe(0);
+    expect(await cancelLoansOnGameboxEdit(db, G1, cur, { ...cur, gameboxPort: " 10 " }, NOW)).toBe(0);
+    expect((await loanOf(id)).cancelledAt).toBeNull();
+    expect(await hasSecret(id)).toBe(true);
+  });
+
+  it("idempotente: repetir não altera o cancelamento", async () => {
+    const id = await create();
+    await edit({ gameboxSeat: "9" });
+    const before = await loanOf(id);
+    expect(await cancelLoansOnGameboxEdit(db, G1, { gameboxSeat: "7" }, { gameboxSeat: "9" }, new Date(NOW.getTime() + 5000))).toBe(0);
+    expect(await loanOf(id)).toEqual(before);
   });
 });

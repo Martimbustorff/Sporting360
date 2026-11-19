@@ -7,6 +7,11 @@ export interface AppConfig {
   comunidadeLeonina: CommunityEntry[];
   /** Secções escondidas na UI por configuração (não apagadas). */
   features?: { comunidadeLeonina?: boolean };
+  /**
+   * Empréstimos de GameBox. Por omissão desligado: só se liga depois de `firestore.final.rules` estar publicada (L5), porque
+   * na fase 2 `gamebox` e `users` são públicos. Um empréstimo já ativo continua a funcionar com o interruptor desligado.
+   */
+  loansEnabled?: boolean;
 }
 
 export interface CommunityEntry {

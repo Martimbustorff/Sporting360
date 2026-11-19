@@ -32,6 +32,7 @@ beforeEach(async () => {
   G1 = `g1_${seq}_${Date.now()}`;
   G2 = `g2_${seq}_${Date.now()}`;
   await clearAll(db);
+  await db.doc("config/app").set({ loansEnabled: true });
   await db.doc("publicProfiles/alice").set({ displayName: "Alice A." });
   await db.doc("publicProfiles/bob").set({ displayName: "Bruno B." });
   await db.doc(`gamebox/${G1}`).set({
@@ -64,6 +65,28 @@ const create = (auth: { uid: string } | undefined, over: Record<string, unknown>
   handleCreateLoan(db, auth, { gameboxId: G1, matchId: "m1", number: NUM, ...over }, NOW);
 const loanOf = async (id: string) => (await db.doc(`loans/${id}`).get()).data()!;
 const secretOf = async (id: string) => (await db.doc(`loans/${id}/secret/number`).get()).data();
+
+describe("createLoan: interruptor loansEnabled", () => {
+  it("desligado (false) ou ausente: failed-precondition com reason disabled, nada criado", async () => {
+    await db.doc("config/app").set({ loansEnabled: false });
+    expect(await code(create(alice))).toEqual({ code: "failed-precondition", reason: "disabled" });
+    await db.doc("config/app").delete();
+    expect(await code(create(alice))).toEqual({ code: "failed-precondition", reason: "disabled" });
+    await db.doc("config/app").set({ loansEnabled: "true" });
+    expect((await code(create(alice)))?.reason).toBe("disabled");
+    expect((await db.collection("loans").get()).size).toBe(0);
+  });
+  it("ligado (true): cria", async () => {
+    const r = await create(alice);
+    expect((await loanOf(r.loanId)).ownerUid).toBe("alice");
+  });
+  it("desligado depois de criar: claim e cancel continuam a funcionar", async () => {
+    const { loanId } = await create(alice);
+    await db.doc("config/app").set({ loansEnabled: false });
+    expect(await handleClaimLoan(db, bob, { loanId }, NOW)).toEqual({ status: "claimed" });
+    expect(await handleCancelLoan(db, alice, { loanId }, NOW)).toEqual({ ok: true });
+  });
+});
 
 describe("createLoan: validação", () => {
   it("sem sessão: unauthenticated", async () => {
@@ -254,12 +277,30 @@ describe("erros internos", () => {
   it("um erro do Firestore sai como internal, sem caminhos nem o loanId", async () => {
     const { loanId } = await create(alice);
     const boom = new Error(`5 NOT_FOUND: No document to update: projects/demo/databases/(default)/documents/loans/${loanId}`);
-    const r = await safely(() => Promise.reject(boom)).catch((e) => e as { code: string; message: string });
+    const r = await safely("cancelLoan", () => Promise.reject(boom)).catch((e) => e as { code: string; message: string });
     expect(r).toMatchObject({ code: "internal" });
     expect(JSON.stringify(r)).not.toContain(loanId);
     expect((r as { message: string }).message).not.toContain("documents");
     // HttpsError passa tal como está
-    expect((await code(safely(() => handleCancelLoan(db, bob, { loanId }, NOW))))?.code).toBe("permission-denied");
+    expect((await code(safely("cancelLoan", () => handleCancelLoan(db, bob, { loanId }, NOW))))?.code).toBe("permission-denied");
+  });
+});
+
+describe("safely: registo do erro interno", () => {
+  it("regista LOAN_INTERNAL só com o nome da callable e o código, sem loanId, caminho, mensagem nem uid", async () => {
+    const err = jest.spyOn(logger, "error").mockImplementation(() => undefined);
+    const { loanId } = await create(alice);
+    const boom = Object.assign(new Error(`5 NOT_FOUND: No document to update: projects/demo/databases/(default)/documents/loans/${loanId} alice`), { code: 5 });
+    await safely("claimLoan", () => Promise.reject(boom)).catch(() => undefined);
+    await safely("cancelLoan", () => Promise.reject(new Error("sem código"))).catch(() => undefined);
+    expect(err.mock.calls).toEqual([["LOAN_INTERNAL", { fn: "claimLoan", code: 5 }], ["LOAN_INTERNAL", { fn: "cancelLoan" }]]);
+    const logged = JSON.stringify(err.mock.calls);
+    for (const x of [loanId, "documents", "alice", "NOT_FOUND"]) expect(logged).not.toContain(x);
+    // HttpsError não é registado
+    err.mockClear();
+    await code(safely("cancelLoan", () => handleCancelLoan(db, bob, { loanId }, NOW)));
+    expect(err).not.toHaveBeenCalled();
+    err.mockRestore();
   });
 });
 

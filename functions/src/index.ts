@@ -2,7 +2,7 @@ import { initializeApp, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
@@ -22,7 +22,7 @@ import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
 import { twitter } from "./sources/twitter";
 import { vsports } from "./sources/vsports";
-import { cancelLoansForGamebox, maintainLoans } from "./loans/lifecycle";
+import { cancelLoansForGamebox, cancelLoansOnGameboxEdit, maintainLoans } from "./loans/lifecycle";
 import { runJob } from "./store/health";
 import { syncVideos } from "./videos/videosSync";
 
@@ -49,6 +49,11 @@ export const loansMaintenance = onSchedule(
 // GameBox apagada (V2: campo `userid`): cancela os empréstimos ativos e apaga os números. Idempotente, por isso com retry.
 export const onGameboxDeleted = onDocumentDeleted({ document: "gamebox/{id}", region: "europe-west1", retry: true }, async (event) => {
   await cancelLoansForGamebox(getFirestore(), event.params.id, new Date());
+});
+
+// GameBox editada (número ou lugar): o empréstimo ativo deixa de corresponder ao que foi emprestado e cancela-se. Idempotente.
+export const onGameboxUpdated = onDocumentUpdated({ document: "gamebox/{id}", region: "europe-west1", retry: true }, async (event) => {
+  await cancelLoansOnGameboxEdit(getFirestore(), event.params.id, event.data?.before.data(), event.data?.after.data(), new Date());
 });
 
 export const settleScheduler = onSchedule(

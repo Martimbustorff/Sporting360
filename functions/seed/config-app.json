@@ -6,6 +6,7 @@
     "updateButton": "Atualizar"
   },
   "features": { "comunidadeLeonina": false },
+  "loansEnabled": false,
   "comunidadeLeonina": [
     { "name": "Sporting 160", "description": null, "image": null, "links": {} },
     { "name": "Sporting Tactico", "description": null, "image": null, "links": {} },

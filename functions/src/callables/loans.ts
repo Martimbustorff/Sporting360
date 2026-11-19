@@ -1,6 +1,7 @@
+import { logger } from "firebase-functions";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, Timestamp, type Firestore } from "firebase-admin/firestore";
-import { isLoanActive, loanExpiryOf, newLoanId, type LoanDoc, type LoanSeat } from "../loans/model";
+import { isLoanActive, loanExpiryOf, newLoanId, SEAT_FIELDS, type LoanDoc, type LoanSeat } from "../loans/model";
 import { normalizeGameboxNumber } from "../loans/number";
 import { publicName } from "../data/profiles";
 import { fromFirestore } from "../store/writer";
@@ -41,8 +42,8 @@ const textOrNull = (v: unknown): string | null => {
 };
 
 function seatOf(g: Record<string, unknown>, venue: "stadium" | "pavilion"): LoanSeat {
-  const p = venue === "stadium" ? ["gameboxPort", "gameboxSector", "gameboxLine", "gameboxSeat"] : ["pavilionPort", "pavilionSector", "pavilionLine", "pavilionSeat"];
-  return { gate: textOrNull(g[p[0]!]), sector: textOrNull(g[p[1]!]), row: textOrNull(g[p[2]!]), seat: textOrNull(g[p[3]!]) };
+  const p = SEAT_FIELDS[venue];
+  return { gate: textOrNull(g[p[0]]), sector: textOrNull(g[p[1]]), row: textOrNull(g[p[2]]), seat: textOrNull(g[p[3]]) };
 }
 
 async function publicNameOf(db: Firestore, uid: string): Promise<string> {
@@ -71,11 +72,14 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
 }
 
 /** Erros que não são HttpsError (Firestore: caminhos com o loanId) nunca chegam ao cliente nem ao log do onCall. */
-export async function safely<T>(run: () => Promise<T>): Promise<T> {
+export async function safely<T>(fn: "createLoan" | "claimLoan" | "cancelLoan", run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (e) {
     if (e instanceof HttpsError) throw e;
+    // Só o nome da callable e o código do erro: nada de mensagem, caminho, uid nem ids (a mensagem do Firestore leva o loanId).
+    const code = (e as { code?: unknown } | null)?.code;
+    logger.error("LOAN_INTERNAL", { fn, ...(typeof code === "string" || typeof code === "number" ? { code } : {}) });
     throw new HttpsError("internal", "Algo correu mal. Tenta outra vez.");
   }
 }
@@ -87,6 +91,9 @@ export async function handleCreateLoan(
   now: Date,
 ): Promise<{ loanId: string; url: string }> {
   const uid = requireUid(auth);
+  // Interruptor `config/app.loansEnabled` (por omissão desligado): até as regras finais estarem publicadas, `gamebox` e `users`
+  // são públicos e a garantia "só o destinatário preso lê o número" não se cumpre. Só o createLoan é travado.
+  if ((await db.doc("config/app").get()).get("loansEnabled") !== true) throw denied("disabled", "Os empréstimos não estão disponíveis.");
   const d = asObj(data);
   const number = typeof d.number === "string" ? normalizeGameboxNumber(d.number) : null;
   if (!validGameId(d.gameboxId) || !validGameId(d.matchId) || !number) throw new HttpsError("invalid-argument", "Dados inválidos.");
@@ -182,6 +189,6 @@ export async function handleCancelLoan(db: Firestore, auth: Auth, data: unknown,
   return { ok: true };
 }
 
-export const createLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleCreateLoan(getFirestore(), req.auth, req.data, new Date())));
-export const claimLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleClaimLoan(getFirestore(), req.auth, req.data, new Date())));
-export const cancelLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleCancelLoan(getFirestore(), req.auth, req.data, new Date())));
+export const createLoan = onCall({ region: "europe-west1" }, (req) => safely("createLoan", () => handleCreateLoan(getFirestore(), req.auth, req.data, new Date())));
+export const claimLoan = onCall({ region: "europe-west1" }, (req) => safely("claimLoan", () => handleClaimLoan(getFirestore(), req.auth, req.data, new Date())));
+export const cancelLoan = onCall({ region: "europe-west1" }, (req) => safely("cancelLoan", () => handleCancelLoan(getFirestore(), req.auth, req.data, new Date())));

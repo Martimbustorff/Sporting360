@@ -38,6 +38,12 @@ export type LoanDoc = {
   cancelledAt: Timestamp | null;
 };
 
+/** Campos do lugar em `gamebox/{id}` (V2), por recinto: porta, sector, fila, lugar. Os mesmos que o `createLoan` copia. */
+export const SEAT_FIELDS = {
+  stadium: ["gameboxPort", "gameboxSector", "gameboxLine", "gameboxSeat"],
+  pavilion: ["pavilionPort", "pavilionSector", "pavilionLine", "pavilionSeat"],
+} as const;
+
 const HORA = 3600 * 1000;
 
 /**

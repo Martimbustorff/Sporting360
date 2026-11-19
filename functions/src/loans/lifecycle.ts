@@ -1,7 +1,8 @@
 import { Timestamp, type Firestore, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { fromFirestore } from "../store/writer";
 import type { MatchDoc } from "../model/types";
-import { isLoanActive, loanExpiryOf, type LoanDoc } from "./model";
+import { readGameboxNumber } from "./gameboxNumber";
+import { isLoanActive, loanExpiryOf, SEAT_FIELDS, type LoanDoc } from "./model";
 
 // Ciclo de vida dos empréstimos de GameBox (Plano 8). Nada aqui regista uid, email, nomes, ids de empréstimo ou números.
 
@@ -54,6 +55,35 @@ export async function cancelLoansForGamebox(db: Firestore, gameboxId: string, no
   return cancelDocs(db, snap.docs, now);
 }
 
+const seatText = (v: unknown): string => (typeof v === "string" || typeof v === "number" ? String(v).trim() : "");
+
+/** O número ou o lugar (qualquer campo do lugar, nos dois recintos) mudou? Nome e ordem não contam. */
+export function gameboxLoanFieldsChanged(before: Record<string, unknown>, after: Record<string, unknown>): boolean {
+  for (const f of [...SEAT_FIELDS.stadium, ...SEAT_FIELDS.pavilion]) {
+    if (seatText(before[f]) !== seatText(after[f])) return true;
+  }
+  const b = before.gameboxNumber;
+  const a = after.gameboxNumber;
+  if (b === a) return false;
+  // O texto cifrado muda a cada gravação (sal aleatório): compara-se o número decifrado. Ilegível conta como mudado.
+  const uid = typeof after.userid === "string" ? after.userid : "";
+  const nb = readGameboxNumber(b, uid);
+  const na = readGameboxNumber(a, uid);
+  return nb === "" || na === "" || nb !== na;
+}
+
+/** GameBox editada: se o número ou o lugar mudou, cancela os empréstimos ativos e apaga os números. Idempotente. */
+export async function cancelLoansOnGameboxEdit(
+  db: Firestore,
+  gameboxId: string,
+  before: Record<string, unknown> | undefined,
+  after: Record<string, unknown> | undefined,
+  now: Date,
+): Promise<number> {
+  if (!before || !after || !gameboxLoanFieldsChanged(before, after)) return 0;
+  return cancelLoansForGamebox(db, gameboxId, now);
+}
+
 /**
  * Apagar conta: cancela os empréstimos em que o uid é dono ou destinatário, apaga os números e limpa os dados pessoais
  * do utilizador (uid e nome, no papel que teve) em todos eles, também nos já cancelados ou expirados. Devolve os cancelados.
@@ -96,6 +126,9 @@ export async function maintainLoans(db: Firestore, now: Date): Promise<{ count: 
       if (expiresMs > now.getTime()) {
         const m = await matchOf(l.matchId);
         if (m) {
+          // Jogo remarcado: o cartão mostra a hora nova (só este campo de apresentação; o estado não se copia).
+          const kickoff = (m.kickoff as unknown as Date).getTime();
+          if (kickoff !== l.match.kickoff.toMillis()) update["match.kickoff"] = Timestamp.fromMillis(kickoff);
           const next = loanExpiryOf(m, now).getTime();
           if (next !== expiresMs) {
             expiresMs = next;

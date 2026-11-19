@@ -34,6 +34,7 @@ export const DEPLOY_ENGINE_FUNCTIONS = [
   "cancelLoan",
   "loansMaintenance",
   "onGameboxDeleted",
+  "onGameboxUpdated",
   "loanRedirect",
 ] as const;
 

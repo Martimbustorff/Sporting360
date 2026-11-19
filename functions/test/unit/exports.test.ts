@@ -31,7 +31,7 @@ const endpoint = (name: string): Endpoint => {
   return ep;
 };
 
-const TRIGGERS = ["onGameboxDeleted"];
+const TRIGGERS = ["onGameboxDeleted", "onGameboxUpdated"];
 const HTTP_FUNCTIONS = ["loanRedirect"];
 const PLAN3_CALLABLES = ["updateProfile", "deleteAccount", "linkProviderByEmail"];
 
@@ -52,7 +52,7 @@ describe("listas de publicação", () => {
   it("tamanhos e nomes sem repetições", () => {
     expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
-    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan", "loansMaintenance", "onGameboxDeleted", "loanRedirect"]);
+    expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan", "loansMaintenance", "onGameboxDeleted", "onGameboxUpdated", "loanRedirect"]);
     expect(DEPLOY_PUSH_FUNCTIONS).toEqual(["predictionReminderPush"]);
     expect(LEGACY_FUNCTIONS).toHaveLength(13);
     expect(new Set(DEPLOYED).size).toBe(DEPLOYED.length);
@@ -91,6 +91,10 @@ describe("configuração de cada function exportada", () => {
     expect(endpoint("onGameboxDeleted").eventTrigger?.retry).toBe(true);
   });
 
+  it("onGameboxUpdated tem retry (idempotente)", () => {
+    expect(endpoint("onGameboxUpdated").eventTrigger?.retry).toBe(true);
+  });
+
   it("as callables do motor são onCall e as restantes são agendadas ou gatilhos", () => {
     const callables = exported.filter((n) => endpoint(n).callableTrigger);
     expect(callables.sort()).toEqual(exported.filter((n) => ["submitPrediction", "voteMvp", ...PLAN3_CALLABLES, "createLoan", "claimLoan", "cancelLoan"].includes(n)).sort());
@@ -124,6 +128,7 @@ describe("configuração de cada function exportada", () => {
     cancelLoan: [],
     loansMaintenance: [],
     onGameboxDeleted: [],
+    onGameboxUpdated: [],
     loanRedirect: [],
     predictionReminderPush: [],
   };
