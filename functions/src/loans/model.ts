@@ -40,7 +40,7 @@ const HORA = 3600 * 1000;
 
 /**
  * Fim da validade: início + 4 h; FT, AET e PEN: fim do jogo + 2 h; adiado ou cancelado sem nova data:
- * hora original + 2 h. Com nova data, `kickoff` já é a hora remarcada.
+ * hora original + 2 h. CANC (inclui ABD/AWD/WO) dá sempre kickoff + 2 h. Com nova data, `kickoff` já é a hora remarcada.
  */
 export function computeExpiresAt(m: {
   kickoff: Date;
@@ -51,7 +51,7 @@ export function computeExpiresAt(m: {
   if ((m.status === "FT" || m.status === "AET" || m.status === "PEN") && m.finishedAt) {
     return new Date(m.finishedAt.getTime() + 2 * HORA);
   }
-  if ((m.status === "PST" || m.status === "CANC") && m.postponedWithoutDate) {
+  if (m.status === "CANC" || (m.status === "PST" && m.postponedWithoutDate)) {
     return new Date(m.kickoff.getTime() + 2 * HORA);
   }
   return new Date(m.kickoff.getTime() + 4 * HORA);

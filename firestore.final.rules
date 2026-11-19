@@ -19,6 +19,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
+
+    // Empréstimo ativo e o utilizador é o destinatário preso (o empréstimo-mãe tem de existir).
+    function activeLoanRecipient(id) {
+      let l = get(/databases/$(database)/documents/loans/$(id)).data;
+      return l.recipientUid == request.auth.uid && l.cancelledAt == null && l.expiresAt > request.time;
+    }
     // O id do documento acaba em '_' + uid (comparação literal, sem regex sobre o uid). Pressupõe uids sem '_'
     // (uids gerados pelo Firebase Auth; não há custom tokens). Um uid com '_' reabriria a sondagem de existência.
     function idEndsWithUid(id) {
@@ -124,10 +130,7 @@ service cloud.firestore {
       allow write: if false;
 
       match /secret/{doc} {
-        allow read: if signedIn()
-                    && get(/databases/$(database)/documents/loans/$(id)).data.recipientUid == request.auth.uid
-                    && get(/databases/$(database)/documents/loans/$(id)).data.cancelledAt == null
-                    && get(/databases/$(database)/documents/loans/$(id)).data.expiresAt > request.time;
+        allow read: if signedIn() && activeLoanRecipient(id);
         allow write: if false;
       }
     }

@@ -11,7 +11,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   collection, doc, getDoc, getDocs, query, setDoc, updateDoc, deleteDoc, runTransaction, increment, deleteField,
-  serverTimestamp, where,
+  serverTimestamp, where, collectionGroup,
 } from "firebase/firestore";
 import { NEW_APP_OPS, V2_OPS } from "../helpers/rulesOps";
 
@@ -396,5 +396,11 @@ describe("loans (empréstimo de GameBox)", () => {
     await assertSucceeds(getDocs(query(collection(as("bob"), "loans"), where("recipientUid", "==", "bob"))));
     await assertFails(getDocs(query(collection(as("bob"), "loans"), where("ownerUid", "==", "alice"))));
     await assertFails(getDocs(collection(as("alice"), "loans")));
+  });
+  it("segredo sem empréstimo-mãe e consulta de grupo em secret: negados", async () => {
+    await seed(S, { number: "123456" });
+    await assertFails(getDoc(doc(as("bob"), S)));
+    await seedLoan();
+    await assertFails(getDocs(collectionGroup(as("bob"), "secret")));
   });
 });

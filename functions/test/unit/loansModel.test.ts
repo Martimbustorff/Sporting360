@@ -18,6 +18,9 @@ describe("computeExpiresAt", () => {
   it.each(["PST", "CANC"])("%s sem nova data: hora original + 2 h", (status) => {
     expect(computeExpiresAt({ ...base, status, postponedWithoutDate: true }).getTime()).toBe(kickoff.getTime() + 2 * H);
   });
+  it("CANC dá sempre início + 2 h, mesmo sem a marca postponedWithoutDate", () => {
+    expect(computeExpiresAt({ ...base, status: "CANC" }).getTime()).toBe(kickoff.getTime() + 2 * H);
+  });
   it("adiado com nova data segue a hora remarcada (+ 4 h)", () => {
     expect(computeExpiresAt({ ...base, status: "PST" }).getTime()).toBe(kickoff.getTime() + 4 * H);
   });
