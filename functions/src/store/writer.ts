@@ -120,6 +120,30 @@ export async function getMatch(db: Firestore, id: string): Promise<MatchDoc | nu
 }
 
 const DETAIL_NAMES = ["events", "statistics", "lineups", "players"] as const;
+
+/**
+ * Estatísticas do intervalo (`firstHalf` do documento `details/statistics`): o instantâneo das estatísticas completas
+ * que a API traz no estado HT, que nesse momento são as da 1.ª parte. Cópia só dos campos conhecidos (valores nulos
+ * ficam nulos); sem equipas devolve null (nada se escreve).
+ */
+export function firstHalfSnapshot(stats: FootballDetails["statistics"] | null | undefined): NonNullable<FootballDetails["statistics"]> | null {
+  if (!stats || !Array.isArray(stats.teams) || stats.teams.length === 0) return null;
+  return {
+    teams: stats.teams.map((t) => ({ teamId: t.teamId, items: { ...t.items } })),
+    xg: stats.xg ?? null,
+  };
+}
+
+/** Grava `firstHalf` uma única vez (transação): nunca substitui um valor já escrito. */
+async function writeFirstHalfOnce(db: Firestore, id: string, snapshot: NonNullable<FootballDetails["statistics"]>): Promise<boolean> {
+  const ref = db.doc(`matches/${id}/details/statistics`);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists || snap.get("firstHalf") != null) return false;
+    tx.set(ref, { firstHalf: toFirestore(snapshot), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    return true;
+  });
+}
 const LEGACY_NAMES = ["summaries", "stastistics", "lineups", "players"] as const;
 
 /**
@@ -129,7 +153,7 @@ const LEGACY_NAMES = ["summaries", "stastistics", "lineups", "players"] as const
 export async function saveMatch(
   db: Firestore,
   m: { match: MatchDoc; details?: FootballDetails | null; legacy?: Partial<LegacyDocs> | null },
-  o?: { prefix?: string; force?: boolean },
+  o?: { prefix?: string; force?: boolean; halftimeSnapshot?: boolean },
 ): Promise<{ written: number; skipped: number; locked: boolean }> {
   const id = m.match.id;
   const existing = await db.doc(`matches/${id}`).get();
@@ -143,7 +167,10 @@ export async function saveMatch(
 
   for (const name of DETAIL_NAMES) {
     const d = m.details?.[name];
-    if (d !== null && d !== undefined) writes.push({ path: `matches/${id}/details/${name}`, data: toFirestore(d) as DocumentData });
+    // `statistics` com merge: o `firstHalf` gravado no intervalo sobrevive às escritas seguintes (nunca vem em `details`).
+    if (d !== null && d !== undefined) {
+      writes.push({ path: `matches/${id}/details/${name}`, data: toFirestore(d) as DocumentData, ...(name === "statistics" ? { merge: true } : {}) });
+    }
   }
 
   const legacy = m.legacy ?? null;
@@ -181,6 +208,12 @@ export async function saveMatch(
       for (const d of gone) clear[hashKey(d.ref.path)] = FieldValue.delete();
       await db.doc(`ingestState/match_${id}`).set({ hashes: clear }, { merge: true });
     }
+  }
+
+  // Só o ticker pede: no primeiro tick em HT as estatísticas são as da 1.ª parte. Sem HT visto, nada se escreve.
+  if (o?.halftimeSnapshot && m.match.status === "HT") {
+    const snapshot = firstHalfSnapshot(m.details?.statistics);
+    if (snapshot) await writeFirstHalfOnce(db, id, snapshot);
   }
 
   return { written: res.written, skipped: res.skipped, locked: false };

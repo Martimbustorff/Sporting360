@@ -194,6 +194,48 @@ describe("tick: jogo a decorrer", () => {
     expect(r.writes.slice(1)).toEqual([0, 0, 0]);
   });
 
+  describe("estatísticas do intervalo (firstHalf)", () => {
+    const statsRef = () => db.doc(`matches/${ID}/details/statistics`);
+    const withShots = (f: ReturnType<typeof fx>, shots: number) => {
+      for (const t of f.statistics) for (const x of t.statistics) if (x.type === "Total Shots") x.value = shots;
+      return f;
+    };
+
+    it("no primeiro tick em HT guarda o instantâneo; os ticks seguintes (2.ª parte) não o alteram", async () => {
+      clock = KO + 47 * MIN;
+      await seedFrom(withShots(fx("fixture-live-2h.json", { elapsed: 30 }), 3), clock);
+      expect((await statsRef().get()).get("firstHalf")).toBeUndefined();
+      await tick(deps(fakeFetch([[byIds, envelope([withShots(fx("fixture-ht.json"), 7)])]])));
+      const at = (await statsRef().get()).get("firstHalf");
+      expect(at.teams.map((t: { items: Record<string, unknown> }) => t.items["Total Shots"])).toEqual([7, 7]);
+      clock += 20 * MIN;
+      await tick(deps(fakeFetch([[byIds, envelope([withShots(fx("fixture-live-2h.json", { elapsed: 70 }), 15)])]])));
+      const snap = await statsRef().get();
+      expect(snap.get("teams").map((t: { items: Record<string, unknown> }) => t.items["Total Shots"])).toEqual([15, 15]);
+      expect(snap.get("firstHalf")).toEqual(at);
+    });
+
+    it("HT repetido não substitui o instantâneo já guardado", async () => {
+      clock = KO + 47 * MIN;
+      await seedFrom(fx("fixture-live-2h.json", { elapsed: 30 }), clock);
+      await tick(deps(fakeFetch([[byIds, envelope([withShots(fx("fixture-ht.json"), 7)])]])));
+      clock += 5 * MIN;
+      await tick(deps(fakeFetch([[byIds, envelope([withShots(fx("fixture-ht.json"), 9)])]])));
+      const snap = await statsRef().get();
+      expect(snap.get("firstHalf").teams[0].items["Total Shots"]).toBe(7);
+      expect(snap.get("teams")[0].items["Total Shots"]).toBe(9);
+    });
+
+    it("sem nunca ver HT (só 2.ª parte): não escreve firstHalf", async () => {
+      clock = KO + 67 * MIN;
+      await seedFrom(fx("fixture-live-2h.json"), clock);
+      await tick(deps(fakeFetch([[byIds, envelope([fx("fixture-live-2h.json", { elapsed: 68 })])]])));
+      const snap = await statsRef().get();
+      expect(snap.exists).toBe(true);
+      expect(snap.get("firstHalf")).toBeUndefined();
+    });
+  });
+
   it("Review Focus 3: 2H 90' → ET 105' → P → PEN mantém 4 chamadas por minuto; PEN fixa finishedAt observado", async () => {
     clock = KO + 112 * MIN; // 21:52
     await seedFrom(fx("fixture-live-2h.json", { elapsed: 90 }), clock);

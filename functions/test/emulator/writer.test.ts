@@ -1,6 +1,6 @@
 import { deleteApp, getApps } from "firebase-admin/app";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
-import { saveMatch, getMatch, legacyCollection, writeDocs } from "../../src/store/writer";
+import { saveMatch, getMatch, legacyCollection, writeDocs, firstHalfSnapshot } from "../../src/store/writer";
 import type { MatchDoc } from "../../src/model/types";
 import type { FootballDetails } from "../../src/football/mapFixture";
 import type { LegacyDocs } from "../../src/legacy/footballLegacy";
@@ -206,5 +206,60 @@ describe("force", () => {
     expect(r.written).toBeGreaterThan(0);
     expect((await db.doc("matches/1001/details/events").get()).exists).toBe(true);
     expect((await db.doc("games/1001").get()).exists).toBe(true);
+  });
+});
+
+describe("saveMatch: estatísticas do intervalo", () => {
+  const stats = (shots: number | null, possession: string | null = "55%"): FootballDetails["statistics"] => ({
+    teams: [
+      { teamId: "228", items: { "Total Shots": shots, "Ball Possession": possession, Fouls: null } },
+      { teamId: "211", items: { "Total Shots": 4, "Ball Possession": "45%" } },
+    ],
+    xg: { home: 0.8, away: null },
+  });
+  const ref = () => db.doc("matches/1001/details/statistics");
+  const save = (status: MatchDoc["status"], s: FootballDetails["statistics"], snapshot = true) =>
+    saveMatch(db, { match: match({ status }), details: { ...details(1), statistics: s } }, { halftimeSnapshot: snapshot });
+
+  it("em HT grava firstHalf com os valores atuais, nulos incluídos", async () => {
+    await save("HT", stats(6));
+    const fh = (await ref().get()).get("firstHalf");
+    expect(fh.teams[0]).toEqual({ teamId: "228", items: { "Total Shots": 6, "Ball Possession": "55%", Fouls: null } });
+    expect(fh.xg).toEqual({ home: 0.8, away: null });
+  });
+
+  it("nunca substitui: HT outra vez e a 2.ª parte mantêm o primeiro instantâneo, e os totais continuam a atualizar", async () => {
+    await save("HT", stats(6));
+    await save("HT", stats(7));
+    await save("LIVE", stats(13));
+    const snap = await ref().get();
+    expect(snap.get("firstHalf").teams[0].items["Total Shots"]).toBe(6);
+    expect(snap.get("teams")[0].items["Total Shots"]).toBe(13);
+  });
+
+  it("sem HT (só LIVE ou FT) não escreve firstHalf; sem a opção também não", async () => {
+    await save("LIVE", stats(6));
+    await save("FT", stats(9));
+    expect((await ref().get()).get("firstHalf")).toBeUndefined();
+    await db.recursiveDelete(db.doc("matches/1001"));
+    await save("HT", stats(6), false);
+    expect((await ref().get()).get("firstHalf")).toBeUndefined();
+  });
+
+  it("HT sem estatísticas (equipas vazias ou null): não escreve nada nem rebenta", async () => {
+    await save("HT", { teams: [], xg: null });
+    await saveMatch(db, { match: match({ status: "HT" }), details: { ...details(1), statistics: null } }, { halftimeSnapshot: true });
+    expect((await ref().get()).get("firstHalf")).toBeUndefined();
+  });
+
+  it("firstHalfSnapshot é uma cópia segura: nulos ficam nulos e xg ausente fica null", () => {
+    expect(firstHalfSnapshot(null)).toBeNull();
+    expect(firstHalfSnapshot({ teams: [], xg: null })).toBeNull();
+    const s = stats(null, null)!;
+    const snap = firstHalfSnapshot({ ...s, xg: undefined as never })!;
+    expect(snap.teams[0]!.items).toEqual({ "Total Shots": null, "Ball Possession": null, Fouls: null });
+    expect(snap.xg).toBeNull();
+    snap.teams[0]!.items["Total Shots"] = 1;
+    expect(s.teams[0]!.items["Total Shots"]).toBeNull();
   });
 });

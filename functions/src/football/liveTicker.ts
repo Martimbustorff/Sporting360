@@ -226,7 +226,7 @@ export async function tick(d: TickDeps): Promise<TickResult> {
           const observedLive = previous !== null && phaseNow(previous) === "live";
           const { match, details } = mapFixture(f, { now, previous, observedLive });
           const legacy = legacyFromFixture(f, match, null);
-          const r = await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix });
+          const r = await saveMatch(d.db, { match, details, legacy }, { prefix: d.prefix, halftimeSnapshot: true });
           written += r.written;
           state.set(id, match);
           saved.push(match);
