@@ -1,9 +1,18 @@
-// Figma: nós 564:7259 ("Entrar") e 564:7261 ("Criar uma conta"): ambos fundo branco, raio 52, texto DIN 24 primary.
-// SEM FIGMA (variante secondary): verificadas as páginas "Last Version S360" (22:1192) e "Calendário" (489:5623); não existe botão de contorno/secundário no Figma, ambos os botões são iguais. A validar pelo Martim.
+// Figma V7.1: botão 4919:5140 (Primário, Escuro, Contorno, Branco): altura 52, raio 26, etiqueta Title S 20.
+// Contorno: 1.5 pt branco. O `secondary` antigo mapeia para `outline`.
 import { ActivityIndicator, View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
-import { Display } from '@/theme/typography';
-import { colors, layout, radius } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout } from '@/theme/tokens';
+
+export type ButtonVariant = 'primary' | 'dark' | 'outline' | 'white' | 'secondary';
+
+const LOOK = {
+  primary: { bg: colors.primary, fg: 'white', border: undefined },
+  dark: { bg: colors.ink, fg: 'white', border: undefined },
+  outline: { bg: undefined, fg: 'white', border: colors.white },
+  white: { bg: colors.white, fg: 'primary', border: undefined },
+} as const;
 
 export function PrimaryButton({
   label,
@@ -14,12 +23,12 @@ export function PrimaryButton({
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  variant?: ButtonVariant;
   loading?: boolean;
   disabled?: boolean;
 }) {
   const inactive = loading || disabled;
-  const primary = variant === 'primary';
+  const look = LOOK[variant === 'secondary' ? 'outline' : variant];
   return (
     <Touchable
       accessibilityRole="button"
@@ -27,21 +36,25 @@ export function PrimaryButton({
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
       onPress={onPress}
-      className={primary ? 'items-center justify-center bg-s360-white' : 'items-center justify-center border border-s360-white'}
       style={{
         height: layout.buttonHeight,
-        borderRadius: radius.button,
+        borderRadius: layout.buttonHeight / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: look.bg,
+        borderWidth: look.border ? layout.buttonOutline : undefined,
+        borderColor: look.border,
         opacity: disabled ? layout.disabledOpacity : undefined,
       }}
     >
       {loading ? (
         <View testID="button-loading">
-          <ActivityIndicator color={primary ? colors.primary : colors.white} />
+          <ActivityIndicator color={colors[look.fg]} />
         </View>
       ) : (
-        <Display variant="screenTitle" style={primary ? undefined : { color: colors.white }}>
+        <Text71 variant="titleS20" color={look.fg} numberOfLines={1}>
           {label}
-        </Display>
+        </Text71>
       )}
     </Touchable>
   );

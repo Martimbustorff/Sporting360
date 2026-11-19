@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { colors } from '@/theme/tokens';
 
 describe('PrimaryButton', () => {
   it('calls onPress', async () => {
@@ -27,11 +29,30 @@ describe('PrimaryButton', () => {
     expect(screen.getByRole('button').props.accessibilityState.disabled).toBe(false);
   });
 
-  it('snapshots (primary, secondary)', async () => {
-    const a = await render(<PrimaryButton label="Entrar" onPress={() => {}} />);
-    expect(a.toJSON()).toMatchSnapshot('primary');
-    a.unmount();
-    const b = await render(<PrimaryButton label="Criar uma conta" onPress={() => {}} variant="secondary" />);
-    expect(b.toJSON()).toMatchSnapshot('secondary');
+  it('white variant: white background, primary text', async () => {
+    await render(<PrimaryButton label="Apagar conta" variant="white" onPress={() => {}} />);
+    expect(StyleSheet.flatten(screen.getByRole('button').props.style).backgroundColor).toBe(colors.white);
+    expect(StyleSheet.flatten(screen.getByText('Apagar conta').props.style).color).toBe(colors.primary);
+  });
+
+  it('dark variant: ink background, white text', async () => {
+    await render(<PrimaryButton label="X" variant="dark" onPress={() => {}} />);
+    expect(StyleSheet.flatten(screen.getByRole('button').props.style).backgroundColor).toBe(colors.ink);
+    expect(StyleSheet.flatten(screen.getByText('X').props.style).color).toBe(colors.white);
+  });
+
+  it('secondary maps to outline: border, no fill', async () => {
+    await render(<PrimaryButton label="X" variant="secondary" onPress={() => {}} />);
+    const st = StyleSheet.flatten(screen.getByRole('button').props.style);
+    expect(st.borderColor).toBe(colors.white);
+    expect(st.backgroundColor).toBeUndefined();
+  });
+
+  it('is 52 high with a fully round radius', async () => {
+    await render(<PrimaryButton label="X" onPress={() => {}} />);
+    const st = StyleSheet.flatten(screen.getByRole('button').props.style);
+    expect(st.height).toBe(52);
+    expect(st.borderRadius).toBe(26);
+    expect(st.backgroundColor).toBe(colors.primary);
   });
 });

@@ -1,10 +1,10 @@
-// Figma: nós 500:28814 (2 tabs iguais), 500:28976 (tabs com scroll) e 500:28788 (cabeçalho do ecrã Calendário, já coberto pelo Header).
-// Barra surface20 com raio 8; etiqueta tipografia tab com 8px acima; sublinhado 2px (ativa: branco; inativa: divider).
-// Modo 'equal': inativas a branco (como no Figma). Modo 'scroll': inativas a 40% (textDisabled), 16px de margem à esquerda e entre tabs.
-// Diferença deliberada: altura mínima 44 (alvo de toque) em vez dos 40 do Figma.
-import { Pressable, ScrollView, View } from 'react-native';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+// Figma V7.1: tabs 4935:7125 (com scroll: espaço 24, topo 15, etiqueta a 11 do indicador) e 4942:7676 (iguais: topo 10, linha separator por baixo).
+// Etiqueta Label 16: ativa branca, inativas text-subtle. Indicador de 3 pt, raio 2, primary-on-dark na ativa.
+// Diferença deliberada: altura mínima 44 (alvo de toque).
+import { ScrollView, View } from 'react-native';
+import { Touchable } from '@/components/Touchable';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space } from '@/theme/tokens';
 
 export function Tabs<K extends string>({
   items,
@@ -19,46 +19,46 @@ export function Tabs<K extends string>({
 }) {
   const tabs = items.map((it) => {
     const active = it.key === value;
-    const labelColor = active || mode === 'equal' ? colors.white : colors.textDisabled;
+    const equal = mode === 'equal';
     return (
-      <Pressable
+      <Touchable
         key={it.key}
         accessibilityRole="tab"
         accessibilityState={{ selected: active }}
         onPress={() => onChange(it.key)}
-        hitSlop={layout.minTouch / 4}
         style={{
-          flex: mode === 'equal' ? 1 : undefined,
+          flex: equal ? 1 : undefined,
           minHeight: layout.minTouch,
-          paddingTop: spacing.sm,
+          paddingTop: equal ? layout.tabTopEqual : layout.tabTopScroll,
+          gap: equal ? layout.tabGapEqual : layout.tabGapScroll,
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <Body variant="tab" style={{ color: labelColor }}>
+        <Text71 variant="label16" color={active ? 'white' : 'textSubtle'} numberOfLines={1}>
           {it.label}
-        </Body>
+        </Text71>
         <View
           testID="tab-underline"
           style={{
             alignSelf: 'stretch',
             height: layout.tabUnderline,
-            borderRadius: radius.hairline,
-            backgroundColor: active ? colors.white : colors.divider,
+            borderRadius: layout.tabUnderlineRadius,
+            backgroundColor: active ? colors.primaryOnDark : 'transparent',
           }}
         />
-      </Pressable>
+      </Touchable>
     );
   });
-  const bar = { backgroundColor: colors.surface20, borderRadius: radius.md, overflow: 'hidden' } as const;
+  const line = { borderBottomWidth: layout.separator, borderBottomColor: mode === 'equal' ? colors.separator : colors.surface10 } as const;
   if (mode === 'scroll') {
     return (
-      <View style={bar}>
+      <View style={line}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           accessibilityRole="tablist"
-          contentContainerStyle={{ paddingLeft: spacing.md, gap: spacing.md }}
+          contentContainerStyle={{ paddingHorizontal: space.s16, gap: space.s24 }}
         >
           {tabs}
         </ScrollView>
@@ -66,7 +66,7 @@ export function Tabs<K extends string>({
     );
   }
   return (
-    <View style={[bar, { flexDirection: 'row' }]} accessibilityRole="tablist">
+    <View style={[line, { flexDirection: 'row' }]} accessibilityRole="tablist">
       {tabs}
     </View>
   );

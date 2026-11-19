@@ -4,8 +4,8 @@ import { View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ForegroundPush } from '@/services/push';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 /** Tempo até o aviso fechar sozinho. */
 export const PUSH_BANNER_MS = 6000;
@@ -21,7 +21,7 @@ export function PushBanner({ push, onPress }: { push: ForegroundPush; onPress: (
   return (
     <View
       pointerEvents="box-none"
-      style={{ position: 'absolute', top: insets.top + spacing.sm, left: spacing.md, right: spacing.md }}
+      style={{ position: 'absolute', top: insets.top + space.s8, left: space.s16, right: space.s16 }}
     >
       <Touchable
         testID="push-banner"
@@ -32,19 +32,19 @@ export function PushBanner({ push, onPress }: { push: ForegroundPush; onPress: (
         onPress={onPress}
         style={{
           minHeight: layout.minTouch,
-          paddingHorizontal: spacing.md,
-          paddingVertical: spacing.sm,
-          gap: spacing.xs,
-          borderRadius: radius.md,
-          backgroundColor: colors.bg,
+          paddingHorizontal: space.s16,
+          paddingVertical: space.s8,
+          gap: space.s4,
+          borderRadius: radii.r12,
+          backgroundColor: colors.bgRaised,
           borderWidth: layout.separator,
-          borderColor: colors.primary,
+          borderColor: colors.primaryOnDark,
           ...layout.sheetShadow,
         }}
       >
-        <Body variant="strip" numberOfLines={1}>{push.title}</Body>
+        <Text71 variant="strong14" numberOfLines={1}>{push.title}</Text71>
         {push.body ? (
-          <Body variant="body" numberOfLines={2}>{push.body}</Body>
+          <Text71 variant="caption12" color="textMuted" numberOfLines={2}>{push.body}</Text71>
         ) : null}
       </Touchable>
     </View>

@@ -1,11 +1,7 @@
-// Figma: nós 323:11790 (linha "Notificações": ícone 24, gap 16, etiqueta DIN 18 maiúsculas, interruptor à direita)
-// e 306:6426 (interruptor ligado 51x31, verde, botão branco 27 com 2 de margem). Reutilizado nas Definições (Task 26).
-// SEM FIGMA (estado desligado e sombra do botão): trilho surface20, botão à esquerda; sem sombra (só tokens).
-// Separador `divider` abaixo, como em MenuRow.
+// Figma V7.1: List row 4919:5133 com trailing Interruptor ligado / desligado (Switch 4918:5108).
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { ListRow, type ListRowSize } from '@/components/ListRow';
+import { SwitchTrack } from '@/components/Switch';
 
 export function ToggleRow({
   icon,
@@ -13,56 +9,28 @@ export function ToggleRow({
   value,
   onChange,
   disabled = false,
+  size = 'L',
+  separator = true,
 }: {
   icon: ReactNode;
   label: string;
   value: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
+  size?: ListRowSize;
+  separator?: boolean;
 }) {
   return (
-    <Touchable
-      accessibilityRole="switch"
-      accessibilityLabel={label}
-      accessibilityState={{ checked: value, disabled }}
+    <ListRow
+      icon={icon}
+      label={label}
+      size={size}
+      separator={separator}
       disabled={disabled}
       onPress={() => onChange(!value)}
-      style={{
-        minHeight: layout.minTouch,
-        paddingVertical: spacing.sm,
-        borderBottomWidth: layout.fieldLineWidth,
-        borderBottomColor: colors.divider,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        opacity: disabled ? layout.disabledOpacity : undefined,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.menuRowGap, flexShrink: 1 }}>
-        <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>{icon}</View>
-        <Text style={type.menuRow} numberOfLines={1}>{label}</Text>
-      </View>
-      <View
-        testID="toggle-track"
-        style={{
-          width: layout.toggleWidth,
-          height: layout.toggleHeight,
-          borderRadius: radius.button,
-          backgroundColor: value ? colors.toggleOn : colors.surface20,
-          paddingHorizontal: layout.toggleInset,
-          justifyContent: 'center',
-          alignItems: value ? 'flex-end' : 'flex-start',
-        }}
-      >
-        <View
-          style={{
-            width: layout.toggleKnob,
-            height: layout.toggleKnob,
-            borderRadius: layout.toggleKnob / 2,
-            backgroundColor: colors.white,
-          }}
-        />
-      </View>
-    </Touchable>
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value, disabled }}
+      trailing={<SwitchTrack value={value} />}
+    />
   );
 }

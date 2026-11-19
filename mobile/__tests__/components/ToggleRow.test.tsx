@@ -14,10 +14,10 @@ it('liga e desliga com o valor contrário', async () => {
   expect(onChange).toHaveBeenCalledWith(true);
 });
 
-it('ligado mostra o trilho verde e envia false', async () => {
+it('ligado mostra o trilho primary e envia false', async () => {
   const onChange = jest.fn();
   await render(<ToggleRow icon={icon} label="Golos" value onChange={onChange} />);
-  expect(screen.getByTestId('toggle-track').props.style.backgroundColor).toBe(colors.toggleOn);
+  expect(screen.getByTestId('toggle-track').props.style.backgroundColor).toBe(colors.primary);
   await fireEvent.press(screen.getByRole('switch', { name: 'Golos' }));
   expect(onChange).toHaveBeenCalledWith(false);
 });

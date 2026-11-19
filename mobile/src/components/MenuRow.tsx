@@ -1,47 +1,45 @@
-// Figma: nó 564:7096 (AGENDA, ícone 24 + gap 16 + etiqueta DIN 18 maiúsculas + seta direita 24) e 564:6990
-// (variante externa, seta diagonal). Separador `divider` abaixo (SEM FIGMA: linha não está no nó).
+// Figma V7.1: List row 4919:5133 (trailing Seta / Externa / Nenhum, tamanho L 64 / M 52, separador opcional).
 import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
-import { Text, View } from 'react-native';
-import { Touchable } from '@/components/Touchable';
-import { colors, layout, spacing, type } from '@/theme/tokens';
+import { ListRow, type ListRowSize } from '@/components/ListRow';
+import { colors, layout } from '@/theme/tokens';
 
 export function MenuRow({
   icon,
   label,
   onPress,
   external = false,
+  size = 'L',
+  separator = true,
+  trailing = external ? 'external' : 'arrow',
 }: {
   icon: ReactNode;
   label: string;
   onPress: () => void;
   external?: boolean;
+  size?: ListRowSize;
+  separator?: boolean;
+  trailing?: 'arrow' | 'external' | 'none';
 }) {
   return (
-    <Touchable
-      accessibilityRole={external ? 'link' : 'button'}
-      accessibilityLabel={label}
+    <ListRow
+      icon={icon}
+      label={label}
+      size={size}
+      separator={separator}
       onPress={onPress}
-      style={{
-        minHeight: layout.minTouch,
-        paddingVertical: spacing.sm,
-        borderBottomWidth: layout.fieldLineWidth,
-        borderBottomColor: colors.divider,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.menuRowGap, flexShrink: 1 }}>
-          <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>{icon}</View>
-          <Text style={type.menuRow}>{label}</Text>
-        </View>
-        <Feather
-          name={external ? 'arrow-up-right' : 'arrow-right'}
-          size={layout.menuRowIcon}
-          color={colors.white}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
-      </View>
-    </Touchable>
+      accessibilityRole={external ? 'link' : 'button'}
+      trailing={
+        trailing === 'none' ? null : (
+          <Feather
+            name={trailing === 'external' ? 'arrow-up-right' : 'arrow-right'}
+            size={layout.menuRowIcon}
+            color={colors.white}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+          />
+        )
+      }
+    />
   );
 }

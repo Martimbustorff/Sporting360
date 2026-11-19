@@ -1,16 +1,16 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { colors, radius } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 
 describe('SectionBar', () => {
-  it('label and right value on a surface10 bar', async () => {
-    await render(<SectionBar label="1ª Parte" right="0-0" />);
-    expect(screen.getByText('1ª Parte')).toBeTruthy();
-    expect(screen.getByText('0-0')).toBeTruthy();
-    const box = StyleSheet.flatten(screen.getByTestId('section-bar').props.style);
-    expect(box.backgroundColor).toBe(colors.surface10);
-    expect(box.borderRadius).toBe(radius.md);
+  it('eyebrow label in text-subtle and action in primary-on-dark', async () => {
+    const onRightPress = jest.fn();
+    await render(<SectionBar label="Informação do Jogo" right="Ver tudo" onRightPress={onRightPress} />);
+    expect(StyleSheet.flatten(screen.getByText('Informação do Jogo').props.style).color).toBe(colors.textSubtle);
+    expect(StyleSheet.flatten(screen.getByText('Ver tudo').props.style).color).toBe(colors.primaryOnDark);
+    fireEvent.press(screen.getByText('Ver tudo'));
+    expect(onRightPress).toHaveBeenCalledTimes(1);
   });
   it('without right', async () => {
     await render(<SectionBar label="Informação do Jogo" />);

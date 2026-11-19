@@ -100,7 +100,7 @@ describe('component tokens from Figma 564:6950 / 564:7259', () => {
   });
   it('interaction tokens', () => {
     expect(layout.minTouch).toBe(44);
-    expect(layout.tabUnderline).toBe(2);
+    expect(layout.tabUnderline).toBe(3);
     expect(layout.disabledOpacity).toBe(0.5);
     expect(layout.pressedOpacity).toBe(0.8);
   });

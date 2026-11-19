@@ -1,7 +1,6 @@
-// Task 14: "Continuar com o Google" e (só iOS) "Continuar com a Apple" + nota sobre o email oculto da Apple.
-// SEM FIGMA: o Figma não tem botões sociais. Apple: botão oficial (AppleAuthenticationButton, branco sobre o fundo
-// escuro). Google: regras de marca do Google (tema escuro, logótipo "G" oficial; cores em theme/brand.ts).
-// Mesma altura e raio dos botões S360. Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
+// Figma V7.1: Botão social 4939:7208. Google: pílula branca 52, logótipo "G" 20, "Continuar com o Google" Medium 15 preto.
+// Apple (só iOS): botão oficial (AppleAuthenticationButton CONTINUE, WHITE) com a mesma altura e raio, mais a nota do email oculto.
+// Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -13,8 +12,8 @@ import {
 import { FormMessage } from '@/components/AuthForm';
 import { Touchable } from '@/components/Touchable';
 import { NEEDS_EXISTING_LOGIN_MESSAGE, signInWithApple, signInWithGoogle, type SocialResult } from '@/services/social';
-import { googleBrand } from '@/theme/brand';
-import { layout, radius, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, type } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const GOOGLE_G = require('../../assets/images/google-g.svg');
@@ -54,7 +53,7 @@ export function SocialButtons() {
             testID="apple-sign-in"
             buttonType={AppleAuthenticationButtonType.CONTINUE}
             buttonStyle={AppleAuthenticationButtonStyle.WHITE}
-            cornerRadius={radius.button}
+            cornerRadius={layout.buttonHeight / 2}
             style={{ height: layout.buttonHeight, opacity: loading === 'apple' ? layout.disabledOpacity : 1 }}
             onPress={() => void run('apple', signInWithApple)}
           />
@@ -75,28 +74,28 @@ function GoogleButton({ loading, onPress }: { loading: boolean; onPress: () => v
       accessibilityState={{ disabled: loading, busy: loading }}
       disabled={loading}
       onPress={onPress}
-      className="flex-row items-center justify-center"
       style={{
         height: layout.buttonHeight,
-        borderRadius: radius.button,
-        borderWidth: layout.fieldLineWidth,
-        borderColor: googleBrand.stroke,
-        backgroundColor: googleBrand.fill,
-        gap: googleBrand.logoGap,
+        borderRadius: layout.buttonHeight / 2,
+        backgroundColor: colors.white,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: layout.socialGap,
       }}
     >
       {loading ? (
-        <ActivityIndicator color={googleBrand.text} />
+        <ActivityIndicator color={colors.black} />
       ) : (
         <>
           <Image
             source={GOOGLE_G}
             accessible={false}
-            style={{ width: googleBrand.logoSize, height: googleBrand.logoSize }}
+            style={{ width: layout.socialLogo, height: layout.socialLogo }}
           />
-          <Text style={{ color: googleBrand.text, fontSize: googleBrand.fontSize, fontWeight: googleBrand.fontWeight }}>
+          <Text71 variant="strong14" color="black" numberOfLines={1} style={{ fontSize: layout.socialLabel }}>
             {label}
-          </Text>
+          </Text71>
         </>
       )}
     </Touchable>

@@ -6,9 +6,8 @@ exports[`Tabs snapshot (default) 1`] = `
   style={
     [
       {
-        "backgroundColor": "rgba(255, 255, 255, 0.2)",
-        "borderRadius": 8,
-        "overflow": "hidden",
+        "borderBottomColor": "rgba(255, 255, 255, 0.25)",
+        "borderBottomWidth": 1,
       },
       {
         "flexDirection": "row",
@@ -38,10 +37,18 @@ exports[`Tabs snapshot (default) 1`] = `
     accessible={true}
     collapsable={false}
     focusable={true}
-    hitSlop={11}
+    hitSlop={
+      {
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+      }
+    }
     onBlur={[Function]}
     onClick={[Function]}
     onFocus={[Function]}
+    onLayout={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -49,26 +56,35 @@ exports[`Tabs snapshot (default) 1`] = `
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "justifyContent": "space-between",
-        "minHeight": 44,
-        "paddingTop": 8,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "gap": 10,
+          "justifyContent": "space-between",
+          "minHeight": 44,
+          "paddingTop": 10,
+        },
+        null,
+        null,
+      ]
     }
   >
     <Text
+      numberOfLines={1}
       style={
         [
           {
-            "color": "#FFFFFF",
-            "fontFamily": "PoppinsMedium",
-            "fontSize": 14,
+            "fontFamily": "DinCondensed",
+            "fontSize": 16,
+            "letterSpacing": 0.4,
+            "lineHeight": 17.6,
+            "textTransform": "uppercase",
           },
           {
             "color": "#FFFFFF",
           },
+          undefined,
         ]
       }
     >
@@ -78,9 +94,9 @@ exports[`Tabs snapshot (default) 1`] = `
       style={
         {
           "alignSelf": "stretch",
-          "backgroundColor": "#FFFFFF",
-          "borderRadius": 1,
-          "height": 2,
+          "backgroundColor": "#19B37E",
+          "borderRadius": 2,
+          "height": 3,
         }
       }
       testID="tab-underline"
@@ -108,10 +124,18 @@ exports[`Tabs snapshot (default) 1`] = `
     accessible={true}
     collapsable={false}
     focusable={true}
-    hitSlop={11}
+    hitSlop={
+      {
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "top": 0,
+      }
+    }
     onBlur={[Function]}
     onClick={[Function]}
     onFocus={[Function]}
+    onLayout={[Function]}
     onResponderGrant={[Function]}
     onResponderMove={[Function]}
     onResponderRelease={[Function]}
@@ -119,26 +143,35 @@ exports[`Tabs snapshot (default) 1`] = `
     onResponderTerminationRequest={[Function]}
     onStartShouldSetResponder={[Function]}
     style={
-      {
-        "alignItems": "center",
-        "flex": 1,
-        "justifyContent": "space-between",
-        "minHeight": 44,
-        "paddingTop": 8,
-      }
+      [
+        {
+          "alignItems": "center",
+          "flex": 1,
+          "gap": 10,
+          "justifyContent": "space-between",
+          "minHeight": 44,
+          "paddingTop": 10,
+        },
+        null,
+        null,
+      ]
     }
   >
     <Text
+      numberOfLines={1}
       style={
         [
           {
-            "color": "#FFFFFF",
-            "fontFamily": "PoppinsMedium",
-            "fontSize": 14,
+            "fontFamily": "DinCondensed",
+            "fontSize": 16,
+            "letterSpacing": 0.4,
+            "lineHeight": 17.6,
+            "textTransform": "uppercase",
           },
           {
-            "color": "#FFFFFF",
+            "color": "rgba(255, 255, 255, 0.5)",
           },
+          undefined,
         ]
       }
     >
@@ -148,9 +181,9 @@ exports[`Tabs snapshot (default) 1`] = `
       style={
         {
           "alignSelf": "stretch",
-          "backgroundColor": "#334942",
-          "borderRadius": 1,
-          "height": 2,
+          "backgroundColor": "transparent",
+          "borderRadius": 2,
+          "height": 3,
         }
       }
       testID="tab-underline"

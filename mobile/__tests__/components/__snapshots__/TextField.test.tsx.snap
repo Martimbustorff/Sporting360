@@ -1,11 +1,39 @@
 // Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`TextField snapshot (default) 1`] = `
-<View>
+<View
+  style={
+    {
+      "gap": 8,
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      [
+        {
+          "fontFamily": "DinCondensed",
+          "fontSize": 13,
+          "letterSpacing": 0.8,
+          "lineHeight": 15.6,
+          "textTransform": "uppercase",
+        },
+        {
+          "color": "rgba(255, 255, 255, 0.5)",
+        },
+        undefined,
+      ]
+    }
+    testID="field-label"
+  >
+    Email
+  </Text>
   <View
-    className="flex-row items-center"
     style={
       {
+        "alignItems": "center",
+        "flexDirection": "row",
         "gap": 8,
       }
     }
@@ -14,21 +42,25 @@ exports[`TextField snapshot (default) 1`] = `
       accessibilityLabel="Email"
       autoCapitalize="none"
       autoCorrect={false}
-      className="flex-1"
+      onBlur={[Function]}
       onChangeText={[Function]}
-      placeholder="EMAIL"
-      placeholderTextColor="#FFFFFF"
+      onFocus={[Function]}
+      placeholderTextColor="rgba(255, 255, 255, 0.5)"
       secureTextEntry={false}
       style={
         [
           {
-            "color": "#FFFFFF",
-            "fontFamily": "DinCondensed",
-            "fontSize": 18,
-            "textTransform": "uppercase",
+            "fontFamily": "Poppins",
+            "fontSize": 14,
+            "letterSpacing": 0,
+            "lineHeight": 21,
+            "textTransform": "none",
           },
           {
-            "paddingVertical": 8,
+            "color": "#FFFFFF",
+            "flex": 1,
+            "minWidth": 0,
+            "paddingVertical": 0,
           },
         ]
       }
@@ -38,11 +70,9 @@ exports[`TextField snapshot (default) 1`] = `
   <View
     style={
       {
-        "backgroundColor": "#FFFFFF",
-        "borderRadius": 23,
+        "backgroundColor": "rgba(255, 255, 255, 0.25)",
+        "borderRadius": 8,
         "height": 1,
-        "marginTop": 13,
-        "opacity": 0.3,
       }
     }
     testID="field-line"

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Header } from '@/components/Header';
+import { colors } from '@/theme/tokens';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 0 } };
 const renderHeader = (ui: React.ReactElement) =>
@@ -13,6 +14,7 @@ describe('Header', () => {
     const style = StyleSheet.flatten(screen.getByText('Nova Conta').props.style);
     expect(style.textTransform).toBe('uppercase');
     expect(style.fontSize).toBe(24);
+    expect(style.color).toBe(colors.primary);
   });
 
   it('has no back button without onBack', async () => {
@@ -39,9 +41,9 @@ describe('Header', () => {
     expect(t.props.numberOfLines).toBe(1);
   });
 
-  it('grows by the extra top inset beyond the 44px status bar area', async () => {
+  it('is the 52pt row plus the top inset', async () => {
     await renderHeader(<Header title="X" />);
-    expect(StyleSheet.flatten(screen.getByTestId('header').props.style).height).toBe(96 + 3);
+    expect(StyleSheet.flatten(screen.getByTestId('header').props.style).height).toBe(47 + 52);
   });
 
   it('snapshot (default)', async () => {

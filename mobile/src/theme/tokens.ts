@@ -189,17 +189,24 @@ export const radius = {
 
 export const layout = {
   headerHeight: 96,
+  headerRow: 52, // V7.1 Header (4918:5132), sem área segura
   headerBlur: 15,
   crestSize: { width: 75, height: 87 }, // big team crest on match header
   crestSmall: { width: 30, height: 35 }, // crest in calendar rows
   eventIcon: 32,
-  buttonHeight: 51,
+  buttonHeight: 52, // V7.1 (Figma 4919:5140)
   headerRowBottom: 13, // gap under the title/back row inside the 96px header (Figma 564:6950)
   headerIcon: 24, // back chevron
   headerSideX: 20, // back chevron left offset
   statusBarHeight: 44, // status bar area included in the 96px header (Figma 564:6950)
   minTouch: 44, // minimum touch target
-  tabUnderline: 2, // tab underline thickness
+  tabUnderline: 3, // V7.1: indicador (4935:7130)
+  tabUnderlineRadius: 2,
+  tabTopEqual: 10, // V7.1 tabs iguais (4942:7677)
+  tabGapEqual: 10,
+  tabTopScroll: 15, // V7.1 tabs com scroll (4935:7128)
+  tabGapScroll: 11,
+  fieldEye: 22, // V7.1 Campo de texto: olho (4939:7192)
   fieldLineWidth: 1, // empty text field underline (Figma 564:6913)
   fieldLineWidthActive: 2, // filled text field underline (Figma 564:6942)
   fieldLineOpacity: 0.3, // empty underline is white at 30%
@@ -207,6 +214,10 @@ export const layout = {
   fieldGapEmpty: 13, // gap between placeholder row and underline
   fieldGapFilled: 12, // gap between label/value block and underline
   disabledOpacity: 0.5,
+  socialGap: 10, // V7.1 Botão social: logótipo a etiqueta
+  socialLogo: 20, // V7.1 Botão social: logótipo (4939:7198)
+  socialLabel: 15, // V7.1 Botão social: Poppins Medium 15 (4939:7203)
+  buttonOutline: 1.5, // V7.1: contorno do botão (4919:5138)
   // Interruptor (Figma 306:6426)
   toggleWidth: 51,
   toggleHeight: 31,
@@ -238,11 +249,16 @@ export const layout = {
   subIcon: { width: 16, height: 18 }, // substitution arrows (Figma 655:31919)
   menuRowIcon: 24, // Figma 564:7096 (icon and arrow)
   menuRowGap: 16,
+  listRowL: 64, // V7.1 List row (4919:5133), separador incluído
+  listRowM: 52,
   sheetPadXCollapsed: 40, // Figma 564:6981
   sheetPadYCollapsed: 38,
   sheetPadXOpen: 24, // Figma 564:7119
   sheetPadYOpen: 32,
   sheetChevron: 24,
+  grabberWidth: 36, // V7.1 GameBox sheet (4920:5084)
+  grabberHeight: 5,
+  grabberOpacity: 0.18,
   sheetVelocity: 500, // px/s: a flick is enough to toggle
   consentSheetHeight: 380, // SEM FIGMA: analytics consent sheet (title, 5 lines of text, two buttons) above the home indicator
   consentGap: 16,
@@ -284,6 +300,9 @@ export const layout = {
   profileAvatar: 72, // círculo com a inicial do nome público
   profileHeaderGap: 16, // avatar ao nome
   statTileMinWidth: 140, // dois mosaicos por linha em 347 pt
+  playerBadgeOffsetX: 4, // V7.1 Foto do jogador: distintivo a -4 / -2 (4959:9555)
+  playerBadgeOffsetY: 2,
+  playerBadgeBorder: 1.5,
   playerPhoto: 96, // SEM FIGMA: foto redonda no topo do detalhe do jogador (Task 14)
   eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
   // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens

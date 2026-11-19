@@ -31,21 +31,23 @@ describe('TextField', () => {
     expect(screen.getByLabelText('Email').props.accessibilityHint).toBe('Email inválido');
   });
 
-  it('empty: uppercase placeholder, thin faint line, no small label', async () => {
+  it('always shows the eyebrow label in text-subtle', async () => {
     await render(<TextField label="Email" value="" onChangeText={() => {}} />);
-    expect(screen.getByLabelText('Email').props.placeholder).toBe('EMAIL');
-    expect(screen.queryByTestId('field-label')).toBeNull();
-    const line = StyleSheet.flatten(screen.getByTestId('field-line').props.style);
-    expect(line.height).toBe(layout.fieldLineWidth);
-    expect(line.opacity).toBe(layout.fieldLineOpacity);
+    expect(StyleSheet.flatten(screen.getByTestId('field-label').props.style).color).toBe(colors.textSubtle);
   });
 
-  it('filled: small label above and 2px primary line', async () => {
+  it('empty and unfocused: thin separator line', async () => {
+    await render(<TextField label="Email" value="" onChangeText={() => {}} />);
+    const line = StyleSheet.flatten(screen.getByTestId('field-line').props.style);
+    expect(line.height).toBe(layout.fieldLineWidth);
+    expect(line.backgroundColor).toBe(colors.separator);
+  });
+
+  it('filled: 2pt primary-on-dark line', async () => {
     await render(<TextField label="Email" value="a@b.pt" onChangeText={() => {}} />);
-    expect(screen.getByTestId('field-label')).toBeTruthy();
     const line = StyleSheet.flatten(screen.getByTestId('field-line').props.style);
     expect(line.height).toBe(layout.fieldLineWidthActive);
-    expect(line.backgroundColor).toBe(colors.primary);
+    expect(line.backgroundColor).toBe(colors.primaryOnDark);
   });
 
   it('snapshot (default)', async () => {

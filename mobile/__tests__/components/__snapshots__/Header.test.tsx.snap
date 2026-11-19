@@ -13,114 +13,63 @@ exports[`Header snapshot (default) 1`] = `
   }
 >
   <View
-    className="w-full overflow-hidden"
     style={
       {
+        "alignItems": "center",
+        "flexDirection": "row",
         "height": 99,
+        "paddingHorizontal": 12,
+        "paddingTop": 47,
       }
     }
     testID="header"
   >
     <View
       style={
+        {
+          "alignItems": "center",
+          "height": 44,
+          "justifyContent": "center",
+          "width": 44,
+        }
+      }
+    />
+    <Text
+      accessibilityRole="header"
+      ellipsizeMode="tail"
+      numberOfLines={1}
+      style={
         [
           {
-            "backgroundColor": "transparent",
+            "fontFamily": "DinCondensed",
+            "fontSize": 24,
+            "letterSpacing": 0.2,
+            "lineHeight": 26.4,
+            "textTransform": "uppercase",
           },
           {
-            "bottom": 0,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": 0,
+            "color": "#00835B",
+          },
+          {
+            "flex": 1,
+            "minWidth": 0,
+            "textAlign": "center",
           },
         ]
       }
     >
-      <ViewManagerAdapter_ExpoBlur
-        blurMethod="none"
-        blurReductionFactor={4}
-        intensity={15}
-        style={
-          {
-            "bottom": 0,
-            "left": 0,
-            "position": "absolute",
-            "right": 0,
-            "top": 0,
-          }
-        }
-        tint="dark"
-      />
-    </View>
+      Nova Conta
+    </Text>
     <View
-      className="bg-s360-header"
       style={
         {
-          "bottom": 0,
-          "left": 0,
-          "position": "absolute",
-          "right": 0,
-          "top": 0,
+          "alignItems": "center",
+          "height": 44,
+          "justifyContent": "center",
+          "width": 44,
         }
       }
     />
-    <View
-      className="absolute inset-x-0 bottom-0 flex-row items-center justify-between"
-      style={
-        {
-          "paddingBottom": 13,
-          "paddingHorizontal": 20,
-        }
-      }
-    >
-      <View
-        style={
-          {
-            "height": 24,
-            "width": 24,
-          }
-        }
-      />
-      <View
-        className="absolute inset-x-0 items-center"
-        style={
-          {
-            "bottom": 13,
-            "paddingHorizontal": 44,
-            "pointerEvents": "none",
-          }
-        }
-      >
-        <Text
-          accessibilityRole="header"
-          numberOfLines={1}
-          style={
-            [
-              {
-                "color": "#00835B",
-                "fontFamily": "DinCondensed",
-                "fontSize": 24,
-                "textTransform": "uppercase",
-              },
-              {
-                "textTransform": "uppercase",
-              },
-              undefined,
-            ]
-          }
-        >
-          Nova Conta
-        </Text>
-      </View>
-      <View
-        style={
-          {
-            "minWidth": 24,
-          }
-        }
-      />
-    </View>
   </View>
 </RNCSafeAreaProvider>
 `;

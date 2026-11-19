@@ -1,11 +1,11 @@
-// Figma: nós 564:6981 (fechada: fundo branco, raio superior 48, padding 40/38, título DIN 24 preto, seta em baixo)
-// e 564:7119 (aberta: padding 24/32, título verde `primary`, seta em cima). Sombra do Figma em layout.sheetShadow.
+// Figma V7.1: GameBox sheet 4920:5083 (fundo branco, raio superior 28, grabber 36x5 a 8 do topo, título Title 24 primary,
+// seta à direita, padding 24). Sombra em layout.sheetShadow. Conflito com o resumo da Tarefa 3 (bg-raised): ganha o frame.
 // SEM FIGMA: gesto de arrastar (skill expo-animation): só transform, mola com velocidade, "reduzir movimento".
 // A paginação (564:7160) e o conteúdo da folha aberta pertencem a quem usa o Sheet.
 import Feather from '@expo/vector-icons/Feather';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
@@ -16,7 +16,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { resolveSheetEnd } from '@/lib/sheetEnd';
-import { colors, layout, radius, type } from '@/theme/tokens';
+import { Touchable } from '@/components/Touchable';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 const titleRow = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: layout.minTouch } as const;
 
@@ -74,9 +76,7 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
 
   const animated = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
 
-  const pad = open
-    ? { paddingHorizontal: layout.sheetPadXOpen, paddingVertical: layout.sheetPadYOpen }
-    : { paddingHorizontal: layout.sheetPadXCollapsed, paddingVertical: layout.sheetPadYCollapsed };
+  const pad = { paddingHorizontal: space.s24, paddingTop: space.s16, paddingBottom: space.s24 };
 
   return (
     <GestureDetector gesture={pan}>
@@ -91,37 +91,51 @@ export function Sheet({ title, collapsedHeight, expandedHeight, open, onOpenChan
             bottom: 0,
             height: expandedHeight,
             backgroundColor: colors.white,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
+            borderTopLeftRadius: radii.r28,
+            borderTopRightRadius: radii.r28,
             ...layout.sheetShadow,
           },
           animated,
         ]}
       >
         <View
+          testID="sheet-grabber"
+          style={{
+            position: 'absolute',
+            top: space.s8,
+            alignSelf: 'center',
+            width: layout.grabberWidth,
+            height: layout.grabberHeight,
+            borderRadius: layout.grabberHeight / 2,
+            backgroundColor: colors.ink,
+            opacity: layout.grabberOpacity,
+            zIndex: 1,
+          }}
+        />
+        <View
           testID="sheet-clip"
           style={{
             flex: 1,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
+            borderTopLeftRadius: radii.r28,
+            borderTopRightRadius: radii.r28,
             overflow: 'hidden',
             ...pad,
           }}
         >
           {toggleable ? (
-            <Pressable
+            <Touchable
               accessibilityRole="button"
               accessibilityLabel={title}
               accessibilityState={{ expanded: open }}
               onPress={() => onOpenChange(!open)}
               style={titleRow}
             >
-              <Text style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
-              <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.black} />
-            </Pressable>
+              <Text71 variant="title24" color="primary" numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
+              <Feather name={open ? 'chevron-down' : 'chevron-up'} size={layout.sheetChevron} color={colors.ink} />
+            </Touchable>
           ) : (
             <View style={titleRow}>
-              <Text accessibilityRole="header" style={open ? type.sheetTitleOpen : type.sheetTitle}>{title}</Text>
+              <Text71 variant="title24" color="primary" accessibilityRole="header" numberOfLines={1} style={{ flex: 1 }}>{title}</Text71>
             </View>
           )}
           <View

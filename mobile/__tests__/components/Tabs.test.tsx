@@ -29,18 +29,18 @@ describe('Tabs', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(2);
   });
 
-  it('active underline is white, inactive uses the divider colour', async () => {
+  it('active underline is primary-on-dark, inactive is transparent', async () => {
     await render(<Tabs items={items} value="results" onChange={() => {}} mode="equal" />);
     const [a, b] = screen.getAllByTestId('tab-underline').map((n) => StyleSheet.flatten(n.props.style));
-    expect(a!.backgroundColor).toBe(colors.white);
-    expect(b!.backgroundColor).toBe(colors.divider);
+    expect(a!.backgroundColor).toBe(colors.primaryOnDark);
+    expect(a!.height).toBe(3);
+    expect(b!.backgroundColor).toBe('transparent');
   });
 
-  it('scroll mode dims inactive labels, equal mode does not (Figma)', async () => {
-    const { rerender } = await render(<Tabs items={items} value="results" onChange={() => {}} mode="scroll" />);
-    expect(StyleSheet.flatten(screen.getByText('Classificação').props.style).color).toBe(colors.textDisabled);
-    await rerender(<Tabs items={items} value="results" onChange={() => {}} mode="equal" />);
-    expect(StyleSheet.flatten(screen.getByText('Classificação').props.style).color).toBe(colors.white);
+  it.each(['scroll', 'equal'] as const)('%s mode: active label white, inactive text-subtle', async (mode) => {
+    await render(<Tabs items={items} value="results" onChange={() => {}} mode={mode} />);
+    expect(StyleSheet.flatten(screen.getByText('Resultados').props.style).color).toBe(colors.white);
+    expect(StyleSheet.flatten(screen.getByText('Classificação').props.style).color).toBe(colors.textSubtle);
   });
 
   it('snapshot (default)', async () => {

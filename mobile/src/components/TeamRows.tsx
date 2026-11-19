@@ -6,27 +6,16 @@
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 import { Touchable } from '@/components/Touchable';
-import { Image } from 'expo-image';
+import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { colors, layout, spacing } from '@/theme/tokens';
 
 export function RowSeparator() {
   return <View style={{ height: layout.separator, backgroundColor: colors.surface20 }} />;
 }
 
 export function Avatar({ photo, testID }: { photo: string | null; testID?: string }) {
-  const box = { width: layout.avatarSize, height: layout.avatarSize, borderRadius: radius.pill, flexShrink: 0 } as const;
-  if (!photo) return <View testID={testID} style={{ ...box, backgroundColor: colors.surface10 }} />;
-  return (
-    <Image
-      testID={testID}
-      source={{ uri: photo }}
-      contentFit="cover"
-      accessibilityElementsHidden
-      importantForAccessibility="no"
-      style={box}
-    />
-  );
+  return <PlayerPhoto photo={photo} size={layout.avatarSize} testID={testID} />;
 }
 
 /** Pessoa (jogador ou treinador): número opcional, foto, nome e linha secundária; tocável quando há `onPress`. */

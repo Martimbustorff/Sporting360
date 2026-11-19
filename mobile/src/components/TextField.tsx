@@ -1,10 +1,12 @@
-// Figma: nós 564:6907 (vazio: etiqueta display 18 como placeholder, linha 1px branca a 30%) e 564:6938 (preenchido: etiqueta display 14 a 50%, valor corpo 16, linha 2px primary).
+// Figma V7.1: Campo de texto 4939:7188: etiqueta Eyebrow 13 text-subtle por cima, valor Body 14 branco, linha de 2 pt primary-on-dark,
+// erro Caption 12 por baixo. Sem foco e vazio, a linha fica fina e em separator (SEM FIGMA).
 // Olho: o ativo ic_eye (564:6910) está vazio no Figma (sem vetores); usa-se Ionicons eye-outline / eye-off-outline tingido com token.
 import { useState, type ReactNode } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { TextInput, View, type TextInputProps } from 'react-native';
+import { Touchable } from '@/components/Touchable';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space, text71 } from '@/theme/tokens';
 
 export function TextField({
   label,
@@ -18,6 +20,7 @@ export function TextField({
   autoCapitalize = 'none',
   autoCorrect = false,
   accessory,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -31,29 +34,28 @@ export function TextField({
   autoCorrect?: boolean;
   /** Ação à direita do valor (ex.: leitor da GameBox, Figma 327:15144). */
   accessory?: ReactNode;
+  placeholder?: string;
 }) {
   const [hidden, setHidden] = useState(true);
+  const [focused, setFocused] = useState(false);
   const filled = value.length > 0;
+  const active = filled || focused;
   return (
-    <View>
-      {filled ? (
-        <Text
-          testID="field-label"
-          style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity, marginBottom: spacing.sm }]}
-        >
-          {label}
-        </Text>
-      ) : null}
-      <View className="flex-row items-center" style={{ gap: spacing.sm }}>
+    <View style={{ gap: space.s8 }}>
+      <Text71 testID="field-label" variant="eyebrow13" color="textSubtle" numberOfLines={1}>
+        {label}
+      </Text71>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s8 }}>
         <TextInput
-          className="flex-1"
-          style={[filled ? type.fieldValue : type.fieldPlaceholder, { paddingVertical: spacing.sm }]}
+          style={[text71.body14, { flex: 1, minWidth: 0, color: colors.white, paddingVertical: 0 }]}
           accessibilityLabel={label}
           accessibilityHint={error}
-          placeholder={label.toLocaleUpperCase('pt-PT')}
-          placeholderTextColor={colors.white}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSubtle}
           value={value}
           onChangeText={onChangeText}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           secureTextEntry={secure && hidden}
           keyboardType={keyboardType}
           autoComplete={autoComplete}
@@ -62,32 +64,29 @@ export function TextField({
           autoCorrect={autoCorrect}
         />
         {secure ? (
-          <Pressable
+          <Touchable
             accessibilityRole="button"
             accessibilityLabel={hidden ? 'Mostrar password' : 'Esconder password'}
             onPress={() => setHidden((h) => !h)}
-            hitSlop={12}
-            style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center', alignItems: 'center' }}
+            style={{ width: layout.minTouch, height: layout.minTouch, justifyContent: 'center', alignItems: 'center' }}
           >
-            <Ionicons name={hidden ? 'eye-outline' : 'eye-off-outline'} size={layout.headerIcon} color={colors.textMuted} />
-          </Pressable>
+            <Ionicons name={hidden ? 'eye-outline' : 'eye-off-outline'} size={layout.fieldEye} color={colors.textMuted} />
+          </Touchable>
         ) : null}
         {accessory}
       </View>
       <View
         testID="field-line"
         style={{
-          marginTop: filled ? layout.fieldGapFilled : layout.fieldGapEmpty,
-          height: filled ? layout.fieldLineWidthActive : layout.fieldLineWidth,
-          borderRadius: radius.line,
-          backgroundColor: filled ? colors.primary : colors.white,
-          opacity: filled ? 1 : layout.fieldLineOpacity,
+          height: active ? layout.fieldLineWidthActive : layout.fieldLineWidth,
+          borderRadius: radii.r8,
+          backgroundColor: active ? colors.primaryOnDark : colors.separator,
         }}
       />
       {error ? (
-        <Body variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.cardRed }}>
+        <Text71 variant="caption12" color="danger" accessibilityRole="alert" accessibilityLiveRegion="polite">
           {error}
-        </Body>
+        </Text71>
       ) : null}
     </View>
   );
