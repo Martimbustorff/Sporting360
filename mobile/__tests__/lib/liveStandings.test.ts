@@ -1,6 +1,6 @@
 // Classificação ao vivo: projeção sobre a tabela oficial (3/1/0 pontos) e documento de jogos ao vivo velho.
 import type { LiveFixture, StandingRow } from '@/data/schemas';
-import { LIVE_MAX_AGE_MS, LIVE_MAX_SKEW_MS, liveStandingsAvailable, projectStandings, zoneOf } from '@/lib/liveStandings';
+import { LIVE_MAX_AGE_MS, LIVE_MAX_SKEW_MS, finishedResults, liveStandingsAvailable, projectStandings, zoneOf } from '@/lib/liveStandings';
 
 function row(rank: number, teamId: string, name: string, points: number, o: Partial<StandingRow> = {}): StandingRow {
   return {
@@ -122,6 +122,80 @@ describe('projectStandings', () => {
     const copy = JSON.parse(JSON.stringify(official));
     projectStandings(official, [live('228', '212', 5, 0)]);
     expect(official).toEqual(copy);
+  });
+});
+
+describe('projectStandings: confronto direto (regulamento da Liga Portugal)', () => {
+  const res = (homeId: string, awayId: string, homeGoals: number, awayGoals: number) => ({ homeId, awayId, homeGoals, awayGoals });
+
+  it('duas equipas a par: o confronto direto vence a diferença de golos geral', () => {
+    // A 20 (+9) e B 20 (+2); B ganhou 2-0 a A. A perde ao vivo com C e continua a 20: B passa à frente.
+    const t = [row(1, 'A', 'A', 20, { goalsDiff: 9 }), row(2, 'B', 'B', 20, { goalsDiff: 2 }), row(3, 'C', 'C', 5)];
+    const rows = projectStandings(t, [live('A', 'C', 0, 1)], [res('B', 'A', 2, 0)]).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+    expect(rows.map((r) => r.delta)).toEqual([1, -1, 0]);
+    // Sem esse resultado: diferença de golos geral (A à frente).
+    expect(projectStandings(t, [live('A', 'C', 0, 1)], []).rows.map((r) => r.teamId)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('mini-liga a três: pontos iguais entre eles, decide a diferença nesses jogos e não a geral', () => {
+    // Z sobe a 30 pontos com 1-0 ao vivo sobre V. X, Y, Z a 30. Entre eles: X 3-0 Y, Y 1-0 Z, Z 1-0 X (3 pontos cada).
+    // Diferença nos jogos entre eles: X +2, Z 0, Y -2. A geral daria Y (+8), Z (+5), X (+1).
+    const t = [
+      row(1, 'X', 'X', 30, { goalsDiff: 1 }),
+      row(2, 'Y', 'Y', 30, { goalsDiff: 8 }),
+      row(3, 'Z', 'Z', 27, { goalsDiff: 5 }),
+      row(4, 'V', 'V', 0, { goalsDiff: -20 }),
+    ];
+    const results = [res('X', 'Y', 3, 0), res('Y', 'Z', 1, 0), res('Z', 'X', 1, 0)];
+    const rows = projectStandings(t, [live('Z', 'V', 1, 0)], results).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['X', 'Z', 'Y', 'V']);
+  });
+
+  it('um jogo ao vivo entre as equipas empatadas conta como resultado entre elas', () => {
+    // A 20 (+3) e B 17 (+9); B-A 1-0 ao vivo põe os dois a 20.
+    const t = [row(1, 'A', 'A', 20, { goalsDiff: 3 }), row(2, 'B', 'B', 17, { goalsDiff: 9 }), row(3, 'C', 'C', 0)];
+    // Só o jogo ao vivo entre eles (B 1-0): B tem 3 pontos no confronto, A 0.
+    expect(projectStandings(t, [live('B', 'A', 1, 0)], []).rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+    // Com a ida A 3-0 B: 3 pontos cada, diferença A +2 e B -2: A à frente, apesar de B ter melhor diferença geral (+10 contra +2).
+    expect(projectStandings(t, [live('B', 'A', 1, 0)], [res('A', 'B', 3, 0)]).rows.map((r) => r.teamId)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('o jogo ao vivo não conta duas vezes se o calendário já o traz terminado', () => {
+    const t = [row(1, 'A', 'A', 20, { goalsDiff: 3 }), row(2, 'B', 'B', 17, { goalsDiff: 9 }), row(3, 'C', 'C', 0)];
+    // O calendário já tem B-A 1-0 como terminado (documento a chegar tarde): fica só o resultado ao vivo, como acima.
+    const rows = projectStandings(t, [live('B', 'A', 1, 0)], [res('A', 'B', 3, 0), res('B', 'A', 1, 0)]).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['A', 'B', 'C']);
+  });
+
+  it('sem calendário (omitido ou vazio): diferença de golos, golos marcados e ordem oficial', () => {
+    const t = [row(1, 'A', 'A', 20, { goalsDiff: 5 }), row(2, 'B', 'B', 17, { goalsDiff: 9 }), row(3, 'C', 'C', 0)];
+    const lv = [live('B', 'C', 3, 0)];
+    expect(projectStandings(t, lv).rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+    expect(projectStandings(t, lv, []).rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+  });
+
+  it('grupos sem equipa em jogo ignoram o confronto direto e mantêm a ordem oficial', () => {
+    const t = [row(1, 'A', 'A', 30), row(2, 'B', 'B', 25), row(3, 'C', 'C', 15, { goalsDiff: 1 }), row(4, 'D', 'D', 15, { goalsDiff: 9 })];
+    const rows = projectStandings(t, [live('A', 'B', 1, 1)], [res('D', 'C', 3, 0)]).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['A', 'B', 'C', 'D']);
+  });
+
+  it('empatadas também no confronto direto: diferença geral decide', () => {
+    const t = [row(1, 'A', 'A', 20, { goalsDiff: 3 }), row(2, 'B', 'B', 20, { goalsDiff: 7 }), row(3, 'C', 'C', 0)];
+    // Ida 1-1 e volta 0-0: 2 pontos cada e diferença 0 no confronto. A perde ao vivo 0-1 com C e continua a 20 (+2 contra +7):
+    // B fica à frente pela diferença geral.
+    const rows = projectStandings(t, [live('A', 'C', 0, 1)], [res('A', 'B', 1, 1), res('B', 'A', 0, 0)]).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
+  });
+});
+
+describe('finishedResults', () => {
+  const item = (id: string, status: string, h: number | null, a: number | null, extra = {}) =>
+    ({ id, status, home: { id: 'H' + id }, away: { id: 'A' + id }, score: { home: h, away: a, extraHome: null, extraAway: null, penaltyHome: null, penaltyAway: null }, ...extra }) as never;
+  it('só jogos terminados com golos; ignora adiados, ao vivo e sem golos', () => {
+    const r = finishedResults([item('1', 'FT', 2, 1), item('2', 'LIVE', 1, 0), item('3', 'PST', null, null), item('4', 'FT', null, null), item('5', 'NS', null, null)]);
+    expect(r).toEqual([{ homeId: 'H1', awayId: 'A1', homeGoals: 2, awayGoals: 1 }]);
   });
 });
 

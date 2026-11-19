@@ -1,10 +1,13 @@
 // Classificação ao vivo (Plan 7 Task 11, Figma 4935:7111): projeta os jogos a decorrer sobre a tabela oficial.
 // O servidor escreve `competitions/{key}/data/liveFixtures` uma vez por minuto enquanto há um jogo do Sporting em liga
 // (functions/src/football/liveFixtures.ts); a app nunca grava. Ordem: pontos projetados; em cada grupo de equipas com os
-// mesmos pontos que inclua pelo menos uma equipa em jogo, diferença de golos, golos marcados e, por fim, a ordem oficial
-// (posição na tabela recebida). Grupos sem equipas em jogo mantêm a ordem oficial (sem setas para quem não joga), o que
-// também mantém a ordenação transitiva. Critérios da Liga Portugal "a confirmar" (nota do Figma, batch 2): ordem do brief.
-import type { LiveFixture, LiveFixturesDoc, StandingRow } from '@/data/schemas';
+// mesmos pontos que inclua pelo menos uma equipa em jogo, desempata-se como no regulamento da Liga Portugal (confirmado
+// pelo Martim a 19/11): (a) pontos nos jogos entre as equipas empatadas nesta época, (b) diferença de golos nesses jogos,
+// (c) diferença de golos geral, (d) golos marcados e (e) ordem oficial (posição na tabela recebida). Os jogos ao vivo entre
+// as equipas empatadas contam como resultados entre elas. O confronto direto vem de `competitions/{key}/data/fixtures`
+// (as jornadas da competição), passado por quem chama em `results`; sem ele, o desempate começa na diferença de golos geral.
+// Grupos sem equipas em jogo mantêm a ordem oficial (sem setas para quem não joga), o que também mantém a ordenação transitiva.
+import type { FixtureItem, LiveFixture, LiveFixturesDoc, StandingRow } from '@/data/schemas';
 
 /** Documento de jogos ao vivo com 5 minutos ou mais é velho: mostra-se só a tabela oficial. */
 export const LIVE_MAX_AGE_MS = 5 * 60_000;
@@ -27,8 +30,31 @@ export function liveStandingsAvailable(doc: Pick<LiveFixturesDoc, 'updatedAt' | 
   return age > -LIVE_MAX_SKEW_MS && age < LIVE_MAX_AGE_MS;
 }
 
-/** Aplica 3/1/0 pontos a cada jogo ao vivo sobre a tabela oficial e reordena. Não altera `official`. */
-export function projectStandings(official: StandingRow[], live: LiveFixture[]): { rows: ProjectedRow[] } {
+/** Resultado final de um jogo da liga entre duas equipas, para o confronto direto. */
+export type LeagueResult = { homeId: string; awayId: string; homeGoals: number; awayGoals: number };
+
+const FINISHED: readonly FixtureItem['status'][] = ['FT', 'AET', 'PEN'];
+
+/** Jogos terminados (com golos) de `competitions/{key}/data/fixtures`, no formato do confronto direto. */
+export function finishedResults(items: FixtureItem[]): LeagueResult[] {
+  const out: LeagueResult[] = [];
+  for (const f of items) {
+    const { home, away } = f.score;
+    if (!FINISHED.includes(f.status) || home == null || away == null) continue;
+    out.push({ homeId: f.home.id, awayId: f.away.id, homeGoals: home, awayGoals: away });
+  }
+  return out;
+}
+
+/**
+ * Aplica 3/1/0 pontos a cada jogo ao vivo sobre a tabela oficial e reordena. Não altera `official`.
+ * `results`: jogos terminados da época (ver `finishedResults`) para o confronto direto; opcional, puro.
+ */
+export function projectStandings(
+  official: StandingRow[],
+  live: LiveFixture[],
+  results: readonly LeagueResult[] = [],
+): { rows: ProjectedRow[] } {
   const base = official.map((r, i) => ({ r: { ...r }, i, liveScore: null as string | null }));
   const byTeam = new Map(base.map((b) => [b.r.teamId, b]));
 
@@ -56,16 +82,51 @@ export function projectStandings(official: StandingRow[], live: LiveFixture[]): 
     apply(f.awayId, f.awayGoals, f.homeGoals);
   }
 
-  // Pontos projetados em que joga pelo menos uma equipa: só aí a diferença e os golos podem mexer na ordem.
-  const livePoints = new Set(base.filter((b) => b.liveScore !== null).map((b) => b.r.points));
-  const ordered = [...base].sort((a, b) => {
-    if (a.r.points !== b.r.points) return b.r.points - a.r.points;
-    if (livePoints.has(a.r.points)) return b.r.goalsDiff - a.r.goalsDiff || b.r.goalsFor - a.r.goalsFor || a.i - b.i;
-    return a.i - b.i;
-  });
+  // Por pontos projetados; depois, em cada grupo de pontos iguais com uma equipa em jogo, o regulamento. Os restantes
+  // grupos ficam pela ordem oficial.
+  const byPoints = [...base].sort((a, b) => b.r.points - a.r.points || a.i - b.i);
+  const ordered: typeof base = [];
+  for (let start = 0; start < byPoints.length; ) {
+    let end = start + 1;
+    while (end < byPoints.length && byPoints[end]!.r.points === byPoints[start]!.r.points) end += 1;
+    const group = byPoints.slice(start, end);
+    ordered.push(...(group.length > 1 && group.some((b) => b.liveScore !== null) ? tieBreak(group, live, results) : group));
+    start = end;
+  }
   return {
     rows: ordered.map((b, pos) => ({ ...b.r, rank: pos + 1, delta: b.i - pos, liveScore: b.liveScore })),
   };
+}
+
+type Entry = { r: StandingRow; i: number; liveScore: string | null };
+
+/** Ordena um grupo de equipas com os mesmos pontos: confronto direto (pontos, diferença), geral, golos marcados, oficial. */
+function tieBreak(group: Entry[], live: LiveFixture[], results: readonly LeagueResult[]): Entry[] {
+  const ids = new Set(group.map((b) => b.r.teamId));
+  // Um jogo ao vivo entre as equipas empatadas manda sobre o mesmo casa/fora do calendário (ainda não terminado ou a chegar tarde).
+  const liveKeys = new Set(live.map((f) => `${f.homeId}|${f.awayId}`));
+  const games: LeagueResult[] = [
+    ...results.filter((g) => !liveKeys.has(`${g.homeId}|${g.awayId}`)),
+    ...live.map((f) => ({ homeId: f.homeId, awayId: f.awayId, homeGoals: f.homeGoals, awayGoals: f.awayGoals })),
+  ].filter((g) => g.homeId !== g.awayId && ids.has(g.homeId) && ids.has(g.awayId));
+  const h2h = new Map([...ids].map((id) => [id, { points: 0, diff: 0 }]));
+  for (const g of games) {
+    const home = h2h.get(g.homeId)!;
+    const away = h2h.get(g.awayId)!;
+    home.diff += g.homeGoals - g.awayGoals;
+    away.diff += g.awayGoals - g.homeGoals;
+    if (g.homeGoals > g.awayGoals) home.points += 3;
+    else if (g.homeGoals < g.awayGoals) away.points += 3;
+    else {
+      home.points += 1;
+      away.points += 1;
+    }
+  }
+  return [...group].sort((a, b) => {
+    const x = h2h.get(a.r.teamId)!;
+    const y = h2h.get(b.r.teamId)!;
+    return y.points - x.points || y.diff - x.diff || b.r.goalsDiff - a.r.goalsDiff || b.r.goalsFor - a.r.goalsFor || a.i - b.i;
+  });
 }
 
 export type Zone = 'champions' | 'europa' | 'conference';

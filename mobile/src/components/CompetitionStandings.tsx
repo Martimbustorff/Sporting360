@@ -24,7 +24,7 @@ import { Touchable } from '@/components/Touchable';
 import { SportSchema, type Sport } from '@/data/schemas';
 import { useNow } from '@/data/clock';
 import { useCompetition, useCompetitionData } from '@/data/sports';
-import { liveStandingsAvailable, projectStandings } from '@/lib/liveStandings';
+import { finishedResults, liveStandingsAvailable, projectStandings } from '@/lib/liveStandings';
 import {
   getViewChoice,
   hasBracketTies,
@@ -64,6 +64,8 @@ export function CompetitionStandings({
   const standings = useCompetitionData(competitionKey, 'standings');
   const bracket = useCompetitionData(competitionKey, 'bracket');
   const liveDoc = useCompetitionData(competitionKey, 'liveFixtures');
+  // Confronto direto do desempate ao vivo: só se lê o calendário quando há jogos ao vivo. Nunca bloqueia a vista.
+  const fixtures = useCompetitionData(liveDoc.status === 'ready' && liveDoc.data.fixtures.length > 0 ? competitionKey : null, 'fixtures');
   const now = useNow(LIVE_CHECK_MS);
   const [mode, setMode] = useState<Mode>('live');
   // A escolha vive no módulo (sessão da app); isto só volta a desenhar depois de a gravar.
@@ -93,9 +95,11 @@ export function CompetitionStandings({
   // Leitura do documento ao vivo nunca bloqueia nem falha a página: sem ele, tabela oficial.
   const liveReady = liveDoc.status === 'ready' ? liveDoc.data : null;
   const liveOn = table !== null && liveReady !== null && liveStandingsAvailable(liveReady, now);
+  // Sem o calendário (a carregar, em falta ou em erro) o desempate segue por diferença de golos, golos marcados e ordem oficial.
+  const results = fixtures.status === 'ready' ? finishedResults(fixtures.data.items) : [];
   const projected =
     shown === 'table' && table && liveOn && mode === 'live'
-      ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures).rows }))
+      ? table.groups.map((g) => ({ ...g, rows: projectStandings(g.rows, liveReady.fixtures, results).rows }))
       : null;
   const fromCache = reads.some((r) => r.status === 'ready' && r.fromCache === true);
 

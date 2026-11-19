@@ -8,7 +8,8 @@ type L =
   | { status: 'missing' }
   | { status: 'error'; error: Error }
   | { status: 'ready'; data: unknown; fromCache?: boolean };
-const mockData: { competition: L; standings: L; bracket: L; liveFixtures: L } = {
+const mockData: { competition: L; standings: L; bracket: L; liveFixtures: L; fixtures: L } = {
+  fixtures: { status: 'missing' },
   liveFixtures: { status: 'missing' },
   competition: { status: 'missing' },
   standings: { status: 'missing' },
@@ -17,7 +18,7 @@ const mockData: { competition: L; standings: L; bracket: L; liveFixtures: L } = 
 
 jest.mock('@/data/sports', () => ({
   useCompetition: jest.fn(() => mockData.competition),
-  useCompetitionData: jest.fn((_key: string | null, kind: 'standings' | 'bracket' | 'liveFixtures') => mockData[kind]),
+  useCompetitionData: jest.fn((_key: string | null, kind: 'standings' | 'bracket' | 'liveFixtures' | 'fixtures') => mockData[kind]),
 }));
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn() } }));
@@ -93,6 +94,7 @@ beforeEach(() => {
   mockData.standings = { status: 'missing' };
   mockData.bracket = { status: 'missing' };
   mockData.liveFixtures = { status: 'missing' };
+  mockData.fixtures = { status: 'missing' };
 });
 
 describe('CompetitionStandings: Review Focus 5 (tabela passa a eliminatórias em direto)', () => {
@@ -408,6 +410,25 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     expect(screen.getByTestId('standings-live-212').props.children).toBe('AO VIVO 1-2');
     expect(screen.queryByTestId('standings-live-211')).toBeNull();
     expect(screen.getByTestId('standings-points-228').props.children).toBe(29);
+  });
+
+  it('confronto direto: o Benfica, que ganhou ao Sporting, fica à frente a 29 pontos apesar da diferença pior', async () => {
+    mockData.liveFixtures = liveDoc(30_000);
+    mockData.fixtures = {
+      status: 'ready',
+      data: { items: [{ id: '1', status: 'FT', home: { id: '211' }, away: { id: '228' }, score: { home: 2, away: 0 } }] },
+    };
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(rank('211')).toBe(1);
+    expect(rank('228')).toBe(2);
+  });
+
+  it('calendário em erro ou em falta: não bloqueia, desempata por diferença de golos', async () => {
+    mockData.liveFixtures = liveDoc(30_000);
+    mockData.fixtures = { status: 'error', error: new Error('x') };
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(rank('228')).toBe(1);
+    expect(rank('211')).toBe(2);
   });
 
   it('o rótulo de acessibilidade diz a mudança de posição em "Ao vivo" e deixa de a dizer em "Oficial"', async () => {
