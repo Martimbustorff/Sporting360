@@ -40,7 +40,7 @@ const HORA = 3600 * 1000;
 
 /**
  * Fim da validade: CANC (inclui ABD/AWD/WO) dá sempre kickoff + 2 h; PST sem nova data dá kickoff + 2 h;
- * FT, AET e PEN: fim do jogo + 2 h; nos restantes casos, início + 4 h. Com nova data, `kickoff` já é a hora remarcada.
+ * FT, AET e PEN com finishedAt: fim + 2 h; sem finishedAt: início + 4 h; nos restantes casos, início + 4 h. Com nova data, `kickoff` já é a hora remarcada.
  */
 export function computeExpiresAt(m: {
   kickoff: Date;

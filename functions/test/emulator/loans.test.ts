@@ -4,7 +4,7 @@ import { logger } from "firebase-functions";
 import { clearAll } from "../helpers/emulatorDb";
 import { seedFootballMatch } from "../helpers/seedMatch";
 import type { MatchDoc } from "../../src/model/types";
-import { handleCreateLoan, handleClaimLoan, handleCancelLoan } from "../../src/callables/loans";
+import { handleCreateLoan, handleClaimLoan, handleCancelLoan, safely } from "../../src/callables/loans";
 
 let db: Firestore;
 const NOW = new Date("2026-11-19T12:00:00Z");
@@ -92,6 +92,26 @@ describe("createLoan: validação", () => {
     expect((await code(create(alice, { matchId: "m1" })))?.reason).toBe("not-next");
     const r = await create(alice, { matchId: "live" });
     expect((await loanOf(r.loanId)).expiresAt.toDate()).toEqual(new Date("2026-11-19T14:00:00Z"));
+  });
+  it("PST há 6 h e NS amanhã no mesmo recinto: amanhã aceita, o PST é not-next", async () => {
+    await db.doc("matches/m2").delete();
+    await seedNs("old", new Date("2026-11-19T06:00:00Z"), { status: "PST", statusRaw: "PST" });
+    await seedNs("tom", new Date("2026-11-20T20:00:00Z"));
+    expect(await code(create(alice, { matchId: "old" }))).toEqual({ code: "failed-precondition", reason: "not-next" });
+    await create(alice, { matchId: "tom" });
+  });
+  it("NS parado há 6 h sem jogo seguinte: recusado, nunca nasce expirado", async () => {
+    await db.doc("matches/m1").delete();
+    await db.doc("matches/m2").delete();
+    await seedNs("stale", new Date("2026-11-19T06:00:00Z"));
+    expect((await code(create(alice, { matchId: "stale" })))?.code).toBe("failed-precondition");
+    expect((await db.collection("loans").get()).size).toBe(0);
+  });
+  it("jogo ao vivo há 6 h (prolongamento longo, validade já passada): finished", async () => {
+    await db.doc("matches/m1").delete();
+    await db.doc("matches/m2").delete();
+    await seedNs("p", new Date("2026-11-19T06:00:00Z"), { status: "LIVE", statusRaw: "2H", elapsed: 80 });
+    expect(await code(create(alice, { matchId: "p" }))).toEqual({ code: "failed-precondition", reason: "finished" });
   });
   it.each(["", "   ", "12345", "abc123456", "1".repeat(21), 123456789, undefined])("número %p: invalid-argument", async (n) => {
     expect((await code(create(alice, { number: n })))?.code).toBe("invalid-argument");
@@ -213,6 +233,19 @@ describe("cancelLoan", () => {
     // repetir é inofensivo e não mexe na hora
     await handleCancelLoan(db, alice, { loanId }, new Date(NOW.getTime() + 1000));
     expect((await loanOf(loanId)).cancelledAt.toDate()).toEqual(NOW);
+  });
+});
+
+describe("erros internos", () => {
+  it("um erro do Firestore sai como internal, sem caminhos nem o loanId", async () => {
+    const { loanId } = await create(alice);
+    const boom = new Error(`5 NOT_FOUND: No document to update: projects/demo/databases/(default)/documents/loans/${loanId}`);
+    const r = await safely(() => Promise.reject(boom)).catch((e) => e as { code: string; message: string });
+    expect(r).toMatchObject({ code: "internal" });
+    expect(JSON.stringify(r)).not.toContain(loanId);
+    expect((r as { message: string }).message).not.toContain("documents");
+    // HttpsError passa tal como está
+    expect((await code(safely(() => handleCancelLoan(db, bob, { loanId }, NOW))))?.code).toBe("permission-denied");
   });
 });
 

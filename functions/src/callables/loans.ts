@@ -13,8 +13,10 @@ export const LOAN_URL_BASE = "https://s360-prognostico-download.web.app/e/";
 const FOOTBALL = "football";
 const FINISHED = ["FT", "AET", "PEN", "CANC"];
 const LOAN_ID_RE = /^[A-Za-z0-9_-]{22}$/;
-// O jogo em curso conta como próximo durante 24 h; jogos mais antigos por terminar (dados parados) não bloqueiam.
-const NEXT_LOOKBACK_MS = 24 * 3600_000;
+// Igual ao modo bilhete da app (mobile/app/(app)/gamebox/bilhete.tsx `upcomingHome`, mobile/src/data/sports.ts):
+// ao vivo (LIVE/HT) conta sempre; NS e PST contam até 4 h depois da hora marcada. Mais antigos por terminar (dados parados) não bloqueiam.
+const NEXT_GRACE_MS = 4 * 3600_000;
+const NEXT_QUERY_LOOKBACK_MS = 24 * 3600_000;
 const NEXT_QUERY_LIMIT = 30;
 const SPORTS = ["football", "futsal", "handball", "roller_hockey", "volleyball", "basketball"] as const;
 
@@ -51,7 +53,7 @@ async function publicNameOf(db: Firestore, uid: string): Promise<string> {
 /** Próximo jogo em casa, por terminar, das modalidades do recinto (futebol: Estádio; outras: Pavilhão). */
 async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now: Date): Promise<string | null> {
   const sports = SPORTS.filter((s) => venueOf(s) === venue);
-  const from = Timestamp.fromMillis(now.getTime() - NEXT_LOOKBACK_MS);
+  const from = Timestamp.fromMillis(now.getTime() - NEXT_QUERY_LOOKBACK_MS);
   const snaps = await Promise.all(
     sports.map((s) => db.collection("matches").where("sport", "==", s).where("kickoff", ">=", from).orderBy("kickoff").limit(NEXT_QUERY_LIMIT).get()),
   );
@@ -59,12 +61,25 @@ async function nextHomeMatchId(db: Firestore, venue: "stadium" | "pavilion", now
   for (const snap of snaps) {
     for (const d of snap.docs) {
       const m = d.data() as MatchDoc;
-      if (m.sportingSide !== "home" || FINISHED.includes(m.status)) continue;
+      if (m.sportingSide !== "home") continue;
       const at = (m.kickoff as unknown as Timestamp).toMillis();
+      const live = m.status === "LIVE" || m.status === "HT";
+      const upcoming = (m.status === "NS" || m.status === "PST") && at >= now.getTime() - NEXT_GRACE_MS;
+      if (!live && !upcoming) continue;
       if (!best || at < best.at) best = { id: d.id, at };
     }
   }
   return best?.id ?? null;
+}
+
+/** Erros que não são HttpsError (Firestore: caminhos com o loanId) nunca chegam ao cliente nem ao log do onCall. */
+export async function safely<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    throw new HttpsError("internal", "Algo correu mal. Tenta outra vez.");
+  }
 }
 
 export async function handleCreateLoan(
@@ -99,6 +114,8 @@ export async function handleCreateLoan(
     // Só PST com o jogo por começar; SUSP e INTR chegam como PST a meio do jogo e não encurtam o empréstimo.
     postponedWithoutDate: m.status === "PST" && m.kickoff.getTime() > now.getTime(),
   });
+  // Nunca nasce expirado (por exemplo, jogo por começar há mais de 4 h que já passou da validade).
+  if (expiresAt.getTime() <= now.getTime()) throw denied("finished", "O jogo já terminou.");
   const loanId = newLoanId();
   const loan: LoanDoc = {
     ownerUid: uid,
@@ -126,7 +143,7 @@ export async function handleCreateLoan(
 
   await db.runTransaction(async (tx) => {
     // Um ativo no máximo por GameBox, verificado dentro da transação.
-    const existing = await tx.get(db.collection("loans").where("gameboxId", "==", gameboxId));
+    const existing = await tx.get(db.collection("loans").where("gameboxId", "==", gameboxId).where("cancelledAt", "==", null));
     const active = existing.docs.some((x) => isLoanActive(x.data() as Pick<LoanDoc, "cancelledAt" | "expiresAt">, now));
     if (active) throw new HttpsError("already-exists", "Esta GameBox já está emprestada.");
     tx.create(db.doc(`loans/${loanId}`), loan);
@@ -173,6 +190,6 @@ export async function handleCancelLoan(db: Firestore, auth: Auth, data: unknown,
   return { ok: true };
 }
 
-export const createLoan = onCall({ region: "europe-west1" }, (req) => handleCreateLoan(getFirestore(), req.auth, req.data, new Date()));
-export const claimLoan = onCall({ region: "europe-west1" }, (req) => handleClaimLoan(getFirestore(), req.auth, req.data, new Date()));
-export const cancelLoan = onCall({ region: "europe-west1" }, (req) => handleCancelLoan(getFirestore(), req.auth, req.data, new Date()));
+export const createLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleCreateLoan(getFirestore(), req.auth, req.data, new Date())));
+export const claimLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleClaimLoan(getFirestore(), req.auth, req.data, new Date())));
+export const cancelLoan = onCall({ region: "europe-west1" }, (req) => safely(() => handleCancelLoan(getFirestore(), req.auth, req.data, new Date())));
