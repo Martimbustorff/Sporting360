@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { BracketView } from '@/components/BracketView';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { SkeletonRows } from '@/components/Skeleton';
 import { StandingsTable } from '@/components/StandingsTable';
 import { Segmented } from '@/components/Segmented';
 import { Tabs } from '@/components/Tabs';
@@ -69,7 +70,7 @@ export function CompetitionStandings({
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   const reads = [competition, standings, bracket];
-  if (reads.some((r) => r.status === 'loading')) return <View testID="standings-loading" />;
+  if (reads.some((r) => r.status === 'loading')) return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="standings-loading" /></View>;
   if (reads.some((r) => r.status === 'error')) return <EmptyState icon="info" text={STANDINGS_ERROR} />;
 
   const view = competition.status === 'ready' ? competition.data.view : undefined;

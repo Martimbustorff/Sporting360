@@ -5,6 +5,7 @@
 // SEM FIGMA: o esqueleto em branco enquanto carrega, o estado de erro, "Sem estatísticas para este jogo." (terminado,
 // adiado ou cancelado sem documento), o aviso de cache e o estado antes do jogo (as mesmas linhas a 30 %).
 import { View } from 'react-native';
+import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { CardsRow, StatRow } from '@/components/StatRow';
@@ -21,7 +22,7 @@ const NO_STATS = 'Sem estatísticas para este jogo.';
 export function StatsTab({ match }: { match: Match }) {
   const stats = useMatchDetail(match.id, 'statistics');
   const state = uiState(match.status);
-  if (stats.status === 'loading') return <View testID="stats-loading" />;
+  if (stats.status === 'loading') return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="stats-loading" /></View>;
   if (stats.status === 'error') return <EmptyState icon="info" text={STATS_ERROR} />;
 
   const doc = stats.status === 'ready' ? stats.data : null;

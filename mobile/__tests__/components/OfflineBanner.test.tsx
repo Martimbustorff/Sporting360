@@ -36,4 +36,11 @@ describe('EmptyState', () => {
     await render(<EmptyState text="Sem dados." icon="info" />);
     expect(screen.getByTestId('empty-icon-info')).toBeTruthy();
   });
+
+  it('o ícone info tem 64 pt (Figma 47, 4952:9060)', async () => {
+    await render(<EmptyState text="Sem dados." icon="info" />);
+    const style = StyleSheet.flatten(screen.getByTestId('empty-icon-info').props.style);
+    expect(style.width).toBe(64);
+    expect(style.height).toBe(64);
+  });
 });

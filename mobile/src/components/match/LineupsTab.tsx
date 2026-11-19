@@ -8,6 +8,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
+import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Pitch } from '@/components/Pitch';
@@ -84,7 +85,7 @@ export function LineupsTab({ match }: { match: Match }) {
   const events = useMatchDetail(match.id, 'events');
   const [selected, setSelected] = useState<'sporting' | 'opponent'>('sporting');
   const state = uiState(match.status);
-  if (lineups.status === 'loading') return <View testID="lineups-loading" />;
+  if (lineups.status === 'loading') return <View style={{ paddingHorizontal: spacing.lg }}><SkeletonRows testID="lineups-loading" /></View>;
   if (lineups.status === 'error') return <EmptyState icon="info" text={LINEUPS_ERROR} />;
 
   const doc = lineups.status === 'ready' ? lineups.data : null;

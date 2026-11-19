@@ -320,7 +320,13 @@ export const layout = {
   bannerPadX: 14, // V7.1 OfflineBanner (4952:9047)
   bannerPadY: 10,
   bannerIcon: 18,
-  emptyInfoIconOpacity: 0.3, // matches the 30% of the calendar SVG
+  emptyInfoIcon: 64, // V7.1 47 Vazio (4952:9060): ícone Info a 64 (opacidade já no SVG), espaço 12 ao texto
+  emptyInfoGap: 12,
+  pushBannerCrestW: 26, // V7.1 47 PushBanner (4952:9052): emblema 26x30, padding 14/12, espaço 12, texto a 2
+  pushBannerCrestH: 30,
+  pushBannerPadY: 12,
+  pushBannerTextGap: 2,
+  pushBannerShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 9, elevation: 8 }, // 0 6 18 0.4 do Figma (raio de sombra RN = metade)
   // SEM FIGMA: news card and ranking row (built from tokens)
   newsImage: { width: 96, height: 72 },
   newsGap: 12,
@@ -399,6 +405,10 @@ export const layout = {
   matchCardCountdownMinScale: 0.75, // a contagem encolhe até 75 % em vez de cortar
   shimmerMin: 0.55, // esqueleto: opacidade mínima do brilho
   shimmerMs: 900,
+  skeletonCircle: 32, // V7.1 47 Esqueleto (4952:9070): círculo 32 e barra 12 (raio 6) a 12 de distância, linhas a 10
+  skeletonBar: 12,
+  skeletonGap: 12,
+  skeletonRowsGap: 10,
   // V7.1 Home backdrop (Figma 4920:5141)
   homeBackdropLion: { left: -46, top: 80, width: 494, height: 874 },
   homeBackdropLionImage: { left: '-83.11%', top: '-5.4%', width: '239.87%', height: '105.4%' },

@@ -1,20 +1,21 @@
 // Figma: nó 500:29854 (Calendar / Calendar_Check, 122 px, branco a 30 %): ícone `calendar`.
 // V7.1: texto Body 14 text-muted.
-// SEM FIGMA: ícone `info` (Feather "info" no mesmo tamanho e opacidade) e o texto por baixo (`body`, centrado).
+// Ícone `info`: V7.1 47 Vazio (4952:9060), 64 pt com o SVG do Figma (opacidade 30 % no próprio SVG), espaço 12 ao texto.
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import Feather from '@expo/vector-icons/Feather';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, space } from '@/theme/tokens';
+import { layout, space } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const CALENDAR = require('../../assets/icons/calendar-check.svg');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const INFO = require('../../assets/icons/info.svg');
 
 export function EmptyState({ text, icon = 'calendar' }: { text: string; icon?: 'calendar' | 'info' }) {
   return (
     <View
       testID="empty-state"
-      style={{ alignItems: 'center', gap: layout.emptyGap, paddingHorizontal: space.s32, paddingVertical: space.s32 }}
+      style={{ alignItems: 'center', gap: icon === 'info' ? layout.emptyInfoGap : layout.emptyGap, paddingHorizontal: space.s32, paddingVertical: space.s32 }}
     >
       {icon === 'calendar' ? (
         <Image
@@ -24,12 +25,10 @@ export function EmptyState({ text, icon = 'calendar' }: { text: string; icon?: '
           accessible={false}
         />
       ) : (
-        <Feather
+        <Image
           testID="empty-icon-info"
-          name="info"
-          size={layout.emptyIcon}
-          color={colors.white}
-          style={{ opacity: layout.emptyInfoIconOpacity }}
+          source={INFO}
+          style={{ width: layout.emptyInfoIcon, height: layout.emptyInfoIcon }}
           accessible={false}
         />
       )}
