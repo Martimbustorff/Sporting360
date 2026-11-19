@@ -157,6 +157,36 @@ describe("dispatchMatchPushes", () => {
     expect(f.topics).toHaveLength(1);
   });
 
+  it("correção da API muda a chave de um golo já enviado: sai só o golo novo", async () => {
+    const f = fakeSender();
+    await db.doc("ingestState/match_9002").set({ push: { goals: { "9002_23_P1": Timestamp.fromDate(at(24)) } } });
+    const m = liveMatch({ elapsed: 31, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
+    const events = [ev({ minute: 23, playerId: "P2", playerName: "Trincão" }), ev({ minute: 30, playerId: "P3", playerName: "Pote" })];
+    const r = await dispatchMatchPushes(db, f.sender, m, events, at(32));
+    expect(r.sent).toEqual(["goal:9002_30_P3"]);
+    expect(f.topics.map((t) => t.msg.body)).toEqual(["Pote (30'). Sporting CP 2-0 Benfica"]);
+  });
+
+  it("golo anulado pelo VAR ainda nos lances: sai o golo real mais recente", async () => {
+    const f = fakeSender();
+    const m = liveMatch({ elapsed: 30, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });
+    const events = [
+      ev({ minute: 20, playerId: "1", playerName: "Anulado" }),
+      ev({ minute: 20, type: "var", detail: "Goal cancelled", playerId: "1" }),
+      ev({ minute: 25, playerId: "2", playerName: "Real" }),
+    ];
+    await dispatchMatchPushes(db, f.sender, m, events, at(31));
+    expect(f.topics.map((t) => t.msg.body)).toEqual(["Real (25'). Sporting CP 1-0 Benfica"]);
+  });
+
+  it("orçamento de 2 com 3 golos por enviar: os 2 mais recentes, por ordem", async () => {
+    const f = fakeSender();
+    const m = liveMatch({ elapsed: 30, score: { home: 2, away: 0, halftime: null, extratime: null, penalty: null } });
+    const events = [ev({ minute: 18, playerId: "1" }), ev({ minute: 22, playerId: "2" }), ev({ minute: 27, playerId: "3" })];
+    const r = await dispatchMatchPushes(db, f.sender, m, events, at(31));
+    expect(r.sent).toEqual(["goal:9002_22_2", "goal:9002_27_3"]);
+  });
+
   it("golo com mais de 15 min de jogo não sai (elapsed 70, golo aos 20)", async () => {
     const f = fakeSender();
     const m = liveMatch({ elapsed: 70, statusRaw: "2H", score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } });

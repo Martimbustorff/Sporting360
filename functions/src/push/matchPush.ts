@@ -78,15 +78,15 @@ export async function dispatchMatchPushes(
     if (goals.length > 0) {
       const marks = ((await db.doc(docPath).get()).get("push.goals") ?? {}) as Record<string, unknown>;
       // Nunca mais pushes de golo do que golos do Sporting no resultado (golo anulado, minuto corrigido).
-      let budget = (m.score[m.sportingSide] ?? 0) - Object.keys(marks).length;
+      const budget = (m.score[m.sportingSide] ?? 0) - Object.keys(marks).length;
       const oldest = (m.elapsed ?? 0) - GOAL_MAX_AGE_MIN;
-      for (const e of goals) {
-        if (budget <= 0) break;
+      // Os `budget` golos frescos sem marca mais recentes, por ordem: uma chave corrigida pela API ou um golo
+      // anulado que fica nos lances nunca tomam o lugar do golo novo.
+      const fresh = goals.filter((e) => !(goalKey(m.id, e) in marks) && e.minute >= oldest);
+      const chosen = budget > 0 ? fresh.slice(-budget) : [];
+      for (const e of chosen) {
         const key = goalKey(m.id, e);
-        if (key in marks || e.minute < oldest) continue;
-        const r = await sendOnce(db, docPath, ["push", "goals", key], now, () => sender.toTopic("push_goals", goalMessage(m, e)));
-        record(`goal:${key}`, r);
-        if (r !== "failed") budget--;
+        record(`goal:${key}`, await sendOnce(db, docPath, ["push", "goals", key], now, () => sender.toTopic("push_goals", goalMessage(m, e))));
       }
     }
   }
