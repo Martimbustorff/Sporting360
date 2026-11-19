@@ -88,7 +88,7 @@ export function GameboxCard({
       <View style={{ alignItems: 'center', gap: layout.gameboxTextGap }}>
         <Text71 variant="strong14" numberOfLines={1}>{name}</Text71>
         {number ? (
-          <Text71 variant="caption12" color="textMuted" selectable>{formatGameboxNumber(number)}</Text71>
+          <Text71 variant="caption12" color="textMuted" accessibilityLabel={number}>{formatGameboxNumber(number)}</Text71>
         ) : (
           <Text71 variant="caption12" color="textMuted" style={{ textAlign: 'center' }}>{CARD_TEXT.unreadable}</Text71>
         )}

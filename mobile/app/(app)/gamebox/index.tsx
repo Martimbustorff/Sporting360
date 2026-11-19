@@ -22,7 +22,7 @@ import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
 import { useRecipientLoans, type LoanItem } from '@/data/loans';
 import { useMyGameboxes } from '@/data/user';
-import { gameboxLabel, resolveGameboxList, type GameboxInput } from '@/lib/gamebox';
+import { formatGameboxNumber, gameboxLabel, resolveGameboxList, type GameboxInput } from '@/lib/gamebox';
 import { useSession } from '@/providers/SessionProvider';
 import { GameboxSaveError, reorderGameboxes, saveGamebox } from '@/services/gamebox';
 import { Text71 } from '@/theme/typography';
@@ -77,7 +77,7 @@ function LegacyPrincipal({ uid, legacy }: { uid: string; legacy: GameboxInput })
     <View style={{ gap: layout.gameboxFieldsGap }}>
       <View style={{ gap: space.s8 }}>
         <Text71 variant="titleS20">{legacy.name}</Text71>
-        <Text71 variant="body14">{legacy.number}</Text71>
+        <Text71 variant="body14" accessibilityLabel={legacy.number.replace(/\s+/g, '')}>{formatGameboxNumber(legacy.number)}</Text71>
         <Text71 variant="caption12" color="textMuted">{GAMEBOX_TEXT.legacyHint}</Text71>
       </View>
       {message ? <FormMessage text={message} /> : null}

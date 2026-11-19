@@ -16,6 +16,9 @@ it('mostra o número em grupos de quatro e o QR leva os algarismos sem espaços'
   await render(<GameboxCard gamebox={view('001234567890')} />);
   expect(screen.getByText('0012 3456 7890')).toBeTruthy();
   expect(screen.queryByText('001234567890')).toBeNull();
+  // não se copia com espaços (sem `selectable`); a etiqueta de acessibilidade leva os algarismos
+  expect(screen.getByText('0012 3456 7890').props.selectable).toBeFalsy();
+  expect(screen.getByLabelText('001234567890')).toBeTruthy();
   expect(screen.getByTestId('qrcode').props.value).toBe('001234567890');
 });
 

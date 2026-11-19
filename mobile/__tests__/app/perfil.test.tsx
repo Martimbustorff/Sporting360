@@ -248,6 +248,16 @@ describe('Perfil: meu jogo', () => {
     expect(screen.queryByText('Sporting CP 2-1 FC Porto')).toBeNull();
   });
 
+  it('só as linhas liquidadas leem o jogo; por liquidar não faz leitura', async () => {
+    const sports = jest.requireMock('@/data/sports') as { useMatchOnce: jest.Mock };
+    sports.useMatchOnce.mockClear();
+    await renderScreen();
+    const ids = new Set(sports.useMatchOnce.mock.calls.map((c) => c[0]));
+    expect(ids.has('g5')).toBe(false);
+    expect(ids.has('g4')).toBe(true);
+    expect(ids.has(null)).toBe(true);
+  });
+
   it('histórico: com o jogo o título é "{casa} {x}-{y} {fora}"; por liquidar nunca leva as equipas', async () => {
     mockMatchOnce.current = () => ({
       id: 'g4',

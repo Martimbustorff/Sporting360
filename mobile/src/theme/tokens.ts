@@ -328,7 +328,7 @@ export const layout = {
   matchCardIcon: 28, // calendário do estado "Sem jogo" (4920:5117)
   matchCardIconOpacity: 0.4, // nota 01b: ícone a 40 %
   tvChipIcon: 14, // ícone do canal de TV (4921:5318, 4920:5103)
-  matchCardBadgePadY: 3, // badge da ronda e canal de TV (4920:5094)
+  matchCardBadgePadY: 3, // badge da ronda (4920:5094); o canal de TV leva 4 (space.s4)
   matchCardShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.4, shadowRadius: 20, elevation: 12 },
   matchCardCenterWideGrow: 2, // dia de jogo: a coluna central ganha espaço para a contagem a 320 pt
   matchCardCountdownMinScale: 0.75, // a contagem encolhe até 75 % em vez de cortar

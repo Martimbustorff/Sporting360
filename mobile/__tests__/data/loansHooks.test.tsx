@@ -103,10 +103,14 @@ describe('useOwnerLoanNotice', () => {
   });
 
   it('o aviso fechado não volta numa montagem nova', async () => {
-    const view = await render(<Notice />);
-    await deliver([loanDoc('Lnotice1')]);
+    const first = await render(<Notice />);
+    await deliver([loanDoc('Lremount')]);
+    expect(screen.getByTestId('n').props.children).toBe('Lremount');
+    await act(async () => dismissOwnerLoanNotice('Lremount'));
+    await first.unmount();
+    await render(<Notice />);
+    await deliver([loanDoc('Lremount')]);
     expect(screen.getByTestId('n').props.children).toBe('none');
-    await view.unmount();
   });
 
   it('outros motivos, sem motivo e expirados não dão aviso', async () => {

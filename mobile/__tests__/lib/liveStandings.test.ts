@@ -353,7 +353,7 @@ describe('projectStandings: sem dupla contagem (guardDoubleCount)', () => {
 
   it('o confronto direto continua a funcionar com o jogo projetado', () => {
     const t = [row(1, 'A', 'A', 30, { goalsDiff: 0 }), row(2, 'B', 'B', 28, { goalsDiff: 5 }), row(3, 'C', 'C', 28, { goalsDiff: 9 })];
-    // B e C empatam a 28; B-C ao vivo 1-0 dá a B 31 (soma: B tem 11 terminados e tabela 12? aqui iguais a 12).
+    // B e C empatam a 28; B-C ao vivo 1-0 dá a B 31.
     const results = [...finished('A', 12), ...finished('B', 12), ...finished('C', 12)];
     const { rows } = projectStandings(t, [live('B', 'C', 1, 0)], results, { guardDoubleCount: true });
     expect(rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);

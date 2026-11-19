@@ -62,6 +62,11 @@ describe('MatchSchema', () => {
     expect(full.statusRaw).toBe('ET');
   });
 
+  it('tv que não é texto não parte o jogo: fica null', () => {
+    expect(MatchSchema.parse(match({ tv: 42 })).tv).toBeNull();
+    expect(MatchSchema.parse(match({ tv: { x: 1 } })).tv).toBeNull();
+  });
+
   it('venue null and no referee is valid', () => {
     const raw = match({ venue: null });
     delete (raw as Record<string, unknown>).referee;

@@ -164,7 +164,7 @@ function HistoryRow({ item }: { item: MyGameHistoryItem }) {
   const settled = item.final !== null;
   // Título com as equipas ("Sporting CP 2-1 FC Porto", mesmos nomes dos cartões do jogo); enquanto o jogo não chega, ou se
   // faltar, fica "{data} · Final {x}-{y}". Uma leitura única por linha, sem listener.
-  const match = useMatchOnce(item.gameId);
+  const match = useMatchOnce(settled ? item.gameId : null);
   const names = match && item.final !== null ? toGameHeaderVM(match) : null;
   const title = !settled
     ? date

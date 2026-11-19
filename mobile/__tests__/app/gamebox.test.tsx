@@ -188,7 +188,9 @@ describe('Gestão de GameBox', () => {
       mockUser.current = ready({ name: 'Maria', gameboxNumber: V2_VECTOR });
       await render(wrap(<GameboxList />));
       expect(screen.getByText('Principal')).toBeTruthy();
-      expect(screen.getByText('266571276572')).toBeTruthy();
+      expect(screen.getByText('2665 7127 6572')).toBeTruthy();
+      expect(screen.queryByText('266571276572')).toBeNull();
+      expect(screen.getByLabelText('266571276572')).toBeTruthy();
       await fireEvent.press(screen.getByRole('button', { name: 'Guardar na minha GameBox' }));
       expect(saveGamebox).toHaveBeenCalledWith(
         'u1',
@@ -203,7 +205,7 @@ describe('Gestão de GameBox', () => {
       mockUser.current = ready({ gameboxNumber: '266571276572', gameboxName: 'Casa' });
       await render(wrap(<GameboxList />));
       expect(screen.getByText('Casa')).toBeTruthy();
-      expect(screen.getByText('266571276572')).toBeTruthy();
+      expect(screen.getByText('2665 7127 6572')).toBeTruthy();
     });
 
     it('com documentos na coleção não aparece', async () => {

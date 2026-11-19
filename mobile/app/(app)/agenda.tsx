@@ -64,7 +64,7 @@ const listOf = (l: Loadable<Match[]>) => (l.status === 'ready' ? l.data : []);
 const attributions = (ms: Match[]): string[] => [
   ...new Set(ms.map((m) => m.source.attribution).filter((a): a is string => typeof a === 'string' && a !== '')),
 ];
-export const FOOTBALL_SOURCE = 'API-Football';
+const FOOTBALL_SOURCE = 'API-Football';
 
 export default function Agenda() {
   const [sport, setSport] = useState<Sport>('football');

@@ -170,7 +170,7 @@ export const MatchSchema = z.looseObject({
   ),
   referee: nullable(str),
   /** Canal de TV ("SPORT TV", "BTV", "TVI / V+"); ausente ou null sem canal. */
-  tv: z.string().nullish(),
+  tv: z.string().nullish().catch(null),
   /** Estado em bruto da API (ET, BT, P...); documentos antigos não o têm. */
   statusRaw: z.string().nullish(),
   source: z.looseObject({ provider: str, id: str, attribution: nullable(str) }),
