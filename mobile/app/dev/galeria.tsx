@@ -65,11 +65,11 @@ const LIVE: GameHeaderVM = {
 };
 
 const EVENTS: EventVM[] = [
-  { minute: "12'", side: 'home', kind: 'goal', primary: 'Jogador Um', secondary: 'Assistência: Jogador Dois' },
-  { minute: "34'", side: 'away', kind: 'yellow', primary: 'Jogador Três' },
-  { minute: "51'", side: 'home', kind: 'red', primary: 'Jogador Quatro' },
-  { minute: "67'", side: 'away', kind: 'sub', primary: 'Entra: Jogador Cinco', secondary: 'Sai: Jogador Seis' },
-  { minute: "80'", side: 'home', kind: 'var', primary: 'Golo anulado' },
+  { minute: "12'", side: 'sporting', kind: 'goal', primary: 'Jogador Um', secondary: 'Assistência: Jogador Dois' },
+  { minute: "34'", side: 'opponent', kind: 'yellow', primary: 'Jogador Três' },
+  { minute: "51'", side: 'sporting', kind: 'red', primary: 'Jogador Quatro' },
+  { minute: "67'", side: 'opponent', kind: 'sub', primary: 'Entra: Jogador Cinco', secondary: 'Sai: Jogador Seis' },
+  { minute: "80'", side: 'sporting', kind: 'var', primary: 'Golo anulado' },
 ];
 
 const NEWS: NewsVM[] = [

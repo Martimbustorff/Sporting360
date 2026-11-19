@@ -1,5 +1,7 @@
 // Task 9: tab Sumário. Hooks de dados mockados (sem rede).
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { colors } from '@/theme/tokens';
 import type { EventItem, GameStatus, InjuriesDoc, Match, PrematchDoc, Venue } from '@/data/schemas';
 
 type L = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; data: unknown; fromCache?: boolean };
@@ -97,14 +99,71 @@ describe('jogo futuro (NS)', () => {
     expect(screen.getByText('25%')).toBeTruthy();
     expect(screen.getByTestId('form-home').props.accessibilityLabel).toBe('Forma: V V E D V');
     expect(screen.getAllByTestId('form-letter-home').map((n) => n.props.children)).toEqual(['V', 'V', 'E', 'D', 'V']);
-    expect(screen.getByText('Confrontos diretos')).toBeTruthy();
-    expect(screen.getByText('1-2')).toBeTruthy();
-    expect(screen.getByText('Lesionados e suspensos')).toBeTruthy();
+    expect(screen.getByText('Forma · últimos 5')).toBeTruthy();
+    expect(screen.getByText('Confrontos diretos · últimos 5')).toBeTruthy();
+    expect(screen.getByText('1 vitória Sporting')).toBeTruthy();
+    expect(screen.getByText('Ausências')).toBeTruthy();
     expect(screen.getByText('Nuno Santos')).toBeTruthy();
-    expect(screen.getByText('Fora, Lesão no joelho')).toBeTruthy();
-    expect(screen.getByText('Dúvida, Castigo')).toBeTruthy();
+    expect(screen.getByText('lesão no joelho')).toBeTruthy();
+    expect(screen.getByText('castigo')).toBeTruthy();
     expect(screen.queryByText(/Double chance/)).toBeNull();
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
+  });
+
+  it('selo "Dúvida" só nas ausências "Questionable" (amarelo), não nas "Missing Fixture"', async () => {
+    mockDetails.current = { prematch: ready(prematch()), injuries: ready(injuries()) };
+    await render(<SummaryTab match={match()} />);
+    expect(screen.getAllByTestId('doubt-badge')).toHaveLength(1);
+    const badge = screen.getByTestId('doubt-badge');
+    expect(within(badge).getByText('Dúvida')).toBeTruthy();
+    expect(StyleSheet.flatten(badge.props.style).backgroundColor).toBe(colors.yellow71Bg);
+    const rows = screen.getAllByTestId('absence-row');
+    expect(within(rows[0]!).queryByTestId('doubt-badge')).toBeNull();
+    expect(within(rows[1]!).getByTestId('doubt-badge')).toBeTruthy();
+  });
+
+  it('forma: Sporting primeiro, mesmo a jogar fora; cores V primary, E surface-20, D vermelho', async () => {
+    mockDetails.current = { prematch: ready(prematch()), injuries: { status: 'missing' } };
+    await render(<SummaryTab match={match({ home: { id: '217', name: 'SC Braga', logo: null }, away: { id: '228', name: 'Sporting CP', logo: null }, sportingSide: 'away' })} />);
+    const rows = screen.getAllByTestId(/^form-(home|away)$/).map((n) => n.props.testID);
+    expect(rows).toEqual(['form-away', 'form-home']);
+    const bg = (n: { props: { style?: unknown } }) => StyleSheet.flatten(n.props.style as never).backgroundColor;
+    const chips = screen.getAllByTestId('form-letter-away').map((n) => bg(n.parent as never));
+    expect(new Set(chips)).toEqual(new Set([colors.primary, colors.surface20, colors.formLoss]));
+  });
+
+  it('confrontos diretos: barra proporcional com as três etiquetas e flex pelo número de jogos', async () => {
+    const p = prematch() as Exclude<PrematchDoc, { empty: true }>;
+    const g = (id: string, h: string, a: string, sh: number, sa: number, day: number) => ({
+      id,
+      kickoff: new Date(2026, 0, day),
+      home: { id: h, name: h === '228' ? 'Sporting CP' : 'SC Braga', logo: null },
+      away: { id: a, name: a === '228' ? 'Sporting CP' : 'SC Braga', logo: null },
+      score: { home: sh, away: sa },
+    });
+    mockDetails.current = {
+      prematch: ready({ ...p, h2h: [g('a', '228', '217', 2, 0, 1), g('b', '217', '228', 0, 1, 2), g('c', '228', '217', 1, 1, 3), g('d', '217', '228', 3, 1, 4)] }),
+      injuries: { status: 'missing' },
+    };
+    await render(<SummaryTab match={match()} />);
+    expect(screen.getByText('2 vitórias Sporting')).toBeTruthy();
+    expect(screen.getByText('1 empate')).toBeTruthy();
+    expect(screen.getByText('1 vitória SC Braga')).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('h2h-sporting').props.style).flexGrow).toBe(2);
+    expect(StyleSheet.flatten(screen.getByTestId('h2h-draws').props.style).flexGrow).toBe(1);
+  });
+
+  it('sem confrontos com resultado, sem forma e sem lesões: os blocos escondem-se, sem marcadores de posição', async () => {
+    const p = prematch() as Exclude<PrematchDoc, { empty: true }>;
+    mockDetails.current = {
+      prematch: ready({ ...p, form: { home: null, away: null }, h2h: [] }),
+      injuries: { status: 'missing' },
+    };
+    await render(<SummaryTab match={match()} />);
+    expect(screen.queryByText('Forma · últimos 5')).toBeNull();
+    expect(screen.queryByText('Confrontos diretos · últimos 5')).toBeNull();
+    expect(screen.queryByText('Ausências')).toBeNull();
+    expect(screen.queryByTestId('h2h-bar')).toBeNull();
   });
 
   it('prematch vazio e sem lesões: "Disponível no dia de jogo"', async () => {
@@ -161,6 +220,42 @@ describe('ao vivo e terminado', () => {
     mockDetails.current = { events: ready({ items: [] }) };
     await render(<SummaryTab match={match({ status: 'FT' })} />);
     expect(screen.getByText('Sem lances registados.')).toBeTruthy();
+  });
+});
+
+describe('cronologia em duas colunas', () => {
+  it('Sporting à esquerda, adversário à direita; autogolo na coluna de quem marcou; golo anulado sem ícone de golo', async () => {
+    mockDetails.current = {
+      events: ready({
+        items: [
+          ev({ minute: 23, playerName: 'Suárez', detail: 'Penalty', teamId: '228' }),
+          ev({ minute: 38, playerName: 'Samu', detail: 'Normal Goal', teamId: '217' }),
+          ev({ minute: 50, playerName: 'Debast', detail: 'Own Goal', teamId: '228' }),
+          ev({ minute: 71, playerName: 'Samu', type: 'var', detail: 'Goal Disallowed - offside', teamId: '217' }),
+        ],
+      }),
+    };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    const rows = screen.getAllByTestId('event-row');
+    const col = (i: number, k: 'left' | 'right') => within(within(rows[i]!).getByTestId(`event-${k}`));
+    expect(col(0, 'left').getByText('Suárez')).toBeTruthy();
+    expect(col(1, 'right').getByText('Samu')).toBeTruthy();
+    expect(col(2, 'right').getByText('Debast')).toBeTruthy();
+    expect(col(2, 'right').getByText('Autogolo')).toBeTruthy();
+    expect(col(3, 'right').getByText('Golo anulado')).toBeTruthy();
+    expect(col(3, 'right').getByText('fora de jogo de Samu')).toBeTruthy();
+    expect(within(rows[3]!).queryByLabelText('Golo')).toBeNull();
+    expect(within(rows[3]!).getByLabelText('VAR')).toBeTruthy();
+  });
+
+  it('Sporting a jogar fora: os lances da equipa visitante ficam à esquerda', async () => {
+    mockDetails.current = {
+      events: ready({ items: [ev({ minute: 12, playerName: 'Trincão', teamId: '228' })] }),
+    };
+    await render(
+      <SummaryTab match={match({ status: 'FT', home: { id: '217', name: 'SC Braga', logo: null }, away: { id: '228', name: 'Sporting CP', logo: null }, sportingSide: 'away' })} />,
+    );
+    expect(within(screen.getByTestId('event-left')).getByText('Trincão')).toBeTruthy();
   });
 });
 

@@ -190,29 +190,64 @@ function isRedCard(detail: string): boolean {
   return d === 'red card' || d === 'second yellow card';
 }
 
-export function toEventVM(e: ShownEvent, homeTeamId: string): EventVM {
-  const base = { minute: minuteText(e.minute, e.extra), side: e.teamId === homeTeamId ? 'home' : 'away' } as const;
+const VAR_TEXT: [RegExp, string][] = [
+  [/goal (disallowed|cancelled|canceled)|disallowed goal/i, 'Golo anulado'],
+  [/penalty confirmed/i, 'Penálti confirmado'],
+  [/penalty cancelled|penalty canceled/i, 'Penálti anulado'],
+  [/card upgrade/i, 'Cartão revisto'],
+  [/card (downgrade|cancelled|canceled)/i, 'Cartão anulado'],
+];
+
+/** Coluna da cronologia: a do Sporting ou a do adversário. Lado do jogo (`home`/`away`) -> coluna. */
+function columnOf(matchSide: 'home' | 'away', sportingSide: 'home' | 'away'): 'sporting' | 'opponent' {
+  return matchSide === sportingSide ? 'sporting' : 'opponent';
+}
+
+/** Texto do VAR por tipo de decisão da API; sem tipo conhecido fica só o selo e o nome do jogador. */
+function varText(e: ShownEvent): { primary: string; secondary?: string } {
+  const player = e.playerName ?? '';
+  const hit = VAR_TEXT.find(([re]) => re.test(e.detail))?.[1];
+  if (!hit) return { primary: player };
+  const offside = /offside/i.test(e.detail);
+  const secondary = player ? (offside ? `fora de jogo de ${player}` : player) : undefined;
+  return { primary: hit, ...(secondary ? { secondary } : {}) };
+}
+
+/**
+ * `side` é a coluna: o Sporting à esquerda, o adversário à direita (Figma 4933:7057). Golo: o lado de quem marcou
+ * (um autogolo vai para a coluna da equipa que beneficiou); os outros lances, a equipa do lance.
+ */
+export function toEventVM(e: ShownEvent, homeTeamId: string, sportingSide: 'home' | 'away' = 'home'): EventVM {
+  const team = e.teamId === homeTeamId ? 'home' : 'away';
+  const minute = minuteText(e.minute, e.extra);
   switch (e.type) {
     case 'goal': {
       // Penálti falhado: o tipo da API é `goal`, mas não é golo (ícone próprio e não conta no resultado).
       if (e.detail.toLowerCase() === MISSED_PENALTY) {
-        return { ...base, kind: 'missedPenalty', primary: e.playerName ?? '', secondary: 'Penálti falhado' };
+        return { minute, side: columnOf(team, sportingSide), kind: 'missedPenalty', primary: e.playerName ?? '', secondary: 'Penálti falhado' };
       }
-      const secondary = GOAL_DETAIL[e.detail.toLowerCase()];
-      return { ...base, kind: 'goal', primary: e.playerName ?? '', ...(secondary ? { secondary } : {}) };
+      const secondary = GOAL_DETAIL[e.detail.toLowerCase()] ?? (e.assistName ? `assist. ${e.assistName}` : undefined);
+      return {
+        minute,
+        side: columnOf(scoringSide(e, homeTeamId), sportingSide),
+        kind: 'goal',
+        primary: e.playerName ?? '',
+        ...(secondary ? { secondary } : {}),
+      };
     }
     case 'card':
-      return { ...base, kind: isRedCard(e.detail) ? 'red' : 'yellow', primary: e.playerName ?? '' };
+      return { minute, side: columnOf(team, sportingSide), kind: isRedCard(e.detail) ? 'red' : 'yellow', primary: e.playerName ?? '' };
     case 'subst':
       // Contrato `summaries` do Plano 2: assist = quem entra, player = quem sai.
       return {
-        ...base,
+        minute,
+        side: columnOf(team, sportingSide),
         kind: 'sub',
         primary: e.assistName ?? '',
-        ...(e.playerName ? { secondary: e.playerName } : {}),
+        ...(e.playerName ? { secondary: `sai ${e.playerName}` } : {}),
       };
     case 'var':
-      return { ...base, kind: 'var', primary: e.playerName ?? '' };
+      return { minute, side: columnOf(team, sportingSide), kind: 'var', ...varText(e) };
   }
 }
 
@@ -244,6 +279,7 @@ function scoringSide(e: EventItem, homeTeamId: string): 'home' | 'away' {
 export function groupEvents(
   items: EventItem[],
   homeTeamId: string,
+  sportingSide: 'home' | 'away' = 'home',
 ): { label: string; score: string; events: EventVM[] }[] {
   const sorted = items
     .filter(isShownEvent)
@@ -260,7 +296,7 @@ export function groupEvents(
     groups.push({
       label: part,
       score: `${tally.home}-${tally.away}`,
-      events: events.map((e) => toEventVM(e, homeTeamId)),
+      events: events.map((e) => toEventVM(e, homeTeamId, sportingSide)),
     });
   }
   return groups;

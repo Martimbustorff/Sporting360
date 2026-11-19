@@ -1,30 +1,34 @@
-// Figma: nós 655:31904 (lances por parte: SectionBar "1ª Parte" + "0-0" e EventRows), 655:31958 (barra
-// "Informação do Jogo") e 655:31960 (linha "Árbitro" / valor), 500:28950 (jogo futuro sem dados: ícone
-// Calendar_Check 500:29854 e "Disponível no dia de jogo", o EmptyState do Plano 3).
-// SEM FIGMA: o bloco de pré-jogo (Previsão, Forma, Confrontos diretos, Lesionados e suspensos), composto
-// com as mesmas SectionBar e linhas do 655:31904/655:31960; o aviso "Pré-jogo ainda não disponível.";
-// as mensagens de adiado, cancelado e sem lances (EmptyState `info`); as linhas Capacidade e a fotografia
-// do estádio. A barra "TV/Transmissão Online" (655:31954) fica de fora: `matches` não tem canal de TV.
-// O texto `advice` da API (inglês) nunca se mostra.
+// Figma V7.1: 4933:7057 (08 Sumário terminado: cronologia em duas colunas, "Forma · últimos 5", "Confrontos diretos ·
+// últimos 5" em barra V/E/D e "Ausências" com o selo "Dúvida") e 4924:6268 (06, ao vivo, mesmos lances). Anteriores:
+// 655:31958 ("Informação do Jogo"), 500:28950 (jogo futuro sem dados: EmptyState do Plano 3).
+// Decisões: a cronologia mantém a ordem do jogo e os separadores por parte com o resultado (regra já testada; o Figma
+// mostra uma só lista "Cronologia"); cada bloco só aparece se houver dados (nunca marcadores de posição); numa barra de
+// confrontos o segmento sem jogos não aparece; as ausências ficam agrupadas por equipa (Sporting primeiro).
+// SEM FIGMA: Previsão, o aviso "Pré-jogo ainda não disponível.", as mensagens de adiado, cancelado e sem lances
+// (EmptyState `info`), as linhas Capacidade e a fotografia do estádio. A barra "TV/Transmissão Online" (655:31954) fica de
+// fora: `matches` não tem canal de TV. O texto `advice` da API (inglês) nunca se mostra.
 import { Image } from 'expo-image';
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { EventRow } from '@/components/EventRow';
+import { TeamCrest, type TeamVM } from '@/components/GameHeader';
+import { SPORTING_API_ID } from '@/lib/teams';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 import type { InjuriesDoc, Match } from '@/data/schemas';
 import { useMatchDetail, useVenue } from '@/data/sports';
 import { groupEvents, uiState } from '@/lib/matchVM';
 import {
+  absenceReasonText,
   capacityText,
   formLetters,
-  h2hDate,
-  injuryText,
+  h2hTally,
+  isDoubtful,
   isPrematchEmpty,
   type FormLetter,
   type PrematchFull,
 } from '@/lib/prematch';
-import { Body, Display } from '@/theme/typography';
-import { colors, layout, radius, spacing } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radius, space, spacing } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
@@ -35,27 +39,9 @@ const NO_EVENTS_LIVE = 'Os lances aparecem aqui durante o jogo.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
-const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.cardRed };
+const LETTER_BG: Record<FormLetter, string> = { V: colors.primary, E: colors.surface20, D: colors.formLoss };
 
-/** Uma linha de texto: nome à esquerda, valor à direita (como o 655:31960, mas só com `body`). */
-function TextRow({ left, right, muted }: { left: string; right: string; muted?: boolean }) {
-  return (
-    <View
-      style={{
-        minHeight: layout.minTouch,
-        paddingHorizontal: spacing.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: spacing.md,
-      }}
-    >
-      <Body variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>{left}</Body>
-      <Body variant="body" style={{ textAlign: 'right', opacity: muted ? layout.mutedOpacity : 1 }}>{right}</Body>
-    </View>
-  );
-}
-
+/** Uma linha de texto: nome à esquerda, valor à direita (só usada na Previsão em falta de Figma). */
 function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
   const cols = [
     { label: match.home.name, value: p.percent.home },
@@ -65,11 +51,11 @@ function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
   return (
     <>
       <SectionBar label="Previsão" />
-      <View style={{ flexDirection: 'row', paddingHorizontal: spacing.md, gap: spacing.sm }}>
+      <View style={{ flexDirection: 'row', gap: space.s8 }}>
         {cols.map((c) => (
-          <View key={c.label} style={{ flex: 1, alignItems: 'center', gap: spacing.xs }}>
-            <Display variant="sectionScore">{`${c.value}%`}</Display>
-            <Body variant="body" numberOfLines={1} style={{ opacity: layout.mutedOpacity }}>{c.label}</Body>
+          <View key={c.label} style={{ flex: 1, alignItems: 'center', gap: space.s4 }}>
+            <Text71 variant="title24">{`${c.value}%`}</Text71>
+            <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{c.label}</Text71>
           </View>
         ))}
       </View>
@@ -77,26 +63,33 @@ function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
   );
 }
 
-function FormRow({ name, form, side }: { name: string; form: string; side: 'home' | 'away' }) {
+/** Lados do jogo pela ordem do Figma (Sporting primeiro), com o nome e o emblema de cada um. */
+function sidesOf(match: Match) {
+  const s = match.sportingSide;
+  const o = s === 'home' ? 'away' : 'home';
+  const crest = (side: 'home' | 'away') => ({
+    id: match.sport === 'football' ? Number(match[side].id) : side === s ? SPORTING_API_ID : null,
+    name: match[side].name,
+    crestUrl: match[side].logo,
+  });
+  return [
+    { side: s, team: match[s], crest: crest(s) },
+    { side: o, team: match[o], crest: crest(o) },
+  ] as const;
+}
+
+function FormRow({ team, crest, form, side }: { team: Match['home']; crest: TeamVM; form: string | null; side: 'home' | 'away' }) {
   const letters = formLetters(form);
   if (letters.length === 0) return null;
   return (
-    <View
-      style={{
-        minHeight: layout.minTouch,
-        paddingHorizontal: spacing.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: spacing.md,
-      }}
-    >
-      <Body variant="body" numberOfLines={1} style={{ flexShrink: 1 }}>{name}</Body>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.formRowGap }}>
+      <TeamCrest team={crest} size="form" />
+      <Text71 variant="body14" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{team.name}</Text71>
       <View
         testID={`form-${side}`}
         accessible
         accessibilityLabel={`Forma: ${letters.join(' ')}`}
-        style={{ flexDirection: 'row', gap: layout.formChipGap }}
+        style={{ flexDirection: 'row', gap: layout.formRowGap }}
       >
         {letters.map((l, i) => (
           <View
@@ -104,13 +97,13 @@ function FormRow({ name, form, side }: { name: string; form: string; side: 'home
             style={{
               width: layout.formChip,
               height: layout.formChip,
-              borderRadius: radius.sm,
+              borderRadius: layout.formChipRadius,
               backgroundColor: LETTER_BG[l],
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Body variant="badge" testID={`form-letter-${side}`}>{l}</Body>
+            <Text71 variant="label16" testID={`form-letter-${side}`}>{l}</Text71>
           </View>
         ))}
       </View>
@@ -121,56 +114,85 @@ function FormRow({ name, form, side }: { name: string; form: string; side: 'home
 function Form({ p, match }: { p: PrematchFull; match: Match }) {
   if (formLetters(p.form.home).length === 0 && formLetters(p.form.away).length === 0) return null;
   return (
-    <>
-      <SectionBar label="Forma" />
-      <FormRow name={match.home.name} form={p.form.home} side="home" />
-      <FormRow name={match.away.name} form={p.form.away} side="away" />
-    </>
+    <View style={{ gap: space.s8 }}>
+      <SectionBar label="Forma · últimos 5" />
+      {sidesOf(match).map(({ side, team, crest }) => (
+        <FormRow key={side} team={team} crest={crest} form={p.form[side]} side={side} />
+      ))}
+    </View>
   );
 }
 
-function HeadToHead({ p }: { p: PrematchFull }) {
+function plural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** Barra proporcional V/E/D: vitórias do Sporting, empates e vitórias do adversário (4933:7373). Sem resultados, não aparece. */
+function HeadToHead({ p, match }: { p: PrematchFull; match: Match }) {
+  const [sporting, opponent] = sidesOf(match);
   const games = [...p.h2h].sort((a, b) => b.kickoff.getTime() - a.kickoff.getTime()).slice(0, 5);
-  if (games.length === 0) return null;
+  const t = h2hTally(games, sporting.team.id, opponent.team.id);
+  const segments = [
+    { key: 'sporting', n: t.sporting, label: plural(t.sporting, 'vitória Sporting', 'vitórias Sporting'), color: colors.primary },
+    { key: 'draws', n: t.draws, label: plural(t.draws, 'empate', 'empates'), color: colors.surface20 },
+    {
+      key: 'opponent',
+      n: t.opponent,
+      label: plural(t.opponent, `vitória ${opponent.team.name}`, `vitórias ${opponent.team.name}`),
+      color: colors.surface10,
+    },
+  ].filter((x) => x.n > 0);
+  if (segments.length === 0) return null;
   return (
-    <>
-      <SectionBar label="Confrontos diretos" />
-      {games.map((g) => {
-        const score = g.score.home == null || g.score.away == null ? '-' : `${g.score.home}-${g.score.away}`;
-        return (
-          <View
-            key={g.id}
-            style={{ minHeight: layout.minTouch, paddingHorizontal: spacing.md, justifyContent: 'center', gap: spacing.xs }}
-          >
-            <Body variant="body" style={{ opacity: layout.mutedOpacity }}>{h2hDate(g.kickoff)}</Body>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Body variant="body" numberOfLines={1} style={{ flex: 1 }}>{g.home.name}</Body>
-              <Display variant="minute">{score}</Display>
-              <Body variant="body" numberOfLines={1} style={{ flex: 1, textAlign: 'right' }}>{g.away.name}</Body>
-            </View>
+    <View style={{ gap: space.s8 }}>
+      <SectionBar label="Confrontos diretos · últimos 5" />
+      <View testID="h2h-bar" accessible accessibilityLabel={segments.map((x) => x.label).join(', ')} style={{ flexDirection: 'row', gap: layout.h2hBarGap }}>
+        {segments.map((x) => (
+          <View key={x.key} testID={`h2h-${x.key}`} style={{ flexGrow: x.n, flexShrink: 1, flexBasis: 0, minWidth: 0, gap: layout.h2hLabelGap }}>
+            <View style={{ height: layout.h2hBarHeight, borderRadius: layout.h2hBarRadius, backgroundColor: x.color }} />
+            <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{x.label}</Text71>
           </View>
-        );
-      })}
-    </>
+        ))}
+      </View>
+    </View>
   );
 }
 
 function Injuries({ doc, match }: { doc: InjuriesDoc; match: Match }) {
-  const teams = [match.home, match.away]
-    .map((t) => ({ team: t, items: doc.items.filter((i) => i.teamId === t.id) }))
+  const teams = sidesOf(match)
+    .map(({ team }) => ({ team, items: doc.items.filter((i) => i.teamId === team.id) }))
     .filter((t) => t.items.length > 0);
   return (
-    <>
-      <SectionBar label="Lesionados e suspensos" />
+    <View style={{ gap: space.s8 }}>
+      <SectionBar label="Ausências" />
       {teams.map(({ team, items }) => (
-        <View key={team.id}>
-          <Body variant="tab" style={{ paddingHorizontal: spacing.md, opacity: layout.mutedOpacity }}>{team.name}</Body>
-          {items.map((i, n) => (
-            <TextRow key={`${team.id}-${i.playerId}-${n}`} left={i.name} right={injuryText(i.type ?? '', i.reason ?? '')} muted />
-          ))}
+        <View key={team.id} style={{ gap: space.s8 }}>
+          <Text71 variant="caption12" color="textSubtle" numberOfLines={1}>{team.name}</Text71>
+          {items.map((i, n) => {
+            const reason = absenceReasonText(i.type, i.reason);
+            return (
+              <View key={`${team.id}-${i.playerId}-${n}`} testID="absence-row" style={{ flexDirection: 'row', alignItems: 'center', gap: space.s8 }}>
+                <Text71 variant="strong14" numberOfLines={1} style={{ flexShrink: 1 }}>{i.name}</Text71>
+                <Text71 variant="caption12" color="textMuted" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>{reason}</Text71>
+                {isDoubtful(i.type) ? (
+                  <View
+                    testID="doubt-badge"
+                    style={{
+                      backgroundColor: colors.yellow71Bg,
+                      borderRadius: layout.tlBadgeRadius,
+                      paddingHorizontal: layout.tlBadgePadX,
+                      paddingVertical: layout.tlBadgePadY,
+                    }}
+                  >
+                    <Text71 variant="badge11" color="yellow71">Dúvida</Text71>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ))}
-    </>
+    </View>
   );
 }
 
@@ -193,12 +215,12 @@ function PreMatch({ match }: { match: Match }) {
         <>
           <Prediction p={full} match={match} />
           <Form p={full} match={match} />
-          <HeadToHead p={full} />
+          <HeadToHead p={full} match={match} />
         </>
       ) : prematch.status === 'error' ? (
         <EmptyState icon="info" text={LOAD_ERROR} />
       ) : (
-        <Body variant="body" style={{ textAlign: 'center', opacity: layout.mutedOpacity }}>{PREMATCH_PENDING}</Body>
+        <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>{PREMATCH_PENDING}</Text71>
       )}
       {injuriesDoc && hasInjuries ? <Injuries doc={injuriesDoc} match={match} /> : null}
     </>
@@ -209,12 +231,12 @@ function Events({ match, live }: { match: Match; live: boolean }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
   if (events.status === 'error') return <EmptyState icon="info" text={LOAD_ERROR} />;
-  const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id) : [];
+  const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id, match.sportingSide) : [];
   if (groups.length === 0) return <EmptyState icon="info" text={live ? NO_EVENTS_LIVE : NO_EVENTS_DONE} />;
   return (
     <>
       {groups.map((g) => (
-        <View key={g.label} style={{ gap: spacing.md }}>
+        <View key={g.label}>
           <SectionBar label={g.label} right={g.score} />
           {g.events.map((e, i) => (
             <EventRow key={i} event={e} />

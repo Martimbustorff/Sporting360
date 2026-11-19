@@ -59,13 +59,14 @@ const CREST_BOX = {
   md: layout.crestCard,
   sm: layout.crestSmall,
   xs: layout.crestCompact,
+  form: layout.crestForm,
 } as const;
 
 /**
  * `size`: 'hd' no cabeçalho do jogo (60x70, V7.1 4924:6375), 'xs' no cabeçalho compacto (24x28, 4933:7267), 'lg' no cabeçalho (75x87, Figma 500:28798), 'sm' nas linhas da Agenda (30x35, Figma 500:28825),
- * 'md' no cartão do próximo jogo da Home (52x60, V7.1 4920:5096).
+ * 'form' na linha de forma do Sumário (18x21, 4933:7343), 'md' no cartão do próximo jogo da Home (52x60, V7.1 4920:5096).
  */
-export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'hd' | 'md' | 'sm' | 'xs' }) {
+export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'hd' | 'md' | 'sm' | 'xs' | 'form' }) {
   const box = CREST_BOX[size];
   const source = team.id === SPORTING_API_ID ? SPORTING_CREST : team.crestUrl ? { uri: team.crestUrl } : null;
   if (!source) return <View testID={testID} style={box} />;

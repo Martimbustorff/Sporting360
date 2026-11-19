@@ -69,3 +69,41 @@ export function h2hDate(d: Date): string {
   const p = lisbonParts(d);
   return `${p.day} ${MONTHS_SHORT[p.month - 1]} ${p.year}`;
 }
+
+/** Tipo "Questionable" da API (e "Doubtful"): o jogador é dúvida, não está confirmado fora. */
+export function isDoubtful(type: string | null): boolean {
+  const t = (type ?? '').trim();
+  return t === 'Questionable' || t === 'Doubtful';
+}
+
+/** Motivo curto em minúsculas ("lesão muscular", "castigo"); sem motivo, "fora" (a menos que seja dúvida). */
+export function absenceReasonText(type: string | null, reason: string | null): string {
+  const r = (reason ?? '').trim();
+  if (!r) return isDoubtful(type) ? '' : 'fora';
+  const t = injuryReasonText(r);
+  return t.charAt(0).toLowerCase() + t.slice(1);
+}
+
+export type H2hTally = { sporting: number; draws: number; opponent: number };
+
+/** Vitórias e empates dos confrontos com resultado; jogos sem resultado ou de outras equipas não contam. */
+export function h2hTally(
+  games: { home: { id: string }; away: { id: string }; score: { home: number | null; away: number | null } }[],
+  sportingId: string,
+  opponentId: string,
+): H2hTally {
+  const out: H2hTally = { sporting: 0, draws: 0, opponent: 0 };
+  for (const g of games) {
+    const { home, away } = g.score;
+    if (home == null || away == null) continue;
+    const ids = [g.home.id, g.away.id];
+    if (!ids.includes(sportingId) || !ids.includes(opponentId)) continue;
+    if (home === away) out.draws += 1;
+    else {
+      const winner = home > away ? g.home.id : g.away.id;
+      if (winner === sportingId) out.sporting += 1;
+      else out.opponent += 1;
+    }
+  }
+  return out;
+}

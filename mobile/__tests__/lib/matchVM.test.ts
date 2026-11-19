@@ -228,7 +228,7 @@ describe('toEventVM', () => {
       shown({ type: 'subst', minute: 60, playerName: 'Gyökeres V.', assistName: 'Giroud O.', detail: 'Substitution 1' }),
       '228',
     );
-    expect(vm).toMatchObject({ kind: 'sub', primary: 'Giroud O.', secondary: 'Gyökeres V.', minute: '60’', side: 'home' });
+    expect(vm).toMatchObject({ kind: 'sub', primary: 'Giroud O.', secondary: 'sai Gyökeres V.', minute: '60’', side: 'sporting' });
   });
 
   it('cards', () => {
@@ -239,7 +239,7 @@ describe('toEventVM', () => {
 
   it('goals: own goal and penalty secondary text, away side', () => {
     const own = toEventVM(shown({ detail: 'Own Goal', playerName: 'X', teamId: '217' }), '228');
-    expect(own).toMatchObject({ kind: 'goal', primary: 'X', secondary: 'Autogolo', side: 'away' });
+    expect(own).toMatchObject({ kind: 'goal', primary: 'X', secondary: 'Autogolo', side: 'sporting' });
     expect(toEventVM(shown({ detail: 'Penalty', playerName: 'Y' }), '228').secondary).toBe('Penálti');
     expect(toEventVM(shown({ detail: 'Normal Goal', playerName: 'Z' }), '228').secondary).toBeUndefined();
     expect(toEventVM(shown({ detail: 'Missed Penalty', playerName: 'W' }), '228').secondary).toBe('Penálti falhado');
@@ -249,6 +249,49 @@ describe('toEventVM', () => {
     expect(toEventVM(shown({ detail: 'Missed Penalty', playerName: 'W' }), '228')).toMatchObject({
       kind: 'missedPenalty',
       primary: 'W',
+    });
+  });
+
+  it('side: Sporting events on the sporting column, opponent on the other, also when Sporting is away', () => {
+    expect(toEventVM(shown({ type: 'card', detail: 'Yellow Card', teamId: '228' }), '228').side).toBe('sporting');
+    expect(toEventVM(shown({ type: 'card', detail: 'Yellow Card', teamId: '217' }), '228').side).toBe('opponent');
+    expect(toEventVM(shown({ type: 'card', detail: 'Yellow Card', teamId: '228' }), '217', 'away').side).toBe('sporting');
+    expect(toEventVM(shown({ type: 'card', detail: 'Yellow Card', teamId: '217' }), '217', 'away').side).toBe('opponent');
+  });
+
+  it('side: an own goal sits on the column of the team that scored', () => {
+    // golo na própria baliza de um jogador do Sporting: conta para o adversário
+    expect(toEventVM(shown({ detail: 'Own Goal', teamId: '228' }), '228').side).toBe('opponent');
+    // golo na própria baliza de um jogador do adversário: conta para o Sporting
+    expect(toEventVM(shown({ detail: 'Own Goal', teamId: '217' }), '228').side).toBe('sporting');
+    expect(toEventVM(shown({ detail: 'Own Goal', teamId: '217' }), '217', 'away').side).toBe('sporting');
+    expect(toEventVM(shown({ detail: 'Own Goal', teamId: '228' }), '217', 'away').side).toBe('opponent');
+  });
+
+  it('side: a missed penalty stays on the team that missed', () => {
+    expect(toEventVM(shown({ detail: 'Missed Penalty', teamId: '217' }), '228').side).toBe('opponent');
+  });
+
+  it('goal with an assist and no detail: "assist. X"', () => {
+    expect(toEventVM(shown({ detail: 'Normal Goal', playerName: 'Trincão', assistName: 'Morita' }), '228')).toMatchObject({
+      kind: 'goal',
+      primary: 'Trincão',
+      secondary: 'assist. Morita',
+    });
+  });
+
+  it('var: a disallowed goal is a var event (never kind goal), with its own text', () => {
+    const vm = toEventVM(shown({ type: 'var', detail: 'Goal Disallowed - offside', playerName: 'Samu', teamId: '217' }), '228');
+    expect(vm).toMatchObject({ kind: 'var', primary: 'Golo anulado', secondary: 'fora de jogo de Samu', side: 'opponent' });
+    expect(toEventVM(shown({ type: 'var', detail: 'Goal cancelled', playerName: 'Samu' }), '228')).toMatchObject({
+      kind: 'var',
+      primary: 'Golo anulado',
+      secondary: 'Samu',
+    });
+    expect(toEventVM(shown({ type: 'var', detail: 'Penalty confirmed', playerName: 'Y' }), '228')).toMatchObject({
+      kind: 'var',
+      primary: 'Penálti confirmado',
+      secondary: 'Y',
     });
   });
 
@@ -283,6 +326,15 @@ describe('groupEvents', () => {
     expect(groups.map((g) => g.score)).toEqual(['1-1']);
     const one = groupEvents([ev({ minute: 10, teamId: '217', detail: 'Own Goal' })], '228');
     expect(one[0]?.score).toBe('1-0');
+  });
+
+  it('keeps the match order (oldest first inside each part) and passes the Sporting side through', () => {
+    const groups = groupEvents(
+      [ev({ minute: 70, teamId: '228', playerName: 'late' }), ev({ minute: 12, teamId: '217', playerName: 'early' })],
+      '217',
+      'away',
+    );
+    expect(groups.flatMap((g) => g.events.map((e) => `${e.primary}:${e.side}`))).toEqual(['early:opponent', 'late:sporting']);
   });
 
   it('no events gives []', () => {

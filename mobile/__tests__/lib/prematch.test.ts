@@ -97,3 +97,33 @@ describe('capacityText', () => {
     expect(capacityText(950)).toBe('950');
   });
 });
+
+describe('Sumário V7.1: ausências e confrontos', () => {
+  it('isDoubtful: Questionable e Doubtful são dúvida, o resto não', () => {
+    const { isDoubtful } = require('@/lib/prematch');
+    expect(isDoubtful('Questionable')).toBe(true);
+    expect(isDoubtful('Doubtful')).toBe(true);
+    expect(isDoubtful('Missing Fixture')).toBe(false);
+    expect(isDoubtful(null)).toBe(false);
+  });
+
+  it('absenceReasonText: minúsculas, "fora" sem motivo, vazio quando é dúvida sem motivo', () => {
+    const { absenceReasonText } = require('@/lib/prematch');
+    expect(absenceReasonText('Missing Fixture', 'Knee Injury')).toBe('lesão no joelho');
+    expect(absenceReasonText('Missing Fixture', 'Suspended')).toBe('castigo');
+    expect(absenceReasonText('Missing Fixture', null)).toBe('fora');
+    expect(absenceReasonText('Questionable', null)).toBe('');
+  });
+
+  it('h2hTally: conta vitórias de cada lado e empates; ignora jogos sem resultado', () => {
+    const { h2hTally } = require('@/lib/prematch');
+    const g = (h: string, a: string, sh: number | null, sa: number | null) => ({
+      home: { id: h },
+      away: { id: a },
+      score: { home: sh, away: sa },
+    });
+    expect(
+      h2hTally([g('217', '228', 1, 2), g('228', '217', 0, 0), g('228', '217', 3, 1), g('217', '228', 2, 0), g('228', '217', null, null)], '228', '217'),
+    ).toEqual({ sporting: 2, draws: 1, opponent: 1 });
+  });
+});

@@ -55,6 +55,10 @@ export const colors = {
   inkSeparator: 'rgba(0, 27, 19, 0.12)',
   danger: '#F74C66',
   scrimV71: 'rgba(0, 13, 9, 0.72)',
+  // Sumário V7.1 (4933:7057): derrota na forma, amarelo do cartão e da "Dúvida"
+  formLoss: '#E53836',
+  yellow71: '#FACC2E',
+  yellow71Bg: 'rgba(250, 204, 46, 0.18)',
 } as const;
 
 export const fonts = {
@@ -314,6 +318,8 @@ export const layout = {
   // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens
   formChip: 24, // V / E / D square in the "Forma" row
   formChipGap: 4,
+  formChipRadius: 6, // 4933:7347
+  formRowGap: 6,
   venuePhotoAspect: 16 / 9, // stadium photo under "Informação do Jogo"
   // Estatísticas (Figma 500:28650): linha de 23 px, 20 px entre linhas e divisória; valores a 30 % antes do jogo (500:29279)
   statRowGap: 20,
@@ -398,6 +404,28 @@ export const layout = {
   // V7.1 Cabeçalho do jogo (Figma 4924:6268 ao vivo, 4945:7833 antes, 4933:7057 compacto)
   crestHeader: { width: 60, height: 70 }, // 4920:5075 a 60x70 no cabeçalho
   crestCompact: { width: 24, height: 28 }, // 4933:7267
+  crestForm: { width: 18, height: 21 }, // 4933:7343 (linha de forma)
+  // Sumário V7.1 (4933:7057): cronologia em duas colunas
+  tlMinuteW: 44, // caixa do minuto 44x28 raio 6
+  tlMinuteH: 28,
+  tlMinuteRadius: 6,
+  tlRowPadY: 4,
+  tlColGap: 10,
+  tlLineGap: 6,
+  tlIcon: 14, // bola, substituição
+  tlCardW: 10, // cartão 10x14 raio 2
+  tlCardH: 14,
+  tlCardRadius: 2,
+  tlTagRadius: 3, // selo VAR
+  tlBadgeRadius: 4, // selo Dúvida
+  tlBadgePadX: 6,
+  tlBadgePadY: 2,
+  tlVarPadX: 4,
+  tlVarPadY: 1,
+  h2hBarHeight: 6, // barra V/E/D 4933:7373
+  h2hBarRadius: 3,
+  h2hBarGap: 4,
+  h2hLabelGap: 6,
   headerTeamColumn: 104,
   headerTeamGap: 8,
   headerPillRadius: 14,
