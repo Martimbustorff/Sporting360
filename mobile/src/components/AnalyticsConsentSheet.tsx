@@ -1,5 +1,5 @@
 // Figma V7.1: 05 Consentimento 4923:6173. Cortina (scrimV71) e folha branca (raio superior 28, pega a 18%): círculo primary 48 com
-// ícone, título Title 24 ink, texto Body 14, três pontos com visto, botões "Agora não" (escuro) e "Aceitar" (primary) lado a
+// ícone, título Title 24 ink, texto Body 14, três pontos com visto primary (sem círculo, gap 8), botões "Agora não" (escuro) e "Aceitar" (primary) lado a
 // lado, ligação "Ler a política de privacidade" e 42 em baixo. Ícone do círculo: Feather bar-chart-2 (o frame usa um vetor próprio).
 // A folha não se fecha sem escolha (sem gesto nem toque na cortina). A ligação abre /definicoes/termos (onPrivacy); o layout
 // esconde a folha enquanto essa página está aberta. Comportamento (setAnalyticsConsent, onDone) igual ao anterior.
@@ -78,19 +78,8 @@ export function AnalyticsConsentSheet({ onDone, onPrivacy }: { onDone: () => voi
           <Text71 variant="body14" color="inkMuted">{CONSENT_TEXT}</Text71>
           <View style={{ gap: layout.consentItemGap }}>
             {CONSENT_POINTS.map((p) => (
-              <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: space.s12 }}>
-                <View
-                  style={{
-                    width: layout.consentCheck,
-                    height: layout.consentCheck,
-                    borderRadius: layout.consentCheck / 2,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Image source={CHECK} style={{ width: layout.consentCheck - space.s8, height: layout.consentCheck - space.s8 }} accessible={false} />
-                </View>
+              <View key={p} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.s8 }}>
+                <Image source={CHECK} tintColor={colors.primary} style={{ width: layout.consentCheck, height: layout.consentCheck }} accessible={false} />
                 <Text71 variant="body14" color="ink" style={{ flex: 1 }}>{p}</Text71>
               </View>
             ))}
