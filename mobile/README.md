@@ -73,3 +73,22 @@ Passos que precisam das contas do Martim. Nada disto foi corrido pelo agente.
   - [ ] privacidade: nomes longos passam a mostrar primeira e última palavra (antes "Sportinguista #xxxx"). Decidir antes do deploy das functions.
 
 Anotar o resultado do smoke no fim do Plano 3. Se algo falhar, corrigir antes da Task 19.
+
+### Push (Plano 6)
+
+O envio fica desligado (`PUSH_ENABLED=false` nos dois `.env` das functions) até ao lançamento da V7.1. Nada disto foi corrido pelo agente.
+
+- [ ] **Chave APNs:** criar a chave `.p8` na Apple Developer (Keys, "Apple Push Notifications service") e carregá-la no Firebase Console, projeto `scp360-37a74`, Definições do projeto, Cloud Messaging, app iOS `com.scp360`. Sem ela o iOS não recebe nada; o Android funciona sem ela.
+- [ ] **Build:** o módulo `@react-native-firebase/messaging` e o entitlement `aps-environment` pedem um build nativo novo. É o mesmo build do redesign V7.1 e só corre com o OK explícito do Martim (não há build só para o push).
+- [ ] **Smoke em dispositivo (iOS e Android):**
+  - [ ] a permissão só é pedida depois do login (e depois da folha de Analytics), nunca no primeiro arranque nem no Welcome;
+  - [ ] os 5 tipos chegam: início do jogo, golo do Sporting, abertura do MVP, lembrete de prognóstico (2 h antes, só sem prognóstico feito) e notícia;
+  - [ ] tocar em cada um abre o ecrã certo (jogo, tab MVP, tab Prognóstico, notícia), com a app fechada e em segundo plano;
+  - [ ] desligar um interruptor no ecrã Notificações deixa de receber esse tipo;
+  - [ ] com a permissão recusada nas definições do telemóvel, o ecrã Notificações mostra o aviso e o botão "Abrir definições";
+  - [ ] sair da conta deixa de receber; entrar com outra conta no mesmo telemóvel segue as preferências da conta nova.
+- [ ] **Publicação, só com OK do Martim, por esta ordem:**
+  1. regras: o `firestore.rules` da fase em vigor (ou o `firestore.final.rules` depois do lançamento), com a regra nova de `users/{uid}/devices`;
+  2. functions: `functions:v2027:footballLiveTicker,functions:v2027:newsSync,functions:v2027:predictionReminderPush,functions:v2027:deleteAccount` (ainda com `PUSH_ENABLED=false`);
+  3. só depois: `PUSH_ENABLED=true` no `.env` de produção e nova publicação das três de envio (`footballLiveTicker`, `newsSync`, `predictionReminderPush`).
+- [ ] **Decisão pendente do Martim:** o ícone pequeno da notificação no Android fica o da app (sem ícone monocromático próprio).

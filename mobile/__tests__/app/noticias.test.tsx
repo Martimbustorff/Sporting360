@@ -10,9 +10,11 @@ type L =
 
 const mockNews: { current: L } = { current: { status: 'loading' } };
 const mockNow: { current: Date } = { current: new Date('2026-11-18T12:00:00Z') };
+const mockParams: { current: Record<string, string | undefined> } = { current: {} };
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ back: jest.fn(), replace: jest.fn(), canGoBack: () => true }),
+  useLocalSearchParams: () => mockParams.current,
 }));
 jest.mock('@/data/user', () => ({ useNews: jest.fn(() => mockNews.current) }));
 jest.mock('@/data/clock', () => ({ useNow: jest.fn(() => mockNow.current) }));
@@ -49,6 +51,7 @@ const item = (id: string, over: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockParams.current = {};
   mockNews.current = ready([item('a'), item('b', { url: 'https://www.record.pt/b' })]);
   mockNow.current = new Date('2026-11-18T12:00:00Z');
 });
@@ -155,5 +158,42 @@ describe('Notícias: estados', () => {
     mockNews.current = ready([item('a')], false);
     await renderScreen();
     expect(screen.queryByTestId('offline-banner')).toBeNull();
+  });
+});
+
+describe('Notícias: link da notificação', () => {
+  it('Notícias com ?id=: abre o artigo uma vez (openLink com o url); id desconhecido: só a lista', async () => {
+    mockParams.current = { id: 'b' };
+    mockNews.current = { status: 'loading' };
+    const view = await renderScreen();
+    expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+    mockNews.current = ready([item('a'), item('b', { url: 'https://www.record.pt/b' })]);
+    await view.rerender(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <Noticias />
+      </SafeAreaProvider>,
+    );
+    await waitFor(() => expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://www.record.pt/b'));
+    // Outro snapshot (servidor confirma) ou mudar de filtro: não volta a abrir.
+    mockNews.current = ready([item('b', { url: 'https://www.record.pt/b' }), item('a')]);
+    await view.rerender(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <Noticias />
+      </SafeAreaProvider>,
+    );
+    await fireEvent.press(screen.getByRole('tab', { name: 'Andebol' }));
+    expect(WebBrowser.openBrowserAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('id desconhecido: só a lista', async () => {
+    mockParams.current = { id: 'nao-existe' };
+    await renderScreen();
+    expect(screen.getByText('Título a')).toBeTruthy();
+    expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+  });
+
+  it('sem ?id= não abre nada', async () => {
+    await renderScreen();
+    expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
   });
 });

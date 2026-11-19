@@ -1,5 +1,6 @@
 // Task 22: Editar perfil e Notificações. Hooks e serviço mockados; expo-router global (jest.setup).
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { AppState, Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const mockUser: { current: unknown } = { current: { status: 'loading' } };
@@ -8,6 +9,7 @@ jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1', email: 'a@b.pt', providers: ['password'] } }),
 }));
 jest.mock('@/data/hooks', () => ({ useMyUser: jest.fn(() => mockUser.current) }));
+jest.mock('@/services/push', () => ({ pushPermissionGranted: jest.fn(() => Promise.resolve(true)) }));
 jest.mock('@/data/sports', () => ({ useTeamData: jest.fn(() => mockSquad.current) }));
 jest.mock('@/services/userProfile', () => {
   class ProfileSaveError extends Error {
@@ -21,6 +23,7 @@ jest.mock('@/services/userProfile', () => {
 });
 
 import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
+import { pushPermissionGranted } from '@/services/push';
 import EditarPerfil from '../../app/(app)/perfil/editar';
 import Notificacoes from '../../app/(app)/perfil/notificacoes';
 
@@ -34,6 +37,7 @@ const SQUAD = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (pushPermissionGranted as jest.Mock).mockResolvedValue(true);
   mockUser.current = {
     status: 'ready',
     data: { name: 'Maria Costa', email: 'a@b.pt', memberNumber: '123', partnerNumber: '03/2008', seasonSeat: 'A1', favoriteSport: 'futsal' },
@@ -123,7 +127,51 @@ describe('Notificações', () => {
     for (const l of ['Início dos jogos', 'Golos', 'Lembrete de prognóstico', 'Abertura do MVP', 'Notícias']) {
       expect(screen.getByRole('switch', { name: l }).props.accessibilityState.checked).toBe(true);
     }
-    expect(screen.getByText('As notificações chegam numa próxima versão. As tuas escolhas ficam guardadas.')).toBeTruthy();
+    expect(screen.getByText('Escolhe o que queres receber neste telemóvel enquanto tiveres sessão iniciada.')).toBeTruthy();
+  });
+
+  it('mostra o aviso novo e já não diz "numa próxima versão"', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    await render(wrap(<Notificacoes />));
+    await act(async () => undefined);
+    expect(screen.getByText('Escolhe o que queres receber neste telemóvel enquanto tiveres sessão iniciada.')).toBeTruthy();
+    expect(screen.queryByText(/numa próxima versão/)).toBeNull();
+    expect(screen.queryByText('As notificações estão desligadas nas definições do telemóvel.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abrir definições' })).toBeNull();
+  });
+
+  it('permissão recusada: mostra permissionOff e o botão chama Linking.openSettings', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    (pushPermissionGranted as jest.Mock).mockResolvedValue(false);
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined as never);
+    await render(wrap(<Notificacoes />));
+    await act(async () => undefined);
+    expect(screen.getByText('As notificações estão desligadas nas definições do telemóvel.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Abrir definições' }));
+    expect(openSettings).toHaveBeenCalledTimes(1);
+    openSettings.mockRestore();
+  });
+
+  it('volta a verificar a permissão quando a app regressa ao primeiro plano', async () => {
+    mockUser.current = { status: 'ready', data: {} };
+    (pushPermissionGranted as jest.Mock).mockResolvedValue(false);
+    const remove = jest.fn();
+    const original = AppState.addEventListener;
+    const add = jest.fn(() => ({ remove }));
+    AppState.addEventListener = add as never;
+    const view = await render(wrap(<Notificacoes />));
+    await act(async () => undefined);
+    expect(screen.getByText('As notificações estão desligadas nas definições do telemóvel.')).toBeTruthy();
+    const listener = (add.mock.calls as unknown as [string, (s: string) => void][]).find((c) => c[0] === 'change')![1];
+    (pushPermissionGranted as jest.Mock).mockResolvedValue(true);
+    await act(async () => listener('background'));
+    expect(pushPermissionGranted).toHaveBeenCalledTimes(1);
+    await act(async () => listener('active'));
+    expect(pushPermissionGranted).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText('As notificações estão desligadas nas definições do telemóvel.')).toBeNull();
+    await view.unmount();
+    expect(remove).toHaveBeenCalled();
+    AppState.addEventListener = original;
   });
 
   it('mudar "Golos" grava o objeto completo com goals false', async () => {
@@ -164,7 +212,7 @@ describe('Notificações', () => {
     expect(
       screen.getByText('Sem ligação. A tua escolha fica guardada e é enviada quando houver ligação.'),
     ).toBeTruthy();
-    expect(screen.queryByText(/neste telemóvel/)).toBeNull();
+    expect(screen.getByRole('alert').props.children).not.toMatch(/neste telemóvel/);
   });
 
   it('snapshot da 1.ª escrita com a 2.ª ainda pendente não perde a 2.ª escolha', async () => {

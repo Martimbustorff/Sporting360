@@ -5,9 +5,10 @@
 // - O toque abre a página original com `openLink` (browser interno, só https, falha reportada).
 // - "há X tempo" em Europe/Lisbon, com o relógio a avançar de minuto a minuto.
 // - Leitura falhada mostra erro, nunca a mensagem de vazio.
-import { useCallback, useState } from 'react';
+// - Plano 6: `?id=` (toque numa notificação) abre esse artigo uma vez, quando a lista chega; id desconhecido: só a lista.
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
 import { NewsCard } from '@/components/NewsCard';
@@ -39,6 +40,15 @@ export default function Noticias() {
   const [filter, setFilter] = useState<Filter>('all');
   const news = useNews(filter === 'all' ? null : filter);
   const byId = news.status === 'ready' ? news.data : null;
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const wanted = Array.isArray(params.id) ? params.id[0] : params.id;
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!wanted || !byId || handled.current === wanted) return;
+    handled.current = wanted;
+    const found = byId.find((n) => n.id === wanted);
+    if (found) void openLink(found.url);
+  }, [wanted, byId]);
   const onPress = useCallback(
     (id: string) => {
       const found = byId?.find((n) => n.id === id);

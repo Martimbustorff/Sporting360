@@ -1,26 +1,32 @@
 // Figma: nós 323:11630 / 323:11790 (linha "Notificações" com interruptor, via ToggleRow). SEM FIGMA: a lista de cinco
 // interruptores e o aviso por baixo não estão desenhados; compõe Header, ToggleRow e Body, só com tokens.
-// Task 22: só guarda as preferências em users/{uid}.notificationPrefs (sem push nesta entrega). Cada interruptor grava o
-// objeto completo. Sem preferências guardadas, tudo ligado. Leitura falhada: erro, nunca valores por omissão.
+// Task 22: guarda as preferências em users/{uid}.notificationPrefs. Cada interruptor grava o objeto completo. Sem
+// preferências guardadas, tudo ligado. Leitura falhada: erro, nunca valores por omissão.
+// Plano 6: o PushSetup segue o documento e acerta os tópicos; este ecrã não chama o push. Com a permissão do
+// telemóvel recusada, um aviso e o botão para as definições (SEM FIGMA: PrimaryButton secundário, só tokens).
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { AppState, Linking, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { Screen } from '@/components/Screen';
 import { ToggleRow } from '@/components/ToggleRow';
 import { useMyUser } from '@/data/hooks';
 import type { NotificationPrefs } from '@/data/schemas';
 import { DEFAULT_NOTIFICATION_PREFS } from '@/lib/profileFields';
 import { useSession } from '@/providers/SessionProvider';
+import { pushPermissionGranted } from '@/services/push';
 import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
 import { Body } from '@/theme/typography';
 import { colors, layout, spacing } from '@/theme/tokens';
 
 export const NOTIFICACOES_TEXT = {
   loadError: 'Não foi possível carregar as tuas preferências.',
-  notice: 'As notificações chegam numa próxima versão. As tuas escolhas ficam guardadas.',
+  notice: 'Escolhe o que queres receber neste telemóvel enquanto tiveres sessão iniciada.',
+  permissionOff: 'As notificações estão desligadas nas definições do telemóvel.',
+  openSettings: 'Abrir definições',
   OFFLINE: 'Sem ligação. A tua escolha fica guardada e é enviada quando houver ligação.',
   DENIED: 'Não tens permissão para guardar esta escolha.',
   UNKNOWN: 'Não foi possível guardar a escolha. Tenta outra vez.',
@@ -55,6 +61,25 @@ export default function Notificacoes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docKey]);
   const prefs = local ?? fromDoc;
+
+  // Permissão do sistema: verificada ao abrir e sempre que a app volta ao primeiro plano (ex.: das definições).
+  const [permission, setPermission] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const check = () => {
+      pushPermissionGranted().then((g) => {
+        if (alive) setPermission(g);
+      });
+    };
+    check();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') check();
+    });
+    return () => {
+      alive = false;
+      sub.remove();
+    };
+  }, []);
 
   const toggle = async (key: keyof NotificationPrefs, value: boolean) => {
     if (!uid) return;
@@ -106,6 +131,16 @@ export default function Notificacoes() {
             <Body variant="body" accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: colors.cardRed }}>
               {message}
             </Body>
+          ) : null}
+          {permission === false ? (
+            <>
+              <Body variant="body" style={{ color: colors.white }}>{NOTIFICACOES_TEXT.permissionOff}</Body>
+              <PrimaryButton
+                variant="secondary"
+                label={NOTIFICACOES_TEXT.openSettings}
+                onPress={() => void Linking.openSettings().catch(() => undefined)}
+              />
+            </>
           ) : null}
           <Body variant="body" style={{ color: colors.textMuted }}>{NOTIFICACOES_TEXT.notice}</Body>
         </ScrollView>
