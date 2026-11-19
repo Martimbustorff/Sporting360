@@ -133,12 +133,22 @@ export async function syncTeamDaily(d: FootballDeps): Promise<Out> {
           const stats = p.statistics.filter((s) => sportingId(s.team.id));
           if (stats.length === 0) continue;
           let appearances = 0, minutes = 0, goals = 0, assists = 0, yellow = 0, red = 0, rated = 0, ratedMinutes = 0, ratingSum = 0, ratingN = 0;
+          const byLeague: Record<string, { appearances: number; minutes: number; goals: number; assists: number }> = {};
           for (const s of stats) {
             const m = s.games.minutes ?? 0;
-            appearances += s.games.appearences ?? 0;
+            const a = s.games.appearences ?? 0;
+            const g = s.goals.total ?? 0;
+            const as = s.goals.assists ?? 0;
+            appearances += a;
             minutes += m;
-            goals += s.goals.total ?? 0;
-            assists += s.goals.assists ?? 0;
+            goals += g;
+            assists += as;
+            // Somado por liga antes de qualquer outro agrupamento (duas linhas da mesma liga contam as duas).
+            const l = (byLeague[String(s.league.id)] ??= { appearances: 0, minutes: 0, goals: 0, assists: 0 });
+            l.appearances += a;
+            l.minutes += m;
+            l.goals += g;
+            l.assists += as;
             yellow += s.cards.yellow ?? 0;
             red += s.cards.red ?? 0;
             const r = s.games.rating === null ? NaN : Number(s.games.rating);
@@ -150,7 +160,7 @@ export async function syncTeamDaily(d: FootballDeps): Promise<Out> {
             }
           }
           const rating = ratingN === 0 ? null : Math.round((ratedMinutes > 0 ? rated / ratedMinutes : ratingSum / ratingN) * 100) / 100;
-          players.push({ id: String(p.player.id), name: p.player.name, photo: p.player.photo ?? null, appearances, minutes, goals, assists, rating, yellow, red });
+          players.push({ id: String(p.player.id), name: p.player.name, photo: p.player.photo ?? null, appearances, minutes, goals, assists, rating, yellow, red, byLeague });
         }
         if (players.length === 0) return { count: 0 };
         await write(d, `playerStats_${season}`, `${TEAM}/data/playerStats_${season}`, { players });

@@ -94,6 +94,33 @@ describe("syncTeamDaily", () => {
     expect(first.rating).toBe(7.02);
   });
 
+  it("byLeague: soma por liga (duas competições da mesma liga somadas), nulos a 0, totais inalterados", async () => {
+    await seedLeague();
+    const p1 = load("players-228-p1.json");
+    const s0 = p1.response[0].statistics[0];
+    const mk = (id: number, games: object, goals: object) => {
+      const x = JSON.parse(JSON.stringify(s0));
+      x.league = { ...x.league, id };
+      x.games = { ...x.games, ...games };
+      x.goals = { ...x.goals, ...goals };
+      return x;
+    };
+    s0.games = { ...s0.games, appearences: 10, minutes: 800 };
+    s0.goals = { ...s0.goals, total: 4, assists: 2 };
+    // duas linhas da mesma liga (94) e uma da Taça (96) com nulos
+    p1.response[0].statistics.push(mk(94, { appearences: 1, minutes: 30 }, { total: 1, assists: 0 }));
+    p1.response[0].statistics.push(mk(96, { appearences: null, minutes: 90 }, { total: null, assists: 3 }));
+    const f = fakeFetch([[/players\?team=228&season=2026&page=1/, p1], [/players\?team=228&season=2026&page=2/, "api-football/players-228-p2.json"], ...dailyRoutes().slice(0, 3).filter((x) => !/players\?/.test(String(x[0]))), [/teams\/statistics/, "api-football/team-stats-94.json"], [/injuries/, "api-football/injuries-team.json"]] as Array<[RegExp, string | object]>);
+    await syncTeamDaily(deps(f));
+    const first = (await get("playerStats_2026"))!.players[0];
+    expect(first.byLeague).toEqual({
+      "94": { appearances: 11, minutes: 830, goals: 5, assists: 2 },
+      "96": { appearances: 0, minutes: 90, goals: 0, assists: 3 },
+    });
+    expect(first).toMatchObject({ appearances: 11, minutes: 920, goals: 5, assists: 5 });
+    expect((await get("playerStats_2026"))!.players[1].byLeague).toEqual({ "94": expect.objectContaining({ appearances: expect.any(Number) }) });
+  });
+
   it("treinador: com duas entradas abertas no 228 vence o start mais recente", async () => {
     await seedLeague();
     const co = load("coachs-228.json");
