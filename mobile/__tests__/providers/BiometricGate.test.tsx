@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppState, Text } from 'react-native';
+import { AppState, StyleSheet, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
@@ -13,6 +13,7 @@ import { markFreshSession, resetColdStartForTests } from '@/lib/lockSession';
 import { BiometricGate, type BiometricToggleResult, useBiometricControl } from '@/providers/BiometricGate';
 import { signOut } from '@/services/auth';
 import * as bio from '@/services/biometrics';
+import { colors } from '@/theme/tokens';
 
 const m = bio as jest.Mocked<typeof bio>;
 type AppStateHandler = (s: string) => void;
@@ -176,6 +177,15 @@ describe('BiometricGate: folha "Ativar {label}?"', () => {
     await waitFor(() => expect(screen.queryByText('Ativar Face ID?')).toBeNull());
   });
 
+  it('V7.1: folha escura com texto aprovado, "Ativar" Branco e "Agora não" Contorno', async () => {
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('Ativar Face ID?')).toBeTruthy());
+    expect(screen.getByText('Usa Face ID para abrir a S360 mais depressa, sem escreveres a palavra-passe.')).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('modal-sheet').props.style).backgroundColor).toBe(colors.bgRaised);
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Ativar' }).props.style).backgroundColor).toBe(colors.white);
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Agora não' }).props.style).borderColor).toBe(colors.white);
+  });
+
   it('"Ativar" liga a opção e grava a resposta', async () => {
     await render(tree());
     await waitFor(() => expect(screen.getByText('Ativar Face ID?')).toBeTruthy());
@@ -234,11 +244,22 @@ describe('BiometricGate: estado de verificação', () => {
     expect(screen.queryByTestId('lock-screen')).toBeNull();
   });
 
-  it('o ecrã de bloqueio tem texto e anéis', async () => {
+  it('V7.1: "Desbloquear" é Branco e "Entrar com outra conta" é Contorno', async () => {
     m.unlock.mockImplementation(() => new Promise(() => {}));
     await render(tree());
     await waitFor(() => expect(screen.getByText('A S360 está bloqueada.')).toBeTruthy());
-    expect(screen.getByTestId('lock-rings')).toBeTruthy();
+    const unlock = StyleSheet.flatten(screen.getByRole('button', { name: 'Desbloquear com Face ID' }).props.style);
+    expect(unlock.backgroundColor).toBe(colors.white);
+    const other = StyleSheet.flatten(screen.getByRole('button', { name: 'Entrar com outra conta' }).props.style);
+    expect(other.backgroundColor).toBeUndefined();
+    expect(other.borderColor).toBe(colors.white);
+  });
+
+  it('o ecrã de bloqueio tem texto e o fundo do leão (Home backdrop)', async () => {
+    m.unlock.mockImplementation(() => new Promise(() => {}));
+    await render(tree());
+    await waitFor(() => expect(screen.getByText('A S360 está bloqueada.')).toBeTruthy());
+    expect(screen.getByTestId('lion-backdrop', { includeHiddenElements: true })).toBeTruthy();
   });
 });
 

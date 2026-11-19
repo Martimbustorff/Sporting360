@@ -1,9 +1,9 @@
-// Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6896 (05_SignIn, título "Accesso" corrigido para "Acesso").
-// Task 14 (SEM FIGMA): botões Google e, só em iOS, Apple, entre "Entrar" e as ligações.
+// Figma V7.1: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 4940:7302 (14 Entrar). "Entrar" em Branco, Google e Apple por baixo,
+// ligações Caption 12. O erro aparece por baixo do campo da password (Caption 12, danger), como na nota do frame.
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthLinkRow, AuthScaffold, FormMessage } from '@/components/AuthForm';
+import { AuthLinkRow, AuthScaffold } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { SocialButtons } from '@/components/SocialButtons';
 import { TextField } from '@/components/TextField';
@@ -46,8 +46,7 @@ export default function Entrar() {
       title="Acesso"
       footer={
         <>
-          {error ? <FormMessage text={error} /> : null}
-          <PrimaryButton label="Entrar" onPress={() => void submit()} loading={loading} />
+          <PrimaryButton label="Entrar" variant="white" onPress={() => void submit()} loading={loading} />
           <SocialButtons />
           <View style={{ gap: layout.authLinksRowGap }}>
             <AuthLinkRow
@@ -73,6 +72,7 @@ export default function Entrar() {
         value={password}
         onChangeText={setPassword}
         secure
+        error={error ?? undefined}
         autoComplete="current-password"
         textContentType="password"
       />

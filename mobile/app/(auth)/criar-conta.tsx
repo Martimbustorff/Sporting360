@@ -1,12 +1,14 @@
-// Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6926 (05_SignUp, "Nova Conta").
+// Figma V7.1: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 4940:7380 (15 Criar conta). "Criar conta" em Branco, Google e Apple por baixo;
+// o texto dos termos é todo uma ligação. O erro geral aparece por baixo do campo da password.
 import { useRef, useState } from 'react';
-import { Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthScaffold, FormMessage } from '@/components/AuthForm';
+import { AuthScaffold } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { SocialButtons } from '@/components/SocialButtons';
+import { Touchable } from '@/components/Touchable';
 import { TextField } from '@/components/TextField';
 import { signUpEmail } from '@/services/auth';
-import { layout, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
 
 export default function CriarConta() {
   const router = useRouter();
@@ -51,21 +53,23 @@ export default function CriarConta() {
       title="Nova Conta"
       footer={
         <>
-          {error ? <FormMessage text={error} /> : null}
-          <PrimaryButton label="Criar conta" onPress={() => void submit()} loading={loading} />
-          {/* Figma 564:6929: o texto inteiro é a ligação para os termos. */}
-          <Pressable
+          <PrimaryButton label="Criar conta" variant="white" onPress={() => void submit()} loading={loading} />
+          <SocialButtons />
+          {/* Figma 4940:7461: o texto inteiro é a ligação para os termos. */}
+          <Touchable
             accessibilityRole="link"
             accessibilityLabel="Termos e condições"
             accessibilityHint="Abre os termos e condições"
             onPress={() => router.push('/termos')}
-            style={{ alignSelf: 'center', width: layout.authNoteWidth }}
+            style={{ alignSelf: 'center' }}
           >
-            <Text style={type.authNote}>
-              <Text style={{ opacity: layout.authMutedOpacity }}>Ao clicar em criar conta aceita os nossos </Text>
-              <Text style={type.authLinkAction}>Termos e condições</Text>
-            </Text>
-          </Pressable>
+            <Text71 variant="caption12" color="textMuted" style={{ textAlign: 'center' }}>
+              {'Ao clicar em criar conta aceita os nossos '}
+              <Text71 variant="captionStrong12" color="primaryOnDark">
+                Termos e condições
+              </Text71>
+            </Text71>
+          </Touchable>
         </>
       }
     >
@@ -91,6 +95,7 @@ export default function CriarConta() {
         value={password}
         onChangeText={setPassword}
         secure
+        error={error ?? undefined}
         autoComplete="new-password"
         textContentType="newPassword"
       />

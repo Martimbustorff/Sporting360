@@ -1,21 +1,18 @@
-// Figma: nó 323:11694 (Conta: fundo desfocado como nas Definições; campos a 128 com 16 entre si, cada um etiqueta DIN 14
-// a 50%, valor em corpo 16 e linha 2px primary; "Mudar Password" em corpo semibold 12 sublinhado, branco).
-// Diferenças ao frame (Plano 4, Task 26): o nome é o nome público e abre /perfil/nome (seta à direita, SEM FIGMA); o
-// email é só de leitura; "Sócio desde" fica no Perfil (editado em /perfil/editar); sem "Guardar" (nada se edita aqui)
-// e "Apagar conta" está nas Definições. "Mudar password" só aparece com o provider `password`.
-// Este é o único ecrã onde o email aparece.
+// Figma V7.1: nó 4941:7546 (19 Conta S360): fundo bg, campos a 24 (etiqueta Eyebrow 13 text-subtle, valor Body 14, linha),
+// "Nome público" abre o ecrã do nome (seta à direita, linha de 2 pt primary-on-dark), "Email" só de leitura (linha de 1 pt
+// separator) e "Mudar password" em Caption Strong sublinhado, só com o provider `password`. Único ecrã onde o email aparece.
+// Diferença ao frame: sem fundo de leão desfocado (o frame é bg liso).
 import Feather from '@expo/vector-icons/Feather';
 import { useRouter } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Header } from '@/components/Header';
-import { LionBackdrop } from '@/components/LionBackdrop';
 import { Screen } from '@/components/Screen';
 import { Touchable } from '@/components/Touchable';
 import { useMyUser, usePublicProfile } from '@/data/hooks';
 import { publicName } from '@/lib/publicName';
 import { useSession } from '@/providers/SessionProvider';
-import { Body } from '@/theme/typography';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const CONTA_TEXT = {
   noEmail: 'Sem email',
@@ -25,20 +22,26 @@ export const CONTA_TEXT = {
 
 function Field({ label, value, onPress, a11y }: { label: string; value: string; onPress?: () => void; a11y?: string }) {
   const body = (
-    <>
-      <View style={{ gap: spacing.sm }}>
-        <Text style={[type.fieldLabel, { opacity: layout.fieldLabelOpacity }]}>{label}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
-          <Text style={[type.fieldValue, { flexShrink: 1 }]} numberOfLines={1} selectable={!onPress}>
-            {value}
-          </Text>
-          {onPress ? (
-            <Feather name="arrow-right" size={layout.menuRowIcon} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
-          ) : null}
-        </View>
+    <View style={{ gap: space.s8 }}>
+      <Text71 variant="eyebrow13" color="textSubtle" numberOfLines={1}>
+        {label}
+      </Text71>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s8 }}>
+        <Text71 variant="body14" style={{ flex: 1, minWidth: 0 }} numberOfLines={1} selectable={!onPress}>
+          {value}
+        </Text71>
+        {onPress ? (
+          <Feather name="chevron-right" size={layout.fieldEye} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
+        ) : null}
       </View>
-      <View style={{ marginTop: spacing.sm, height: layout.fieldLineWidthActive, borderRadius: radius.line, backgroundColor: colors.primary }} />
-    </>
+      <View
+        style={{
+          height: onPress ? layout.fieldLineWidthActive : layout.fieldLineWidth,
+          borderRadius: radii.r8,
+          backgroundColor: onPress ? colors.primaryOnDark : colors.separator,
+        }}
+      />
+    </View>
   );
   if (!onPress) return <View accessible accessibilityLabel={`${label}: ${value}`}>{body}</View>;
   return (
@@ -75,22 +78,23 @@ export default function Conta() {
 
   return (
     <Screen padded="none">
-      <LionBackdrop blurred />
       <Header title="Conta S360" onBack={back} />
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: spacing.screenXWide, paddingTop: layout.settingsListTop, gap: spacing.md }}
+        contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.authContentTop, gap: layout.settingsFieldGap }}
       >
-        <Field label="Nome" value={name} a11y={`Nome público: ${name}. Mudar`} onPress={() => router.push('/perfil/nome')} />
+        <Field label="Nome público" value={name} a11y={`Nome público: ${name}. Mudar`} onPress={() => router.push('/perfil/nome')} />
         <Field label="Email" value={user?.email ?? CONTA_TEXT.noEmail} />
         {user?.providers.includes('password') ? (
           <Touchable
             accessibilityRole="button"
             accessibilityLabel="Mudar password"
             onPress={() => router.push('/definicoes/password')}
-            hitSlop={spacing.sm}
-            style={{ minHeight: layout.minTouch, justifyContent: 'center', alignSelf: 'flex-start' }}
+            hitSlop={space.s8}
+            style={{ minHeight: layout.minTouch, justifyContent: 'center', alignSelf: 'flex-start', marginTop: -space.s12 }}
           >
-            <Body variant="badgeSmall" style={{ textDecorationLine: 'underline' }}>Mudar password</Body>
+            <Text71 variant="captionStrong12" style={{ textDecorationLine: 'underline' }}>
+              Mudar password
+            </Text71>
           </Touchable>
         ) : null}
       </ScrollView>

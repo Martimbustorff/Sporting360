@@ -143,10 +143,10 @@ export const type = {
   newsMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
   // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)
-  welcomeLogo: { fontFamily: fonts.display, fontSize: 110, color: colors.white, textTransform: 'uppercase' }, // 565:8145
+  welcomeLogo: { fontFamily: fonts.display, fontSize: 155, lineHeight: 155, color: colors.white, textTransform: 'uppercase' }, // V7.1 13 Welcome (4940:7278): DIN Condensed 155
   welcomeTagline: { fontFamily: fonts.display, fontSize: 30, color: colors.white, textTransform: 'uppercase', textAlign: 'center' }, // 564:7256
   // Lock screen (Figma 310:9622, frame 348:37997): logo 565:21545, hint 348:38277
-  lockLogo: { fontFamily: fonts.display, fontSize: 48, color: colors.white, textTransform: 'uppercase' },
+  lockLogo: { fontFamily: fonts.display, fontSize: 68, lineHeight: 68, color: colors.white, textTransform: 'uppercase' }, // V7.1 48 Bloqueio: logo a 67,76 (DIN Condensed)
   // Home (Figma 1561:5056): name 1561:5135, "Sócio desde" label and value 1561:5136 (line height 27)
   homeName: { fontFamily: fonts.display, fontSize: 24, color: colors.white, textTransform: 'uppercase' },
   homeSinceLabel: { fontFamily: fonts.display, fontSize: 14, lineHeight: 27, color: colors.white, textTransform: 'uppercase' },
@@ -319,7 +319,6 @@ export const layout = {
   settingsFooterGap: 16, // SEM FIGMA: "Terminar sessão", "Apagar conta" e a versão empilhados
   settingsFooterBottom: 24, // "Log Out" (733) acima do indicador de início; o Screen já aplica a safe area
   settingsFormGap: 32, // Mudar password 348:26562: campos a 32 entre si
-  settingsButtonTop: 48, // SEM FIGMA no ecrã (teclado no frame): folga do último campo ao "Guardar"
   sheetShadow: { shadowColor: colors.black, shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.1, shadowRadius: 28, elevation: 16 },
   // Empty state (Figma 500:29854: Calendar_Check icon 122px, white at 30% inside the SVG)
   emptyIcon: 122,
@@ -393,13 +392,6 @@ export const layout = {
   videoGap: 8, // miniatura ao título
   videoListGap: 24, // entre vídeos
   videoCloseBarHeight: 44, // barra do "Fechar" em cima do leitor
-  // Welcome (Figma 564:7178)
-  welcomeRings: { width: 709.004, height: 709.029 }, // ring group 564:7180 (welcome-rings.svg)
-  welcomeRingsLift: 99, // ring/logo centre sits 49.5px above the screen centre (2 x 49.5)
-  welcomeLogoGap: 32, // between "S360" and the tagline (564:7253)
-  welcomeTaglineWidth: 302,
-  welcomeButtonsGap: 20, // between "Entrar" and "Criar uma conta"
-  welcomeBottom: 16, // under "Criar uma conta", above the home indicator
   // V7.1 Cartão do próximo jogo (Figma 4920:5140): altura fixa em todos os estados, para o menu não saltar
   matchCardHeight: 192,
   matchCardStrip: 36,
@@ -515,16 +507,13 @@ export const layout = {
   homeIndicator: 34, // iOS home indicator area included in Figma bottoms
   // Entrar / Criar conta / Recuperar (Figma 564:6896 / 564:6926 / 564:6956)
   // Lock screen (Figma 310:9622 / 348:37997, no keypad). Offsets are from the top of the 812px frame.
-  lockLogoTop: 77, // logo top; status bar is 44 of it
-  lockHintGap: 33, // logo bottom (111) to hint text (144)
-  lockHintWidth: 315,
   lockLion: { width: 669, height: 663, left: -40, top: 135 }, // "image 2" 348:37998 (clipped box)
   lockLionImage: { width: 899.6, height: 698.8, left: -271.5, top: -35.8 }, // crop inside the box: 134.46% x 105.4%, -40.59% / -5.4%
-  lockRings: { width: 659.006, height: 659.029, left: -5.94, top: -23.78 }, // Frame 39 (348:38002); same ring SVG as welcome at ~0.9295 scale
   lockTint: '#003625', // "Rectangle 954" 348:37999, over the lion
   lockTintOpacity: 0.5,
-  lockButtonsGap: 20,
+  lockButtonsGap: 12, // V7.1 48: botões a 12
   lockBottom: 16,
+  lockActionsBottom: 20, // V7.1 48: último botão a 20 do indicador de início
   lockScrim: 'rgba(0, 0, 0, 0.6)', // SEM FIGMA: backdrop behind the enable-biometrics prompt
   lockModalPad: 32,
   lockModalGap: 16,
@@ -536,16 +525,14 @@ export const layout = {
   homeBlockGap: 32, // SEM FIGMA: between name, next-game card and menu (card is not on 1561:5056)
   homeMenuSheetGap: 9, // V7.1: o menu acaba 9 pt acima da folha GameBox (nota 01)
   homeSheetExpandedRatio: 0.8, // SEM FIGMA: open GameBox sheet height as a share of the window (content in Task 24)
-  authContentTop: 32, // header bottom to the first field
-  authIntroTop: 24, // header bottom to the intro text (564:6971)
+  authContentTop: 36, // V7.1 13 a 21: fim do Header (114) ao primeiro campo (150)
+  authIntroTop: 36, // V7.1 16, 18, 21: fim do Header ao texto de introdução (150)
   authFieldsGap: 32,
-  authButtonGap: 16, // button to links / terms note
-  authLinksRowGap: 8,
-  authLinkGap: 8,
-  authBottom: 16, // last footer line to keyboard / bottom
-  authRecoverBottom: 30, // "Enviar" to keyboard / bottom
+  authButtonGap: 12, // V7.1: botões, ligações e nota empilhados a 12
+  authLinksRowGap: 12,
+  authLinkGap: 6, // V7.1 14 (4940:7374): texto e ação a 6
+  authBottom: 20, // V7.1 16, 21: último botão a 20 do indicador de início
   authMutedOpacity: 0.5,
-  authNoteWidth: 267, // terms note under "Criar conta"
   // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
   mvpRowHeight: 48, // SEM FIGMA: linha de candidato da tab MVP (referência raster 818:21193)
   // V7.1 MVP com notas (4934:7087): linha do jogador, caixa da nota, escolha (radio) e selo "Melhor nota"
@@ -667,7 +654,27 @@ export const layout = {
   scanSheetPadBottom: 10, // somado à área do indicador home
   scanSheetGap: 14,
   termsTop: 16, // header bottom to text (564:7169)
-  termsSectionGap: 12,
+  termsSectionGap: 20, // V7.1 17: secções a 20
+  termsTitleGap: 6, // V7.1 17: título e corpo a 6
+  // V7.1 Entrada, conta e bloqueio (frames 13 a 21b, 48, 48b)
+  welcomeRingsSize: 560, // 13 Welcome: anéis (4940:7187) a 560 pt
+  welcomeRingsOpacity: 0.22,
+  welcomeRingsRise: 37, // centro dos anéis 37 pt acima do centro do ecrã
+  welcomeLogoDrop: 98, // grupo S360 + frase centrado no espaço acima dos botões, 49 pt abaixo do centro
+  welcomeLogoGap: 8, // logo a frase (4940:7279)
+  welcomeActionsBottom: 8, // último botão a 8 pt do indicador de início (4940:7284)
+  authIntroGap: 24, // 16 Recuperar: texto, campo e mensagem a 24
+  authStackGap: 20, // 18 e 21: texto, botão, mensagem e campo a 20
+  noticePadX: 14, // mensagem em caixa (16, 18): padding 12 / 14
+  noticeGap: 8, // 18: visto e texto
+  noticeIcon: 18, // 18: visto
+  settingsFieldGap: 24, // 19 Conta S360: campos a 24
+  modalSheetGap: 16, // 48b: elementos da folha a 16
+  modalSheetGapLoose: 20, // 21b: elementos da folha a 20
+  modalSheetBottomExtra: 6, // folha: 40 em baixo = indicador de início (34) + 6
+  modalSheetIcon: 40, // 48b: ícone Face ID
+  lockLogoOffset: 48, // 48 Bloqueio: logo a 48 pt do fim da barra de estado (62 > 110)
+  lockHintGapV71: 22, // 48: logo (fim a 158) a frase (180)
   // V7.1 Marcadores e assistências (4935:7423)
   leaderChipPadX: 14, // chips de competição (4935:7464)
   leaderChipPadY: 7,

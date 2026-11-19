@@ -1,7 +1,5 @@
-// Figma: nó 348:26553 (Mudar Pass: fundo `bg`, campos a 128 com 32 entre si, "Password actual" e "Nova password" com o
-// olho, "Guardar" branco). Campos com TextField (564:6907 / 564:6938) e botão com PrimaryButton (564:7259).
-// "Password actual" passa a "Password atual" (pt-PT atual). SEM FIGMA: as mensagens e a conta sem password.
-// O "Guardar" fica por baixo dos campos (no frame está por cima do teclado).
+// Figma V7.1: nó 4941:7604 (20 Mudar password): campos "Password atual" e "Nova password" com o olho, a 32 entre si, e
+// "Guardar" em Branco logo por baixo (a 32). SEM FIGMA: as mensagens e a conta sem password.
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -13,7 +11,7 @@ import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { useSession } from '@/providers/SessionProvider';
 import { CHANGE_PASSWORD_TEXT, MIN_PASSWORD_LENGTH, changePassword } from '@/services/account';
-import { layout, spacing } from '@/theme/tokens';
+import { layout, space } from '@/theme/tokens';
 
 export const PASSWORD_TEXT = {
   tooShort: CHANGE_PASSWORD_TEXT.tooShort,
@@ -65,7 +63,7 @@ export default function Password() {
       ) : (
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: spacing.authX, paddingTop: layout.settingsListTop }}
+          contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.authContentTop }}
         >
           <View style={{ gap: layout.settingsFormGap }}>
             <TextField
@@ -85,10 +83,11 @@ export default function Password() {
               textContentType="newPassword"
             />
           </View>
-          <View style={{ marginTop: layout.settingsButtonTop, gap: spacing.md }}>
+          <View style={{ marginTop: layout.settingsFormGap, gap: space.s16 }}>
             {message ? <FormMessage text={message.text} tone={message.tone} /> : null}
             <PrimaryButton
               label="Guardar"
+              variant="white"
               onPress={() => void submit()}
               loading={busy}
               disabled={current.length === 0 || next.length === 0}

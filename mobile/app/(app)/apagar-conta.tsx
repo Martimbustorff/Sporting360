@@ -1,26 +1,38 @@
-// SEM FIGMA: ecrã e folha da password não desenhados. Compõe AuthScaffold (Header + rodapé acima do teclado),
-// TextField, PrimaryButton e FormMessage; a folha segue o modal "Ativar Face ID?" do BiometricGate (tokens).
-// Não há token de cor "destrutivo": o botão é o PrimaryButton normal (a validar pelo Martim).
+// Figma V7.1: ficheiro R3IhhyNxNZuVINgUtJjZE3, nós 4941:7664 (21 Apagar conta) e 4941:7718 (21b Confirmar password).
+// Compõe AuthScaffold (Header + rodapé acima do teclado), TextField, PrimaryButton e a ModalSheet escura.
+// "Apagar conta" é o botão Branco (texto primary sobre branco, contraste 4,8:1), nunca encarnado (decisão do Martim).
 // Task 16: apaga a conta (App Store: apagar dentro da app + revogar o token Apple, R9 em services/account.ts).
 // Confirmação: escrever APAGAR exatamente (maiúsculas, sem aparar espaços). R17: depois de apagar a sessão termina
 // e a guarda de (app) leva ao Welcome com "Conta apagada.".
+// 21b: em contas que entram só com password, a folha "Confirma a tua password" aparece SEMPRE antes de apagar (antes só
+// aparecia se o servidor pedisse login recente). Google e Apple (e contas com os dois) mantêm a reautenticação de sempre.
 import { useRef, useState } from 'react';
-import { Modal, Text, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthScaffold, FormMessage } from '@/components/AuthForm';
+import { ModalSheet } from '@/components/ModalSheet';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { TextField } from '@/components/TextField';
 import { deleteMyAccount, providerReauth, reauthenticateWithPassword, type ReauthOutcome } from '@/services/account';
 import { signOut } from '@/services/auth';
 import { authInstance } from '@/services/firebase';
-import { colors, layout, radius, type } from '@/theme/tokens';
+import { useSession } from '@/providers/SessionProvider';
+import { Text71 } from '@/theme/typography';
+import { layout } from '@/theme/tokens';
 
 const CONFIRM_WORD = 'APAGAR';
 
+/** Textos da folha 21b (aprovados pelo Martim, 19/11). */
+export const APAGAR_TEXT = {
+  sheetTitle: 'Confirma a tua password',
+  sheetBody: 'Por segurança, indica a password antes de apagarmos a conta.',
+} as const;
+
 export default function ApagarConta() {
   const router = useRouter();
+  const session = useSession();
+  const providers = session.status === 'signedIn' ? session.user.providers : [];
+  // Só password (sem Google nem Apple): a folha da password abre sempre antes de apagar.
+  const passwordOnly = providers.includes('password') && !providers.includes('google.com') && !providers.includes('apple.com');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +62,12 @@ export default function ApagarConta() {
     setError(null);
     setLoading(true);
     try {
+      if (passwordOnly && (await askPassword()) === 'cancelled') {
+        // Sem password confirmada não se apaga nada: cancelar volta ao ecrã tal como estava.
+        busy.current = false;
+        setLoading(false);
+        return;
+      }
       const r = await deleteMyAccount(providerReauth(askPassword));
       // 'deleted' com a sessão terminada: a guarda de (app) já está a sair deste ecrã; não mexer no estado.
       // currentUser é a fonte síncrona (o estado React da sessão só muda no próximo render).
@@ -76,17 +94,18 @@ export default function ApagarConta() {
         title="Apagar conta"
         fallbackHref="/"
         contentTop={layout.authIntroTop}
+        fieldsGap={layout.authStackGap}
         footer={
           <>
             {error ? <FormMessage text={error} /> : null}
-            <PrimaryButton label="Apagar conta" onPress={() => void submit()} loading={loading} disabled={!enabled} />
+            <PrimaryButton label="Apagar conta" variant="white" onPress={() => void submit()} loading={loading} disabled={!enabled} />
           </>
         }
       >
-        <Text style={type.authIntro}>
+        <Text71 variant="bodyLight14">
           Ao apagar a conta, apagamos o teu perfil, GameBox, prognósticos, votos e pontos. Não é possível recuperá-los.
-        </Text>
-        <Text style={type.authIntro}>{`Para confirmar, escreve ${CONFIRM_WORD}.`}</Text>
+        </Text71>
+        <Text71 variant="bodyLight14">{`Para confirmar, escreve ${CONFIRM_WORD}.`}</Text71>
         <TextField
           label={`Escreve ${CONFIRM_WORD}`}
           value={confirm}
@@ -103,7 +122,6 @@ export default function ApagarConta() {
 }
 
 function PasswordSheet({ onDone }: { onDone: (r: ReauthOutcome) => void }) {
-  const { bottom } = useSafeAreaInsets();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -126,39 +144,27 @@ function PasswordSheet({ onDone }: { onDone: (r: ReauthOutcome) => void }) {
   };
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={() => onDone('cancelled')}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            padding: layout.lockModalPad,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
-            gap: layout.lockModalGap,
-          }}
-        >
-          <Text style={type.screenTitle} accessibilityRole="header">
-            Confirma a password
-          </Text>
-          <Text style={type.authIntro}>Por segurança, escreve a tua password para apagar a conta.</Text>
-          <TextField
-            label="Password"
-            value={password}
-            onChangeText={(v) => {
-              setPassword(v);
-              setError(null);
-            }}
-            secure
-            autoComplete="current-password"
-            textContentType="password"
-          />
-          {error ? <FormMessage text={error} /> : null}
-          <PrimaryButton label="Confirmar" onPress={() => void confirm()} loading={loading} disabled={!password} />
-          <PrimaryButton label="Cancelar" variant="secondary" onPress={() => onDone('cancelled')} />
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+    <ModalSheet gap="loose" onClose={() => onDone('cancelled')}>
+      <Text71 variant="titleS20" accessibilityRole="header">
+        {APAGAR_TEXT.sheetTitle}
+      </Text71>
+      <Text71 variant="bodyLight14" color="textMuted">
+        {APAGAR_TEXT.sheetBody}
+      </Text71>
+      <TextField
+        label="Password"
+        value={password}
+        onChangeText={(v) => {
+          setPassword(v);
+          setError(null);
+        }}
+        secure
+        error={error ?? undefined}
+        autoComplete="current-password"
+        textContentType="password"
+      />
+      <PrimaryButton label="Confirmar" variant="white" onPress={() => void confirm()} loading={loading} disabled={!password} />
+      <PrimaryButton label="Cancelar" variant="outline" onPress={() => onDone('cancelled')} />
+    </ModalSheet>
   );
 }

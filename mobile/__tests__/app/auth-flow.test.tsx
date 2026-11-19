@@ -45,7 +45,8 @@ jest.mock('expo-apple-authentication', () => {
 
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 import { authErrorMessage } from '@/lib/authErrors';
-import { Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { colors } from '@/theme/tokens';
 import { sendReset, signInEmail, signUpEmail } from '@/services/auth';
 import { signInWithApple, signInWithGoogle } from '@/services/social';
 
@@ -121,6 +122,15 @@ describe('Welcome', () => {
   it('os anéis são uma só imagem', async () => {
     await renderRouter(ROUTES, { initialUrl: '/welcome' });
     expect(screen.getAllByTestId('welcome-rings')).toHaveLength(1);
+  });
+
+  it('V7.1: "Entrar" é Branco, "Criar uma conta" é Contorno, tagline com Verde e Branco', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/welcome' });
+    const entrar = StyleSheet.flatten(screen.getByRole('button', { name: 'Entrar' }).props.style);
+    expect(entrar.backgroundColor).toBe(colors.white);
+    const criar = StyleSheet.flatten(screen.getByRole('button', { name: 'Criar uma conta' }).props.style);
+    expect(criar.backgroundColor).toBeUndefined();
+    expect(criar.borderColor).toBe(colors.white);
   });
 
   it('sem aviso não mostra "Conta apagada."', async () => {
@@ -303,11 +313,29 @@ describe('Criar conta', () => {
   });
 });
 
+describe('V7.1: botões e erros', () => {
+  it('Entrar: "Entrar" é Branco e o erro aparece por baixo do campo da password', async () => {
+    await renderRouter(ROUTES, { initialUrl: '/entrar' });
+    const btn = screen.getByRole('button', { name: 'Entrar' });
+    expect(StyleSheet.flatten(btn.props.style).backgroundColor).toBe(colors.white);
+    await fireEvent.press(btn);
+    const err = screen.getByText('Indica o email e a password.');
+    expect(StyleSheet.flatten(err.props.style).color).toBe(colors.danger);
+  });
+
+  it('Criar conta: "Criar conta" é Branco e tem os botões Google e Apple', async () => {
+    Platform.OS = 'ios';
+    await renderRouter(ROUTES, { initialUrl: '/criar-conta' });
+    expect(StyleSheet.flatten(screen.getByRole('button', { name: 'Criar conta' }).props.style).backgroundColor).toBe(colors.white);
+    expect(screen.getByRole('button', { name: 'Continuar com o Google' })).toBeTruthy();
+  });
+});
+
 describe('Recuperar password', () => {
   it('sucesso mostra a mensagem neutra', async () => {
     (sendReset as jest.Mock).mockResolvedValue(undefined);
     await renderRouter(ROUTES, { initialUrl: '/recuperar-password' });
-    expect(screen.getByText('Indica o teu email para receberes uma nova password.')).toBeTruthy();
+    expect(screen.getByText('Indica o email da tua conta. Enviamos um link para criares uma password nova.')).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText('Email'), ' Z@X.pt ');
     await fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
     expect(sendReset).toHaveBeenCalledWith('z@x.pt');

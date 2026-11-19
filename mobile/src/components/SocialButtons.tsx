@@ -2,7 +2,7 @@
 // Apple (só iOS): botão oficial (AppleAuthenticationButton CONTINUE, WHITE) com a mesma altura e raio, mais a nota do email oculto.
 // Sucesso: a sessão passa a signedIn e a guarda de (auth) leva para a app.
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { Image } from 'expo-image';
 import {
   AppleAuthenticationButton,
@@ -13,7 +13,7 @@ import { FormMessage } from '@/components/AuthForm';
 import { Touchable } from '@/components/Touchable';
 import { NEEDS_EXISTING_LOGIN_MESSAGE, signInWithApple, signInWithGoogle, type SocialResult } from '@/services/social';
 import { Text71 } from '@/theme/typography';
-import { colors, layout, type } from '@/theme/tokens';
+import { colors, layout } from '@/theme/tokens';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const GOOGLE_G = require('../../assets/images/google-g.svg');
@@ -58,7 +58,9 @@ export function SocialButtons() {
             onPress={() => void run('apple', signInWithApple)}
           />
           {/* Spec §9: quem escolhe "ocultar o meu email" e já tem conta deve entrar com o método habitual. */}
-          <Text style={[type.authNote, { opacity: layout.authMutedOpacity }]}>{NEEDS_EXISTING_LOGIN_MESSAGE}</Text>
+          <Text71 variant="caption12" color="textSubtle" style={{ textAlign: 'center' }}>
+            {NEEDS_EXISTING_LOGIN_MESSAGE}
+          </Text71>
         </>
       ) : null}
     </View>

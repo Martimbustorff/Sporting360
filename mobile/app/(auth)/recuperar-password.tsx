@@ -1,11 +1,12 @@
-// Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:6956 (05_Lost Pass, "Recuperar Pass").
+// Figma V7.1: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 4941:7389 (16 Recuperar password). Texto Body Light a 70 %, campo,
+// mensagem em caixa (surface-06) e "Enviar" em Branco em baixo. Erro de validação por baixo do campo.
 import { useRef, useState } from 'react';
-import { Text } from 'react-native';
-import { AuthScaffold, FormMessage } from '@/components/AuthForm';
+import { AuthScaffold, NoticeBox } from '@/components/AuthForm';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { TextField } from '@/components/TextField';
 import { sendReset } from '@/services/auth';
-import { layout, type } from '@/theme/tokens';
+import { Text71 } from '@/theme/typography';
+import { layout } from '@/theme/tokens';
 
 // R18: sucesso e email inexistente dão a mesma mensagem.
 const SENT = 'Se existir uma conta com este email, vais receber um link para mudar a password.';
@@ -51,25 +52,22 @@ export default function RecuperarPassword() {
     <AuthScaffold
       title="Recuperar Pass"
       contentTop={layout.authIntroTop}
-      bottom={layout.authRecoverBottom}
-      footer={
-        <>
-          {error ? <FormMessage text={error} /> : null}
-          {sent ? <FormMessage text={SENT} tone="info" /> : null}
-          <PrimaryButton label="Enviar" onPress={() => void submit()} loading={loading} />
-        </>
-      }
+      fieldsGap={layout.authIntroGap}
+      footer={<PrimaryButton label="Enviar" variant="white" onPress={() => void submit()} loading={loading} />}
     >
-      <Text style={type.authIntro}>Indica o teu email para receberes uma nova password.</Text>
+      <Text71 variant="bodyLight14" color="textMuted">
+        Indica o email da tua conta. Enviamos um link para criares uma password nova.
+      </Text71>
       <TextField
         label="Email"
         value={email}
         onChangeText={setEmail}
-        error={fieldError}
+        error={fieldError ?? error ?? undefined}
         keyboardType="email-address"
         autoComplete="email"
         textContentType="emailAddress"
       />
+      {sent ? <NoticeBox text={SENT} /> : null}
     </AuthScaffold>
   );
 }

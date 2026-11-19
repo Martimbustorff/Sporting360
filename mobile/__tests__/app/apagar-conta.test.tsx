@@ -18,7 +18,9 @@ jest.mock('@/data/sports', () => ({ useHomeMatches: () => ({ status: 'loading' }
 jest.mock('@/data/user', () => ({ useMyMvpVote: () => ({ status: 'missing' }) }));
 
 type S = { status: 'loading' | 'signedOut' | 'signedIn'; user: unknown };
-const SIGNED_IN: S = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } };
+// Por omissão a conta entra com o Google (sem folha da password); `usePasswordAccount()` passa-a a só password (21b).
+const SIGNED_IN: S = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['google.com'] } };
+const SIGNED_IN_PASSWORD: S = { status: 'signedIn', user: { uid: 'u1', email: 'ze@x.pt', providers: ['password'] } };
 const mockStore = {
   value: SIGNED_IN as S,
   listeners: new Set<() => void>(),
@@ -38,8 +40,9 @@ jest.mock('@/providers/SessionProvider', () => ({
     ),
 }));
 jest.mock('@/providers/BiometricGate', () => ({ BiometricGate: ({ children }: { children: unknown }) => children }));
-const MOCK_USER = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'password' }] };
-const mockAuth: { currentUser: typeof MOCK_USER | null } = { currentUser: MOCK_USER };
+const MOCK_USER = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'google.com' }] };
+const PASSWORD_USER = { uid: 'u1', email: 'ze@x.pt', providerData: [{ providerId: 'password' }] };
+const mockAuth: { currentUser: typeof MOCK_USER | typeof PASSWORD_USER | null } = { currentUser: MOCK_USER };
 jest.mock('@/services/firebase', () => ({
   authInstance: jest.fn(() => ({ __mock: 'auth', currentUser: mockAuth.currentUser })),
   fns: jest.fn(() => ({ __mock: 'functions' })),
@@ -76,11 +79,13 @@ jest.mock('expo-apple-authentication', () => {
   };
 });
 
-import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
+import { StyleSheet } from 'react-native';
+import { act, fireEvent, renderRouter, screen, within } from 'expo-router/testing-library';
 import { reauthenticateWithCredential } from '@react-native-firebase/auth';
 import { httpsCallable } from '@react-native-firebase/functions';
 import { clearSignOutNotice } from '@/lib/signOutNotice';
 import { signOut } from '@/services/auth';
+import { colors } from '@/theme/tokens';
 import { setBiometricEnabled } from '@/services/biometrics';
 
 import AuthLayout from '../../app/(auth)/_layout';
@@ -103,6 +108,10 @@ const mockDelete = jest.fn();
 const REAUTH = Object.assign(new Error('REAUTH_REQUIRED'), { code: 'failed-precondition' });
 const deleteBtn = () => screen.getByRole('button', { name: 'Apagar conta' });
 const confirmField = () => screen.getByLabelText('Escreve APAGAR');
+const usePasswordAccount = () => {
+  mockStore.value = SIGNED_IN_PASSWORD;
+  mockAuth.currentUser = PASSWORD_USER;
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -157,42 +166,102 @@ it('o aviso só aparece uma vez: um signOut normal depois não o mostra', async 
   expect(screen.queryByText('Conta apagada.')).toBeNull();
 });
 
-it('REAUTH_REQUIRED com password: folha da password; errada mostra a mensagem; certa apaga', async () => {
-  mockDelete.mockRejectedValueOnce(REAUTH).mockResolvedValueOnce({ data: { ok: true, deleted: 1 } });
-  (reauthenticateWithCredential as jest.Mock)
-    .mockRejectedValueOnce({ code: 'auth/wrong-password' })
-    .mockResolvedValueOnce({ user: {} });
-  const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
-  await fireEvent.changeText(confirmField(), 'APAGAR');
-  await fireEvent.press(deleteBtn());
-  await act(async () => {});
-  const pw = screen.getByLabelText('Password');
-  expect(pw.props.textContentType).toBe('password');
-  expect(pw.props.secureTextEntry).toBe(true);
-  await fireEvent.changeText(pw, 'errada');
-  await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
-  expect(screen.getByText('Email ou password incorretos.')).toBeTruthy();
-  expect(signOut).not.toHaveBeenCalled();
-  await fireEvent.changeText(screen.getByLabelText('Password'), 'certa1');
-  await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
-  await act(async () => {});
-  expect(mockDelete).toHaveBeenCalledTimes(2);
-  expect(r.getPathname()).toBe('/welcome');
-  expect(screen.getByText('Conta apagada.')).toBeTruthy();
+it('"Apagar conta" é o botão Branco (fundo branco, texto primary), nunca encarnado', async () => {
+  await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+  const btn = StyleSheet.flatten(deleteBtn().props.style);
+  expect(btn.backgroundColor).toBe(colors.white);
+  expect(btn.backgroundColor).not.toBe(colors.danger);
+  expect(StyleSheet.flatten(within(deleteBtn()).getByText('Apagar conta').props.style).color).toBe(colors.primary);
 });
 
-it('folha da password cancelada: fica no ecrã, sem signOut', async () => {
-  mockDelete.mockRejectedValueOnce(REAUTH);
-  const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+describe('21b: conta só com password', () => {
+  beforeEach(usePasswordAccount);
+
+  it('a folha "Confirma a tua password" abre antes de apagar, com o texto aprovado, e nada é apagado até confirmar', async () => {
+    (reauthenticateWithCredential as jest.Mock).mockResolvedValue({ user: {} });
+    const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    expect(screen.getByText('Confirma a tua password')).toBeTruthy();
+    expect(screen.getByText('Por segurança, indica a password antes de apagarmos a conta.')).toBeTruthy();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    // sem password escrita, "Confirmar" está desativado e não apaga
+    expect(screen.getByRole('button', { name: 'Confirmar' }).props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    expect(mockDelete).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'certa1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    await act(async () => {});
+    expect(reauthenticateWithCredential).toHaveBeenCalledTimes(1);
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(r.getPathname()).toBe('/welcome');
+    expect(screen.getByText('Conta apagada.')).toBeTruthy();
+  });
+
+  it('password errada mostra a mensagem e não apaga; a certa apaga', async () => {
+    (reauthenticateWithCredential as jest.Mock)
+      .mockRejectedValueOnce({ code: 'auth/wrong-password' })
+      .mockResolvedValueOnce({ user: {} });
+    await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    const pw = screen.getByLabelText('Password');
+    expect(pw.props.textContentType).toBe('password');
+    expect(pw.props.secureTextEntry).toBe(true);
+    await fireEvent.changeText(pw, 'errada');
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    expect(screen.getByText('Email ou password incorretos.')).toBeTruthy();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'certa1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    await act(async () => {});
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancelar a folha: fica no ecrã, nada apagado, sem signOut', async () => {
+    const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
+    await act(async () => {});
+    expect(screen.queryByLabelText('Password')).toBeNull();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(r.getPathname()).toBe('/apagar-conta');
+    expect(deleteBtn().props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('se o servidor ainda pedir login recente (REAUTH_REQUIRED), pede a password outra vez e só então apaga', async () => {
+    mockDelete.mockRejectedValueOnce(REAUTH).mockResolvedValueOnce({ data: { ok: true, deleted: 1 } });
+    (reauthenticateWithCredential as jest.Mock).mockResolvedValue({ user: {} });
+    const r = await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
+    await fireEvent.changeText(confirmField(), 'APAGAR');
+    await fireEvent.press(deleteBtn());
+    await act(async () => {});
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'certa1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    await act(async () => {});
+    // segunda folha (REAUTH_REQUIRED)
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'certa1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirmar' }));
+    await act(async () => {});
+    expect(mockDelete).toHaveBeenCalledTimes(2);
+    expect(r.getPathname()).toBe('/welcome');
+  });
+});
+
+it('conta Google: sem folha da password, apaga direto (a reautenticação social mantém-se no serviço)', async () => {
+  await renderRouter(ROUTES, { initialUrl: '/apagar-conta' });
   await fireEvent.changeText(confirmField(), 'APAGAR');
   await fireEvent.press(deleteBtn());
   await act(async () => {});
-  await fireEvent.press(screen.getByRole('button', { name: 'Cancelar' }));
-  await act(async () => {});
-  expect(screen.queryByLabelText('Password')).toBeNull();
-  expect(signOut).not.toHaveBeenCalled();
-  expect(r.getPathname()).toBe('/apagar-conta');
-  expect(deleteBtn().props.accessibilityState.disabled).toBe(false);
+  expect(screen.queryByText('Confirma a tua password')).toBeNull();
+  expect(mockDelete).toHaveBeenCalledTimes(1);
 });
 
 it('outro erro da callable: mensagem genérica, sessão mantém-se', async () => {

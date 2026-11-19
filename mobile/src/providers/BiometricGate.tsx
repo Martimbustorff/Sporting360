@@ -1,17 +1,17 @@
-// Figma: ecrã de bloqueio segue o frame 348:37997 (secção 310:9622, "PIN Code") SEM o teclado e os pontos do PIN:
-// logótipo 565:21545 (DIN 48, "S" verde) a 77px do topo, texto a 144px, leão "image 2" 348:37998 ao fundo.
-// Os botões ocupam o lugar do teclado e seguem o par de botões do Welcome (564:7259 / 564:7261).
-// Anéis (Group 1743): o SVG do Welcome (72 elipses iguais) a 659,006x659,029 (escala ~0,9295) na posição da Frame 39.
-// "Ellipse 7" (348:38001) usa o mesmo asset da máscara da Frame 39 (e0688.svg): é só máscara, não um fundo visível.
-// A máscara não é reproduzida (RN não tem máscara elíptica sem SVG); a validar com o Martim.
-// "Rectangle 954" (348:37999) é o verde do Figma a 50% por cima do leão.
-// SEM FIGMA: a folha "Ativar {label}?" (modal feito com tokens) e o estado "não foi possível desbloquear".
+// Figma V7.1: ecrã de bloqueio 4953:9027 (48 Bloqueio) e folha 4953:9206 (48b Ativar Face ID). O fundo é o "Home backdrop"
+// (LionBackdrop: leão a 62 %, anéis, verde bg-tint a 60 % e esbatido em baixo); logo "S360" DIN Condensed 68 centrado a 48 pt
+// da barra de estado, frase Body 14 a 22 pt do logo, e os botões em baixo a 12: "Desbloquear com {label}" (Branco) e
+// "Entrar com outra conta" (Contorno). A folha 48b é a ModalSheet escura com o ícone, o título Title S 20, o texto
+// Body Light a 70 % e "Ativar" (Branco) / "Agora não" (Contorno).
+// SEM FIGMA: o estado "não foi possível desbloquear" usa a mesma frase no lugar de "A S360 está bloqueada." (nota do frame).
 // Task 26 (Plano 4): `useBiometricControl` dá às Definições o estado e o interruptor. Ligar pede logo o Face ID (como
 // "Ativar"); ligar e desligar mudam `enabledRef` de imediato, sem esperar pelo próximo arranque.
-import { Image } from 'expo-image';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Modal, StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LionBackdrop } from '@/components/LionBackdrop';
+import { ModalSheet } from '@/components/ModalSheet';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { shouldLock } from '@/lib/biometricPolicy';
 import { consumeColdStart } from '@/lib/lockSession';
@@ -28,12 +28,8 @@ import {
   setBiometricPromptAnswered,
   unlock,
 } from '@/services/biometrics';
-import { colors, layout, radius, spacing, type } from '@/theme/tokens';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const LION = require('../../assets/images/lock-lion.png');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const RINGS = require('../../assets/images/welcome-rings.svg');
+import { Text71 } from '@/theme/typography';
+import { colors, layout, space, type } from '@/theme/tokens';
 
 type Phase = 'checking' | 'locked' | 'open';
 
@@ -336,72 +332,51 @@ function LockScreen({
   onOtherAccount: () => void;
 }) {
   const { top, bottom } = useSafeAreaInsets();
-  const paddingTop = Math.max(top, layout.statusBarHeight) + (layout.lockLogoTop - layout.statusBarHeight);
-  const paddingBottom = Math.max(bottom, layout.homeIndicator) + layout.lockBottom;
+  const paddingTop = top + layout.lockLogoOffset;
+  const paddingBottom = Math.max(bottom, layout.homeIndicator) + layout.lockActionsBottom;
   return (
     <View testID="lock-screen" accessibilityViewIsModal style={[StyleSheet.absoluteFill, { backgroundColor: colors.black }]}>
-      <View pointerEvents="none" style={[styles.lion, layout.lockLion]}>
-        <Image source={LION} accessible={false} contentFit="fill" style={[styles.lionImage, layout.lockLionImage]} />
-      </View>
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: layout.lockTint, opacity: layout.lockTintOpacity }]}
-      />
-      <Image
-        testID="lock-rings"
-        source={RINGS}
-        accessible={false}
-        style={[styles.lionImage, layout.lockRings, { pointerEvents: 'none' }]}
-      />
+      <LionBackdrop />
       <View style={{ paddingTop, alignItems: 'center' }}>
         <Text style={type.lockLogo} accessibilityRole="header" accessibilityLabel="S360">
           <Text style={{ color: colors.primary }}>S</Text>360
         </Text>
-        <Text
+        <Text71
+          variant="body14"
           accessibilityLiveRegion="polite"
-          style={[type.authIntro, { width: layout.lockHintWidth, textAlign: 'center', marginTop: layout.lockHintGap }]}
+          style={{ textAlign: 'center', marginTop: layout.lockHintGapV71 }}
         >
           {failed ? 'Não foi possível desbloquear.' : 'A S360 está bloqueada.'}
-        </Text>
+        </Text71>
       </View>
       <View
-        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.authX, paddingBottom, gap: layout.lockButtonsGap }}
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.s24, paddingBottom, gap: layout.lockButtonsGap }}
       >
-        <PrimaryButton label={failed ? 'Tentar outra vez' : `Desbloquear com ${label}`} onPress={onUnlock} disabled={busy} />
-        <PrimaryButton label="Entrar com outra conta" variant="secondary" onPress={onOtherAccount} disabled={busy} />
+        <PrimaryButton label={failed ? 'Tentar outra vez' : `Desbloquear com ${label}`} variant="white" onPress={onUnlock} disabled={busy} />
+        <PrimaryButton label="Entrar com outra conta" variant="outline" onPress={onOtherAccount} disabled={busy} />
       </View>
     </View>
   );
 }
 
 function EnablePrompt({ label, onEnable, onLater }: { label: BiometricLabel; onEnable: () => void; onLater: () => void }) {
-  const { bottom } = useSafeAreaInsets();
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onLater}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: layout.lockScrim }}>
-        <View
-          accessibilityViewIsModal
-          style={{
-            backgroundColor: colors.bg,
-            borderTopLeftRadius: radius.sheet,
-            borderTopRightRadius: radius.sheet,
-            padding: layout.lockModalPad,
-            paddingBottom: Math.max(bottom, layout.homeIndicator) + layout.lockBottom,
-            gap: layout.lockModalGap,
-          }}
-        >
-          <Text style={type.screenTitle} accessibilityRole="header">{`Ativar ${label}?`}</Text>
-          <Text style={type.authIntro}>{`Usa ${label} para abrir a S360 mais depressa, sem escreveres a palavra-passe.`}</Text>
-          <PrimaryButton label="Ativar" onPress={onEnable} />
-          <PrimaryButton label="Agora não" variant="secondary" onPress={onLater} />
-        </View>
-      </View>
-    </Modal>
+    <ModalSheet onClose={onLater}>
+      <Ionicons
+        name={label === 'Touch ID' || label === 'impressão digital' ? 'finger-print-outline' : 'scan-outline'}
+        size={layout.modalSheetIcon}
+        color={colors.white}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+      <Text71 variant="titleS20" accessibilityRole="header">{`Ativar ${label}?`}</Text71>
+      <Text71 variant="bodyLight14" color="textMuted">{`Usa ${label} para abrir a S360 mais depressa, sem escreveres a palavra-passe.`}</Text71>
+      <PrimaryButton label="Ativar" variant="white" onPress={onEnable} />
+      <PrimaryButton label="Agora não" variant="outline" onPress={onLater} />
+    </ModalSheet>
   );
 }
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  lion: { position: 'absolute', overflow: 'hidden' },
-  lionImage: { position: 'absolute' },
 });

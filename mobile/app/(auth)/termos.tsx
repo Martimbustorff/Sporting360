@@ -1,4 +1,4 @@
-// Figma: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 564:7164 (Terms, "Termos e CondiçÕes"). Conteúdo em TermsView.
+// Figma V7.1: ficheiro R3IhhyNxNZuVINgUtJjZE3, nó 4941:7444 (17 Termos e condições). Conteúdo em TermsView.
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';

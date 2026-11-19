@@ -1,13 +1,15 @@
-// Estrutura comum de Entrar / Criar conta / Recuperar (Figma 564:6896, 564:6926, 564:6956):
-// Header com voltar, campos a 32px do header, rodapé (botão + links) encostado em baixo, acima do teclado.
+// Estrutura comum de Entrar / Criar conta / Recuperar e dos ecrãs de conta (Figma V7.1 14, 15, 16, 21, 23, 24):
+// Header com voltar, campos a 36 do Header, rodapé (botões e ligações a 12) encostado em baixo, acima do teclado.
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
+import { ScrollView, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { Header } from '@/components/Header';
 import { Screen } from '@/components/Screen';
-import { Body } from '@/theme/typography';
-import { colors, layout, spacing, type } from '@/theme/tokens';
+import { Touchable } from '@/components/Touchable';
+import { Text71 } from '@/theme/typography';
+import { colors, layout, radii, space } from '@/theme/tokens';
 
 export function AuthScaffold({
   title,
@@ -15,6 +17,7 @@ export function AuthScaffold({
   footer,
   contentTop = layout.authContentTop,
   bottom = layout.authBottom,
+  fieldsGap = layout.authFieldsGap,
   fallbackHref = '/welcome',
 }: {
   title: string;
@@ -22,6 +25,8 @@ export function AuthScaffold({
   footer: ReactNode;
   contentTop?: number;
   bottom?: number;
+  /** Espaço entre os blocos de cima (campos e textos); 32 por omissão. */
+  fieldsGap?: number;
   /** Para onde "Voltar" leva quando não há histórico (ecrãs de (app) usam '/'). */
   fallbackHref?: '/welcome' | '/';
 }) {
@@ -37,12 +42,12 @@ export function AuthScaffold({
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             flexGrow: 1,
-            paddingHorizontal: spacing.authX,
+            paddingHorizontal: space.s24,
             paddingTop: contentTop,
             paddingBottom: bottom,
           }}
         >
-          <View style={{ gap: layout.authFieldsGap }}>{children}</View>
+          <View style={{ gap: fieldsGap }}>{children}</View>
           <View className="flex-1" style={{ minHeight: layout.authFieldsGap }} />
           <View style={{ gap: layout.authButtonGap }}>{footer}</View>
         </ScrollView>
@@ -51,14 +56,18 @@ export function AuthScaffold({
   );
 }
 
-/** Linha "texto a 50% + ação a verde" (Figma 564:6900 / 564:6903). */
+/** Linha "texto Caption 12 text-muted + ação Caption Strong primary-on-dark" (Figma 4940:7374). */
 export function AuthLinkRow({ text, action, onPress }: { text: string; action: string; onPress: () => void }) {
   return (
     <View className="flex-row items-center justify-center" style={{ gap: layout.authLinkGap }}>
-      <Text style={[type.authLink, { opacity: layout.authMutedOpacity }]}>{text}</Text>
-      <Pressable accessibilityRole="link" accessibilityLabel={action} onPress={onPress} hitSlop={12}>
-        <Text style={type.authLinkAction}>{action}</Text>
-      </Pressable>
+      <Text71 variant="caption12" color="textMuted">
+        {text}
+      </Text71>
+      <Touchable accessibilityRole="link" accessibilityLabel={action} onPress={onPress} hitSlop={space.s12}>
+        <Text71 variant="captionStrong12" color="primaryOnDark">
+          {action}
+        </Text71>
+      </Touchable>
     </View>
   );
 }
@@ -66,13 +75,46 @@ export function AuthLinkRow({ text, action, onPress }: { text: string; action: s
 /** Mensagem do formulário: erro (vermelho, alerta) ou informação neutra. SEM FIGMA (estado não desenhado). */
 export function FormMessage({ text, tone = 'error' }: { text: string; tone?: 'error' | 'info' }) {
   return (
-    <Body
-      variant="body"
+    <Text71
+      variant="body14"
       accessibilityRole={tone === 'error' ? 'alert' : undefined}
       accessibilityLiveRegion="polite"
-      style={[{ textAlign: 'center' }, tone === 'error' ? { color: colors.cardRed } : null]}
+      color={tone === 'error' ? 'danger' : 'white'}
+      style={{ textAlign: 'center' }}
     >
       {text}
-    </Body>
+    </Text71>
+  );
+}
+
+/** Mensagem em caixa (Figma 4941:7389 "Mensagem enviada", 4941:7496 "Depois de ligar"): surface-06, raio 12, padding 12 / 14. */
+export function NoticeBox({ text, check = false }: { text: string; check?: boolean }) {
+  return (
+    <View
+      testID="notice-box"
+      accessibilityLiveRegion="polite"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: check ? layout.noticeGap : space.s12,
+        backgroundColor: colors.surface06,
+        borderRadius: radii.r12,
+        paddingVertical: space.s12,
+        paddingHorizontal: layout.noticePadX,
+      }}
+    >
+      {check ? (
+        <Feather
+          name="check"
+          size={layout.noticeIcon}
+          color={colors.primaryOnDark}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+      ) : null}
+      <Text71 variant={check ? 'body14' : 'caption12'} style={{ flex: 1 }}>
+        {text}
+      </Text71>
+    </View>
   );
 }
