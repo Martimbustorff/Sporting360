@@ -263,6 +263,25 @@ describe('/equipa: PlayerPhoto, etiquetas e 44 pt (V7.1)', () => {
   });
 });
 
+describe('/equipa: esqueletos', () => {
+  const sideOf = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style).paddingHorizontal;
+  it('secção dentro do scroll (estatísticas da equipa e dos jogadores): sem margem própria, o scroll já tem 24', async () => {
+    mockTeamStats['94'] = { status: 'loading' };
+    mockStats.current = { status: 'loading' };
+    await render(wrap(<Equipa />));
+    await openTab('Estatísticas');
+    expect(screen.getByTestId('team-stats-loading')).toBeTruthy();
+    expect(screen.getByTestId('player-stats-loading')).toBeTruthy();
+    expect(sideOf('team-stats-loading') ?? 0).toBe(0);
+    expect(sideOf('player-stats-loading') ?? 0).toBe(0);
+  });
+  it('separador inteiro a carregar (plantel): esqueleto de ecrã com a margem de 24', async () => {
+    mockTeam.squad = { status: 'loading' };
+    await render(wrap(<Equipa />));
+    expect(sideOf('squad-loading')).toBe(24);
+  });
+});
+
 describe('/equipa: Estatísticas', () => {
   it('por competição: forma, golos em casa e fora, períodos e jogos sem sofrer; jogadores por golos', async () => {
     await render(wrap(<Equipa />));

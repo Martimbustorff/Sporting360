@@ -9,7 +9,7 @@ import { View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
-import { ScreenSkeleton } from '@/components/Skeleton';
+import { ScreenSkeleton, SkeletonRows } from '@/components/Skeleton';
 import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
@@ -150,5 +150,8 @@ export function SectionError() {
 }
 
 /** Enquanto os dados chegam: o esqueleto do ecrã a carregar (38c 4994:12960, 11c 4994:13150). */
+/** Esqueleto de ecrã inteiro (com a margem de 24 e 8 do cabeçalho): só para devolver no ecrã, nunca dentro de um scroll com margem. */
 export const Loading = ({ testID }: { testID: string }) => <ScreenSkeleton testID={testID} />;
+/** Esqueleto de uma secção dentro de um scroll que já tem a margem lateral. */
+export const SectionLoading = ({ testID }: { testID: string }) => <SkeletonRows testID={testID} />;
 

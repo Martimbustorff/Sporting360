@@ -433,6 +433,31 @@ describe('/gamebox/bilhete: brilho e ecrã ligado só com o QR à vista', () => 
     untouched();
   });
 
+  it('listas de jogos ainda a carregar: o QR conta como não mostrado; emprestada para o jogo seguinte, nunca sobe', async () => {
+    mockMatches.current = { status: 'loading' };
+    mockLoans.current = [{ id: 'L1', gameboxId: 'g1', matchId: 'm1' }];
+    const view = await render(ui());
+    await flush();
+    untouched();
+    mockMatches.current = { status: 'ready', data: [match('football')] };
+    await view.rerender(ui());
+    await flush();
+    expect(screen.queryByTestId('qrcode')).toBeNull();
+    untouched();
+  });
+
+  it('uma consulta que volta a carregar depois de conhecida não baixa o brilho', async () => {
+    mockMatches.current = { status: 'ready', data: [] };
+    const view = await render(ui());
+    await flush();
+    expect(setBrightness).toHaveBeenLastCalledWith(1);
+    mockMatches.current = { status: 'loading' };
+    await view.rerender(ui());
+    await flush();
+    expect(setBrightness).toHaveBeenCalledTimes(1);
+    expect(deactivateKeepAwake).not.toHaveBeenCalled();
+  });
+
   it('número ilegível (sem QR): nada', async () => {
     mockBoxes.current = { status: 'ready', data: [box('g1', { gameboxNumber: 'lixo' })] };
     await render(ui());

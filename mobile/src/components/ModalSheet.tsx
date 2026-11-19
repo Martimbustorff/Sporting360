@@ -1,7 +1,8 @@
 // Figma V7.1: folhas modais escuras 4941:7718 (21b "Folha · password") e 4953:9206 (48b "Folha · Ativar Face ID"): fundo
 // bg-raised, raio 28 em cima, grabber 36x5 (surface-20) à esquerda a 12 do topo, padding 24, 40 em baixo (34 do indicador
 // de início + 6), elementos a 16 (48b), 20 (21b) ou 14 (45Lb, 45Le, com o título a 28 do topo), por cima de um fundo escurecido.
-// Os três ritmos existem porque os frames não coincidem e não há componente de folha no quadro 4918:5041 que decida. É um Modal (não a `Sheet`: a `Sheet` tem altura
+// Os três ritmos existem, um por família de frames, porque os frames realmente diferem e o quadro de componentes 4918:5041 não
+// tem folha que decida. É um Modal (não a `Sheet`: a `Sheet` tem altura
 // fixa e gesto de arrastar, e estas folhas têm de subir com o teclado e só se fecham pelos botões).
 import type { ReactNode } from 'react';
 import { Modal, View } from 'react-native';

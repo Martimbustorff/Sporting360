@@ -20,7 +20,7 @@ import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Screen } from '@/components/Screen';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
-import { Loading, PersonRow, SectionError, Tag, TextRow } from '@/components/TeamRows';
+import { Loading, SectionLoading, PersonRow, SectionError, Tag, TextRow } from '@/components/TeamRows';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
 import type { Loadable } from '@/data/hooks';
@@ -248,7 +248,7 @@ function PeriodBars({ periods }: { periods: { label: string; for: number; agains
 
 function TeamStatsBlock({ leagueId, season }: { leagueId: string; season: string }) {
   const stats = useTeamStats(leagueId, season);
-  if (stats.status === 'loading') return <Loading testID="team-stats-loading" />;
+  if (stats.status === 'loading') return <SectionLoading testID="team-stats-loading" />;
   if (stats.status === 'error') return <EmptyState icon="info" text={ERROR_TEXT} />;
   const vm = stats.status === 'ready' ? teamStatsVM(stats.data) : null;
   if (!vm || vm.empty) return <EmptyState icon="info" text={NO_TEAM_STATS} />;
@@ -287,7 +287,7 @@ const PT_COLS = [layout.ptColGames, layout.ptColMinutes, layout.ptColGoals, layo
 
 function PlayerTable({ season }: { season: string }) {
   const stats = usePlayerStats(season);
-  if (stats.status === 'loading') return <Loading testID="player-stats-loading" />;
+  if (stats.status === 'loading') return <SectionLoading testID="player-stats-loading" />;
   if (stats.status === 'error') return <EmptyState icon="info" text={ERROR_TEXT} />;
   const players = stats.status === 'ready' ? playersByGoals(stats.data) : [];
   if (players.length === 0) return <EmptyState icon="info" text={NO_PLAYER_STATS} />;

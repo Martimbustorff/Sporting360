@@ -160,6 +160,20 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     expect(screen.queryByTestId('empty-state')).toBeNull();
   });
 
+  it('esqueleto só enquanto carrega: desaparece com dados e com erro', async () => {
+    mockUpcoming.current = { status: 'loading' };
+    const view = await render(ui());
+    expect(screen.getByTestId('agenda-skeleton')).toBeTruthy();
+    mockUpcoming.current = ready([match({ id: '1001' })]);
+    await view.rerender(ui());
+    expect(screen.queryByTestId('agenda-skeleton')).toBeNull();
+    mockUpcoming.current = { status: 'loading' };
+    await view.rerender(ui());
+    mockUpcoming.current = { status: 'error', error: new Error('x') };
+    await view.rerender(ui());
+    expect(screen.queryByTestId('agenda-skeleton')).toBeNull();
+  });
+
   it('a carregar: as pílulas de modalidade continuam e mudar de modalidade funciona', async () => {
     mockUpcoming.current = { status: 'loading' };
     await render(ui());

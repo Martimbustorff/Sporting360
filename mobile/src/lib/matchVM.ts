@@ -252,6 +252,8 @@ export function toEventVM(e: ShownEvent, homeTeamId: string, sportingSide: 'home
 }
 
 export type LiveEventVM = {
+  /** Chave estável (minuto, extra, tipo, jogador): um lance novo no topo não muda a chave dos outros. */
+  key: string;
   minute: string;
   /** Coluna do lance: o Sporting ou o adversário (um autogolo conta para quem beneficiou). */
   side: 'sporting' | 'opponent';
@@ -284,6 +286,7 @@ function liveLine(e: ShownEvent, vm: EventVM): string | undefined {
 
 /** Lances do Sumário ao vivo, o mais recente primeiro (no mesmo minuto, a ordem inversa da API). */
 export function liveFeed(items: EventItem[], homeTeamId: string, sportingSide: 'home' | 'away' = 'home'): LiveEventVM[] {
+  const seen = new Map<string, number>();
   return items
     .filter(isShownEvent)
     .sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0))
@@ -291,7 +294,10 @@ export function liveFeed(items: EventItem[], homeTeamId: string, sportingSide: '
     .map((e) => {
       const vm = toEventVM(e, homeTeamId, sportingSide);
       const line = liveLine(e, vm);
-      return { minute: vm.minute, side: vm.side, kind: vm.kind, ...(line ? { line } : {}) };
+      const base = `${e.minute}-${e.extra ?? 0}-${e.type}-${e.playerName ?? ''}`;
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      return { key: n === 0 ? base : `${base}#${n}`, minute: vm.minute, side: vm.side, kind: vm.kind, ...(line ? { line } : {}) };
     });
 }
 

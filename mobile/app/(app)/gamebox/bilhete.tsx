@@ -191,6 +191,7 @@ function Page({
   name,
   member,
   onQrShown,
+  settled,
 }: {
   gamebox: GameboxView;
   index: number;
@@ -199,12 +200,14 @@ function Page({
   member: string;
   /** Diz ao ecrã se o QR desta página está a ser desenhado (nem a carregar o empréstimo, nem emprestada, nem sem número). */
   onQrShown: (id: string, shown: boolean) => void;
+  /** Falso enquanto as listas de jogos carregam: ainda não se sabe se a GameBox está emprestada para o próximo jogo. */
+  settled: boolean;
 }) {
   // Cada página é a sua GameBox: o estado "emprestada" aplica-se quando ela tem um empréstimo ativo para o jogo da faixa.
   const loans = useOwnerLoans(gamebox.id);
   const loan = match && loans.status === 'ready' ? loans.data.find((l) => l.matchId === match.id) : undefined;
   const [cancelling, setCancelling] = useState(false);
-  const qrShown = loans.status !== 'loading' && !loan && normalizeGameboxNumber(gamebox.number) !== null;
+  const qrShown = settled && loans.status !== 'loading' && !loan && normalizeGameboxNumber(gamebox.number) !== null;
   const { id } = gamebox;
   useEffect(() => {
     onQrShown(id, qrShown);
@@ -298,14 +301,22 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   // A faixa não pisca: enquanto alguma lista volta a carregar (a consulta muda de 10 em 10 minutos) fica o último jogo
   // conhecido; sem jogo em casa a faixa é só o nome da GameBox, sempre.
   const settled = lists.every((l) => l.status !== 'loading');
-  const lastMatch = useRef<Match | null>(null);
+  const [lastMatch, setLastMatch] = useState<Match | null>(null);
   const computed = useMemo(
     () => upcomingHome(lists.flatMap((l) => (l.status === 'ready' ? l.data : [])), now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [...lists, now],
   );
-  if (settled) lastMatch.current = computed;
-  const match = settled ? computed : lastMatch.current;
+  // `known`: já houve uma resposta das listas. Só então o QR pode contar como mostrado (as consultas seguintes, de 10 em 10
+  // minutos, mantêm o último jogo e não fazem o brilho descer e subir).
+  const [known, setKnown] = useState(false);
+  useEffect(() => {
+    if (settled) {
+      setLastMatch(computed);
+      setKnown(true);
+    }
+  }, [settled, computed]);
+  const match = settled ? computed : lastMatch;
   // Brilho no máximo e ecrã ligado só com o QR desenhado da GameBox à vista e sem o bloqueio por cima.
   const [shown, setShown] = useState<Record<string, boolean>>({});
   const onQrShown = useCallback((id: string, on: boolean) => setShown((s) => (s[id] === on ? s : { ...s, [id]: on })), []);
@@ -316,6 +327,7 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   const member = (data?.memberNumber ?? '').trim();
   const count = views.length;
   const index = Math.min(current, count - 1);
+  // Com as listas a carregar ainda não se sabe se a GameBox está emprestada para o próximo jogo: o QR conta como não mostrado.
   useTicketMode(!covered && shown[views[index]!.id] === true);
 
   const goTo = useCallback(
@@ -332,7 +344,7 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   };
 
   if (count === 1) {
-    return <Page gamebox={views[0]!} index={0} match={match} name={name} member={member} onQrShown={onQrShown} />;
+    return <Page gamebox={views[0]!} index={0} match={match} name={name} member={member} onQrShown={onQrShown} settled={known} />;
   }
   const active = views[index]!;
   return (
@@ -356,7 +368,7 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
             accessibilityElementsHidden={i !== index}
             importantForAccessibility={i === index ? 'auto' : 'no-hide-descendants'}
           >
-            <Page gamebox={item} index={i} match={match} name={name} member={member} onQrShown={onQrShown} />
+            <Page gamebox={item} index={i} match={match} name={name} member={member} onQrShown={onQrShown} settled={known} />
           </View>
         )}
         style={{ flex: 1 }}

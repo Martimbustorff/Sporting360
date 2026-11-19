@@ -131,6 +131,20 @@ describe('estrutura', () => {
   });
 });
 
+describe('esqueleto do ecrã', () => {
+  it('a carregar a competição: esqueleto; desaparece com dados e com erro', async () => {
+    mockCompetition.current = { status: 'loading' };
+    const view = await render(ui());
+    expect(screen.getByTestId('competition-loading')).toBeTruthy();
+    mockCompetition.current = competition('league', 'Liga Portugal', '94');
+    await view.rerender(ui());
+    expect(screen.queryByTestId('competition-loading')).toBeNull();
+    mockCompetition.current = { status: 'error', error: new Error('x') };
+    await view.rerender(ui());
+    expect(screen.queryByTestId('competition-loading')).toBeNull();
+  });
+});
+
 describe('Jornadas', () => {
   beforeEach(() => {
     mockData.rounds = ready(leagueRounds);

@@ -43,7 +43,10 @@ describe('ModalSheet: ritmos dos frames', () => {
     await render(ui('center', 'tight'));
     expect(sheet().gap).toBe(14);
     expect(sheet().paddingTop).toBe(12);
-    const g = grabber();
-    expect(sheet().paddingTop + g.height + g.marginBottom + sheet().gap).toBe(28);
+    // Posição do primeiro elemento: 12 de padding, grabber de 5, margem do grabber e o gap (valores literais do frame).
+    expect(sheet().paddingTop).toBe(12);
+    expect(grabber().height).toBe(5);
+    expect(grabber().marginBottom).toBe(28 - 12 - 5 - 14);
+    expect(12 + 5 + (28 - 12 - 5 - 14) + 14).toBe(28);
   });
 });

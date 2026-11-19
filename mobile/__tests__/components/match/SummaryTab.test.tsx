@@ -414,6 +414,34 @@ describe('Sumário ao vivo (Figma 06)', () => {
   });
 });
 
+describe('Sumário ao vivo: partes e estados', () => {
+  const items = () => [ev({ minute: 10, teamId: '228' }), ev({ minute: 50, teamId: '217' })];
+  it('sem separadores de parte ao vivo; o terminado mantém-nos', async () => {
+    mockDetails.current = { events: ready({ items: items() }) };
+    const view = await render(<SummaryTab match={LIVE()} />);
+    expect(screen.queryByText(/^[12]ª Parte$/)).toBeNull();
+    expect(screen.getAllByTestId('live-event')).toHaveLength(2);
+    await view.unmount();
+    mockDetails.current = { events: ready({ items: items() }) };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.getByText('1ª Parte')).toBeTruthy();
+    expect(screen.getByText('2ª Parte')).toBeTruthy();
+  });
+  // GameStatus só tem NS, LIVE, HT, FT, AET, PEN, PST, CANC: o ramo ao vivo é LIVE e HT; AET e PEN são terminados.
+  it.each([
+    ['LIVE', true],
+    ['HT', true],
+    ['AET', false],
+    ['PEN', false],
+    ['PST', false],
+    ['CANC', false],
+  ] as const)('%s: bloco "Números do jogo" %s', async (status, shows) => {
+    mockDetails.current = { statistics: ready(stats()), events: ready({ items: items() }) };
+    await render(<SummaryTab match={match({ status })} />);
+    expect(!!screen.queryByText('Números do jogo')).toBe(shows);
+  });
+});
+
 describe('contexto do jogo (Figma 08)', () => {
   it('terminado com dados: Forma, Confrontos e Ausências por baixo da cronologia, sem Previsão', async () => {
     mockDetails.current = {

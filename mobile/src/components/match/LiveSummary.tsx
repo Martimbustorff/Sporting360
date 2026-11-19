@@ -88,7 +88,7 @@ export function LiveEvents({ match }: { match: Match }) {
   return (
     <View testID="live-events" style={{ gap: space.s16 }}>
       {feed.map((e, i) => (
-        <View key={i} style={{ gap: space.s16 }}>
+        <View key={e.key} style={{ gap: space.s16 }}>
           {i > 0 ? <View style={{ height: layout.separator, backgroundColor: colors.separator }} /> : null}
           <LiveEventRow event={e} match={match} />
         </View>

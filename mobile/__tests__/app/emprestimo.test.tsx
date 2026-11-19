@@ -38,6 +38,7 @@ jest.mock('@/services/loans', () => ({ ...jest.requireActual('@/services/loans')
 
 import { useLoan, useLoanSecret } from '@/data/loans';
 import { claimLoan, LoanError } from '@/services/loans';
+import { GateCoverContext } from '@/providers/gateCover';
 import Emprestimo from '../../app/(app)/emprestimo/[id]';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 47, left: 0, right: 0, bottom: 34 } };
@@ -398,6 +399,22 @@ describe('Empréstimo (destinatário)', () => {
     expect(mockCapture.active).toBe(0);
     expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.4);
     expect(deactivateKeepAwake).toHaveBeenCalled();
+  });
+
+  it('com o BiometricGate por cima o cartão não sobe o brilho; ao abrir, sobe', async () => {
+    claimed();
+    READY();
+    const gated = (covered: boolean) => (
+      <GateCoverContext.Provider value={covered}>{ui()}</GateCoverContext.Provider>
+    );
+    const view = await render(gated(true));
+    await flush();
+    expect(Brightness.setBrightnessAsync).not.toHaveBeenCalled();
+    expect(activateKeepAwakeAsync).not.toHaveBeenCalled();
+    await view.rerender(gated(false));
+    await flush();
+    expect(Brightness.setBrightnessAsync).toHaveBeenCalledWith(1);
+    expect(activateKeepAwakeAsync).toHaveBeenCalled();
   });
 
   it('o bloqueio de capturas também vale nos estados de aviso', async () => {

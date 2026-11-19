@@ -534,3 +534,16 @@ describe('liveFeed (Sumário ao vivo, Figma 06)', () => {
     expect(feed([item({ type: 'var', detail: 'Goal Disallowed - offside' })])[0]!.line).toBe('Golo anulado');
   });
 });
+
+describe('liveFeed: chaves estáveis', () => {
+  const it0 = (over: Partial<EventItem>): EventItem => ({
+    minute: 10, extra: null, teamId: '228', playerId: null, playerName: 'A', assistId: null, assistName: null,
+    type: 'card', detail: 'Yellow Card', comments: null, ...over,
+  });
+  it('um lance novo no topo não muda a chave dos outros; repetidos ganham sufixo', () => {
+    const a = liveFeed([it0({}), it0({})], '228');
+    const b = liveFeed([it0({}), it0({}), it0({ minute: 20 })], '228');
+    expect(new Set(a.map((e) => e.key)).size).toBe(2);
+    expect(b.map((e) => e.key)).toEqual(expect.arrayContaining(a.map((e) => e.key)));
+  });
+});

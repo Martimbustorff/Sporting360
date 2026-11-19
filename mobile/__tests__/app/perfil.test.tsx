@@ -202,6 +202,23 @@ describe('Perfil: identidade', () => {
   });
 });
 
+describe('Perfil: esqueleto do ecrã', () => {
+  it('sem utilizador nem perfil: só o esqueleto; desaparece com dados e com erro', async () => {
+    mockUser.current = { status: 'loading' };
+    mockProfile.current = { status: 'loading' };
+    const view = await renderScreen();
+    expect(screen.getByTestId('perfil-loading')).toBeTruthy();
+    mockUser.current = ready(USER);
+    mockProfile.current = ready({ displayName: 'Maria C.', avatarId: null });
+    await view.rerender(<SafeAreaProvider initialMetrics={METRICS}><Perfil /></SafeAreaProvider>);
+    expect(screen.queryByTestId('perfil-loading')).toBeNull();
+    mockUser.current = { status: 'error', error: new Error('x') };
+    mockProfile.current = { status: 'error', error: new Error('x') };
+    await view.rerender(<SafeAreaProvider initialMetrics={METRICS}><Perfil /></SafeAreaProvider>);
+    expect(screen.queryByTestId('perfil-loading')).toBeNull();
+  });
+});
+
 describe('Perfil: ligações', () => {
   it.each([
     ['Editar nome público', '/perfil/nome'],

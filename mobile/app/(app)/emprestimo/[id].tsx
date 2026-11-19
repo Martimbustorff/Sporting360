@@ -30,6 +30,7 @@ import { useLoan, useLoanSecret } from '@/data/loans';
 import type { Loan } from '@/data/schemas';
 import { SPORTING_API_ID } from '@/lib/teams';
 import { useTicketMode } from '@/lib/ticketMode';
+import { useGateCovered } from '@/providers/gateCover';
 import { useSession } from '@/providers/SessionProvider';
 import { claimLoan, LoanError, type LoanErrorCode } from '@/services/loans';
 import { Text71 } from '@/theme/typography';
@@ -89,7 +90,7 @@ function Notice({ text, onClose, onRetry }: { text: string; onClose: () => void;
 }
 
 function LoanCard({ loan, number }: { loan: Loan; number: string | null }) {
-  useTicketMode();
+  useTicketMode(!useGateCovered());
   const { match } = loan;
   const seatValue = (k: keyof Loan['seat']): string => {
     const v: unknown = loan.seat[k];
