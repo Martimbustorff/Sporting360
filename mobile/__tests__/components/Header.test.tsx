@@ -50,4 +50,13 @@ describe('Header', () => {
     const r = await renderHeader(<Header title="Nova Conta" />);
     expect(r.toJSON()).toMatchSnapshot();
   });
+
+  it('wide right action keeps the title centred (equal side slots, min 44)', async () => {
+    await renderHeader(<Header title="X" onBack={() => {}} right={<Text>Guardar alterações</Text>} />);
+    const right = screen.getByText('Guardar alterações').parent!;
+    const side = StyleSheet.flatten(right.props.style);
+    expect(side.minWidth).toBe(44);
+    expect(side.flex).toBe(1);
+    expect(side.flexBasis).toBe(0);
+  });
 });

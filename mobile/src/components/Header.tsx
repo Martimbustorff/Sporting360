@@ -8,7 +8,9 @@ import { Touchable } from '@/components/Touchable';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
-const slot = { width: layout.minTouch, height: layout.minTouch, alignItems: 'center', justifyContent: 'center' } as const;
+const btn = { width: layout.minTouch, height: layout.minTouch, alignItems: 'center', justifyContent: 'center' } as const;
+// Lados iguais (flex 1, mínimo 44): o título fica centrado e uma ação mais larga cresce sem o deslocar.
+const side = { flex: 1, flexBasis: 0, minWidth: layout.minTouch, height: layout.minTouch, justifyContent: 'center' } as const;
 
 export function Header({ title, onBack, right }: { title: string; onBack?: () => void; right?: ReactNode }) {
   const { top } = useSafeAreaInsets();
@@ -23,9 +25,9 @@ export function Header({ title, onBack, right }: { title: string; onBack?: () =>
         alignItems: 'center',
       }}
     >
-      <View style={slot}>
+      <View style={[side, { alignItems: 'flex-start' }]}>
         {onBack ? (
-          <Touchable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} style={slot}>
+          <Touchable accessibilityRole="button" accessibilityLabel="Voltar" onPress={onBack} style={btn}>
             <Feather name="chevron-left" size={layout.headerIcon} color={colors.white} accessibilityElementsHidden importantForAccessibility="no" />
           </Touchable>
         ) : null}
@@ -36,11 +38,11 @@ export function Header({ title, onBack, right }: { title: string; onBack?: () =>
         accessibilityRole="header"
         numberOfLines={1}
         ellipsizeMode="tail"
-        style={{ flex: 1, minWidth: 0, textAlign: 'center' }}
+        style={{ flexShrink: 1, textAlign: 'center' }}
       >
         {title}
       </Text71>
-      <View style={slot}>{right}</View>
+      <View style={[side, { alignItems: 'flex-end' }]}>{right}</View>
     </View>
   );
 }

@@ -18,7 +18,12 @@ export function SectionBar({ label, right, onRightPress }: { label: string; righ
         {label}
       </Text71>
       {action && onRightPress ? (
-        <Touchable accessibilityRole="button" accessibilityLabel={right} onPress={onRightPress}>
+        <Touchable
+          accessibilityRole="button"
+          accessibilityLabel={right}
+          onPress={onRightPress}
+          style={{ minHeight: layout.minTouch, minWidth: layout.minTouch, justifyContent: 'center', alignItems: 'flex-end' }}
+        >
           {action}
         </Touchable>
       ) : (

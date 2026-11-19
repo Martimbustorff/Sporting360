@@ -26,12 +26,18 @@ exports[`Header snapshot (default) 1`] = `
   >
     <View
       style={
-        {
-          "alignItems": "center",
-          "height": 44,
-          "justifyContent": "center",
-          "width": 44,
-        }
+        [
+          {
+            "flex": 1,
+            "flexBasis": 0,
+            "height": 44,
+            "justifyContent": "center",
+            "minWidth": 44,
+          },
+          {
+            "alignItems": "flex-start",
+          },
+        ]
       }
     />
     <Text
@@ -51,8 +57,7 @@ exports[`Header snapshot (default) 1`] = `
             "color": "#00835B",
           },
           {
-            "flex": 1,
-            "minWidth": 0,
+            "flexShrink": 1,
             "textAlign": "center",
           },
         ]
@@ -62,12 +67,18 @@ exports[`Header snapshot (default) 1`] = `
     </Text>
     <View
       style={
-        {
-          "alignItems": "center",
-          "height": 44,
-          "justifyContent": "center",
-          "width": 44,
-        }
+        [
+          {
+            "flex": 1,
+            "flexBasis": 0,
+            "height": 44,
+            "justifyContent": "center",
+            "minWidth": 44,
+          },
+          {
+            "alignItems": "flex-end",
+          },
+        ]
       }
     />
   </View>

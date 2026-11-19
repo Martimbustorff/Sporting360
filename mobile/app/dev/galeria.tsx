@@ -223,6 +223,14 @@ function Gallery() {
           </View>
         </Section>
 
+        <Section title="Sheet escura" caption="tone=dark (folhas escuras do Figma, ex. 4953:9228)">
+          <View style={{ height: 240 }}>
+            <Sheet title="Ativar Face ID?" tone="dark" collapsedHeight={240} expandedHeight={240} open onOpenChange={() => {}} toggleable={false}>
+              <Body variant="body">Conteúdo da folha escura.</Body>
+            </Sheet>
+          </View>
+        </Section>
+
         <Section title="NewsCard" caption="SEM FIGMA: aprovar: cartão de notícia (com imagem, sem imagem, data inválida)">
           {NEWS.map((n) => (
             <NewsCard key={n.id} news={n} now={NOW} onPress={() => {}} />

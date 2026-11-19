@@ -48,7 +48,13 @@ export function Switch({
       accessibilityState={{ checked: value, disabled }}
       disabled={disabled}
       onPress={() => onValueChange(!value)}
-      style={{ opacity: disabled ? layout.disabledOpacity : undefined }}
+      style={{
+        minWidth: layout.minTouch,
+        minHeight: layout.minTouch,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: disabled ? layout.disabledOpacity : undefined,
+      }}
     >
       <SwitchTrack value={value} />
     </Touchable>

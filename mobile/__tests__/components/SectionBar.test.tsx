@@ -21,4 +21,10 @@ describe('SectionBar', () => {
     expect(screen.getByText('Árbitro')).toBeTruthy();
     expect(screen.getByText('Branco Godinho L. M.')).toBeTruthy();
   });
+  it('action target is at least 44pt', async () => {
+    await render(<SectionBar label="X" right="Ver tudo" onRightPress={() => {}} />);
+    const st = StyleSheet.flatten(screen.getByRole('button', { name: 'Ver tudo' }).props.style);
+    expect(st.minHeight).toBe(44);
+    expect(st.minWidth).toBe(44);
+  });
 });

@@ -289,6 +289,9 @@ export const layout = {
   emptyGap: 16,
   // SEM FIGMA: offline banner and the "info" empty icon
   offlineBannerPadY: 8,
+  bannerPadX: 14, // V7.1 OfflineBanner (4952:9047)
+  bannerPadY: 10,
+  bannerIcon: 18,
   emptyInfoIconOpacity: 0.3, // matches the 30% of the calendar SVG
   // SEM FIGMA: news card and ranking row (built from tokens)
   newsImage: { width: 96, height: 72 },

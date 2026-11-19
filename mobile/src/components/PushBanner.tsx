@@ -35,10 +35,8 @@ export function PushBanner({ push, onPress }: { push: ForegroundPush; onPress: (
           paddingHorizontal: space.s16,
           paddingVertical: space.s8,
           gap: space.s4,
-          borderRadius: radii.r12,
+          borderRadius: radii.r16,
           backgroundColor: colors.bgRaised,
-          borderWidth: layout.separator,
-          borderColor: colors.primaryOnDark,
           ...layout.sheetShadow,
         }}
       >
