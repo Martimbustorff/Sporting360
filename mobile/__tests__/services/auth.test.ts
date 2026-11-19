@@ -6,6 +6,7 @@ jest.mock('@react-native-firebase/crashlytics');
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: { signOut: jest.fn(() => Promise.resolve()) },
 }));
+jest.mock('@/services/push', () => ({ unregisterPush: jest.fn(() => Promise.resolve()) }));
 jest.mock('@/services/firebase', () => ({
   authInstance: jest.fn(() => ({ __mock: 'auth', currentUser: null })),
   db: jest.fn(() => ({ __mock: 'firestore' })),
@@ -26,6 +27,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { authInstance } from '@/services/firebase';
 import { signInEmail, signUpEmail, sendReset, signOut } from '@/services/auth';
 import { ensureProfile } from '@/services/profile';
+import { unregisterPush } from '@/services/push';
 import { claimProfileEnsure, resetProfileEnsured } from '@/lib/profileEnsured';
 
 beforeEach(() => {
@@ -124,6 +126,32 @@ describe('signOut', () => {
     await signOut();
     expect(fbSignOut).toHaveBeenCalled();
     expect(GoogleSignin.signOut).toHaveBeenCalled();
+  });
+  it('signOut desregista o push do utilizador atual antes do fbSignOut', async () => {
+    (authInstance as jest.Mock).mockReturnValue({ currentUser: { uid: 'alice', providerData: [{ providerId: 'password' }] } });
+    const order: string[] = [];
+    (unregisterPush as jest.Mock).mockImplementation(async () => {
+      order.push('unregister');
+    });
+    (fbSignOut as jest.Mock).mockImplementation(async () => {
+      order.push('signOut');
+    });
+    await signOut();
+    expect(unregisterPush).toHaveBeenCalledWith('alice');
+    expect(order).toEqual(['unregister', 'signOut']);
+    (fbSignOut as jest.Mock).mockReset();
+  });
+  it('signOut termina a sessão mesmo que o desregisto falhe', async () => {
+    (authInstance as jest.Mock).mockReturnValue({ currentUser: { uid: 'alice', providerData: [] } });
+    (unregisterPush as jest.Mock).mockRejectedValueOnce(new Error('offline'));
+    await signOut();
+    expect(fbSignOut).toHaveBeenCalled();
+  });
+  it('sem utilizador atual não desregista', async () => {
+    (authInstance as jest.Mock).mockReturnValue({ currentUser: null });
+    await signOut();
+    expect(unregisterPush).not.toHaveBeenCalled();
+    expect(fbSignOut).toHaveBeenCalled();
   });
   it('does not touch Google for password sessions', async () => {
     (authInstance as jest.Mock).mockReturnValue({

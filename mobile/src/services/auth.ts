@@ -11,6 +11,7 @@ import { beginSignUp, endSignUp, markProfileEnsured } from '@/lib/profileEnsured
 import { codeOf, reportCode } from '@/lib/report';
 import { authInstance, db } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
+import { unregisterPush } from '@/services/push';
 
 function fail(e: unknown): never {
   throw new Error(authErrorMessage(codeOf(e)));
@@ -61,6 +62,14 @@ export async function sendReset(email: string): Promise<void> {
 
 export async function signOut(): Promise<void> {
   const user = authInstance().currentUser;
+  // Plano 6: este telemóvel deixa de receber o push desta conta (tópicos e dispositivo) antes de sair.
+  if (user?.uid) {
+    try {
+      await unregisterPush(user.uid);
+    } catch {
+      // a sessão termina na mesma
+    }
+  }
   const hasGoogle = !!user?.providerData?.some((p) => p?.providerId === 'google.com');
   if (hasGoogle) {
     try {
