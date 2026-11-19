@@ -13,3 +13,6 @@ export const VSPORTS_SEASON_ID = defineString("VSPORTS_SEASON_ID", { default: ""
 
 /** `true` até ao lançamento: a V2 lê `content` da mesma coleção `news`. Passa a `false` no passo L6. */
 export const NEWS_LEGACY_CONTENT = defineBoolean("NEWS_LEGACY_CONTENT", { default: true });
+
+/** Envio de notificações push. `false` até o Martim o ligar no lançamento da V7.1: nada envia nem grava marcas. */
+export const PUSH_ENABLED = defineBoolean("PUSH_ENABLED", { default: false });
