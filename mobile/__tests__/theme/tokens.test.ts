@@ -7,7 +7,6 @@ const tw = require('../../tailwind.config.js');
 // tokens.colors key -> tailwind s360 key
 const MAP: Record<string, string> = {
   bg: 'bg',
-  bgHeader: 'header',
   surface10: 'surface10',
   surface20: 'surface20',
   divider: 'divider',
@@ -19,13 +18,6 @@ const MAP: Record<string, string> = {
   positionBronze: 'positionBronze',
   textMuted: 'muted',
   textDisabled: 'disabled',
-  cardYellow: 'yellow',
-  cardYellowAlt: 'yellowAlt',
-  cardRed: 'red',
-  toggleOn: 'toggleOn',
-  sheetCard: 'sheetCard',
-  sheetLabel: 'sheetLabel',
-  dotInactive: 'dotInactive',
   bgRaised: 'bgRaised',
   bgTint: 'bgTint',
   primaryOnDark: 'primaryOnDark',
@@ -91,9 +83,8 @@ describe('tokens <-> tailwind', () => {
 
 
 describe('Poppins Light usage (Figma 564:6971 / 564:7169)', () => {
-  it('authIntro and termsBody use Poppins Light', () => {
+  it('authIntro uses Poppins Light', () => {
     expect(type.authIntro.fontFamily).toBe('PoppinsLight');
-    expect(type.termsBody.fontFamily).toBe('PoppinsLight');
   });
 });
 
@@ -103,9 +94,7 @@ describe('component tokens from Figma 564:6950 / 564:7259', () => {
     expect(radius.button).toBe(52);
   });
   it('header row layout', () => {
-    expect(layout.headerRowBottom).toBe(13);
     expect(layout.headerIcon).toBe(24);
-    expect(layout.headerSideX).toBe(20);
     expect(layout.statusBarHeight).toBe(44);
   });
   it('interaction tokens', () => {
@@ -118,21 +107,9 @@ describe('component tokens from Figma 564:6950 / 564:7259', () => {
 
 describe('component tokens from Figma 564:6907 / 564:6938 / 500:28814 / 500:28976', () => {
   it('text field', () => {
-    expect(type.fieldPlaceholder.fontSize).toBe(18);
-    expect(type.fieldLabel.fontSize).toBe(14);
-    expect(type.fieldValue.fontSize).toBe(16);
-    expect(type.fieldPlaceholder.fontFamily).toBe(fonts.display);
-    expect(type.fieldValue.fontFamily).toBe(fonts.body);
     expect(layout.fieldLineWidth).toBe(1);
     expect(layout.fieldLineWidthActive).toBe(2);
-    expect(layout.fieldLineOpacity).toBe(0.3);
-    expect(layout.fieldLabelOpacity).toBe(0.5);
-    expect(layout.fieldGapEmpty).toBe(13);
-    expect(layout.fieldGapFilled).toBe(12);
     expect(radius.line).toBe(23);
-  });
-  it('tab underline ends', () => {
-    expect(radius.hairline).toBe(1);
   });
 });
 

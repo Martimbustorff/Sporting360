@@ -11,7 +11,6 @@ import type { TextStyle } from 'react-native';
 export const colors = {
   // Backgrounds
   bg: '#001B13', // screen background (dark green, almost black)
-  bgHeader: 'rgba(0, 28, 19, 0.7)', // header bar, with 15px backdrop blur
   surface10: 'rgba(255, 255, 255, 0.1)', // section bars ("1ª Parte", "Informação do Jogo")
   surface20: 'rgba(255, 255, 255, 0.2)', // status strip ("Live - 23'"), tab bar
   divider: '#334942', // inactive tab underline, list separators
@@ -27,19 +26,6 @@ export const colors = {
   positionCircle: '#FFF068',
   positionSilver: '#919191', // 2.º lugar (Figma 500:29433)
   positionBronze: '#95735A', // 3.º lugar (Figma 500:29443)
-
-  // Match events
-  cardYellow: '#F7CF46',
-  cardYellowAlt: '#FFB648',
-  cardRed: '#F74C66',
-
-  // Interruptor ligado (Figma 306:6426, verde iOS)
-  toggleOn: '#34C759',
-
-  // Folha GameBox Digital aberta (Figma 450:5419): blocos Estádio/Pavilhão, etiquetas a 50 %, pontos da paginação
-  sheetCard: '#F1F1F1', // 450:5529
-  sheetLabel: 'rgba(0, 0, 0, 0.5)', // 450:5532 (DIN 14, opacidade 50 %)
-  dotInactive: 'rgba(0, 0, 0, 0.2)', // 450:5562 (Ellipse 11/12)
 
   // V7.1 (variáveis do Figma R3IhhyNxNZuVINgUtJjZE3)
   bgRaised: '#06261C',
@@ -136,28 +122,14 @@ export const type = {
   rowTeam: { fontFamily: fonts.body, fontSize: 12, color: colors.white },
   rowScore: { fontFamily: fonts.display, fontSize: 24, color: colors.bg },
   // Text field (Figma 564:6907 / 564:6938)
-  fieldPlaceholder: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
-  fieldLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.white, textTransform: 'uppercase' },
-  menuRow: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' }, // Figma 564:7096
   sheetTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.black, textTransform: 'uppercase' }, // Figma 564:6981
-  sheetTitleOpen: { fontFamily: fonts.display, fontSize: 24, color: colors.primary, textTransform: 'uppercase' }, // Figma 564:7119
-  newsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 14, color: colors.white },
-  newsSummary: { fontFamily: fonts.bodyLight, fontSize: 12, color: colors.textMuted },
-  newsMeta: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
-  fieldValue: { fontFamily: fonts.body, fontSize: 16, color: colors.white },
   // Auth (Figma 564:7178 / 564:6896 / 564:6926 / 564:6956 / 564:7164)
   welcomeLogo: { fontFamily: fonts.display, fontSize: 155, lineHeight: 155, color: colors.white, textTransform: 'uppercase' }, // V7.1 13 Welcome (4940:7278): DIN Condensed 155
   // Lock screen (Figma 310:9622, frame 348:37997): logo 565:21545, hint 348:38277
   lockLogo: { fontFamily: fonts.display, fontSize: 68, lineHeight: 68, color: colors.white, textTransform: 'uppercase' }, // V7.1 48 Bloqueio: logo a 67,76 (DIN Condensed)
   // Home (Figma 1561:5056): name 1561:5135, "Sócio desde" label and value 1561:5136 (line height 27)
-  homeName: { fontFamily: fonts.display, fontSize: 24, color: colors.white, textTransform: 'uppercase' },
-  homeSinceLabel: { fontFamily: fonts.display, fontSize: 14, lineHeight: 27, color: colors.white, textTransform: 'uppercase' },
-  homeSinceValue: { fontFamily: fonts.display, fontSize: 20, lineHeight: 27, color: colors.white, textTransform: 'uppercase' },
   authLink: { fontFamily: fonts.body, fontSize: 12, color: colors.white }, // 564:6901 (white at 50%)
-  authLinkAction: { fontFamily: fonts.bodySemiBold, fontSize: 12, color: colors.primary }, // 564:6902
-  authNote: { fontFamily: fonts.body, fontSize: 12, lineHeight: 22, color: colors.white, textAlign: 'center' }, // 564:6929
   authIntro: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:6971
-  termsBody: { fontFamily: fonts.bodyLight, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // 564:7169
   // Formações (Figma 498:28140): número na camisola 498:28147 e apelido 498:28149
   // Classificação (Figma 500:29367): cabeçalho 500:29409 (DIN 18 a 60 %), equipa 500:29419, valores 500:29420, posição 500:29424
   tableHead: { fontFamily: fonts.display, fontSize: 18, color: colors.white, textTransform: 'uppercase' },
@@ -169,13 +141,8 @@ export const type = {
   // Folha GameBox Digital (Figma 450:5419): nome 450:5527, número, etiqueta e valor dos lugares 450:5532 / 450:5533
   gameboxName: { fontFamily: fonts.bodySemiBold, fontSize: 16, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
   gameboxNumber: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
-  gameboxSeatLabel: { fontFamily: fonts.display, fontSize: 14, color: colors.sheetLabel, textTransform: 'uppercase' },
-  gameboxSeatValue: { fontFamily: fonts.body, fontSize: 16, color: colors.black },
   // Folha vazia (Figma 348:39563): texto 13/22 e "insere manualmente" SemiBold primary sublinhado
-  gameboxEmpty: { fontFamily: fonts.body, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.black, textAlign: 'center' },
-  gameboxEmptyLink: { fontFamily: fonts.bodySemiBold, fontSize: 13, lineHeight: 22, letterSpacing: 0.5, color: colors.primary, textDecorationLine: 'underline' },
   communityName: { fontFamily: fonts.display, fontSize: 24, color: colors.white, textTransform: 'uppercase' }, // Figma 406:13223
-  termsTitle: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: 22, letterSpacing: 0.5, color: colors.white }, // SEM FIGMA (only lorem body in 564:7169)
 } as const;
 
 export const spacing = {
@@ -194,7 +161,6 @@ export const radius = {
   md: 8, // section bars, tab bar
   pill: 16, // round badge, event icons
   sheet: 48, // GameBox bottom sheet, top corners (Figma 564:6981 / 564:7119)
-  hairline: 1, // tab underline ends (Figma 500:28818)
   line: 23, // text field underline (Figma 564:6913)
   button: 52, // primary / secondary buttons (Figma 564:7259), fully round at 51px height
 } as const;
@@ -232,14 +198,10 @@ export const layout = {
   videoLabelGap: 4, // rótulo do tipo ao título
   headerHeight: 96,
   headerRow: 52, // V7.1 Header (4918:5132), sem área segura
-  headerBlur: 15,
   crestSize: { width: 75, height: 87 }, // big team crest on match header
   crestSmall: { width: 30, height: 35 }, // crest in calendar rows
-  eventIcon: 32,
   buttonHeight: 52, // V7.1 (Figma 4919:5140)
-  headerRowBottom: 13, // gap under the title/back row inside the 96px header (Figma 564:6950)
   headerIcon: 24, // back chevron
-  headerSideX: 20, // back chevron left offset
   statusBarHeight: 44, // status bar area included in the 96px header (Figma 564:6950)
   minTouch: 44, // minimum touch target
   tabUnderline: 3, // V7.1: indicador (4935:7130)
@@ -252,10 +214,6 @@ export const layout = {
   fieldEye: 22, // V7.1 Campo de texto: olho (4939:7192)
   fieldLineWidth: 1, // empty text field underline (Figma 564:6913)
   fieldLineWidthActive: 2, // filled text field underline (Figma 564:6942)
-  fieldLineOpacity: 0.3, // empty underline is white at 30%
-  fieldLabelOpacity: 0.5, // small label above a filled value is white at 50%
-  fieldGapEmpty: 13, // gap between placeholder row and underline
-  fieldGapFilled: 12, // gap between label/value block and underline
   disabledOpacity: 0.5,
   socialGap: 10, // V7.1 Botão social: logótipo a etiqueta
   socialLogo: 20, // V7.1 Botão social: logótipo (4939:7198)
@@ -268,32 +226,20 @@ export const layout = {
   toggleInset: 2,
   pressedOpacity: 0.8,
   // Game header (Figma 500:28956 / 655:31868)
-  teamColumnWidth: 100,
-  headerColumnsGap: 33, // between team columns and the centre column
-  headerCrestNameGap: 8,
-  headerDateGap: 6, // between date line and time / score boxes
-  scoreBoxGap: 5,
   badgeSmallPadX: 6, // small competition badge (Figma 500:28830)
   badgeSmallPadY: 2,
-  mutedOpacity: 0.7, // date line under the round badge
   // Agenda match row (Figma 500:28822 / 489:7038: 102px row) and list separator (500:28839)
   matchRowPadY: 12, // row top to the badge line
-  matchRowGap: 15, // badge line to the crests line
   separator: 1, // 1px rgba(255,255,255,0.2) line between rows
   skeletonRowHeight: 102, // SEM FIGMA: loading placeholder, the height of a match row
   skeletonHeaderHeight: 190, // SEM FIGMA: loading placeholder, the height of the game header (500:28956)
   // Event rows (Figma 655:31908 / 655:31916)
-  eventRowGap: 16,
-  eventRowMinHeight: 40,
-  subIcon: { width: 16, height: 18 }, // substitution arrows (Figma 655:31919)
   menuRowIcon: 24, // Figma 564:7096 (icon and arrow)
   menuRowGap: 16,
   listRowL: 64, // V7.1 List row (4919:5133), separador incluído
   listRowM: 52,
-  sheetPadXCollapsed: 40, // Figma 564:6981
   sheetPadYCollapsed: 38,
   sheetPadXOpen: 24, // Figma 564:7119
-  sheetPadYOpen: 32,
   sheetChevron: 24,
   grabberWidth: 36, // V7.1 GameBox sheet (4920:5084)
   grabberHeight: 5,
@@ -315,7 +261,6 @@ export const layout = {
   emptyIcon: 122,
   emptyGap: 16,
   // SEM FIGMA: offline banner and the "info" empty icon
-  offlineBannerPadY: 8,
   bannerPadX: 14, // V7.1 OfflineBanner (4952:9047)
   bannerPadY: 10,
   bannerIcon: 18,
@@ -331,35 +276,21 @@ export const layout = {
   newsGap: 12,
   positionCircle: 26, // Figma 500:29423
   rankingRowMinHeight: 44,
-  avatarSize: 32,
   // SEM FIGMA: Perfil (Task 21), composto com tokens
   profileAvatar: 64, // V7.1 22 Perfil: círculo com a inicial do nome público (4942:7650)
-  profileHeaderGap: 16, // avatar ao nome
-  statTileMinWidth: 140, // dois mosaicos por linha em 347 pt
   playerBadgeOffsetX: 4, // V7.1 Foto do jogador: distintivo a -4 / -2 (4959:9555)
   playerBadgeOffsetY: 2,
   playerBadgeBorder: 1.5,
-  playerPhoto: 96, // SEM FIGMA: foto redonda no topo do detalhe do jogador (Task 14)
-  eventGlyph: 18, // goal / VAR glyph (no Figma; sized like the card glyph)
   // SEM FIGMA: pre-match block of the Sumário tab (Task 9), built from tokens
   formChip: 24, // V / E / D square in the "Forma" row
-  formChipGap: 4,
   formChipRadius: 6, // 4933:7347
   formRowGap: 6,
   venuePhotoAspect: 16 / 9, // stadium photo under "Informação do Jogo"
   // Estatísticas: valores a 30 % antes do jogo (500:29279)
-  statValueWidth: 64,
   statMutedOpacity: 0.3,
   subNumberWidth: 28, // SEM FIGMA: coluna do número na lista de suplentes
   // Classificação (Figma 500:29367): linha de 34 px, 8 px entre divisória e linha, círculo da posição 26 px
   // (positionCircle), nome a 34 px da esquerda; colunas J/V/E/D a ~31 px, G a ~40, P a ~30 (centros 162/193/224/256/290/331).
-  tableRowHeight: 34,
-  tableRowGap: 8,
-  tableHeadOpacity: 0.6,
-  tableNameGap: 8,
-  tableColWidth: 31,
-  tableGoalsWidth: 44,
-  tablePointsWidth: 30,
   // Classificação V7.1 (4935:7287): colunas # 28, J 28, DG 36, PTS 40; linha com 9 de altura vertical e faixa de zona de 3
   stColPos: 28,
   stColPlayed: 28,
@@ -380,14 +311,12 @@ export const layout = {
   stContentGap: 12,
   // SEM FIGMA: quadro das eliminatórias (BracketView), composto com tokens
   tieTeamGap: 8,
-  tieScoreWidth: 32,
   tieBorder: 1,
   // SEM FIGMA: leitor VSports e tab Vídeos (referência 818:20891: miniatura 16:9 a toda a largura, título por baixo)
   videoAspect: 16 / 9,
   videoRadius: 8,
   videoPlayIcon: 56,
   videoGap: 8, // miniatura ao título
-  videoListGap: 24, // entre vídeos
   videoCloseBarHeight: 44, // barra do "Fechar" em cima do leitor
   // V7.1 Cartão do próximo jogo (Figma 4920:5140): altura fixa em todos os estados, para o menu não saltar
   matchCardHeight: 192,
@@ -458,7 +387,6 @@ export const layout = {
   headerPillPadLeft: 10,
   headerPillPadRight: 12,
   headerPillPadY: 5,
-  headerMomentGap: 16,
   headerPadTop: 8,
   headerScoreShadow: { shadowColor: colors.black, shadowOpacity: 0.35, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
   headerScoreGlowElevation: 8,
@@ -513,16 +441,9 @@ export const layout = {
   lockTint: '#003625', // "Rectangle 954" 348:37999, over the lion
   lockTintOpacity: 0.5,
   lockButtonsGap: 12, // V7.1 48: botões a 12
-  lockBottom: 16,
   lockActionsBottom: 20, // V7.1 48: último botão a 20 do indicador de início
   // Home (Figma 1561:5056). Same lion, tint and rings as the lock screen (lockLion / lockRings / lockTint).
-  homeLogoTop: 77, // logo row top (1561:5137); status bar is 44 of it
-  homeNameGap: 82, // logo bottom (111, cap-trimmed) to the name (193), measured like lockHintGap
-  homeSinceGap: 14, // name bottom (222) to "Sócio desde" (236)
-  homeSinceLabelOpacity: 0.5,
-  homeBlockGap: 32, // SEM FIGMA: between name, next-game card and menu (card is not on 1561:5056)
   homeMenuSheetGap: 9, // V7.1: o menu acaba 9 pt acima da folha GameBox (nota 01)
-  homeSheetExpandedRatio: 0.8, // SEM FIGMA: open GameBox sheet height as a share of the window (content in Task 24)
   authContentTop: 36, // V7.1 13 a 21: fim do Header (114) ao primeiro campo (150)
   authIntroTop: 36, // V7.1 16, 18, 21: fim do Header ao texto de introdução (150)
   authFieldsGap: 32,
@@ -530,7 +451,6 @@ export const layout = {
   authLinksRowGap: 12,
   authLinkGap: 6, // V7.1 14 (4940:7374): texto e ação a 6
   authBottom: 20, // V7.1 16, 21: último botão a 20 do indicador de início
-  authMutedOpacity: 0.5,
   // SEM FIGMA: cartão "S360 MATCHDAY" (Task 17; referência raster 818:20427), largura do conteúdo dos ecrãs de jogo
   mvpRowHeight: 48, // SEM FIGMA: linha de candidato da tab MVP (referência raster 818:21193)
   // V7.1 MVP com notas (4934:7087): linha do jogador, caixa da nota, escolha (radio) e selo "Melhor nota"
@@ -582,35 +502,12 @@ export const layout = {
   shareTeamWidth: 88,
   shareTeamGap: 6,
   shareFooterPadTop: 10,
-  shareSheetPadTop: 12,
-  shareSheetPadBottom: 8, // somado à área do indicador de início
   // GameBox (Figma 323:12992 lista, 327:15134 / 450:5633 / 450:5683 formulário)
   gameboxFab: 60, // botão "+" redondo branco (327:14894)
-  gameboxFabRight: 32, // borda direita a 32 px (centro em 313 de 375)
-  gameboxFabBottom: 31, // 64.97 px do fundo do frame, menos os 34 do indicador
-  gameboxListGap: 24, // entre linhas da lista (323:12996)
   gameboxFieldsGap: 16, // entre campos (327:15141 / 327:15159)
   gameboxBlockGap: 24, // campos de cima ao cartão Estádio/Pavilhão (327:15140)
-  gameboxCardBorder: 2, // cartão Estádio/Pavilhão (327:15153): contorno branco 2 px, raio 16
-  gameboxCardRadius: 16,
-  gameboxCardPadX: 24,
-  gameboxCardPadTop: 16,
-  gameboxCardPadBottom: 24,
-  gameboxDeleteTop: 32, // SEM FIGMA exato: cartão ao "Apagar GameBox" (450:5636, ~32 px abaixo do cartão)
   // Folha GameBox Digital (Figma 450:5419 com GameBox, 348:39454 vazia, 348:40189 só Estádio)
-  gameboxSheetGap: 24, // título, QR, blocos e paginação (450:5521)
-  gameboxSheetEmptyGap: 32, // título, botão e texto (348:39556)
   gameboxQr: 189, // 450:5526
-  gameboxQrGap: 8, // QR ao nome (450:5525) e entre blocos Estádio/Pavilhão (450:5528)
-  gameboxSeatPad: 16, // bloco Estádio/Pavilhão (450:5529): padding 16, raio 16
-  gameboxSeatRadius: 16,
-  gameboxSeatVenueWidth: 112, // coluna do nome do recinto (450:5531)
-  gameboxSeatLabelGap: 8,
-  paginationDot: 10, // 450:5562: pontos de 10 px a 18 px de centro a centro
-  paginationGap: 8,
-  scannerPad: 24, // SEM FIGMA: leitor, margens dos painéis sobre a câmara
-  scannerFrame: 240, // SEM FIGMA: moldura de mira do leitor
-  scannerFrameBorder: 2,
   // V7.1 Modo bilhete (Figma 4936:7161)
   ticketRadius: 20, // cartão branco e faixa de cima
   ticketBandPadX: 20,

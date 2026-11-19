@@ -8,7 +8,6 @@ module.exports = {
       colors: {
         s360: {
           bg: '#001B13',
-          header: 'rgba(0, 28, 19, 0.7)',
           surface10: 'rgba(255, 255, 255, 0.1)',
           surface20: 'rgba(255, 255, 255, 0.2)',
           divider: '#334942',
@@ -20,13 +19,6 @@ module.exports = {
           positionBronze: '#95735A',
           muted: 'rgba(255, 255, 255, 0.7)',
           disabled: 'rgba(255, 255, 255, 0.4)',
-          yellow: '#F7CF46',
-          yellowAlt: '#FFB648',
-          red: '#F74C66',
-          toggleOn: '#34C759',
-          sheetCard: '#F1F1F1',
-          sheetLabel: 'rgba(0, 0, 0, 0.5)',
-          dotInactive: 'rgba(0, 0, 0, 0.2)',
           bgRaised: '#06261C',
           bgTint: '#003625',
           primaryOnDark: '#19B37E',
