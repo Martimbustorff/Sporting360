@@ -359,7 +359,6 @@ export const layout = {
   tableRowHeight: 34,
   tableRowGap: 8,
   tableHeadOpacity: 0.6,
-  tableHeadGap: 8, // texto do cabeçalho em 348, primeira divisória em 375 (27 px menos a altura da linha de texto)
   tableNameGap: 8,
   tableColWidth: 31,
   tableGoalsWidth: 44,

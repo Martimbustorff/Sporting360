@@ -3,7 +3,6 @@ import type { Competition, Tie } from '@/data/schemas';
 import {
   aggregateText,
   getViewChoice,
-  goalsText,
   legScoreText,
   resetViewChoices,
   resolveView,
@@ -73,10 +72,6 @@ describe('escolha manual da vista (sessão da app)', () => {
 });
 
 describe('textos', () => {
-  it('golos como 8:4', () => {
-    expect(goalsText({ goalsFor: 8, goalsAgainst: 4 })).toBe('8:4');
-  });
-
   const tie: Tie = {
     id: 't1',
     stage: 'Round of 16',

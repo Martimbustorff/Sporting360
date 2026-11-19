@@ -623,28 +623,57 @@ describe("tick: classificação ao vivo (competitions/{key}/data/liveFixtures)",
     expect(liveCalls).toHaveLength(0);
   });
 
-  it("jogo do Sporting ainda por começar ou já terminado: não pede", async () => {
+  it("jogo do Sporting ainda por começar: não pede", async () => {
     clock = KO - 60 * MIN;
     await seedFrom(fx("fixture-ns.json"), clock);
-    let f = fakeFetch([[byIds, "api-football/fixture-ns-lineups.json"]]);
+    const f = fakeFetch([[byIds, "api-football/fixture-ns-lineups.json"]]);
     expect((await tick(deps(f))).calls).toBe(1);
-    expect(liveCalls).toHaveLength(0);
-    await clearAll(db);
-    clock = KO + 30 * MIN;
-    f = fakeFetch([]);
-    expect((await tick(deps(f))).calls).toBe(0);
     expect(liveCalls).toHaveLength(0);
   });
 
-  it("o pedido a falhar conta como falha do tick e não impede o resto", async () => {
+  it("jogo do Sporting em liga já terminado (fora do postmatch): nem fixtures nem liveFixtures", async () => {
+    // Jogo FT da liga 94 com o Sporting, terminado há 40 min (depois do postmatch de 25 min e do postRefresh feito).
+    const ft = fx("fixture-ft.json");
+    expect(ft.league.id).toBe(94);
+    expect([ft.teams.home.id, ft.teams.away.id]).toContain(228);
+    const finishedAt = KO + 110 * MIN;
+    await seedFrom(ft, finishedAt);
+    await db.doc(`matches/${ft.fixture.id}`).set({ finishedAt: new Date(finishedAt), finishedAtSource: "observed" }, { merge: true });
+    await db.doc(`ingestState/match_${ft.fixture.id}`).set({ ticker: { endRefresh: true, postRefresh: true } }, { merge: true });
+    expect((await db.doc(`matches/${ft.fixture.id}`).get()).get("status")).toBe("FT");
+    clock = finishedAt + 40 * MIN;
+    const f = fakeFetch([]);
+    const r = await tick(deps(f));
+    expect(r.calls).toBe(0);
+    expect(f.calls).toHaveLength(0);
+    expect(liveCalls).toHaveLength(0);
+  });
+
+  it("o pedido a falhar: o ticker continua saudável (e regista remaining) e a falha vai para football_live_standings", async () => {
     clock = KO + 67 * MIN;
     await seedFrom(fx("fixture-live-2h.json"), clock);
     const f = fakeFetch([[byIds, envelope([fx("fixture-live-2h.json")])]]);
-    const r = await tick(deps(f, { liveResponse: { errors: { rateLimit: "Too many requests" }, response: [] } }));
-    expect(r.failed).toBe(1);
-    expect(r.errors[0]).toMatch(/liveFixtures 94/);
+    const bad = { errors: { rateLimit: "Too many requests" }, response: [] };
+    const r = await tick(deps(f, { liveResponse: bad }));
+    expect(r.failed).toBe(0);
+    expect(r.liveStandings.errors[0]).toMatch(/liveFixtures 94/);
     expect((await db.doc(`matches/${ID}`).get()).get("elapsed")).toBe(67);
     expect((await db.doc(LIVE_DOC).get()).exists).toBe(false);
+
+    await liveTickerJob(deps(f, { liveResponse: bad }));
+    const live = (await db.doc("ingestHealth/football_live").get()).data()!;
+    expect(live.consecutiveFailures).toBe(0);
+    expect(live.lastError).toBeNull();
+    expect(live.lastCount).toBe(4 + 1);
+    const st = (await db.doc("ingestHealth/football_live_standings").get()).data()!;
+    expect(st.consecutiveFailures).toBe(1);
+    expect(st.lastError).toMatch(/liveFixtures 94/);
+
+    // minuto seguinte sem erro: a saúde da classificação recupera
+    clock += MIN;
+    await liveTickerJob(deps(f, { liveResponse: liveResponse() }));
+    expect((await db.doc("ingestHealth/football_live_standings").get()).get("consecutiveFailures")).toBe(0);
+    expect((await db.doc("ingestHealth/football_live").get()).get("consecutiveFailures")).toBe(0);
   });
 
   it("o jogo acaba: o documento fica com fixtures vazio (sem pedido à API) para a app não somar o resultado duas vezes", async () => {

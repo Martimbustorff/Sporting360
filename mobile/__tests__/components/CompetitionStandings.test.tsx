@@ -407,6 +407,16 @@ describe('Classificação ao vivo (Plan 7 Task 11)', () => {
     expect(screen.getByTestId('standings-points-228').props.children).toBe(29);
   });
 
+  it('o rótulo de acessibilidade diz a mudança de posição em "Ao vivo" e deixa de a dizer em "Oficial"', async () => {
+    mockData.liveFixtures = liveDoc(30_000);
+    await render(<CompetitionStandings competitionKey={LIGA} />);
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('1.º Sporting, 29 pontos, 7 jogos, ao vivo 2-1, sobe 2 lugares');
+    expect(screen.getByTestId('standings-row-211').props.accessibilityLabel).toBe('2.º Benfica, 29 pontos, 6 jogos, desce 1 lugar');
+    expect(screen.getByTestId('standings-row-217').props.accessibilityLabel).toBe('4.º SC Braga, 23 pontos, 6 jogos');
+    await fireEvent.press(screen.getByRole('tab', { name: 'Oficial' }));
+    expect(screen.getByTestId('standings-row-228').props.accessibilityLabel).toBe('3.º Sporting, 26 pontos, 6 jogos');
+  });
+
   it('"Oficial": tabela oficial, sem setas nem resultados em direto, e volta a "Ao vivo"', async () => {
     mockData.liveFixtures = liveDoc(30_000);
     await render(<CompetitionStandings competitionKey={LIGA} />);

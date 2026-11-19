@@ -1,6 +1,6 @@
 // Classificação ao vivo: projeção sobre a tabela oficial (3/1/0 pontos) e documento de jogos ao vivo velho.
 import type { LiveFixture, StandingRow } from '@/data/schemas';
-import { LIVE_MAX_AGE_MS, liveStandingsAvailable, projectStandings, zoneOf } from '@/lib/liveStandings';
+import { LIVE_MAX_AGE_MS, LIVE_MAX_SKEW_MS, liveStandingsAvailable, projectStandings, zoneOf } from '@/lib/liveStandings';
 
 function row(rank: number, teamId: string, name: string, points: number, o: Partial<StandingRow> = {}): StandingRow {
   return {
@@ -73,18 +73,41 @@ describe('projectStandings', () => {
     expect(projectStandings(tie, [live('B', 'C', 1, 0)]).rows.map((r) => r.teamId)).toEqual(['B', 'A', 'C']);
   });
 
-  it('mesmos pontos e diferença: desempata pelos golos marcados', () => {
-    const f = [row(1, 'A', 'A', 20, { goalsDiff: 5, goalsFor: 15 }), row(2, 'B', 'B', 20, { goalsDiff: 5, goalsFor: 26 })];
-    const rows = projectStandings(f, []).rows;
-    expect(rows.map((x) => x.teamId)).toEqual(['B', 'A']);
-    // A ordem muda face à oficial (B era 2.º): sem jogos, o delta mede essa mudança.
+  it('grupo de pontos com uma equipa em jogo: diferença de golos, depois golos marcados', () => {
+    // A 20 (+5, 15 marcados) e B 17 (+2, 20 marcados); B vence C por 3-0: 20 pontos, +5, 23 marcados. Iguala A em pontos e
+    // diferença; os golos marcados (23 contra 15) põem B à frente.
+    const f = [row(1, 'A', 'A', 20, { goalsDiff: 5, goalsFor: 15 }), row(2, 'B', 'B', 17, { goalsDiff: 2, goalsFor: 20 }), row(3, 'C', 'C', 5, { goalsDiff: 0, goalsFor: 5 })];
+    const rows = projectStandings(f, [live('B', 'C', 3, 0)]).rows;
+    expect(rows.map((x) => x.teamId)).toEqual(['B', 'A', 'C']);
     expect(rows[0]!.delta).toBe(1);
     expect(rows[1]!.delta).toBe(-1);
   });
 
-  it('pontos e diferença iguais e golos marcados iguais: a ordem oficial', () => {
-    const f = [row(1, 'A', 'A', 20, { goalsDiff: 5, goalsFor: 15 }), row(2, 'B', 'B', 20, { goalsDiff: 5, goalsFor: 15 })];
-    expect(projectStandings(f, []).rows.map((x) => x.teamId)).toEqual(['A', 'B']);
+  it('equipas que não jogam com os mesmos pontos mantêm a ordem oficial (sem setas), mesmo com melhor diferença', () => {
+    // C e D (não jogam) têm 15 pontos; D tem melhor diferença mas está atrás na tabela oficial: nada muda.
+    // A e B jogam entre si (empate) e ficam noutros pontos.
+    const t = [
+      row(1, 'A', 'A', 30, { goalsDiff: 10 }),
+      row(2, 'B', 'B', 25, { goalsDiff: 8 }),
+      row(3, 'C', 'C', 15, { goalsDiff: 1, goalsFor: 10 }),
+      row(4, 'D', 'D', 15, { goalsDiff: 9, goalsFor: 30 }),
+    ];
+    const rows = projectStandings(t, [live('A', 'B', 1, 1)]).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['A', 'B', 'C', 'D']);
+    expect(rows.map((r) => r.delta)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('a ordem oficial é a posição na tabela recebida, não o campo rank', () => {
+    const t = [row(7, 'A', 'A', 20), row(3, 'B', 'B', 20)]; // `rank` desalinhado da posição no array
+    const rows = projectStandings(t, []).rows;
+    expect(rows.map((r) => r.teamId)).toEqual(['A', 'B']);
+    expect(rows.map((r) => r.rank)).toEqual([1, 2]);
+    expect(rows.map((r) => r.delta)).toEqual([0, 0]);
+  });
+
+  it('pontos, diferença e golos marcados iguais com uma equipa em jogo: a ordem oficial', () => {
+    const f = [row(1, 'A', 'A', 20, { goalsDiff: 5, goalsFor: 15 }), row(2, 'B', 'B', 20, { goalsDiff: 5, goalsFor: 15 }), row(3, 'C', 'C', 1)];
+    expect(projectStandings(f, [live('A', 'C', 0, 0)]).rows.map((x) => x.teamId)).toEqual(['A', 'B', 'C']);
   });
 
   it('equipa fora da tabela é ignorada; o resultado de cada equipa é "seus-adversário"', () => {
@@ -114,9 +137,14 @@ describe('liveStandingsAvailable', () => {
     expect(liveStandingsAvailable(doc(LIVE_MAX_AGE_MS), now)).toBe(false);
     expect(liveStandingsAvailable(doc(20 * 60_000), now)).toBe(false);
   });
-  it('sem jogos, sem documento ou com data no futuro além da tolerância: escondido', () => {
+  it('sem jogos ou sem documento: escondido', () => {
     expect(liveStandingsAvailable(doc(1_000, 0), now)).toBe(false);
     expect(liveStandingsAvailable(null, now)).toBe(false);
+  });
+  it('relógio desalinhado: até 2 min no futuro ainda conta; mais do que isso, escondido', () => {
+    expect(liveStandingsAvailable(doc(-60_000), now)).toBe(true);
+    expect(liveStandingsAvailable(doc(-LIVE_MAX_SKEW_MS), now)).toBe(false);
+    expect(liveStandingsAvailable(doc(-10 * 60_000), now)).toBe(false);
   });
 });
 

@@ -1,7 +1,7 @@
 // Classificação: que vista abrir (tabela ou eliminatórias) e os textos da tabela e do quadro.
 // O agregado e o vencedor de uma eliminatória vêm do servidor (`Tie.aggregate`, `Tie.winnerTeamId`,
 // functions/src/football/bracket.ts) e nunca se recalculam aqui (preflight F11).
-import type { Bracket, Competition, StandingRow, StandingsDoc, Tie } from '@/data/schemas';
+import type { Bracket, Competition, StandingsDoc, Tie } from '@/data/schemas';
 import { penaltiesText } from '@/lib/matchVM';
 
 export type StandingsView = 'table' | 'bracket';
@@ -57,11 +57,6 @@ export function setViewChoice(competitionKey: string, v: StandingsView): void {
 /** Só para testes: começa cada teste sem escolhas. */
 export function resetViewChoices(): void {
   viewChoices.clear();
-}
-
-/** Golos marcados e sofridos como no Figma 500:29421: "8:4". */
-export function goalsText(row: Pick<StandingRow, 'goalsFor' | 'goalsAgainst'>): string {
-  return `${row.goalsFor}:${row.goalsAgainst}`;
 }
 
 /** Agregado do servidor, "3-2"; null enquanto a eliminatória não acabou. */

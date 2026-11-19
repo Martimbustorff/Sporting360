@@ -5,7 +5,7 @@ import type { MatchDoc } from "../model/types";
 import { dispatchMatchPushes } from "../push/matchPush";
 import type { PushSender } from "../push/sender";
 import { MAX_IDS } from "../sources/apiFootball";
-import { runJob } from "../store/health";
+import { recordRun, runJob } from "../store/health";
 import { saveMatch } from "../store/writer";
 import { refreshCompetition, refreshStandings } from "./competitionSync";
 import { clearLiveFixtures, isLiveSportingLeagueMatch, isRecentlyFinishedSportingLeagueMatch, refreshLiveFixtures } from "./liveFixtures";
@@ -41,6 +41,8 @@ const POST_REFRESH_UNTIL_MS = 2 * HOUR;
 
 /** Fonte em `ingestHealth`. */
 export const LIVE_SOURCE = "football_live";
+/** Saúde própria da classificação ao vivo: um pedido opcional a falhar não estraga a saúde do ticker. */
+export const LIVE_STANDINGS_SOURCE = "football_live_standings";
 
 export type TickDeps = FootballDeps & {
   sleep: (ms: number) => Promise<void>;
@@ -61,6 +63,8 @@ export interface TickResult {
   errors: string[];
   /** Jogos cujo refresco de fim de jogo ficou para o minuto seguinte (tick já demasiado adiantado). */
   deferred: string[];
+  /** Classificação ao vivo (opcional): pedidos/limpezas tentados e erros; não contam em `failed`. */
+  liveStandings: { attempted: number; errors: string[] };
 }
 
 /**
@@ -99,14 +103,16 @@ const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
  * Um minuto do ticker. Lê os jogos com kickoff em `[now - 6 h, now + 75 min]`; sem nenhum fora de
  * `idle` (nem refresco pendente) não faz pedidos. Com algum `live` rápido, até 4 iterações alinhadas a
  * 0/15/30/45 s desde o início, cada uma com um só `fixturesByIds`; senão uma iteração. Nenhuma
- * iteração começa se puder acabar depois dos 60 s; no fim, 1 pedido `liveFixtures` por liga com jogo do Sporting em direto; os refrescos de fim de jogo depois dos 30 s ficam
- * para o minuto seguinte. Os erros contam-se em `failed` e a iteração seguinte continua.
+ * iteração começa se puder acabar depois dos 60 s; os refrescos de fim de jogo depois dos 30 s ficam
+ * para o minuto seguinte. Os erros contam-se em `failed` e a iteração seguinte continua. No fim, 1 pedido
+ * `liveFixtures` por liga com jogo do Sporting em direto: o seu erro não conta em `failed`, vai em
+ * `liveStandings.errors` (saúde `football_live_standings`).
  */
 export async function tick(d: TickDeps): Promise<TickResult> {
   const start = d.now().getTime();
   const elapsed = () => d.now().getTime() - start;
   const callsAtStart = d.api.calls;
-  const out: TickResult = { calls: 0, ids: [], remaining: null, writes: [], failed: 0, errors: [], deferred: [] };
+  const out: TickResult = { calls: 0, ids: [], remaining: null, writes: [], failed: 0, errors: [], deferred: [], liveStandings: { attempted: 0, errors: [] } };
   const fail = (what: string, e: unknown) => {
     out.failed++;
     out.errors.push(`${what}: ${msg(e)}`);
@@ -261,12 +267,17 @@ export async function tick(d: TickDeps): Promise<TickResult> {
   // Classificação ao vivo: 1 pedido por minuto e por liga, só com um jogo do Sporting em direto numa liga.
   const liveLeagues = new Map<string, MatchDoc>();
   for (const m of state.values()) if (isLiveSportingLeagueMatch(m) && !liveLeagues.has(m.competition.key)) liveLeagues.set(m.competition.key, m);
+  const liveFail = (what: string, e: unknown) => {
+    out.liveStandings.errors.push(`${what}: ${msg(e)}`);
+    logger.warn(`liveTicker: ${what} falhou: ${msg(e)}`);
+  };
   for (const [key, m] of liveLeagues) {
     if (elapsed() + LIVE_REQUEST_TIMEOUT_MS > TICK_DEADLINE_MS) break;
+    out.liveStandings.attempted++;
     try {
       await refreshLiveFixtures(d, Number(m.competition.id), key);
     } catch (e) {
-      fail(`liveFixtures ${m.competition.id}`, e);
+      liveFail(`liveFixtures ${m.competition.id}`, e);
     }
   }
   // Jogo do Sporting acabado há pouco (e nenhum em direto nessa liga): esvazia o documento, sem pedidos.
@@ -275,10 +286,11 @@ export async function tick(d: TickDeps): Promise<TickResult> {
     const key = m.competition.key;
     if (liveLeagues.has(key) || cleared.has(key) || !isRecentlyFinishedSportingLeagueMatch(m, d.now(), POSTMATCH_TAIL_MS)) continue;
     cleared.add(key);
+    out.liveStandings.attempted++;
     try {
       await clearLiveFixtures(d, key);
     } catch (e) {
-      fail(`liveFixtures ${m.competition.id} (limpeza)`, e);
+      liveFail(`liveFixtures ${m.competition.id} (limpeza)`, e);
     }
   }
 
@@ -294,14 +306,29 @@ export async function tick(d: TickDeps): Promise<TickResult> {
  * execução falhada (consecutiveFailures + 1, alerta) mesmo que as outras iterações tenham corrido.
  */
 export async function liveTickerJob(d: TickDeps, o: { minRemaining?: number } = {}): Promise<void> {
+  let standings: TickResult["liveStandings"] | null = null;
   await runJob(
     d.db,
     LIVE_SOURCE,
     async () => {
       const r = await tick(d);
+      standings = r.liveStandings;
       if (r.failed > 0) throw new Error(`${r.failed} falha(s) no tick (${r.calls} pedidos): ${r.errors.join(" | ")}`.slice(0, 1000));
       return { count: r.calls, remaining: r.remaining };
     },
     { minRemaining: o.minRemaining ?? 500 },
   );
+  // Saúde própria da classificação ao vivo; só quando houve tentativa neste minuto. Nunca lança.
+  const st = standings as TickResult["liveStandings"] | null;
+  if (st && st.attempted > 0) {
+    try {
+      await recordRun(
+        d.db,
+        LIVE_STANDINGS_SOURCE,
+        st.errors.length > 0 ? { ok: false, error: st.errors.join(" | ").slice(0, 1000) } : { ok: true, count: st.attempted },
+      );
+    } catch (e) {
+      logger.warn(`liveTicker: saúde de ${LIVE_STANDINGS_SOURCE} não registada: ${msg(e)}`);
+    }
+  }
 }

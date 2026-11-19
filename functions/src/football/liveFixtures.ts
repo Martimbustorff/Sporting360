@@ -38,10 +38,13 @@ export function isRecentlyFinishedSportingLeagueMatch(m: MatchDoc, now: Date, ta
   );
 }
 
-/** Resposta de `fixtures?live=all&league=`: só os jogos a decorrer (a API pode incluir intervalo, `HT`). */
+/** Estados da API-Football em que o jogo está a decorrer (inclui intervalo, prolongamento, penáltis e interrupções). */
+export const IN_PLAY_STATUSES: ReadonlySet<string> = new Set(["1H", "HT", "2H", "ET", "BT", "P", "SUSP", "INT", "LIVE"]);
+
+/** Resposta de `fixtures?live=all&league=`: só os jogos a decorrer (lista de estados permitidos). */
 export function liveFixtureItems(fixtures: AfFixtureCore[]): LiveFixtureItem[] {
   return fixtures
-    .filter((f) => f.fixture.status.short !== "NS" && f.fixture.status.short !== "FT")
+    .filter((f) => IN_PLAY_STATUSES.has(f.fixture.status.short))
     .map((f) => ({
       homeId: String(f.teams.home.id),
       awayId: String(f.teams.away.id),

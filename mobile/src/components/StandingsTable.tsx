@@ -9,7 +9,7 @@
 import { View } from 'react-native';
 import { TeamCrest } from '@/components/GameHeader';
 import { SectionBar } from '@/components/SectionBar';
-import type { Sport, StandingRow, StandingsDoc } from '@/data/schemas';
+import type { Sport, StandingRow } from '@/data/schemas';
 import { zoneOf, type Zone } from '@/lib/liveStandings';
 import { Display, Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
@@ -70,6 +70,14 @@ function Arrow({ up, testID }: { up: boolean; testID: string }) {
 
 const diffText = (n: number) => (n > 0 ? `+${n}` : String(n));
 
+const placesText = (n: number) => `${n} ${n === 1 ? 'lugar' : 'lugares'}`;
+
+function rowLabel(row: TableRow): string {
+  const delta = row.delta ?? 0;
+  const move = delta > 0 ? `, sobe ${placesText(delta)}` : delta < 0 ? `, desce ${placesText(-delta)}` : '';
+  return `${row.rank}.º ${row.name}, ${row.points} pontos, ${row.played} jogos${row.liveScore ? `, ao vivo ${row.liveScore}` : ''}${move}`;
+}
+
 function Row({ row, highlight, sport }: { row: TableRow; highlight: boolean; sport: Sport | null }) {
   const zone = zoneOf(row.description);
   const live = row.liveScore ? `AO VIVO ${row.liveScore}` : null;
@@ -79,7 +87,7 @@ function Row({ row, highlight, sport }: { row: TableRow; highlight: boolean; spo
       testID={`standings-row-${row.teamId}`}
       accessible
       accessibilityState={{ selected: highlight }}
-      accessibilityLabel={`${row.rank}.º ${row.name}, ${row.points} pontos, ${row.played} jogos${row.liveScore ? `, ao vivo ${row.liveScore}` : ''}`}
+      accessibilityLabel={rowLabel(row)}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -176,12 +184,12 @@ export function StandingsTable({
   highlightTeamId,
   sport,
 }: {
-  groups: TableGroup[] | StandingsDoc['groups'];
+  groups: TableGroup[];
   highlightTeamId: string;
   /** Modalidade da competição; null quando não se sabe (nunca o emblema local do Sporting). */
   sport: Sport | null;
 }) {
-  const shown = (groups as TableGroup[]).filter((g) => g.rows.length > 0);
+  const shown = groups.filter((g) => g.rows.length > 0);
   const named = shown.length > 1;
   const present = new Set(shown.flatMap((g) => g.rows.map((r) => zoneOf(r.description))));
   const zones = ZONE_ORDER.filter((z) => present.has(z));
