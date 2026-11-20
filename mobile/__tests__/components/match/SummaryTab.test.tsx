@@ -209,7 +209,7 @@ describe('ao vivo e terminado', () => {
     };
     await render(<SummaryTab match={match({ status: 'FT', score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
     expect(screen.getByText('1ª Parte')).toBeTruthy();
-    expect(screen.getByText('0-0')).toBeTruthy();
+    expect(screen.getAllByText('0-0')[0]).toBeTruthy();
     expect(screen.getByLabelText('Cartão vermelho')).toBeTruthy();
     expect(screen.getByText('Zalazar')).toBeTruthy();
   });
@@ -221,7 +221,17 @@ describe('ao vivo e terminado', () => {
     await render(<SummaryTab match={match({ status: 'FT', score: { home: 0, away: 0, halftime: null, extratime: null, penalty: null } })} />);
     expect(screen.getByLabelText('Penálti falhado')).toBeTruthy();
     expect(screen.queryByLabelText('Golo')).toBeNull();
-    expect(screen.getByText('0-0')).toBeTruthy();
+    expect(screen.getAllByText('0-0')[0]).toBeTruthy();
+  });
+
+  it('20/11: 1.ª parte sem lances aparece primeiro, a 0-0 e "Sem incidências"; depois a 2.ª com os lances', async () => {
+    mockDetails.current = {
+      events: ready({ items: [ev({ minute: 61, playerName: 'Suárez', teamId: '228' }), ev({ minute: 54, type: 'subst', playerName: 'Trincão', assistName: 'Geny', teamId: '228' })] }),
+    };
+    await render(<SummaryTab match={match({ status: 'FT' })} />);
+    expect(screen.getAllByText(/^[12]ª Parte$/).map((n) => n.props.children)).toEqual(['1ª Parte', '2ª Parte']);
+    expect(screen.getAllByTestId('part-empty')).toHaveLength(1);
+    expect(screen.getByText('Sem incidências.')).toBeTruthy();
   });
 
   it('ao vivo sem lances ainda: mensagem, sem rebentar', async () => {

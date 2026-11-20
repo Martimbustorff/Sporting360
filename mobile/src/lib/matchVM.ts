@@ -300,7 +300,7 @@ export function liveFeed(items: EventItem[], homeTeamId: string, sportingSide: '
     });
 }
 
-type Part = '1ª Parte' | '2ª Parte' | 'Prolongamento' | 'Penáltis';
+export type Part = '1ª Parte' | '2ª Parte' | 'Prolongamento' | 'Penáltis';
 const PARTS: readonly Part[] = ['1ª Parte', '2ª Parte', 'Prolongamento', 'Penáltis'];
 
 function partOf(e: EventItem): Part {
@@ -325,10 +325,22 @@ function scoringSide(e: EventItem, homeTeamId: string): 'home' | 'away' {
  * Lances agrupados por parte, com o resultado no fim de cada parte. Partes sem lances não aparecem.
  * Nos penáltis o resultado é só o do desempate (ex.: "4-3"), não somado ao do jogo.
  */
+/**
+ * Partes que um jogo terminado jogou (20/11, Martim: ver sempre a 1.ª parte primeiro, mesmo sem lances): 1.ª e 2.ª
+ * sempre; prolongamento com AET ou PEN; penáltis com PEN.
+ */
+export function playedParts(status: string): Part[] {
+  if (status === 'PEN') return ['1ª Parte', '2ª Parte', 'Prolongamento', 'Penáltis'];
+  if (status === 'AET') return ['1ª Parte', '2ª Parte', 'Prolongamento'];
+  return ['1ª Parte', '2ª Parte'];
+}
+
 export function groupEvents(
   items: EventItem[],
   homeTeamId: string,
   sportingSide: 'home' | 'away' = 'home',
+  /** Partes que aparecem mesmo sem lances (com o resultado dessa altura). */
+  alwaysParts: readonly Part[] = [],
 ): { label: string; score: string; events: EventVM[] }[] {
   const sorted = items
     .filter(isShownEvent)
@@ -341,7 +353,7 @@ export function groupEvents(
     const events = sorted.filter((e) => partOf(e) === part);
     const tally = part === 'Penáltis' ? shootout : game;
     for (const e of events) if (isScoredGoal(e)) tally[scoringSide(e, homeTeamId)] += 1;
-    if (events.length === 0) continue;
+    if (events.length === 0 && !alwaysParts.includes(part)) continue;
     groups.push({
       label: part,
       score: `${tally.home}-${tally.away}`,

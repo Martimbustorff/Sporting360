@@ -17,7 +17,7 @@ import { SPORTING_API_ID } from '@/lib/teams';
 import { InfoRow, SectionBar } from '@/components/SectionBar';
 import type { InjuriesDoc, Match } from '@/data/schemas';
 import { useMatchDetail, useVenue } from '@/data/sports';
-import { groupEvents, uiState } from '@/lib/matchVM';
+import { groupEvents, playedParts, uiState } from '@/lib/matchVM';
 import {
   absenceReasonText,
   capacityText,
@@ -38,6 +38,7 @@ const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
 const POSTPONED = 'Jogo adiado. A nova data aparece aqui quando for conhecida.';
 const CANCELLED = 'Jogo cancelado.';
 const NO_EVENTS_DONE = 'Sem lances registados.';
+const NO_EVENTS_PART = 'Sem incidências.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
 
@@ -254,16 +255,22 @@ function Events({ match, after }: { match: Match; after?: ReactNode }) {
   const events = useMatchDetail(match.id, 'events');
   if (events.status === 'loading') return null;
   if (events.status === 'error') return <EmptyState icon="info" text={LOAD_ERROR} />;
-  const groups = events.status === 'ready' ? groupEvents(events.data.items, match.home.id, match.sportingSide) : [];
-  if (groups.length === 0) return <><EmptyState icon="info" text={NO_EVENTS_DONE} />{after}</>;
+  const items = events.status === 'ready' ? events.data.items : [];
+  if (items.length === 0) return <><EmptyState icon="info" text={NO_EVENTS_DONE} />{after}</>;
+  // 20/11: as partes jogadas aparecem sempre por ordem (a 1.ª primeiro), mesmo uma parte sem lances.
+  const groups = groupEvents(items, match.home.id, match.sportingSide, playedParts(match.status));
   return (
     <>
       {groups.map((g) => (
         <View key={g.label}>
           <SectionBar label={g.label} right={g.score} />
-          {g.events.map((e, i) => (
-            <EventRow key={i} event={e} />
-          ))}
+          {g.events.length === 0 ? (
+            <Text71 testID="part-empty" variant="caption12" color="textMuted" style={{ paddingVertical: space.s12 }}>
+              {NO_EVENTS_PART}
+            </Text71>
+          ) : (
+            g.events.map((e, i) => <EventRow key={i} event={e} />)
+          )}
         </View>
       ))}
       {after}
