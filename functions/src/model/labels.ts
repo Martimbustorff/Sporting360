@@ -38,6 +38,7 @@ const OTHER_BY_NAME: Record<string, Label> = {
   "taça da liga": { name: "Taça da Liga", type: "cup" },
   "uefa futsal champions league": { name: "Liga dos Campeões UEFA de Futsal", type: "europe" },
   "liga dos campeões uefa de futsal": { name: "Liga dos Campeões UEFA de Futsal", type: "europe" },
+  "copa intercontinental futsal": { name: "Taça Intercontinental", type: "europe" },
   "campeonato placard": { name: "Campeonato Placard", type: "league" },
   "campeonato placard hp - fase regular": { name: "Campeonato Placard", type: "league" },
   "supertaça antónio livramento placard": { name: "Supertaça", type: "supercup" },

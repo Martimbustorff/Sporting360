@@ -35,6 +35,8 @@ export const FUTSAL_PAGES: { page: number; raw: string }[] = [
   { page: 43, raw: "Taça da Liga" },
   { page: 40, raw: "Supertaça" },
   { page: 57, raw: "UEFA Futsal Champions League" },
+  // 20/11 (Martim): o Sporting foi campeão da Taça Intercontinental (Pato Branco, Brasil, 15 a 19/11) e a app não a mostrava.
+  { page: 85, raw: "Copa Intercontinental Futsal" },
 ];
 
 const MONTHS: Record<string, number> = {

@@ -88,7 +88,7 @@ const FUTSALPORTUGAL: FreeSourceRef = {
   kind: "html",
   url: "https://futsalportugal.com/pt/schedule/3/{competicao}",
   notes:
-    "Zona Técnica Futsal, HTML no servidor. Competições: 26 Liga Placard, 45 Taça de Portugal, 43 Taça da Liga, 40 Supertaça, 57 UEFA Futsal Champions League. A hora da lista segue o país do pedido (aparece 'hora US'); usar o startDate com offset do JSON-LD de /pt/gamesheet/{id} para a hora certa e o local. Pedir no máximo 1 vez por 30 min.",
+    "Zona Técnica Futsal, HTML no servidor. Competições: 26 Liga Placard, 45 Taça de Portugal, 43 Taça da Liga, 40 Supertaça, 57 UEFA Futsal Champions League, 85 Copa Intercontinental Futsal. A hora da lista segue o país do pedido (aparece 'hora US'); usar o startDate com offset do JSON-LD de /pt/gamesheet/{id} para a hora certa e o local. Pedir no máximo 1 vez por 30 min.",
 };
 
 const FUTSALPORTUGAL_GAMESHEET: FreeSourceRef = {

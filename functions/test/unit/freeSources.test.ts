@@ -97,21 +97,35 @@ describe("futsalportugal (lista)", () => {
       [/schedule\/3\/43$/, "free/futsalportugal/schedule-taca-da-liga-43.html"],
       [/schedule\/3\/40$/, "free/futsalportugal/schedule-supertaca-40.html"],
       [/schedule\/3\/57$/, "free/futsalportugal/schedule-champions-league-57.html"],
+      [/schedule\/3\/85$/, "free/futsalportugal/schedule-intercontinental-85.html"],
       [/gamesheet\/\d+$/, (url) => { const r = gs(url); return (typeof r === "string" ? html(r) : r) as never; }],
     ]);
 
-  it("amostras: 14 jogos do Sporting (8 Liga, 3 Taça da Liga, 1 Supertaça, 2 Champions; marcadores 'Beitar / Sporting' fora)", async () => {
+  it("amostras: 18 jogos do Sporting (8 Liga, 3 Taça da Liga, 1 Supertaça, 2 Champions, 4 Intercontinental; marcadores 'Beitar / Sporting' fora)", async () => {
     const f = routes();
     const ms = await futsalPortugal.fetchMatches(f, SEASON, NOW);
-    expect(ms).toHaveLength(14);
+    expect(ms).toHaveLength(18);
     expect(ms.every((m) => m.sport === "futsal" && m.sourceKey === "futsalportugal" && m.season === SEASON)).toBe(true);
     expect(ms.filter((m) => m.competition.id === "liga-placard")).toHaveLength(8);
     expect(ms.filter((m) => m.competition.id === "liga-dos-campeoes-uefa-de-futsal")).toHaveLength(2);
     expect(ms.map((m) => m.sourceId)).not.toContain("66628");
     // Uma lista por competição.
-    expect(f.calls.filter((u) => u.includes("/schedule/"))).toHaveLength(5);
-    // Fichas (hora com fuso): no máximo 4 por execução, os jogos futuros mais próximos primeiro.
-    expect(f.calls.filter((u) => u.includes("/gamesheet/"))).toEqual(["66614", "66622", "31813", "33023"].map((id) => `https://futsalportugal.com/pt/gamesheet/${id}`));
+    expect(f.calls.filter((u) => u.includes("/schedule/"))).toHaveLength(6);
+    // Fichas (hora com fuso): os jogos próximos (aqui a meia-final e a final da Intercontinental, a 18/11) sempre;
+    // dos restantes no máximo 4 por execução, os futuros mais próximos primeiro.
+    expect(f.calls.filter((u) => u.includes("/gamesheet/"))).toEqual(["66845", "66847", "66614", "66622", "31813", "33023"].map((id) => `https://futsalportugal.com/pt/gamesheet/${id}`));
+  });
+
+  it("Taça Intercontinental (Pato Branco, 15 a 19/11/2026): grupo, meia-final e final, com resultados", async () => {
+    // No dia seguinte à final (20/11): os quatro jogos já têm resultado.
+    const ms = (await futsalPortugal.fetchMatches(routes(), SEASON, new Date("2026-11-20T21:00:00Z"))).filter((m) => m.competition.id === "taca-intercontinental");
+    expect(ms).toHaveLength(4);
+    expect(ms.every((m) => m.competition.name === "Taça Intercontinental" && m.competition.type === "europe")).toBe(true);
+    expect(ms.every((m) => m.status !== "NS")).toBe(true);
+    const final = ms.find((m) => m.competition.round === "Final")!;
+    const sporting = final.sportingSide === "home" ? final.score.home : final.score.away;
+    const other = final.sportingSide === "home" ? final.score.away : final.score.home;
+    expect(sporting).toBeGreaterThan(other!);
   });
 
   it("jogo passado com resultado: competição, ronda, lados e emblema", async () => {

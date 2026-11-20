@@ -146,6 +146,7 @@ describe("competitionLabel", () => {
       ["futsal", "Taça Da Liga", { name: "Taça da Liga", type: "cup" }],
       ["futsal", "Taça De Portugal", { name: "Taça de Portugal", type: "cup" }],
       ["futsal", "UEFA Futsal Champions League", { name: "Liga dos Campeões UEFA de Futsal", type: "europe" }],
+      ["futsal", "Copa Intercontinental Futsal", { name: "Taça Intercontinental", type: "europe" }],
       ["roller_hockey", "Campeonato Placard", { name: "Campeonato Placard", type: "league" }],
       ["roller_hockey", "Campeonato Placard HP - Fase Regular", { name: "Campeonato Placard", type: "league" }],
       ["roller_hockey", "SuperTaça António Livramento  PLACARD", { name: "Supertaça", type: "supercup" }],
