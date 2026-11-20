@@ -1,0 +1,18 @@
+// Vibração nos momentos-chave (20/11): submeter o prognóstico, votar no MVP, partilhar, abrir a GameBox, mudar de
+// GameBox na catraca e golo de um jogo que estás a ver. Nunca lança: sem motor de vibração (simulador, web) não faz nada.
+import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
+
+const run = (fn: () => Promise<void>) => {
+  if (Platform.OS === 'web') return;
+  fn().catch(() => undefined);
+};
+
+export const haptic = {
+  /** Toque leve: abrir, mudar de página. */
+  light: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
+  /** Escolha numa lista (MVP, + e − do prognóstico). */
+  selection: () => run(() => Haptics.selectionAsync()),
+  /** Ação concluída (prognóstico, voto, partilha) e golo. */
+  success: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
+};

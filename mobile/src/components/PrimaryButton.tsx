@@ -36,6 +36,7 @@ export function PrimaryButton({
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
       onPress={onPress}
+      feedback="scale"
       style={{
         height: layout.buttonHeight,
         borderRadius: layout.buttonHeight / 2,

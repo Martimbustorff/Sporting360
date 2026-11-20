@@ -30,6 +30,7 @@ export function MvpButton({ match }: { match: Match }) {
       accessibilityRole="button"
       accessibilityLabel={dot ? 'Votar no MVP, votação aberta' : 'MVP do jogo'}
       onPress={() => router.push(`/mvp/${match.id}`)}
+      feedback="scale"
       style={{
         width: layout.mvpButton,
         height: layout.mvpButton,

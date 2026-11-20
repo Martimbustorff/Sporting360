@@ -10,6 +10,9 @@
 // nas três vistas, e só nas equipas de `liveTeamIds`.
 // SEM FIGMA: nome do grupo (SectionBar) quando há mais de um; o rótulo de acessibilidade de cada linha; a legenda só mostra
 // as zonas que existem na tabela.
+import type { ReactNode } from 'react';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { canAnimate, MOTION } from '@/lib/motion';
 import { View } from 'react-native';
 import { TeamCrest } from '@/components/GameHeader';
 import { SectionBar } from '@/components/SectionBar';
@@ -299,11 +302,25 @@ export function StandingsTable({
           ) : null}
           <HeadRow view={view} />
           {g.rows.map((r, ri) => (
-            <Row key={`${r.teamId}-${ri}`} row={r} highlight={r.teamId === highlightTeamId} sport={sport} view={view} isLive={liveTeamIds?.has(r.teamId) ?? false} />
+            // 20/11: chave pela equipa (sem a posição) para a linha deslizar até ao novo lugar quando a tabela ao vivo muda.
+            <Slide key={rowKey(g.rows, r, ri)}>
+              <Row row={r} highlight={r.teamId === highlightTeamId} sport={sport} view={view} isLive={liveTeamIds?.has(r.teamId) ?? false} />
+            </Slide>
           ))}
         </View>
       ))}
       <Legend zones={zones} />
     </View>
   );
+}
+
+/** Chave estável da linha: a equipa; só com a mesma equipa repetida no grupo se junta a posição. */
+function rowKey(rows: { teamId: string | number }[], r: { teamId: string | number }, i: number): string {
+  return rows.filter((x) => x.teamId === r.teamId).length > 1 ? `${r.teamId}-${i}` : String(r.teamId);
+}
+
+/** Linha que desliza para o novo lugar quando a ordem muda (sem animar ao abrir). */
+function Slide({ children }: { children: ReactNode }) {
+  if (!canAnimate()) return <>{children}</>;
+  return <Animated.View layout={LinearTransition.duration(MOTION.slow)}>{children}</Animated.View>;
 }

@@ -4,6 +4,7 @@
 // antigo em users/{uid}.gameboxNumber mostra-o como "Principal" (mesma regra da lista, resolveGameboxList).
 // Tocar no QR abre o modo bilhete `/gamebox/bilhete?id={id}` (`onOpenTicket` troca o destino).
 // SEM FIGMA: esqueleto de carregamento e erro de leitura.
+import { haptic } from '@/lib/haptics';
 import { useState } from 'react';
 import { Image } from 'expo-image';
 import { useRouter, type Href } from 'expo-router';
@@ -117,7 +118,9 @@ function Content({ state, onOpenTicket }: { state: Sheetable; onOpenTicket: (g: 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (pageWidth <= 0) return;
     const next = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
-    setPage(Math.max(0, Math.min(views.length - 1, next)));
+    const p = Math.max(0, Math.min(views.length - 1, next));
+    if (p !== page) haptic.light();
+    setPage(p);
   };
   const active = Math.min(page, views.length - 1);
   const showHint = normalizeGameboxNumber(views[active]?.number ?? '') !== null;
@@ -166,7 +169,11 @@ export function HomeGameboxSheet({ uid, onOpenTicket }: { uid: string; onOpenTic
         collapsedHeight={collapsedHeight}
         expandedHeight={Math.max(collapsedHeight, Math.min(height, openHeight + Math.max(0, bottom - layout.homeIndicator)))}
         open={open}
-        onOpenChange={setOpen}
+        onOpenChange={(o) => {
+          // 20/11: abrir a GameBox vibra ao de leve.
+          if (o) haptic.light();
+          setOpen(o);
+        }}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}

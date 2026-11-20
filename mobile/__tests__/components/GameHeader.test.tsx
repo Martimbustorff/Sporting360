@@ -111,14 +111,24 @@ describe('GameHeader completo, ao vivo (frame 06)', () => {
     expect(screen.getAllByTestId('timeline-goal-top')).toHaveLength(2);
     expect(screen.getAllByTestId('timeline-goal-bottom')).toHaveLength(1);
     expect(screen.getByTestId('timeline-now')).toBeTruthy();
-    expect(screen.getByTestId('timeline-progress').props.style.width).toBe(`${67 / 0.9}%`);
+    expect(StyleSheet.flatten(screen.getByTestId('timeline-progress').props.style).width).toBe(`${67 / 0.9}%`);
   });
 
   it('só a caixa de quem marcou por último leva o contorno verde', async () => {
     await render(<GameHeader game={live} />);
-    const ring = (id: string) => StyleSheet.flatten(screen.getByTestId(id).parent!.props.style).borderColor;
+    const ring = (id: string) => StyleSheet.flatten(screen.getByTestId(`${id}-box`).props.style).borderColor;
     expect(ring('score-home')).toBe(layout.headerScoreRing);
     expect(ring('score-away')).toBeUndefined();
+  });
+
+  it('golo (20/11): o número sobe e o telemóvel vibra uma vez; abrir o jogo não vibra', async () => {
+    const Haptics = require('expo-haptics') as { notificationAsync: jest.Mock };
+    const spy = jest.spyOn(Haptics, 'notificationAsync').mockResolvedValue(undefined as never);
+    const view = await render(<GameHeader game={live} />);
+    expect(spy).not.toHaveBeenCalled();
+    await view.rerender(<GameHeader game={{ ...live, score: { home: (live.score?.home ?? 0) + 1, away: live.score?.away ?? 0 } }} />);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
   });
 
   it('sem golos conhecidos não há marcadores', async () => {
@@ -156,7 +166,7 @@ describe('GameHeader terminado', () => {
     expect(screen.getByText('Terminado')).toBeTruthy();
     expect(screen.getByText('Fim do jogo')).toBeTruthy();
     expect(screen.queryByTestId('timeline-now')).toBeNull();
-    expect(screen.getByTestId('timeline-progress').props.style.width).toBe('100%');
+    expect(StyleSheet.flatten(screen.getByTestId('timeline-progress').props.style).width).toBe('100%');
   });
 
   it('com penáltis mostra o desempate', async () => {

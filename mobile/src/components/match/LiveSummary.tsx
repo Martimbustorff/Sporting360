@@ -4,6 +4,9 @@
 // caixa do minuto 44x28, o título Label 16 (primary-on-dark num golo do Sporting) e uma segunda linha Caption 12 só quando
 // os dados do lance a dão; separador entre lances. Só o jogo ao vivo (e ao intervalo): o terminado é o frame 08.
 // Sem dados de estatísticas dos dois lados, o bloco não aparece (nunca zeros inventados); a leitura falhada também o esconde.
+import type { ReactNode } from 'react';
+import Animated, { FadeInDown, LayoutAnimationConfig, LinearTransition } from 'react-native-reanimated';
+import { canAnimate, MOTION } from '@/lib/motion';
 import { View } from 'react-native';
 import { EmptyState } from '@/components/EmptyState';
 import { StatRow } from '@/components/StatRow';
@@ -86,13 +89,32 @@ export function LiveEvents({ match }: { match: Match }) {
   const feed = events.status === 'ready' ? liveFeed(events.data.items, match.home.id, match.sportingSide) : [];
   if (feed.length === 0) return <EmptyState icon="info" text={LIVE_TEXT.noEvents} />;
   return (
-    <View testID="live-events" style={{ gap: space.s16 }}>
+    // 20/11: um lance novo entra a subir com fade no fim da lista; ao abrir o jogo os lances já lá estão (skipEntering).
+    <LiveList>
       {feed.map((e, i) => (
-        <View key={e.key} style={{ gap: space.s16 }}>
+        <LiveItem key={e.key}>
           {i > 0 ? <View style={{ height: layout.separator, backgroundColor: colors.separator }} /> : null}
           <LiveEventRow event={e} match={match} />
-        </View>
+        </LiveItem>
       ))}
+    </LiveList>
+  );
+}
+
+function LiveList({ children }: { children: ReactNode }) {
+  const list = (
+    <View testID="live-events" style={{ gap: space.s16 }}>
+      {children}
     </View>
+  );
+  return canAnimate() ? <LayoutAnimationConfig skipEntering>{list}</LayoutAnimationConfig> : list;
+}
+
+function LiveItem({ children }: { children: ReactNode }) {
+  if (!canAnimate()) return <View style={{ gap: space.s16 }}>{children}</View>;
+  return (
+    <Animated.View entering={FadeInDown.duration(MOTION.base)} layout={LinearTransition.duration(MOTION.base)} style={{ gap: space.s16 }}>
+      {children}
+    </Animated.View>
   );
 }

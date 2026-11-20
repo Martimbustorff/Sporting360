@@ -27,11 +27,13 @@ require('react-native-gesture-handler/jestSetup');
 // Cobre só o que os componentes usam; estender aqui quando outra tarefa precisar de mais.
 jest.mock('react-native-worklets', () => ({ scheduleOnRN: (fn: (...a: unknown[]) => void, ...args: unknown[]) => fn(...args) }));
 jest.mock('react-native-reanimated', () => {
-  const { View, ScrollView } = require('react-native');
+  const { View, ScrollView, Text } = require('react-native');
   const sv = <T,>(v: T) => { let cur = v; return { get: () => cur, set: (n: T) => { cur = n; } }; };
   return {
     __esModule: true,
-    default: { View, ScrollView, createAnimatedComponent: (c: unknown) => c },
+    default: { View, ScrollView, Text, createAnimatedComponent: (c: unknown) => c },
+    View,
+    Text,
     // O handler corre no JS dos testes: o onScroll do worklet é passado tal e qual ao ScrollView.
     useAnimatedScrollHandler: (h: any) => {
       const fn = typeof h === 'function' ? h : h.onScroll;
@@ -46,6 +48,22 @@ jest.mock('react-native-reanimated', () => {
     withSpring: jest.fn((v: unknown) => v),
     withTiming: jest.fn((v: unknown) => v),
     withRepeat: jest.fn((v: unknown) => v),
+    withSequence: jest.fn((...v: unknown[]) => v[v.length - 1]),
+    withDelay: jest.fn((_d: number, v: unknown) => v),
+    useDerivedValue: (fn: () => unknown) => ({ get: fn, set: () => {} }),
+    useAnimatedReaction: () => {},
+    interpolateColor: (_v: number, _i: number[], out: string[]) => out[out.length - 1],
+    Easing: { out: (f: unknown) => f, inOut: (f: unknown) => f, cubic: (t: number) => t, linear: (t: number) => t },
+    ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
+    // Animações de layout (entering/layout): objetos encadeáveis que os testes ignoram.
+    ...Object.fromEntries(
+      ['FlipInXDown', 'FadeIn', 'FadeOut', 'FadeInDown', 'FadeInUp', 'FadeOutUp', 'FadeOutDown', 'LinearTransition', 'SlideInDown', 'SlideInUp', 'ZoomIn'].map((k) => {
+        const chain: Record<string, unknown> = {};
+        for (const m of ['duration', 'delay', 'springify', 'damping', 'stiffness', 'easing', 'reduceMotion', 'withInitialValues']) chain[m] = () => chain;
+        return [k, chain];
+      }),
+    ),
+    LayoutAnimationConfig: ({ children }: { children: unknown }) => children,
     Extrapolation: { CLAMP: 'clamp' },
     interpolate: (v: number, input: number[], output: number[]) => {
       const lo = input[0] as number;

@@ -9,8 +9,11 @@
 // Regras (spec §6): abre ao minuto 80, fecha 20 minutos depois do apito final; um voto definitivo, só pela callable
 // voteMvp (services/game.ts); candidatos e janela iguais ao servidor (lib/gameWindows: mvpCandidates, mvpWindow), mas
 // só desenham a UI: o servidor decide e os seus códigos de erro dão as mensagens. Adiado e cancelado não abrem.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { haptic } from '@/lib/haptics';
+import { canAnimate, easeOut, MOTION, SPRING } from '@/lib/motion';
 import Svg, { Path } from 'react-native-svg';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
@@ -182,6 +185,7 @@ function CandidateRow({
       accessibilityLabel={`Escolher ${candidate.name}`}
       accessibilityState={{ checked: selected }}
       onPress={onPress}
+      feedback="scale"
       style={{
         width,
         alignItems: 'center',
@@ -194,7 +198,9 @@ function CandidateRow({
         backgroundColor: selected ? colors.surface10 : colors.surface06,
       }}
     >
-      <PlayerPhoto photo={line?.photo ?? null} size={layout.mvpTilePhoto} number={candidate.number} />
+      <Pop active={selected}>
+        <PlayerPhoto photo={line?.photo ?? null} size={layout.mvpTilePhoto} number={candidate.number} />
+      </Pop>
       <Text71 variant="strong14" numberOfLines={1} style={{ textAlign: 'center', alignSelf: 'stretch' }}>
         {candidate.name}
       </Text71>
@@ -244,6 +250,37 @@ function CandidateRow({
 }
 
 /** Linha só de leitura: nome à esquerda, percentagem à direita (estilo secundário). O voto do próprio fica a primary. */
+/** 20/11: a foto do jogador escolhido dá um pequeno salto (mola). */
+function Pop({ active, children }: { active: boolean; children: ReactNode }) {
+  if (!canAnimate()) return <>{children}</>;
+  return <PopAnimated active={active}>{children}</PopAnimated>;
+}
+
+function PopAnimated({ active, children }: { active: boolean; children: ReactNode }) {
+  const scale = useSharedValue(1);
+  useEffect(() => {
+    if (active) scale.set(withSequence(withTiming(layout.mvpPopScale, { duration: MOTION.fast }), withSpring(1, SPRING)));
+  }, [active, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/** 20/11: a percentagem enche a linha da esquerda para a direita (a linha do próprio voto já é toda verde). */
+function PercentFill({ percent }: { percent: number }) {
+  const base = { position: 'absolute', left: 0, top: 0, bottom: 0, width: `${percent}%`, backgroundColor: colors.surface10 } as const;
+  if (!canAnimate()) return <View testID="mvp-result-fill" pointerEvents="none" style={base} />;
+  return <PercentFillAnimated style={base} />;
+}
+
+function PercentFillAnimated({ style }: { style: object }) {
+  const grow = useSharedValue(0);
+  useEffect(() => {
+    grow.set(withTiming(1, { duration: MOTION.slow * 2, easing: easeOut() }));
+  }, [grow]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scaleX: grow.get() }] }));
+  return <Animated.View testID="mvp-result-fill" pointerEvents="none" style={[style, { transformOrigin: 'left' }, animated]} />;
+}
+
 function ResultRow({ candidate, percent, mine }: { candidate: MvpCandidate; percent: number; mine: boolean }) {
   return (
     <View
@@ -258,8 +295,10 @@ function ResultRow({ candidate, percent, mine }: { candidate: MvpCandidate; perc
         borderWidth: layout.separator,
         borderColor: mine ? colors.primary : colors.separator,
         backgroundColor: mine ? colors.primary : undefined,
+        overflow: 'hidden',
       }}
     >
+      {mine ? null : <PercentFill percent={percent} />}
       <Text71 variant="strong14" numberOfLines={1} style={{ flex: 1 }}>
         {candidate.name}
       </Text71>
@@ -331,6 +370,7 @@ function VoteForm({
     setError(null);
     try {
       await voteMvp(match.id, playerId);
+      haptic.success();
       // O snapshot de mvpVotes chega a seguir; até lá mostra-se o voto enviado.
       onSent(playerId);
     } catch (e) {
@@ -374,6 +414,7 @@ function VoteForm({
             width={tile}
             onPress={() => {
               if (sending) return;
+              if (c.playerId !== selected) haptic.selection();
               setSelected(c.playerId);
               setError(null);
             }}

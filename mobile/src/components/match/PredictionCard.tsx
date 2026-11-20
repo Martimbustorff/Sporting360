@@ -8,6 +8,7 @@
 // A partilha abre o cartão "S360 MATCHDAY" (ShareCard) com "Partilhar" (Branco) e "Fechar" (Contorno).
 // Martim 20/11: o prognóstico deixou de ter separador. É um cartão no topo do Sumário, só antes do apito inicial (jogo
 // NS e relógio antes do kickoff); ao apito sai e o palpite e os pontos ficam no cabeçalho do jogo (PredictionSummary).
+import { haptic } from '@/lib/haptics';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import Feather from '@expo/vector-icons/Feather';
 import { View } from 'react-native';
@@ -249,6 +250,7 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
     setError(null);
     try {
       await submitPrediction(match.id, home, away);
+      haptic.success();
       // O snapshot de matchPredictions chega a seguir; até lá mostra-se o que foi enviado.
       setSent({ home, away });
     } catch (e) {

@@ -12,6 +12,7 @@ import { useEffect, useId, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { Appear } from '@/components/Appear';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
 import { TvChip } from '@/components/TvChip';
@@ -309,7 +310,10 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
             style={StyleSheet.absoluteFill}
           />
         ) : null}
-        {content}
+        {/* 20/11: ao mudar de estado (a carregar para o jogo, próximo para ao vivo) o conteúdo entra com um fade curto. */}
+        <Appear key={state} style={styles.fill} pointerEvents="box-none">
+          {content}
+        </Appear>
       </View>
     </View>
   );

@@ -4,10 +4,11 @@
 // 35c (4994:12606): a carregar é o cartão a carregar e o esqueleto do 47 por baixo das tabs.
 // SEM FIGMA: o aviso de cache (OfflineBanner, com tolerância), o estado vazio e de erro, e a atribuição
 // "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas).
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { router, useIsFocused, type Href } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
+import { Appear } from '@/components/Appear';
 import { Chips } from '@/components/Chips';
 import { EmptyState } from '@/components/EmptyState';
 import { Header } from '@/components/Header';
@@ -25,6 +26,7 @@ import { useResultMatches, useUpcomingMatches } from '@/data/sports';
 import { agendaLists } from '@/lib/agenda';
 import { predictionOpen } from '@/lib/gameWindows';
 import { homeMatchMoment } from '@/lib/homeMatchMoment';
+import { MOTION } from '@/lib/motion';
 import { AGENDA_SPORTS, sportLabel } from '@/lib/sports';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
@@ -50,6 +52,17 @@ const attributions = (ms: Match[]): string[] => [
 ];
 const FOOTBALL_SOURCE = 'API-Football';
 
+/** Verdadeiro durante um instante depois de `key` mudar (as linhas montadas nesse instante entram com fade). */
+function useFreshWindow(key: string): boolean {
+  const [fresh, setFresh] = useState(true);
+  useEffect(() => {
+    setFresh(true);
+    const t = setTimeout(() => setFresh(false), MOTION.slow * 2);
+    return () => clearTimeout(t);
+  }, [key]);
+  return fresh;
+}
+
 export default function Agenda() {
   const [sport, setSport] = useState<Sport>('football');
   const [tab, setTab] = useState<Tab>('upcoming');
@@ -70,6 +83,9 @@ export default function Agenda() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   const loading = isLoading(upcoming) || isLoading(results);
+  // 20/11: as linhas que chegam (fim do carregamento, outra modalidade ou separador) aparecem com um fade curto; as que
+  // montam depois, ao fazer scroll, não.
+  const fresh = useFreshWindow(`${sport}-${tab}-${loading ? 'l' : 'r'}`);
   const failed = isError(upcoming) || isError(results);
   const moment = homeMatchMoment({
     match: next,
@@ -141,7 +157,10 @@ export default function Agenda() {
         testID="agenda-list"
         data={loading || failed ? [] : list}
         keyExtractor={(m) => m.id}
-        renderItem={({ item }) => <MatchRow match={item} showCompetition onPress={(id) => router.push(`/jogo/${id}`)} />}
+        renderItem={({ item }) => {
+          const row = <MatchRow match={item} showCompetition onPress={(id) => router.push(`/jogo/${id}`)} />;
+          return fresh ? <Appear>{row}</Appear> : row;
+        }}
         ListHeaderComponent={header}
         ListEmptyComponent={
           failed ? (

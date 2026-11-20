@@ -526,6 +526,7 @@ export const layout = {
   shareBox: { width: 48, height: 58 }, // caixas do cartão
   shareBoxRadius: 6,
   shareBoxGap: 8,
+  pressScaleSlop: 0, // botões e cartões com `feedback="scale"` já têm 44 pt ou mais
   mvpButton: 44, // botão da taça do MVP na barra do jogo (4933:7140)
   mvpButtonIcon: 24,
   mvpButtonDot: 10,
@@ -533,6 +534,7 @@ export const layout = {
   mvpTileGap: 10, // grelha de caras do ecrã do MVP (4934:7263)
   mvpTilePhoto: 64,
   mvpTileBorder: 2,
+  mvpPopScale: 1.12, // salto da foto do jogador escolhido no MVP
   headerScoreDigitNudge: 5, // 20/11 (Martim): os algarismos score72 da DIN Condensed ficavam altos na caixa branca; descidos 5 pt
   valueDigitNudge: 3, // algarismos display40 da DIN Condensed descidos 3 pt para ficarem ao centro da caixa branca
   shareCardRadius: 20,

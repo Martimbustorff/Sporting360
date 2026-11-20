@@ -3,9 +3,14 @@
 // branca 52x60 raio 8 com o valor em Display 40 ink. Submetido (4946:8064): a mesma linha só com emblema, nome e caixa.
 // Abaixo de `layout.stepCompactBelow` de largura de janela (320 pt) o emblema esconde-se e o espaço desce para 8, para o
 // nome ter pelo menos ~80 pt (uma linha, reticências). Não passa de `max` nem desce de `min`.
-import type { ReactNode } from 'react';
+// Movimento (20/11): no seletor, o número novo entra a descer (+) ou a subir (−) e o toque vibra ao de leve; no cartão
+// de partilha (imagem) não há animação.
+import { useRef, type ReactNode } from 'react';
 import { useWindowDimensions, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, LayoutAnimationConfig } from 'react-native-reanimated';
 import { Touchable } from '@/components/Touchable';
+import { haptic } from '@/lib/haptics';
+import { canAnimate, MOTION } from '@/lib/motion';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
@@ -26,10 +31,26 @@ export function ValueBox({ value, testID, size = 'step' }: { value: number; test
     >
       {/* A DIN Condensed reserva espaço de descendente por baixo: sem o ajuste os algarismos ficavam acima do centro
           da caixa branca (visto na partilha a 20/11). */}
-      <Text71 variant="display40" color="ink" testID={testID} style={{ transform: [{ translateY: layout.valueDigitNudge }] }}>
-        {value}
-      </Text71>
+      <Rolling value={value} animate={!share}>
+        <Text71 variant="display40" color="ink" testID={testID} style={{ transform: [{ translateY: layout.valueDigitNudge }] }}>
+          {value}
+        </Text71>
+      </Rolling>
     </View>
+  );
+}
+
+function Rolling({ value, animate, children }: { value: number; animate: boolean; children: ReactNode }) {
+  const prev = useRef(value);
+  const up = value >= prev.current;
+  prev.current = value;
+  if (!animate || !canAnimate()) return <>{children}</>;
+  return (
+    <LayoutAnimationConfig skipEntering>
+      <Animated.View key={value} entering={(up ? FadeInDown : FadeInUp).duration(MOTION.fast)}>
+        {children}
+      </Animated.View>
+    </LayoutAnimationConfig>
   );
 }
 
@@ -40,7 +61,10 @@ function StepButton({ glyph, label, disabled, onPress }: { glyph: '−' | '+'; l
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        haptic.selection();
+        onPress();
+      }}
       style={{
         width: layout.minTouch,
         height: layout.minTouch,

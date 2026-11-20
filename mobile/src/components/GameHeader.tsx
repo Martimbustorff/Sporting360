@@ -7,9 +7,11 @@
 // pontos quando existem eventos de pontos do servidor (a app nunca calcula pontuação). O nome da competição e a jornada
 // vivem na barra de navegação (`GameNavTitle`), uma só vez (nota 06).
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInDown, FlipInXDown, LayoutAnimationConfig, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { haptic } from '@/lib/haptics';
+import { canAnimate, MOTION } from '@/lib/motion';
 import { MatchTimeline } from '@/components/MatchTimeline';
 import { TvChip } from '@/components/TvChip';
 import { PredictionSummary, type PredictionVM } from '@/components/PredictionSummary';
@@ -187,10 +189,30 @@ function MomentPill({ game }: { game: GameHeaderVM }) {
   );
 }
 
+/**
+ * Algarismo que vira quando muda (golo). O primeiro desenho não anima; uma subida (golo, não correção) vibra uma vez.
+ */
+function FlipDigit({ value, children }: { value: number; children: ReactNode }) {
+  const prev = useRef(value);
+  useEffect(() => {
+    if (value > prev.current) haptic.success();
+    prev.current = value;
+  }, [value]);
+  if (!canAnimate()) return <>{children}</>;
+  return (
+    <LayoutAnimationConfig skipEntering>
+      <Animated.View key={value} entering={FlipInXDown.duration(MOTION.slow)} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        {children}
+      </Animated.View>
+    </LayoutAnimationConfig>
+  );
+}
+
 /** Caixa de resultado do Figma 4924:6384: branca, charneira de placard e, na equipa que marcou por último, contorno e brilho verdes. */
 function FlipBox({ value, testID, ringed }: { value: number; testID: string; ringed: boolean }) {
   return (
     <View
+      testID={`${testID}-box`}
       style={{
         width: layout.headerScoreBox.width,
         height: layout.headerScoreBox.height,
@@ -212,16 +234,19 @@ function FlipBox({ value, testID, ringed }: { value: number; testID: string; rin
           : layout.headerScoreShadow),
       }}
     >
-      <Text71
-        variant="score72"
-        color="ink"
-        testID={testID}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        style={{ textAlign: 'center', transform: [{ translateY: layout.headerScoreDigitNudge }] }}
-      >
-        {value}
-      </Text71>
+      {/* 20/11: quando o número muda (golo), vira como num placard. Ao abrir o jogo não vira (skipEntering). */}
+      <FlipDigit value={value}>
+        <Text71
+          variant="score72"
+          color="ink"
+          testID={testID}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={{ textAlign: 'center', transform: [{ translateY: layout.headerScoreDigitNudge }] }}
+        >
+          {value}
+        </Text71>
+      </FlipDigit>
       <View
         style={{
           position: 'absolute',
@@ -248,6 +273,23 @@ function Team({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   );
 }
 
+/** Minuto ao vivo: cada minuto novo entra a descer, em vez de saltar (20/11). */
+function LiveMinute({ text }: { text: string }) {
+  const label = (
+    <Text71 variant="title24" color="primaryOnDark" testID="live-minute" numberOfLines={1}>
+      {text}
+    </Text71>
+  );
+  if (!canAnimate()) return label;
+  return (
+    <LayoutAnimationConfig skipEntering>
+      <Animated.View key={text} entering={FadeInDown.duration(MOTION.base)}>
+        {label}
+      </Animated.View>
+    </LayoutAnimationConfig>
+  );
+}
+
 function Center({ game }: { game: GameHeaderVM }) {
   const { state } = game;
   const off = state === 'postponed' || state === 'cancelled';
@@ -262,11 +304,7 @@ function Center({ game }: { game: GameHeaderVM }) {
             <FlipBox value={score.home} testID="score-home" ringed={ringSide === 'home'} />
             <FlipBox value={score.away} testID="score-away" ringed={ringSide === 'away'} />
           </View>
-          {state === 'live' && minuteOf(game) ? (
-            <Text71 variant="title24" color="primaryOnDark" testID="live-minute" numberOfLines={1}>
-              {minuteOf(game)}
-            </Text71>
-          ) : null}
+          {state === 'live' && minuteOf(game) ? <LiveMinute text={minuteOf(game)} /> : null}
           {state === 'finished' ? (
             <Text71 variant="eyebrow13" color="textMuted" numberOfLines={1}>
               {game.penalty ? penaltiesText(game.penalty.home, game.penalty.away) : GAME_HEADER_TEXT.endOfGame}

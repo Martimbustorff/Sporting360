@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
+import { Appear } from '@/components/Appear';
 import { EmptyState } from '@/components/EmptyState';
 import { GameHeader, GameNavTitle, type GameHeaderVM } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
@@ -177,7 +178,10 @@ function FootballDetail({ match, initialTab }: { match: Match; initialTab: Match
         />
       }
     >
-      <ActiveTab match={match} />
+      {/* 20/11: o conteúdo de cada separador entra com um fade curto (a chave reinicia-o ao mudar). */}
+      <Appear key={tab} style={{ flex: 1 }}>
+        <ActiveTab match={match} />
+      </Appear>
     </MatchDetailLayout>
   );
 }

@@ -1,10 +1,14 @@
 // Figma V7.1: tabs 4935:7125 (com scroll: espaço 24, topo 15, etiqueta a 11 do indicador) e 4942:7676 (iguais: topo 10, linha separator por baixo).
 // Etiqueta Label 16: ativa branca, inativas text-subtle. Indicador de 3 pt, raio 2, primary-on-dark na ativa.
 // Diferença deliberada: altura mínima 44 (alvo de toque).
+// Movimento (20/11): o indicador desliza de um separador para o outro com mola (`SPRING`). Até cada separador se medir
+// (primeiro desenho, testes) o indicador fica no próprio separador, como antes.
 // `plain` (modo scroll): variante das Notícias (4943:7909): começa a 24, sem linha por baixo, topo 10 e espaço 10.
-import { useCallback, useEffect, useRef, type ComponentRef } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Touchable } from '@/components/Touchable';
+import { canAnimate, SPRING } from '@/lib/motion';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
@@ -37,6 +41,16 @@ export function Tabs<K extends string>({
     [mode],
   );
   useEffect(() => reveal(value), [value, reveal]);
+  const slide = canAnimate();
+  const [measured, setMeasured] = useState(false);
+  const ix = useSlideValue(slide);
+  const iw = useSlideValue(slide);
+  useEffect(() => {
+    const span = spans.current[value];
+    if (!slide || !span) return;
+    ix?.set(withSpring(span.x, SPRING));
+    iw?.set(withSpring(span.width, SPRING));
+  }, [value, slide, ix, iw]);
   const tabs = items.map((it) => {
     const active = it.key === value;
     const equal = mode === 'equal';
@@ -49,7 +63,13 @@ export function Tabs<K extends string>({
         onLayout={(e) => {
           const { x, width } = e.nativeEvent.layout;
           spans.current[it.key] = { x, width };
-          if (active) reveal(it.key);
+          if (active) {
+            reveal(it.key);
+            // Primeira medição do ativo: o indicador nasce no sítio, sem deslizar.
+            ix?.set(x);
+            iw?.set(width);
+            if (slide) setMeasured(true);
+          }
         }}
         onPress={() => onChange(it.key)}
         style={{
@@ -70,12 +90,13 @@ export function Tabs<K extends string>({
             alignSelf: 'stretch',
             height: layout.tabUnderline,
             borderRadius: layout.tabUnderlineRadius,
-            backgroundColor: active ? colors.primaryOnDark : 'transparent',
+            backgroundColor: active && !measured ? colors.primaryOnDark : 'transparent',
           }}
         />
       </Touchable>
     );
   });
+  const indicator = measured && ix && iw ? <Indicator x={ix} w={iw} /> : null;
   const line = plain
     ? {}
     : ({ borderBottomWidth: layout.separator, borderBottomColor: mode === 'equal' ? colors.separator : colors.surface10 } as const);
@@ -95,9 +116,12 @@ export function Tabs<K extends string>({
           onScroll={(e) => {
             view.current.x = e.nativeEvent.contentOffset.x;
           }}
-          contentContainerStyle={{ paddingHorizontal: plain ? space.s24 : space.s16, gap: space.s24 }}
+          contentContainerStyle={{ paddingHorizontal: plain ? space.s24 : space.s16 }}
         >
-          {tabs}
+          <View style={{ flexDirection: 'row', gap: space.s24 }}>
+            {tabs}
+            {indicator}
+          </View>
         </ScrollView>
       </View>
     );
@@ -105,6 +129,30 @@ export function Tabs<K extends string>({
   return (
     <View style={[line, { flexDirection: 'row' }]} accessibilityRole="tablist">
       {tabs}
+      {indicator}
     </View>
+  );
+}
+
+type Slide = { get: () => number; set: (v: number) => void };
+
+/** Valor animado do indicador; sem Reanimated (alguns testes) não há indicador a deslizar. */
+function useSlideValue(slide: boolean): Slide | null {
+  // `canAnimate()` é constante durante a execução: a ordem dos hooks não muda.
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return slide ? (useSharedValue(0) as unknown as Slide) : null;
+}
+
+function Indicator({ x, w }: { x: Slide; w: Slide }) {
+  const style = useAnimatedStyle(() => ({ left: x.get(), width: w.get() }));
+  return (
+    <Animated.View
+      testID="tab-indicator"
+      pointerEvents="none"
+      style={[
+        { position: 'absolute', bottom: 0, height: layout.tabUnderline, borderRadius: layout.tabUnderlineRadius, backgroundColor: colors.primaryOnDark },
+        style,
+      ]}
+    />
   );
 }

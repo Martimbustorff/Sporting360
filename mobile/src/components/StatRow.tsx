@@ -3,7 +3,11 @@
 // cada equipa, 10x14 raio 2, contagem Label 16). A barra da equipa com o valor maior é primary-on-dark, a outra
 // surface-20 (empate sem líder). Antes do jogo (500:29279) os valores e as barras ficam esbatidos: prop `muted`.
 // Martim 20/11: números maiores. Valores em Title L 28 (eram Title S 20) e contagens dos cartões em Title S 20 (eram Label 16).
-import { View } from 'react-native';
+// Movimento (20/11): as barras crescem a partir do centro ao aparecer e ajustam-se suavemente quando os números mudam.
+import { useEffect, type ReactNode } from 'react';
+import { View, type ViewStyle } from 'react-native';
+import Animated, { LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { canAnimate, easeOut, MOTION } from '@/lib/motion';
 import { statBars } from '@/lib/stats';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
@@ -19,8 +23,9 @@ export type StatRowProps = {
 export function StatRow({ label, home, away, muted }: StatRowProps) {
   const bars = statBars(home, away);
   const bar = (side: 'home' | 'away') => (
-    <View
-      testID={`stat-bar-${side}`}
+    <GrowBar
+      key={side}
+      side={side}
       style={{
         flexGrow: bars[side].grow,
         flexShrink: 1,
@@ -93,5 +98,26 @@ export function CardsRow({ home, away, muted }: CardsRowProps) {
       <Text71 variant="caption12" color="textMuted">Cartões</Text71>
       <CardCount side="away" {...away} />
     </View>
+  );
+}
+
+/** Barra que cresce do centro para fora (casa para a esquerda, fora para a direita). */
+function GrowBar({ side, style }: { side: 'home' | 'away'; style: ViewStyle }): ReactNode {
+  if (!canAnimate()) return <View testID={`stat-bar-${side}`} style={style} />;
+  return <AnimatedBar side={side} style={style} />;
+}
+
+function AnimatedBar({ side, style }: { side: 'home' | 'away'; style: ViewStyle }) {
+  const grow = useSharedValue(0);
+  useEffect(() => {
+    grow.set(withTiming(1, { duration: MOTION.slow * 2, easing: easeOut() }));
+  }, [grow]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scaleX: grow.get() }] }));
+  return (
+    <Animated.View
+      testID={`stat-bar-${side}`}
+      layout={LinearTransition.duration(MOTION.slow)}
+      style={[style, { transformOrigin: side === 'home' ? 'right' : 'left' }, animated]}
+    />
   );
 }

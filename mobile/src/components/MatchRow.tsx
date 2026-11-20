@@ -136,6 +136,7 @@ export function MatchRow({ match, onPress, showCompetition = false }: { match: M
       accessible
       accessibilityRole="button"
       accessibilityLabel={label}
+      feedback="scale"
       onPress={() => onPress(match.id)}
     >
       {content}

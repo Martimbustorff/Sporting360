@@ -9,6 +9,7 @@
 // bilhetes, pela ordem guardada, a abrir na do `id`; pontos de página por baixo (acrescentado a pedido do Martim, o frame 12
 // não os tem). Uma só GameBox: sem pontos nem paginação.
 // Rota `/gamebox/bilhete?id={id}`: `principal` é a GameBox antiga do perfil da V2 (mesma regra da folha da Home).
+import { haptic } from '@/lib/haptics';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import Feather from '@expo/vector-icons/Feather';
@@ -339,7 +340,11 @@ function Body({ views, initialIndex }: { views: GameboxView[]; initialIndex: num
   );
   const onEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const page = Math.round(e.nativeEvent.contentOffset.x / (width || 1));
-    if (page >= 0 && page < count) setCurrent(page);
+    if (page >= 0 && page < count) {
+      // 20/11: mudar de GameBox na catraca vibra ao de leve.
+      if (page !== index) haptic.light();
+      setCurrent(page);
+    }
   };
 
   if (count === 1) {

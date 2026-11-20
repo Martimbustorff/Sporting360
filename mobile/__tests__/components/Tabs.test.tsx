@@ -86,3 +86,20 @@ describe('Tabs', () => {
     expect(scrollTo).not.toHaveBeenCalled();
   });
 });
+
+describe('Tabs: indicador que desliza (20/11)', () => {
+  it('depois de medir, o indicador passa a ser um só e desliza para o separador escolhido', async () => {
+    const { withSpring } = require('react-native-reanimated') as { withSpring: jest.Mock };
+    withSpring.mockClear();
+    const view = await render(<Tabs items={items} value="results" onChange={() => {}} mode="equal" />);
+    expect(screen.queryByTestId('tab-indicator')).toBeNull();
+    const [a, b] = screen.getAllByRole('tab');
+    await fireEvent(a!, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 150, height: 44 } } });
+    await fireEvent(b!, 'layout', { nativeEvent: { layout: { x: 150, y: 0, width: 150, height: 44 } } });
+    expect(screen.getByTestId('tab-indicator')).toBeTruthy();
+    // Os sublinhados de cada separador ficam transparentes: quem pinta é o indicador.
+    expect(screen.getAllByTestId('tab-underline').map((n) => StyleSheet.flatten(n.props.style).backgroundColor)).toEqual(['transparent', 'transparent']);
+    await view.rerender(<Tabs items={items} value="table" onChange={() => {}} mode="equal" />);
+    expect(withSpring).toHaveBeenCalledWith(150, expect.anything());
+  });
+});

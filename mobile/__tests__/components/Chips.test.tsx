@@ -74,3 +74,18 @@ describe('AuthLinkRow', () => {
     expect(onPress).toHaveBeenCalled();
   });
 });
+
+describe('Chips: pílula que desliza (20/11)', () => {
+  it('depois de medir, a pílula ativa é uma só e desliza para a modalidade escolhida', async () => {
+    const { withSpring } = require('react-native-reanimated') as { withSpring: jest.Mock };
+    withSpring.mockClear();
+    const items2 = [{ key: 'a', label: 'Futebol' }, { key: 'b', label: 'Futsal' }];
+    const view = await render(<Chips items={items2} value="a" onChange={() => {}} testIDPrefix="s" />);
+    expect(screen.queryByTestId('chip-pill')).toBeNull();
+    await fireEvent(screen.getByTestId('s-a'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 90, height: 44 } } });
+    await fireEvent(screen.getByTestId('s-b'), 'layout', { nativeEvent: { layout: { x: 98, y: 0, width: 80, height: 44 } } });
+    expect(screen.getByTestId('chip-pill')).toBeTruthy();
+    await view.rerender(<Chips items={items2} value="b" onChange={() => {}} testIDPrefix="s" />);
+    expect(withSpring).toHaveBeenCalledWith(98, expect.anything());
+  });
+});

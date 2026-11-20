@@ -1,13 +1,47 @@
 // Figma V7.1 4924:6399 "Linha do tempo (0 a 90)": pista de 4 pt (surface-20), progresso até ao minuto, marca do intervalo
 // aos 45, golos do Sporting em cima e do adversário em baixo (pontos de 8), "agora" de 12 e rótulos 0', INT., 90'.
 // O progresso do Figma é um degradé primary a primary-on-dark; aqui é primary liso (sem biblioteca de degradés).
+// Movimento (20/11): depois de medida a pista, o progresso avança suavemente até ao minuto (e ao abrir enche de 0).
+import { useEffect, useState } from 'react';
 import { View, type DimensionValue } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { canAnimate, easeOut, MOTION } from '@/lib/motion';
 import type { GoalVM } from '@/lib/matchVM';
 import { Text71 } from '@/theme/typography';
 import { colors, layout } from '@/theme/tokens';
 
 const LABEL_W = layout.timelineLabelWidth;
 const pct = (minute: number): DimensionValue => `${Math.min(Math.max(minute, 0), 90) / 0.9}%`;
+
+function Progress({ minute, top, track }: { minute: number; top: number; track: number }) {
+  const [w, setW] = useState(0);
+  const base = { position: 'absolute', left: 0, top, height: track, borderRadius: track / 2, backgroundColor: colors.primary } as const;
+  // Pista invisível do mesmo tamanho, só para medir a largura disponível.
+  const probe = <View pointerEvents="none" onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ position: 'absolute', left: 0, right: 0, top, height: track }} />;
+  if (!canAnimate() || w === 0) {
+    return (
+      <>
+        {probe}
+        <View testID="timeline-progress" style={[base, { width: pct(minute) }]} />
+      </>
+    );
+  }
+  return (
+    <>
+      {probe}
+      <AnimatedProgress style={base} target={(w * Math.min(Math.max(minute, 0), 90)) / 90} />
+    </>
+  );
+}
+
+function AnimatedProgress({ style, target }: { style: object; target: number }) {
+  const width = useSharedValue(0);
+  useEffect(() => {
+    width.set(withTiming(target, { duration: MOTION.slow * 2, easing: easeOut() }));
+  }, [target, width]);
+  const animated = useAnimatedStyle(() => ({ width: width.get() }));
+  return <Animated.View testID="timeline-progress" style={[style, animated]} />;
+}
 
 export function MatchTimeline({
   goals,
@@ -27,10 +61,7 @@ export function MatchTimeline({
       <View
         style={{ position: 'absolute', left: 0, right: 0, top: trackTop, height: track, borderRadius: track / 2, backgroundColor: colors.surface20 }}
       />
-      <View
-        testID="timeline-progress"
-        style={{ position: 'absolute', left: 0, width: pct(minute), top: trackTop, height: track, borderRadius: track / 2, backgroundColor: colors.primary }}
-      />
+      <Progress minute={minute} top={trackTop} track={track} />
       <View
         style={{
           position: 'absolute',
