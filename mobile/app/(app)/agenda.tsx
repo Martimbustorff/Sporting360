@@ -16,6 +16,7 @@ import { MatchRow } from '@/components/MatchRow';
 import { NextMatchCard } from '@/components/NextMatchCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
+import { SwipeTabs } from '@/components/SwipeTabs';
 import { ScreenSkeleton } from '@/components/Skeleton';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
@@ -153,27 +154,30 @@ export default function Agenda() {
         }
       />
       {bar}
-      <FlatList
-        testID="agenda-list"
-        data={loading || failed ? [] : list}
-        keyExtractor={(m) => m.id}
-        renderItem={({ item }) => {
-          const row = <MatchRow match={item} showCompetition onPress={(id) => router.push(`/jogo/${id}`)} />;
-          return fresh ? <Appear>{row}</Appear> : row;
-        }}
-        ListHeaderComponent={header}
-        ListEmptyComponent={
-          failed ? (
-            <EmptyState icon="info" text={ERROR_TEXT} />
-          ) : loading ? (
-            <ScreenSkeleton testID="agenda-skeleton" />
-          ) : (
-            <EmptyState text={empty} />
-          )
-        }
-        ListFooterComponent={loading || failed ? undefined : footer}
-        contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s24 }}
-      />
+      {/* 20/11: arrastar para o lado troca Próximos e Resultados (o cartão de cima fica onde está). */}
+      <SwipeTabs keys={TABS.map((t) => t.key)} value={tab} onChange={setTab} slide={false}>
+        <FlatList
+          testID="agenda-list"
+          data={loading || failed ? [] : list}
+          keyExtractor={(m) => m.id}
+          renderItem={({ item }) => {
+            const row = <MatchRow match={item} showCompetition onPress={(id) => router.push(`/jogo/${id}`)} />;
+            return fresh ? <Appear>{row}</Appear> : row;
+          }}
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            failed ? (
+              <EmptyState icon="info" text={ERROR_TEXT} />
+            ) : loading ? (
+              <ScreenSkeleton testID="agenda-skeleton" />
+            ) : (
+              <EmptyState text={empty} />
+            )
+          }
+          ListFooterComponent={loading || failed ? undefined : footer}
+          contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s24 }}
+        />
+      </SwipeTabs>
     </Screen>
   );
 }

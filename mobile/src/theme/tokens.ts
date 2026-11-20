@@ -466,6 +466,8 @@ export const layout = {
   compactStateChipPadX: 6,
   matchLuz: { width: 680, height: 520, top: -90 }, // 4924:6269 "Luz", centrada no ecrã
   matchRings: { size: 560, top: -74, opacity: 0.22 }, // 4924:6270 "Anéis (marca)" a 22 %
+  lionFrameWidth: 375, // largura do frame do João onde lockLion/lockLionImage foram medidos
+  screenLionOpacity: 0.55, // 20/11: leão desfocado no fundo dos ecrãs (menos Home e bilhete), por baixo do círculo
   matchBackdropHeight: 520, // altura do cantinho da luz (4924:6269)
   collapseRange: 120, // SEM FIGMA: alcance de reserva enquanto a altura do cabeçalho completo não foi medida
   collapseCompactFrom: 0.5, // progresso (scroll / altura do cabeçalho) a partir do qual o compacto é o rótulo acessível

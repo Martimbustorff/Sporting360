@@ -12,6 +12,7 @@ import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { RankingRow } from '@/components/RankingRow';
 import { Screen } from '@/components/Screen';
+import { SwipeTabs } from '@/components/SwipeTabs';
 import { Tabs } from '@/components/Tabs';
 import { useNow } from '@/data/clock';
 import type { LeaderboardEntry } from '@/data/schemas';
@@ -130,7 +131,9 @@ export default function Ranking() {
         <View style={{ paddingHorizontal: space.s24 }}>
           <Tabs mode="equal" items={TABS} value={kind} onChange={setKind} />
         </View>
-        {body}
+        <SwipeTabs keys={TABS.map((t) => t.key)} value={kind} onChange={setKind}>
+          {body}
+        </SwipeTabs>
       </View>
     </Screen>
   );

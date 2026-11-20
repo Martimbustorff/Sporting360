@@ -19,6 +19,7 @@ import { MatchRow } from '@/components/MatchRow';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
 import { ScreenSkeleton } from '@/components/Skeleton';
+import { SwipeTabs } from '@/components/SwipeTabs';
 import { Tabs } from '@/components/Tabs';
 import { Touchable } from '@/components/Touchable';
 import type { Loadable } from '@/data/hooks';
@@ -221,7 +222,7 @@ function CompetitionBody({ competition }: { competition: SeasonCompetition }) {
       <View style={{ paddingHorizontal: space.s24 }}>
         <Tabs mode="scroll" items={tabs} value={shown} onChange={setTab} />
       </View>
-      <View style={{ flex: 1 }}>
+      <SwipeTabs keys={tabs.map((t) => t.key)} value={shown} onChange={setTab}>
         {shown === 'classificacao' ? (
           <CompetitionStandings competitionKey={competition.key} showCompetitionLink={false} />
         ) : shown === 'jornadas' ? (
@@ -233,7 +234,7 @@ function CompetitionBody({ competition }: { competition: SeasonCompetition }) {
         ) : (
           <CardsTab competitionKey={competition.key} />
         )}
-      </View>
+      </SwipeTabs>
     </View>
   );
 }

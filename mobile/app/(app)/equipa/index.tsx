@@ -18,6 +18,7 @@ import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Screen } from '@/components/Screen';
+import { SwipeTabs } from '@/components/SwipeTabs';
 import { SectionBar } from '@/components/SectionBar';
 import { Tabs } from '@/components/Tabs';
 import { Loading, SectionLoading, PersonRow, SectionError, Tag, TextRow } from '@/components/TeamRows';
@@ -499,7 +500,7 @@ export default function Equipa() {
         <View style={{ paddingHorizontal: space.s24 }}>
           <Tabs mode="scroll" items={TABS} value={tab} onChange={setTab} />
         </View>
-        <View style={{ flex: 1 }}>
+        <SwipeTabs keys={TABS.map((t) => t.key)} value={tab} onChange={setTab}>
           {tab === 'plantel' ? (
             <SquadTab />
           ) : tab === 'estatisticas' ? (
@@ -509,7 +510,7 @@ export default function Equipa() {
           ) : (
             <TrophiesTab />
           )}
-        </View>
+        </SwipeTabs>
       </View>
     </Screen>
   );

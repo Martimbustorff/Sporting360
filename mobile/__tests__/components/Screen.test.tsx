@@ -39,3 +39,8 @@ describe('Screen', () => {
     expect(r.toJSON()).toMatchSnapshot();
   });
 });
+
+it('o fundo leva o leão desfocado por baixo do círculo (20/11)', async () => {
+  await render(<Screen><Text>ola</Text></Screen>);
+  expect(screen.getByTestId('brand-backdrop-lion')).toBeTruthy();
+});

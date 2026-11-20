@@ -16,9 +16,8 @@ exports[`Screen snapshot (default) 1`] = `
     pointerEvents="none"
     style={
       {
-        "height": 520,
+        "bottom": 0,
         "left": 0,
-        "overflow": "hidden",
         "position": "absolute",
         "right": 0,
         "top": 0,
@@ -26,98 +25,186 @@ exports[`Screen snapshot (default) 1`] = `
     }
     testID="brand-backdrop"
   >
-    <ViewManagerAdapter_ExpoImage
-      accessible={false}
-      containerViewRef={"[React.ref]"}
-      contentFit="cover"
-      contentPosition={
+    <View
+      style={
         {
-          "left": "50%",
-          "top": "50%",
+          "height": 1326,
+          "left": -80,
+          "opacity": 0.55,
+          "overflow": "hidden",
+          "position": "absolute",
+          "top": 270,
+          "width": 1338,
         }
       }
-      height={520}
-      left="50%"
-      marginLeft={-340}
-      nativeViewRef={"[React.ref]"}
-      onError={[Function]}
-      onLoad={[Function]}
-      onLoadStart={[Function]}
-      onProgress={[Function]}
-      placeholder={[]}
-      position="absolute"
-      sfEffect={null}
-      source={
+      testID="brand-backdrop-lion"
+    >
+      <ViewManagerAdapter_ExpoImage
+        accessible={false}
+        containerViewRef={"[React.ref]"}
+        contentFit="fill"
+        contentPosition={
+          {
+            "left": "50%",
+            "top": "50%",
+          }
+        }
+        height={1397.6}
+        left={-543}
+        nativeViewRef={"[React.ref]"}
+        onError={[Function]}
+        onLoad={[Function]}
+        onLoadStart={[Function]}
+        onProgress={[Function]}
+        placeholder={[]}
+        position="absolute"
+        sfEffect={null}
+        source={
+          [
+            {
+              "testUri": "../../../assets/images/lion-blur.png",
+            },
+          ]
+        }
+        style={
+          {
+            "height": 1397.6,
+            "left": -543,
+            "position": "absolute",
+            "top": -71.6,
+            "width": 1799.2,
+          }
+        }
+        svgVariables={null}
+        symbolSize={null}
+        symbolWeight={null}
+        top={-71.6}
+        transition={null}
+        width={1799.2}
+      />
+    </View>
+    <View
+      style={
         [
           {
-            "testUri": "../../../assets/images/match-luz.svg",
+            "bottom": 0,
+            "left": 0,
+            "position": "absolute",
+            "right": 0,
+            "top": 0,
+          },
+          {
+            "backgroundColor": "#003625",
+            "opacity": 0.5,
           },
         ]
       }
+    />
+    <View
       style={
         {
           "height": 520,
-          "left": "50%",
-          "marginLeft": -340,
+          "left": 0,
+          "overflow": "hidden",
           "position": "absolute",
-          "top": -90,
-          "width": 680,
+          "right": 0,
+          "top": 0,
         }
       }
-      svgVariables={null}
-      symbolSize={null}
-      symbolWeight={null}
-      top={-90}
-      transition={null}
-      width={680}
-    />
-    <ViewManagerAdapter_ExpoImage
-      accessible={false}
-      containerViewRef={"[React.ref]"}
-      contentFit="cover"
-      contentPosition={
-        {
-          "left": "50%",
-          "top": "50%",
-        }
-      }
-      height={560}
-      left="50%"
-      marginLeft={-280}
-      nativeViewRef={"[React.ref]"}
-      onError={[Function]}
-      onLoad={[Function]}
-      onLoadStart={[Function]}
-      onProgress={[Function]}
-      opacity={0.22}
-      placeholder={[]}
-      position="absolute"
-      sfEffect={null}
-      source={
-        [
+    >
+      <ViewManagerAdapter_ExpoImage
+        accessible={false}
+        containerViewRef={"[React.ref]"}
+        contentFit="cover"
+        contentPosition={
           {
-            "testUri": "../../../assets/images/welcome-rings.svg",
-          },
-        ]
-      }
-      style={
-        {
-          "height": 560,
-          "left": "50%",
-          "marginLeft": -280,
-          "opacity": 0.22,
-          "position": "absolute",
-          "top": -74,
-          "width": 560,
+            "left": "50%",
+            "top": "50%",
+          }
         }
-      }
-      svgVariables={null}
-      symbolSize={null}
-      symbolWeight={null}
-      top={-74}
-      transition={null}
-      width={560}
-    />
+        height={520}
+        left="50%"
+        marginLeft={-340}
+        nativeViewRef={"[React.ref]"}
+        onError={[Function]}
+        onLoad={[Function]}
+        onLoadStart={[Function]}
+        onProgress={[Function]}
+        placeholder={[]}
+        position="absolute"
+        sfEffect={null}
+        source={
+          [
+            {
+              "testUri": "../../../assets/images/match-luz.svg",
+            },
+          ]
+        }
+        style={
+          {
+            "height": 520,
+            "left": "50%",
+            "marginLeft": -340,
+            "position": "absolute",
+            "top": -90,
+            "width": 680,
+          }
+        }
+        svgVariables={null}
+        symbolSize={null}
+        symbolWeight={null}
+        top={-90}
+        transition={null}
+        width={680}
+      />
+      <ViewManagerAdapter_ExpoImage
+        accessible={false}
+        containerViewRef={"[React.ref]"}
+        contentFit="cover"
+        contentPosition={
+          {
+            "left": "50%",
+            "top": "50%",
+          }
+        }
+        height={560}
+        left="50%"
+        marginLeft={-280}
+        nativeViewRef={"[React.ref]"}
+        onError={[Function]}
+        onLoad={[Function]}
+        onLoadStart={[Function]}
+        onProgress={[Function]}
+        opacity={0.22}
+        placeholder={[]}
+        position="absolute"
+        sfEffect={null}
+        source={
+          [
+            {
+              "testUri": "../../../assets/images/welcome-rings.svg",
+            },
+          ]
+        }
+        style={
+          {
+            "height": 560,
+            "left": "50%",
+            "marginLeft": -280,
+            "opacity": 0.22,
+            "position": "absolute",
+            "top": -74,
+            "width": 560,
+          }
+        }
+        svgVariables={null}
+        symbolSize={null}
+        symbolWeight={null}
+        top={-74}
+        transition={null}
+        width={560}
+      />
+    </View>
   </View>
   <View
     className="flex-1"

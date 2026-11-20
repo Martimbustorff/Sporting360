@@ -8,12 +8,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Appear } from '@/components/Appear';
 import { EmptyState } from '@/components/EmptyState';
 import { GameHeader, type GameHeaderVM } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
+import { SwipeTabs } from '@/components/SwipeTabs';
 import { Tabs } from '@/components/Tabs';
 import { CrossfadeCenter, MatchDetailLayout } from '@/components/match/CollapsingHeader';
 import { LineupsTab } from '@/components/match/LineupsTab';
@@ -158,6 +158,11 @@ function FootballDetail({ match, initialTab }: { match: Match; initialTab: Match
   const scroll = useMatchScrollContext();
   const header = useFootballHeaderVM(match);
   const ActiveTab = TAB_VIEWS[tab];
+  const change = (k: MatchTabKey) => {
+    // Cada separador tem o seu scroll: ao mudar, o cabeçalho volta a abrir.
+    scroll?.reset();
+    setTab(k);
+  };
   return (
     <MatchDetailLayout
       header={<GameHeader game={header} />}
@@ -166,18 +171,14 @@ function FootballDetail({ match, initialTab }: { match: Match; initialTab: Match
           mode="scroll"
           items={FOOTBALL_TABS}
           value={tab}
-          onChange={(k) => {
-            // Cada separador tem o seu scroll: ao mudar, o cabeçalho volta a abrir.
-            scroll?.reset();
-            setTab(k);
-          }}
+          onChange={change}
         />
       }
     >
-      {/* 20/11: o conteúdo de cada separador entra com um fade curto (a chave reinicia-o ao mudar). */}
-      <Appear key={tab} style={{ flex: 1 }}>
+      {/* 20/11: arrastar para o lado muda de separador; o novo entra a deslizar desse lado. */}
+      <SwipeTabs keys={FOOTBALL_TABS.map((t) => t.key)} value={tab} onChange={change}>
         <ActiveTab match={match} />
-      </Appear>
+      </SwipeTabs>
     </MatchDetailLayout>
   );
 }

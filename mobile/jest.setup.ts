@@ -22,6 +22,12 @@ jest.mock('expo-router', () => {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('react-native-gesture-handler/jestSetup');
+// GestureDetector exige um GestureHandlerRootView por cima (a app tem-no na raiz). Nos testes de ecrã não há raiz:
+// o detetor passa a ser transparente (os gestos não se simulam; a lógica do gesto testa-se em funções puras).
+jest.mock('react-native-gesture-handler', () => {
+  const actual = jest.requireActual('react-native-gesture-handler');
+  return { ...actual, GestureDetector: ({ children }: { children: unknown }) => children };
+});
 
 // Reanimated 4 / Worklets precisam do módulo nativo (o mock oficial também falha em Jest): mock mínimo à mão.
 // Cobre só o que os componentes usam; estender aqui quando outra tarefa precisar de mais.
@@ -58,7 +64,7 @@ jest.mock('react-native-reanimated', () => {
     ReduceMotion: { System: 'system', Always: 'always', Never: 'never' },
     // Animações de layout (entering/layout): objetos encadeáveis que os testes ignoram.
     ...Object.fromEntries(
-      ['FlipInXDown', 'FadeIn', 'FadeOut', 'FadeInDown', 'FadeInUp', 'FadeOutUp', 'FadeOutDown', 'LinearTransition', 'SlideInDown', 'SlideInUp', 'ZoomIn'].map((k) => {
+      ['FlipInXDown', 'FadeIn', 'FadeOut', 'FadeInDown', 'FadeInUp', 'FadeOutUp', 'FadeOutDown', 'LinearTransition', 'SlideInDown', 'SlideInUp', 'SlideInLeft', 'SlideInRight', 'ZoomIn'].map((k) => {
         const chain: Record<string, unknown> = {};
         for (const m of ['duration', 'delay', 'springify', 'damping', 'stiffness', 'easing', 'reduceMotion', 'withInitialValues']) chain[m] = () => chain;
         return [k, chain];
