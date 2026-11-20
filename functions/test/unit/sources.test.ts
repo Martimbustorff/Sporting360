@@ -227,6 +227,31 @@ describe("fetchFeed", () => {
   });
 });
 
+describe("rss: charset", () => {
+  const latin1 = fs.readFileSync(path.join(__dirname, "../fixtures/rss/record-latin1.xml"));
+  const accents = (items: { title: string; summary: string }[]) => items.map((i) => i.title + i.summary).join(" ");
+
+  it("Record em ISO-8859-1 (cabeçalho real): acentos certos, nenhum \\uFFFD", async () => {
+    const f = fakeFetch([[/record/, { status: 200, body: latin1, headers: { "content-type": "text/xml; charset=ISO-8859-1" } }]]);
+    const items = await fetchFeed(f, { name: "Record", url: "https://www.record.pt/rss" });
+    expect(items.length).toBeGreaterThan(0);
+    expect(accents(items)).not.toContain("\uFFFD");
+    expect(accents(items)).toMatch(/[ãçéáíóõê]/);
+  });
+
+  it("sem charset no cabeçalho vale a declaração XML", async () => {
+    const f = fakeFetch([[/record/, { status: 200, body: latin1, headers: { "content-type": "text/xml" } }]]);
+    const items = await fetchFeed(f, { name: "Record", url: "https://www.record.pt/rss" });
+    expect(accents(items)).not.toContain("\uFFFD");
+  });
+
+  it("UTF-8 continua UTF-8", async () => {
+    const f = fakeFetch([[/maisfutebol/, "rss/maisfutebol.xml"]]);
+    const items = await fetchFeed(f, { name: "Maisfutebol", url: "https://maisfutebol.iol.pt/rss" });
+    expect(accents(items)).not.toContain("\uFFFD");
+  });
+});
+
 describe("fixtures gravadas", () => {
   const dir = path.join(__dirname, "../fixtures");
   const files: string[] = [];

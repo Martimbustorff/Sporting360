@@ -34,7 +34,7 @@ export class Quota {
   }
 }
 
-async function request(f: FetchFn, url: string, o: RequestOptions): Promise<{ text: string; headers: Headers }> {
+async function request(f: FetchFn, url: string, o: RequestOptions, decode: (bytes: Uint8Array, headers: Headers) => string = utf8): Promise<{ text: string; headers: Headers }> {
   const timeoutMs = o.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // O temporizador próprio garante o timeout mesmo com um fetch que ignore o sinal.
@@ -54,7 +54,7 @@ async function request(f: FetchFn, url: string, o: RequestOptions): Promise<{ te
     }
     if (!res.ok) throw new SourceError(o.source, "http", `HTTP ${res.status}`, res.status);
     try {
-      return { text: await res.text(), headers: res.headers };
+      return { text: decode(new Uint8Array(await res.arrayBuffer()), res.headers), headers: res.headers };
     } catch (e) {
       const name = (e as { name?: string }).name;
       if (name === "TimeoutError" || name === "AbortError") {
@@ -71,8 +71,31 @@ async function request(f: FetchFn, url: string, o: RequestOptions): Promise<{ te
   }
 }
 
+function utf8(bytes: Uint8Array): string {
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+/**
+ * Charset do texto: o do `Content-Type`, senão o da declaração XML, senão UTF-8. O RSS do Record vem
+ * em ISO-8859-1 (visto em produção a 20/11): lido como UTF-8, os acentos saíam como "�".
+ */
+export function decodeText(bytes: Uint8Array, headers: Headers): string {
+  const fromHeader = /charset=["']?([\w-]+)/i.exec(headers.get("content-type") ?? "")?.[1];
+  const head = new TextDecoder("latin1").decode(bytes.subarray(0, 200));
+  const fromXml = /^\s*<\?xml[^>]*encoding=["']([\w-]+)["']/i.exec(head)?.[1];
+  for (const label of [fromHeader, fromXml]) {
+    if (!label) continue;
+    try {
+      return new TextDecoder(label.toLowerCase()).decode(bytes);
+    } catch {
+      // charset desconhecido: tenta o seguinte
+    }
+  }
+  return utf8(bytes);
+}
+
 export async function getText(f: FetchFn, url: string, o: RequestOptions): Promise<{ body: string; headers: Headers }> {
-  const { text, headers } = await request(f, url, o);
+  const { text, headers } = await request(f, url, o, decodeText);
   return { body: text, headers };
 }
 

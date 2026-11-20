@@ -3,6 +3,7 @@ import * as path from "path";
 import type { FetchFn } from "../../src/sources/http";
 
 type Spec = { status: number; body?: unknown; headers?: Record<string, string> };
+// Ficheiros servidos em bytes (não relidos como UTF-8), para os testes apanharem charsets reais.
 type Value = string | object | Spec;
 type Route = Value | Value[] | ((url: string, n: number) => Value);
 
@@ -13,12 +14,11 @@ const isSpec = (v: unknown): v is Spec =>
 
 function toResponse(v: Value): Response {
   if (isSpec(v)) {
-    const body = v.body === undefined ? "" : typeof v.body === "string" ? v.body : JSON.stringify(v.body);
+    const body = v.body === undefined ? "" : typeof v.body === "string" ? v.body : v.body instanceof Uint8Array ? v.body : JSON.stringify(v.body);
     return new Response(body, { status: v.status, headers: v.headers });
   }
   if (typeof v === "string") {
-    const text = fs.readFileSync(path.join(FIXTURES, v), "utf8");
-    return new Response(text, { status: 200 });
+    return new Response(fs.readFileSync(path.join(FIXTURES, v)), { status: 200 });
   }
   return new Response(JSON.stringify(v), { status: 200 });
 }
