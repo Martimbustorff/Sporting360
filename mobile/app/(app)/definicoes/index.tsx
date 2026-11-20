@@ -26,6 +26,7 @@ import { publicName } from '@/lib/publicName';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 import { Touchable } from '@/components/Touchable';
+import { memberYearsText } from '@/lib/profileFields';
 
 const ICONS = {
   conta: require('../../../assets/icons/user.svg'), // 323:11823 User / User_03
@@ -173,7 +174,8 @@ export default function Definicoes() {
 
   const u = user.status === 'ready' ? user.data : null;
   const fullName = u ? (u.name ?? u.displayName ?? '').trim() || (uid ? publicName({ displayName: u.displayName ?? null, name: u.name ?? null }, uid) : '') : '';
-  const since = u?.partnerNumber != null && String(u.partnerNumber).trim() !== '' ? `Conta S360 · sócio desde ${String(u.partnerNumber).trim()}` : 'Conta S360';
+  const years = u?.partnerNumber != null ? memberYearsText(String(u.partnerNumber)) : null;
+  const since = years ? `Conta S360 · ${years}` : 'Conta S360';
 
   return (
     <Screen padded="none">

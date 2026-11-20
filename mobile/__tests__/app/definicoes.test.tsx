@@ -1,3 +1,4 @@
+import { memberYearsText } from '@/lib/profileFields';
 // Task 26: Definições, Conta e Mudar password. Sessão, biometria, Analytics, Apple e auth mockados (sem rede).
 import { Alert, Platform, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -85,12 +86,12 @@ describe('Definições', () => {
     expect(screen.getByText('App de adeptos, não oficial.')).toBeTruthy();
   });
 
-  it('cartão da conta mostra o nome completo e "sócio desde", e abre a Conta', async () => {
+  it('cartão da conta mostra o nome completo e os anos de sócio, e abre a Conta', async () => {
     mockMyUser.current = { status: 'ready', data: { name: 'Maria Albuquerque Costa', partnerNumber: '03/1998' } };
     await render(wrap(<Definicoes />));
     await flush();
     expect(screen.getByText('Maria Albuquerque Costa')).toBeTruthy();
-    expect(screen.getByText('Conta S360 · sócio desde 03/1998')).toBeTruthy();
+    expect(screen.getByText(`Conta S360 · ${memberYearsText('03/1998')}`)).toBeTruthy();
     expect(screen.getByTestId('conta-card-initial').props.children).toBe('M');
   });
 

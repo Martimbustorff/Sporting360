@@ -177,7 +177,10 @@ export function MatchTitles({
   round,
   pill,
   date,
+  tight = false,
 }: {
+  /** Cartão compacto da Home (20/11): mesma ordem, intervalos de 4 em vez de 8. */
+  tight?: boolean;
   competitionName: string;
   round: string | null | undefined;
   /** Pílula do momento; null quando não se aplica (jogo por jogar que não é o próximo). */
@@ -191,7 +194,7 @@ export function MatchTitles({
       accessible
       accessibilityRole="header"
       accessibilityLabel={[competitionName, round, date].filter(Boolean).join(', ')}
-      style={{ alignItems: 'center', gap: space.s8, alignSelf: 'stretch' }}
+      style={{ alignItems: 'center', gap: tight ? space.s4 : space.s8, alignSelf: 'stretch' }}
     >
       <Text71 variant="label16" numberOfLines={1} testID="titles-competition" style={{ textAlign: 'center' }}>
         {competitionName}
@@ -313,10 +316,10 @@ function FlipBox({ value, testID, ringed }: { value: number; testID: string; rin
   );
 }
 
-export function HeaderTeam({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
+export function HeaderTeam({ team, side, crest = 'hd' }: { team: TeamVM; side: 'home' | 'away'; crest?: 'hd' | 'md' }) {
   return (
     <View style={{ flex: 1, flexBasis: 0, maxWidth: layout.headerTeamColumn, alignItems: 'center', gap: layout.headerTeamGap }}>
-      <TeamCrest team={team} testID={`crest-${side}`} size="hd" />
+      <TeamCrest team={team} testID={`crest-${side}`} size={crest} />
       <Text71 variant="label16" numberOfLines={1} style={{ alignSelf: 'stretch', textAlign: 'center' }}>
         {team.name}
       </Text71>

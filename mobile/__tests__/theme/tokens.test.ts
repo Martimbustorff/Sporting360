@@ -76,6 +76,7 @@ describe('tokens <-> tailwind', () => {
       'Din',
       'Poppins',
       'PoppinsLight',
+      'PoppinsLightItalic',
       'PoppinsMedium',
       'PoppinsSemiBold',
     ]);

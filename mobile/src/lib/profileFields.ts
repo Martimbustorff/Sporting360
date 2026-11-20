@@ -100,3 +100,26 @@ export function diffForm(
   }
   return { patch, errors };
 }
+
+/**
+ * Anos completos de sócio a partir de "sócio desde" (MM/AAAA; dos dados antigos também MAAAA sem barra, ex. 52008, ou só AAAA), em Lisboa (20/11, Martim:
+ * a Home mostra "30 anos de sócio"). Conta o ano só quando o mês de entrada já chegou. Valor ilegível ou no futuro: null.
+ */
+export function memberYears(since: string, now: Date = new Date()): number | null {
+  const m = /^\s*(?:(\d{1,2})\s*\/?\s*)?((?:19|20)\d{2})\s*$/.exec(since);
+  if (!m) return null;
+  const month = m[1] ? Number(m[1]) : 1;
+  if (month < 1 || month > 12) return null;
+  const year = Number(m[2]);
+  const cur = lisbonParts(now);
+  const years = cur.year - year - (cur.month < month ? 1 : 0);
+  return years < 0 ? null : years;
+}
+
+/** "30 ANOS DE SÓCIO" / "1 ANO DE SÓCIO" / "SÓCIO HÁ MENOS DE 1 ANO"; null quando não há data legível. */
+export function memberYearsText(since: string, now: Date = new Date()): string | null {
+  const y = memberYears(since, now);
+  if (y === null) return null;
+  if (y === 0) return 'Sócio há menos de 1 ano';
+  return y === 1 ? '1 ano de sócio' : `${y} anos de sócio`;
+}

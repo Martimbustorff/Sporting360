@@ -60,6 +60,12 @@ export type NextMatchCardProps = {
   onRetry?: () => void;
   /** No próprio Calendário o "Ver agenda" não leva a lado nenhum: fica só o aviso. */
   hideAgendaLink?: boolean;
+  /**
+   * 20/11 (Martim): na Home o cartão encolhe (200 em vez de 300) para os Sites do Clube caberem acima da GameBox.
+   * Mesma ordem de títulos (mais juntos), emblemas 52x60, hora a 56; o canal de TV ou a ação passam para baixo da hora;
+   * ao vivo o minuto fica a 20 e não há "Ver jogo" (o cartão inteiro já abre o jogo).
+   */
+  compact?: boolean;
 };
 
 function Shimmer({ style }: { style: StyleProp<ViewStyle> }) {
@@ -201,7 +207,7 @@ function CardGradient() {
   );
 }
 
-export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry, hideAgendaLink = false }: NextMatchCardProps) {
+export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry, hideAgendaLink = false, compact = false }: NextMatchCardProps) {
   const { state, action } = moment;
   let content: ReactNode;
   let summary = '';
@@ -235,15 +241,16 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
     // competição, jornada/fase, pílula do momento, data; emblemas grandes e a hora em destaque).
     let main: ReactNode;
     let under: ReactNode = null;
+    const big = compact ? 'score56' : 'score72';
     if (state === 'live') {
-      main = <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
       under = (
-        <Text71 variant="title24" color="primaryOnDark" numberOfLines={1}>
+        <Text71 variant={compact ? 'titleS20' : 'title24'} color="primaryOnDark" numberOfLines={1}>
           {ui === 'halftime' ? stateLabel('halftime') : minuteText(match.elapsed, match.elapsedExtra)}
         </Text71>
       );
     } else if (state === 'finished') {
-      main = <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
     } else if (state === 'matchday') {
       main = <Countdown to={moment.countdownTo ?? match.kickoff} base={now} ticking={ticking} />;
       under = (
@@ -253,9 +260,15 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
       main = off ? (
         <Text71 variant="titleS20" numberOfLines={1} testID="next-time">{stateLabel(ui).toUpperCase()}</Text71>
       ) : (
-        <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
+        <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
       );
     }
+    const showAction = action && !(compact && state === 'live');
+    const slot = showAction ? (
+      <Chip label={action.label} tone={action.label === 'VER JOGO' ? 'subtle' : 'primary'} onPress={() => onAction(action.href)} />
+    ) : state === 'next' ? (
+      <TvChip tv={match.tv} testID="next-tv" />
+    ) : null;
     const pillText = state === 'live' ? NEXT_MATCH_TEXT.live : state === 'finished' ? NEXT_MATCH_TEXT.finished : NEXT_MATCH_TEXT.next;
     content = (
       <View style={styles.fill} pointerEvents="box-none">
@@ -265,31 +278,33 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
             round={comp.round}
             pill={<MomentChip text={pillText} live={state === 'live'} />}
             date={formatCardDate(match.kickoff)}
+            tight={compact}
           />
         </View>
-        <View style={styles.body} pointerEvents="box-none">
-          <HeaderTeam team={vm.home} side="home" />
-          <View style={styles.center} pointerEvents="none">
-            {main}
-            {under}
+        <View style={[styles.body, compact && styles.bodyCompact]} pointerEvents="box-none">
+          <HeaderTeam team={vm.home} side="home" crest={compact ? 'md' : 'hd'} />
+          <View style={[styles.center, compact && styles.centerCompact]} pointerEvents="box-none">
+            <View pointerEvents="none" style={{ alignItems: 'center', gap: space.s4 }}>
+              {main}
+              {under}
+            </View>
+            {compact ? slot : null}
           </View>
-          <HeaderTeam team={vm.away} side="away" />
+          <HeaderTeam team={vm.away} side="away" crest={compact ? 'md' : 'hd'} />
         </View>
         {/* Linha de baixo com altura fixa: canal de TV ou ação; sem nada fica o espaço (a hora não desce). */}
-        <View style={styles.slot} pointerEvents="box-none">
-          {action ? (
-            <Chip label={action.label} tone={action.label === 'VER JOGO' ? 'subtle' : 'primary'} onPress={() => onAction(action.href)} />
-          ) : state === 'next' ? (
-            <TvChip tv={match.tv} testID="next-tv" />
-          ) : null}
-        </View>
+        {compact ? null : (
+          <View style={styles.slot} pointerEvents="box-none">
+            {slot}
+          </View>
+        )}
       </View>
     );
   }
 
   const tappable = match && state !== 'loading' && state !== 'none';
   return (
-    <View testID="next-match-card" style={styles.shadow}>
+    <View testID="next-match-card" style={[styles.shadow, compact && styles.shadowCompact]}>
       <View style={styles.card}>
         <CardGradient />
         {tappable ? (
@@ -302,7 +317,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
           />
         ) : null}
         {/* 20/11: ao mudar de estado (a carregar para o jogo, próximo para ao vivo) o conteúdo entra com um fade curto. */}
-        <Appear key={state} style={styles.fill} pointerEvents="box-none">
+        <Appear key={state} style={[styles.fill, compact && styles.fillCompact]} pointerEvents="box-none">
           {content}
         </Appear>
       </View>
@@ -313,6 +328,10 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
 const styles = StyleSheet.create({
   // Sem sombra: num cartão transparente a sombra via-se por trás e escurecia o leão.
   shadow: { height: layout.matchCardHeight, borderRadius: radii.r12 },
+  shadowCompact: { height: layout.matchCardHeightCompact },
+  fillCompact: { paddingTop: space.s12 },
+  bodyCompact: { paddingTop: space.s8 },
+  centerCompact: { minHeight: layout.crestCard.height },
   card: {
     flex: 1,
     borderRadius: radii.r12,

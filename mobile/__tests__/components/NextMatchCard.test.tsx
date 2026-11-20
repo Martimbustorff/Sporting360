@@ -51,6 +51,18 @@ it('Próximo: competição, ronda, data, hora e equipas; tocar abre o jogo', asy
   expect(handlers.onOpenMatch).toHaveBeenCalledWith('1001');
 });
 
+describe('compact (Home, 20/11)', () => {
+  it('altura 200, hora a 56 e o canal de TV por baixo da hora; mesma ordem de títulos', async () => {
+    const m = match('NS', { tv: 'BTV' }, '2026-12-26T18:00:00Z');
+    await render(<NextMatchCard compact moment={moment(m)} match={m} now={NOW} {...handlers} />);
+    expect(StyleSheet.flatten(screen.getByTestId('next-match-card').props.style).height).toBe(layout.matchCardHeightCompact);
+    expect(StyleSheet.flatten(screen.getByTestId('next-time').props.style).fontSize).toBe(56);
+    expect(screen.getByTestId('next-tv')).toBeTruthy();
+    expect(screen.getByText('Taça de Portugal')).toBeTruthy();
+    expect(screen.getByText('SÁB 26 DEZ')).toBeTruthy();
+  });
+});
+
 it('Próximo: o canal de TV aparece em chip quando o jogo o traz', async () => {
   const m = match('NS', { tv: 'BTV' }, '2026-12-26T18:00:00Z');
   await view(m, moment(m));
@@ -236,3 +248,4 @@ describe('largura 320 pt e acessibilidade do cartão', () => {
     expect(screen.getByRole('button', { name: 'Jogo ao vivo: Sporting CP contra SC Braga, ao vivo, 1 - 0' })).toBeTruthy();
   });
 });
+

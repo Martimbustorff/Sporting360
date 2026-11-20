@@ -73,6 +73,7 @@ export const fonts = {
   // Body text
   body: 'Poppins',
   bodyLight: 'PoppinsLight',
+  bodyLightItalic: 'PoppinsLightItalic', // frase do splash (design do João, 564:7339)
   bodyMedium: 'PoppinsMedium',
   bodySemiBold: 'PoppinsSemiBold',
 } as const;
@@ -90,6 +91,8 @@ const din = { fontFamily: fonts.din, textTransform: 'uppercase' } as const;
 /** Estilos de texto V7.1 (sem cor; a cor vem de `colors`). */
 export const text71 = {
   score72: { ...dinC, fontSize: 72, lineHeight: lh(72, 100), letterSpacing: 0 },
+  /** Hora/resultado do cartão do próximo jogo na Home, versão compacta (20/11). */
+  score56: { ...dinC, fontSize: 56, lineHeight: lh(56, 100), letterSpacing: 0 },
   display40: { ...dinC, fontSize: 40, lineHeight: lh(40, 100), letterSpacing: 0 },
   titleL28: { ...dinC, fontSize: 28, lineHeight: lh(28, 110), letterSpacing: 0 },
   title24: { ...dinC, fontSize: 24, lineHeight: lh(24, 110), letterSpacing: 0.2 },
@@ -339,6 +342,7 @@ export const layout = {
   matchCardHeight: 300, // 20/11 (2.ª volta): títulos do cabeçalho do jogo, emblemas 60x70, hora 72, linha da TV
   matchCardStrip: 36,
   matchCardStripPadTop: 16,
+  matchCardHeightCompact: 200, // 20/11: só na Home, para os Sites do Clube caberem acima da GameBox sem scroll
   matchCardSlot: 30, // linha de baixo do cartão (TV ou ação), sempre com esta altura
   matchCardGradientOpacity: 0.6, // 20/11: o leão e a forma geométrica da Home veem-se através do cartão
   matchCardTeamMax: 108,
@@ -611,9 +615,13 @@ export const layout = {
   termsSectionGap: 20, // V7.1 17: secções a 20
   termsTitleGap: 6, // V7.1 17: título e corpo a 6
   // V7.1 Entrada, conta e bloqueio (frames 13 a 21b, 48, 48b)
-  welcomeRingsSize: 560, // 13 Welcome: anéis (4940:7187) a 560 pt
-  welcomeRingsOpacity: 0.22,
-  welcomeRingsRise: 37, // centro dos anéis 37 pt acima do centro do ecrã
+  // 20/11 (Martim, design do João 564:7178/564:7339): o S360 fica dentro do círculo dos anéis, a 100 %. Os anéis medem
+  // 709/375 da largura do ecrã (760 num ecrã de 402) e centram-se no logótipo.
+  welcomeRingsScale: 709 / 375,
+  welcomeRingsOpacity: 1,
+  splashMs: 1500, // 20/11: splash de 1,5 s (a contar de quando aparece) antes de entrar na app
+  splashFadeMs: 400, // saída suave para a Home (ou o Welcome)
+  splashTaglineBottom: 32, // "De Sportinguistas para Sportinguistas" a 32 do indicador (564:7339)
   welcomeLogoDrop: 98, // grupo S360 + frase centrado no espaço acima dos botões, 49 pt abaixo do centro
   welcomeLogoGap: 8, // logo a frase (4940:7279)
   welcomeActionsBottom: 8, // último botão a 8 pt do indicador de início (4940:7284)

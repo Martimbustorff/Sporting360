@@ -1,5 +1,5 @@
 import '../global.css';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -9,6 +9,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { FONT_ASSETS } from '@/theme/fontAssets';
 import { getCrashlytics, recordError } from '@react-native-firebase/crashlytics';
 import { SessionProvider, useSession } from '@/providers/SessionProvider';
+import { BrandSplash } from '@/components/BrandSplash';
 import { LoanReferrerGate } from '@/components/LoanReferrerGate';
 import { UpdateGate } from '@/providers/UpdateGate';
 import { initFirebase } from '@/services/firebase';
@@ -32,20 +33,28 @@ legacyCleanup();
 ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
 
 // Guardas de rota: (auth)/_layout e (app)/_layout redirecionam conforme a sessão.
-// Enquanto a sessão está em `loading` não se mostra nada: o splash nativo continua (V2 entra já com sessão).
+// 20/11: o splash nativo é só a cor de fundo e sai assim que as fontes chegam; o BrandSplash (anéis, S360 e frase)
+// fica por cima durante 1,5 s (e enquanto a sessão carrega) e sai num fade por cima da app já montada.
 function RootStack({ fontsReady }: { fontsReady: boolean }) {
   const { status } = useSession();
   const ready = fontsReady && status !== 'loading';
+  const [splashDone, setSplashDone] = useState(false);
+  const done = useCallback(() => setSplashDone(true), []);
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
-  }, [ready]);
+    if (fontsReady) SplashScreen.hideAsync();
+  }, [fontsReady]);
 
-  if (!ready) return null;
+  if (!fontsReady) return null;
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
-      <LoanReferrerGate />
+      {ready ? (
+        <>
+          <Stack screenOptions={{ headerShown: false }} />
+          <LoanReferrerGate />
+        </>
+      ) : null}
+      {splashDone ? null : <BrandSplash ready={ready} onDone={done} />}
     </>
   );
 }

@@ -1,3 +1,5 @@
+import { layout } from '@/theme/tokens';
+import { memberYearsText } from '@/lib/profileFields';
 // Task 5: Home. Dados mockados (hooks); expo-router global (jest.setup) com `router.push` estável.
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
@@ -140,25 +142,28 @@ describe('cabeçalho', () => {
     expect(router.push).toHaveBeenCalledWith('/definicoes');
   });
 
-  it('mostra o nome e o "sócio desde" tal como está gravado; tocar abre o perfil', async () => {
+  it('mostra o nome e os anos completos de sócio (20/11); tocar abre o perfil', async () => {
     await render(ui());
     expect(screen.getByText('João Oliveira Simões')).toBeTruthy();
-    expect(screen.getByText('Sócio desde')).toBeTruthy();
-    expect(screen.getByText('05/2008')).toBeTruthy();
+    expect(screen.getByTestId('home-member-years').props.children).toBe(memberYearsText('05/2008')!.toUpperCase());
+    expect(screen.queryByText('Sócio desde')).toBeNull();
     await fireEvent.press(screen.getByText('João Oliveira Simões'));
     expect(router.push).toHaveBeenCalledWith('/perfil');
   });
 
-  it('sem partnerNumber esconde a linha "Sócio desde"', async () => {
+  it('sem partnerNumber (ou ilegível) não mostra os anos de sócio', async () => {
     mockUser.current = { status: 'ready', data: { name: 'João Oliveira Simões' } };
     await render(ui());
-    expect(screen.queryByText('Sócio desde')).toBeNull();
+    expect(screen.queryByTestId('home-member-years')).toBeNull();
+    mockUser.current = { status: 'ready', data: { name: 'João Oliveira Simões', partnerNumber: 'abc' } };
+    await render(ui());
+    expect(screen.queryByTestId('home-member-years')).toBeNull();
   });
 
-  it('partnerNumber numérico (V2) mostra-se com String(v)', async () => {
+  it('partnerNumber numérico (V2, 52008 = 05/2008) conta os anos na mesma', async () => {
     mockUser.current = { status: 'ready', data: { name: 'Ana', partnerNumber: 52008 } };
     await render(ui());
-    expect(screen.getByText('52008')).toBeTruthy();
+    expect(screen.getByTestId('home-member-years').props.children).toBe(memberYearsText('05/2008')!.toUpperCase());
   });
 
   it('nunca mostra o email: sem name usa o nome público', async () => {
@@ -266,13 +271,19 @@ describe('próximo jogo', () => {
     expect(screen.getByTestId('next-countdown').props.children).toBe('03:29:55');
   });
 
-  it('ao vivo: AO VIVO e Ver jogo', async () => {
+  it('ao vivo: AO VIVO; na Home compacta não há "Ver jogo", o cartão inteiro abre o jogo (20/11)', async () => {
     at('2026-11-22T21:10:00Z');
     ready({ ...MATCH, status: 'LIVE', elapsed: 40, score: { home: 1, away: 0, halftime: null, extratime: null, penalty: null } } as Match);
     await render(ui());
     expect(screen.getByText('AO VIVO')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'VER JOGO' }));
+    expect(screen.queryByRole('button', { name: 'VER JOGO' })).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: /^Jogo ao vivo:/ }));
     expect(router.push).toHaveBeenCalledWith('/jogo/1001');
+  });
+
+  it('o cartão da Home é o compacto (200) para os Sites do Clube caberem sem scroll', async () => {
+    await render(ui());
+    expect(StyleSheet.flatten(screen.getByTestId('next-match-card').props.style).height).toBe(layout.matchCardHeightCompact);
   });
 
   it('terminado com MVP aberto e sem voto: Vota no MVP', async () => {

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeGameboxSheet, useGameboxSheetCollapsedHeight } from '@/components/HomeGameboxSheet';
 import { LionBackdrop } from '@/components/LionBackdrop';
 import { MenuRow } from '@/components/MenuRow';
+import { memberYearsText } from '@/lib/profileFields';
 import { NextMatchCard } from '@/components/NextMatchCard';
 import { Touchable } from '@/components/Touchable';
 import { useNow } from '@/data/clock';
@@ -97,6 +98,7 @@ export default function Home() {
       ? ''
       : publicName({ displayName: profile.status === 'ready' ? profile.data.displayName : null }, uid));
   const since = user.status === 'ready' && user.data.partnerNumber != null ? String(user.data.partnerNumber).trim() : '';
+  const years = since ? memberYearsText(since) : null;
   const comunidade = config.status === 'ready' && config.data.features.comunidadeLeonina === true;
   const items = menuItems(comunidade);
 
@@ -129,18 +131,19 @@ export default function Home() {
           accessibilityRole="button"
           accessibilityHint="Abre o perfil"
           onPress={() => router.push('/perfil')}
-          style={{ paddingTop: space.s16, paddingBottom: space.s24 }}
+          style={{ paddingTop: space.s16, paddingBottom: space.s16 }}
         >
           <Text71 variant="titleL28" numberOfLines={1}>{name}</Text71>
-          {since ? (
-            <View style={{ paddingTop: space.s12, gap: layout.gameboxTextGap }}>
-              <Text71 variant="eyebrow13" color="textSubtle">Sócio desde</Text71>
-              <Text71 variant="titleS20">{since}</Text71>
-            </View>
+          {/* 20/11: em vez de "Sócio desde MM/AAAA", os anos completos de sócio (memberYearsText); data ilegível: nada. */}
+          {years ? (
+            <Text71 testID="home-member-years" variant="titleS20" color="textSubtle" style={{ paddingTop: space.s4 }}>
+              {years.toUpperCase()}
+            </Text71>
           ) : null}
         </Touchable>
 
         <NextMatchCard
+          compact
           moment={moment}
           match={match}
           now={minute}

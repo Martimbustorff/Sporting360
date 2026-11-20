@@ -46,7 +46,8 @@ jest.mock('react-native-reanimated', () => {
     useHandler: () => ({ context: {}, doDependenciesDiffer: false, useWeb: false }),
     makeMutable: (v: unknown) => ({ get: () => v, set: () => {} }),
     withSpring: jest.fn((v: unknown) => v),
-    withTiming: jest.fn((v: unknown) => v),
+    // O callback de fim corre logo (como se a animação tivesse acabado), para os testes verem o que vem depois.
+    withTiming: jest.fn((v: unknown, _c?: unknown, cb?: (finished: boolean) => void) => { cb?.(true); return v; }),
     withRepeat: jest.fn((v: unknown) => v),
     withSequence: jest.fn((...v: unknown[]) => v[v.length - 1]),
     withDelay: jest.fn((_d: number, v: unknown) => v),
