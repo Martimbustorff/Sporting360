@@ -25,39 +25,42 @@ export interface ApiSportsSport {
   leagues: ApiSportsLeague[];
 }
 
+// Ids confirmados a 20/11 com a API-Sports direta (teams?search=Sporting e leagues?country=Portugal). Os jogos vêm
+// todos pelo `team` (incluindo taças e provas europeias); a lista de ligas só serve para as classificações: as taças e
+// supertaças não têm tabela (covered: false). Provas europeias: sem tabela por agora (ids por confirmar).
 export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSportsSport> = {
   handball: {
-    host: "api-handball.p.rapidapi.com",
-    enabled: false,
-    teamId: null,
+    host: "v1.handball.api-sports.io",
+    enabled: true,
+    teamId: 791,
     seasonFormat: "year",
     leagues: [
-      { id: null, name: "Andebol 1", covered: null },
-      { id: null, name: "EHF European League", covered: null },
+      { id: 84, name: "Andebol 1", covered: true },
+      { id: 86, name: "Taça de Portugal", covered: false },
+      { id: 83, name: "Supertaça", covered: false },
     ],
   },
   volleyball: {
-    host: "api-volleyball.p.rapidapi.com",
-    enabled: false,
-    teamId: null,
+    host: "v1.volleyball.api-sports.io",
+    enabled: true,
+    teamId: 976,
     seasonFormat: "year",
     leagues: [
-      { id: null, name: "Campeonato Nacional", covered: true },
-      { id: null, name: "Taça de Portugal", covered: true },
-      { id: null, name: "Supertaça", covered: true },
-      { id: null, name: "CEV Champions League", covered: true },
-      { id: null, name: "CEV Cup", covered: true },
-      { id: null, name: "CEV Challenge Cup", covered: true },
+      { id: 126, name: "Campeonato Nacional", covered: true },
+      { id: 123, name: "Taça de Portugal", covered: false },
+      { id: 122, name: "Supertaça", covered: false },
     ],
   },
   basketball: {
-    host: "api-basketball.p.rapidapi.com",
-    enabled: false,
-    teamId: null,
+    host: "v1.basketball.api-sports.io",
+    enabled: true,
+    teamId: 943,
     seasonFormat: "span",
     leagues: [
-      { id: null, name: "Liga Portuguesa de Basquetebol", covered: null },
-      { id: null, name: "Taça de Portugal", covered: null },
+      { id: 74, name: "Liga Portuguesa de Basquetebol", covered: true },
+      { id: 75, name: "Taça de Portugal", covered: false },
+      { id: 262, name: "Taça da Liga", covered: false },
+      { id: 157, name: "Supertaça", covered: false },
     ],
   },
 };

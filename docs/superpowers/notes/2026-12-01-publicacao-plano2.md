@@ -51,6 +51,7 @@ Valores atuais, sem rotação (decisão do Martim, 18/11: as chaves antigas não
 ```bash
 firebase functions:secrets:set RAPIDAPI_KEY --project scp360-37a74
 firebase functions:secrets:set VSPORTS_KEY --project scp360-37a74
+firebase functions:secrets:set APISPORTS_KEY --project scp360-37a74   # 20/11: andebol, voleibol e basquetebol pela API-Sports direta (sem RapidAPI)
 firebase functions:secrets:get RAPIDAPI_KEY --project scp360-37a74   # mostra as versões, nunca o valor
 ```
 

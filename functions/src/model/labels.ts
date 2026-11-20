@@ -25,6 +25,11 @@ const OTHER_BY_NAME: Record<string, Label> = {
   "cev challenge cup": { name: "Taça Challenge CEV", type: "europe" },
   "liga portuguesa de basquetebol": { name: "Liga Portuguesa de Basquetebol", type: "league" },
   "taça de portugal": { name: "Taça de Portugal", type: "cup" },
+  // Nomes crus da API-Sports (20/11): sem acentos e em inglês.
+  "taca de portugal": { name: "Taça de Portugal", type: "cup" },
+  "taca da liga": { name: "Taça da Liga", type: "cup" },
+  "super cup": { name: "Supertaça", type: "supercup" },
+  lpb: { name: "Liga Portuguesa de Basquetebol", type: "league" },
   "supertaça": { name: "Supertaça", type: "supercup" },
   "elite cup": { name: "Elite Cup", type: "cup" },
   "wse champions league": { name: "Liga dos Campeões WSE", type: "europe" },

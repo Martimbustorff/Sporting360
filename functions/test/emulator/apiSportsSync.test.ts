@@ -141,11 +141,14 @@ describe("syncApiSports", () => {
     expect((await db.doc("ingestHealth/apisports_volleyball").get()).exists).toBe(false);
   });
 
-  it("configuração real (tudo desligado): 0 chamadas", async () => {
+  it("configuração real (ligada a 20/11): por modalidade 1 pedido de jogos e 1 de tabela (só a liga; taças sem tabela)", async () => {
     const s = setup();
-    const r = await syncApiSports({ db, clients: s.clients, now: () => NOW });
-    expect(s.total()).toBe(0);
-    expect(r).toMatchObject({ count: 0, failed: 0 });
+    await syncApiSports({ db, clients: s.clients, now: () => NOW });
+    expect(s.total()).toBe(6);
+    for (const sport of ["handball", "volleyball", "basketball"] as const) {
+      expect(s.calls(sport, "games")).toHaveLength(1);
+      expect(s.calls(sport, "standings")).toHaveLength(1);
+    }
   });
 
   it("429 numa modalidade pára essa modalidade (sem classificações); as outras seguem", async () => {

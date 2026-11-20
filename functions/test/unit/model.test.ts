@@ -101,6 +101,12 @@ describe("roundLabel (API-Sports, textos das fixtures)", () => {
 });
 
 describe("competitionLabel", () => {
+  it("nomes crus da API-Sports (20/11) em português", () => {
+    expect(competitionLabel("handball", 86, "Taca de Portugal")).toEqual({ name: "Taça de Portugal", type: "cup" });
+    expect(competitionLabel("volleyball", 122, "Super Cup")).toEqual({ name: "Supertaça", type: "supercup" });
+    expect(competitionLabel("basketball", 74, "LPB")).toEqual({ name: "Liga Portuguesa de Basquetebol", type: "league" });
+    expect(competitionLabel("basketball", 262, "Taca da Liga")).toEqual({ name: "Taça da Liga", type: "cup" });
+  });
   it("futebol por id", () => {
     expect(competitionLabel("football", 94, "Primeira Liga")).toEqual({ name: "Liga Portugal", type: "league" });
     expect(competitionLabel("football", 96, "x")).toEqual({ name: "Taça de Portugal", type: "cup" });

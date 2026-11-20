@@ -168,10 +168,10 @@ describe("apiSports", () => {
     const api = apiSports({ sport: "handball", key: KEY, fetch: f });
     expect(await api.games({ team: 10, season: "2026" })).toEqual([{ id: 1 }]);
     expect(await api.standings({ league: 5, season: "2026" })).toEqual([[{ position: 1 }]]);
-    expect(f.calls[0]).toBe("https://api-handball.p.rapidapi.com/games?team=10&season=2026");
+    // API-Sports direta (20/11: sem RapidAPI), cabeçalho x-apisports-key.
+    expect(f.calls[0]).toBe("https://v1.handball.api-sports.io/games?team=10&season=2026");
     const h = f.inits[0].headers as Record<string, string>;
-    expect(h["x-rapidapi-key"]).toBe(KEY);
-    expect(h["x-rapidapi-host"]).toBe("api-handball.p.rapidapi.com");
+    expect(h).toEqual({ "x-apisports-key": KEY });
     expect(api.calls).toBe(2);
     expect(api.remaining).toBe(88);
   });

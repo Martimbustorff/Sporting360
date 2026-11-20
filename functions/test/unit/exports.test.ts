@@ -10,6 +10,7 @@ import {
 
 // Segredos simulados: importar o index não pode depender de valores reais.
 process.env.RAPIDAPI_KEY = "test-rapidapi";
+process.env.APISPORTS_KEY = "test-apisports";
 process.env.VSPORTS_KEY = "test-vsports";
 process.env.GCLOUD_PROJECT ??= "demo-scp360";
 
@@ -109,7 +110,7 @@ describe("configuração de cada function exportada", () => {
     footballSeasonSync: ["RAPIDAPI_KEY"],
     footballWeeklySync: ["RAPIDAPI_KEY"],
     footballPrematchSync: ["RAPIDAPI_KEY"],
-    apiSportsSync: ["RAPIDAPI_KEY"],
+    apiSportsSync: ["APISPORTS_KEY"],
     videosSync: ["VSPORTS_KEY"],
     newsSync: [],
     freeSourcesSync: [],

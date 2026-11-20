@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
+import { APISPORTS_KEY, LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
@@ -222,9 +222,9 @@ export const legacyPredictionSettlement = onSchedule(
 // min mas cada modalidade só pede à API com jogo em [início - 15 min, início + 3 h] ou sem execução há 3 h; as
 // modalidades desligadas (ids por confirmar, ver sourcesConfig) não fazem pedidos. Orçamento: ver Task 16.
 export const apiSportsSync = onSchedule(
-  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [RAPIDAPI_KEY] },
+  { schedule: "every 10 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [APISPORTS_KEY] },
   async () => {
-    const key = RAPIDAPI_KEY.value();
+    const key = APISPORTS_KEY.value();
     await runApiSportsJob(getFirestore(), {
       db: getFirestore(),
       clients: { handball: apiSports({ sport: "handball", key }), volleyball: apiSports({ sport: "volleyball", key }), basketball: apiSports({ sport: "basketball", key }) },

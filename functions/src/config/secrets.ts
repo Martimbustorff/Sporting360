@@ -3,6 +3,8 @@ import { defineBoolean, defineSecret, defineString } from "firebase-functions/pa
 // Valores lidos em runtime do Secret Manager; nunca no código nem no repositório.
 export const RAPIDAPI_KEY = defineSecret("RAPIDAPI_KEY");
 export const VSPORTS_KEY = defineSecret("VSPORTS_KEY");
+/** Chave do painel da API-Sports (dashboard.api-football.com): andebol, voleibol e basquetebol, sem RapidAPI. */
+export const APISPORTS_KEY = defineSecret("APISPORTS_KEY");
 
 /** Prefixo das coleções legadas durante o ensaio em sombra (ex.: "_shadow_"); vazio em produção. */
 export const LEGACY_COLLECTION_PREFIX = defineString("LEGACY_COLLECTION_PREFIX", { default: "" });
