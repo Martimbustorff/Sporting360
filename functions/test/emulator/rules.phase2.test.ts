@@ -404,6 +404,27 @@ describe.each(NEW_APP_OPS)("app nova: $name", (op) => {
   });
 });
 
+describe("users/{uid}/liveActivityDevices e liveActivities (Plano 10)", () => {
+  const dev = { fcmToken: "fcm-1", pushToStartToken: "pts", dir: "/grp", updatedAt: serverTimestamp() };
+  const act = { matchId: "g1", activityToken: "act", fcmToken: "fcm-1", dir: null, updatedAt: serverTimestamp() };
+  it("o dono grava o seu dispositivo e a sua atividade", async () => {
+    await assertSucceeds(setDoc(doc(as("alice"), "users/alice/liveActivityDevices/fcm-1"), dev));
+    await assertSucceeds(setDoc(doc(as("alice"), "users/alice/liveActivities/a1"), act));
+  });
+  it("outra pessoa não lê nem escreve", async () => {
+    await assertFails(setDoc(doc(as("bob"), "users/alice/liveActivityDevices/fcm-1"), dev));
+    await assertFails(setDoc(doc(as("bob"), "users/alice/liveActivities/a1"), act));
+    await seed("users/alice/liveActivities/a1", { matchId: "g1", activityToken: "act", fcmToken: "fcm-1", dir: null });
+    await assertFails(getDoc(doc(as("bob"), "users/alice/liveActivities/a1")));
+    await assertFails(getDoc(doc(anon(), "users/alice/liveActivities/a1")));
+  });
+  it("o id do dispositivo tem de ser o token FCM e não entram campos a mais", async () => {
+    await assertFails(setDoc(doc(as("alice"), "users/alice/liveActivityDevices/outro"), dev));
+    await assertFails(setDoc(doc(as("alice"), "users/alice/liveActivityDevices/fcm-1"), { ...dev, uid: "alice" }));
+    await assertFails(setDoc(doc(as("alice"), "users/alice/liveActivities/a1"), { ...act, extra: 1 }));
+  });
+});
+
 describe("users/{uid}/devices", () => {
   const DEV = "users/alice/devices/tok-1";
   const dev = { token: "tok-1", platform: "ios", updatedAt: serverTimestamp() };

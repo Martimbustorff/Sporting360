@@ -17,3 +17,6 @@ export const NEWS_LEGACY_CONTENT = defineBoolean("NEWS_LEGACY_CONTENT", { defaul
 
 /** Envio de notificações push. `false` até o Martim o ligar no lançamento da V7.1: nada envia nem grava marcas. */
 export const PUSH_ENABLED = defineBoolean("PUSH_ENABLED", { default: false });
+
+/** Jogo no ecrã de bloqueio do iPhone (Plano 10). `false` até haver um build com a extensão: nada envia nem grava marcas. */
+export const LIVE_ACTIVITY_ENABLED = defineBoolean("LIVE_ACTIVITY_ENABLED", { default: false });

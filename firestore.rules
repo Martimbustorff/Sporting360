@@ -120,6 +120,30 @@ service cloud.firestore {
                             && request.resource.data.updatedAt == request.time;
     }
 
+    // Jogo no ecrã de bloqueio (Plano 10): tokens do iPhone, só o dono escreve; o servidor lê pelo Admin SDK.
+    // Dispositivo (id = token FCM): o token de "push-to-start" e a pasta partilhada dos emblemas.
+    match /users/{uid}/liveActivityDevices/{deviceId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['fcmToken', 'pushToStartToken', 'dir', 'updatedAt'])
+                            && request.resource.data.fcmToken == deviceId
+                            && request.resource.data.pushToStartToken is string
+                            && request.resource.data.pushToStartToken.size() <= 512
+                            && (request.resource.data.dir == null || (request.resource.data.dir is string && request.resource.data.dir.size() <= 512))
+                            && request.resource.data.updatedAt == request.time;
+    }
+    // Atividade (id = id do ActivityKit): o jogo e o token para a atualizar.
+    match /users/{uid}/liveActivities/{activityId} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['matchId', 'activityToken', 'fcmToken', 'dir', 'updatedAt'])
+                            && request.resource.data.matchId is string && request.resource.data.matchId.size() <= 64
+                            && request.resource.data.activityToken is string && request.resource.data.activityToken.size() <= 512
+                            && request.resource.data.fcmToken is string && request.resource.data.fcmToken.size() <= 512
+                            && (request.resource.data.dir == null || (request.resource.data.dir is string && request.resource.data.dir.size() <= 512))
+                            && request.resource.data.updatedAt == request.time;
+    }
+
     // gamebox: campo `userid` (minúsculas, formato da V2). Leitura pública na fase 2.
     match /gamebox/{id} {
       allow read: if true;

@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { APISPORTS_KEY, LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
+import { APISPORTS_KEY, LEGACY_COLLECTION_PREFIX, LIVE_ACTIVITY_ENABLED, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
@@ -14,6 +14,7 @@ import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
 import { runPredictionReminder } from "./push/predictionReminder";
 import { fcmSender } from "./push/sender";
+import { fcmLiveActivitySender } from "./liveActivity/sender";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleRun } from "./scheduled/settle";
 import { aggregateMvpTallies } from "./scheduled/mvpTallyAggregator";
@@ -179,6 +180,8 @@ export const footballLiveTicker = onSchedule(
         sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
         // Push de MVP só com PUSH_ENABLED (desligado até ao lançamento da V7.1).
         push: PUSH_ENABLED.value() ? fcmSender(getMessaging()) : undefined,
+        // Ecrã de bloqueio só com LIVE_ACTIVITY_ENABLED (desligado até ao build com a extensão).
+        liveActivity: LIVE_ACTIVITY_ENABLED.value() ? fcmLiveActivitySender(getMessaging()) : undefined,
       },
       { minRemaining: 500 },
     );

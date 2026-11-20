@@ -103,6 +103,20 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
+    },
+    {
+      "collectionGroup": "liveActivities",
+      "fieldPath": "matchId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
     }
   ]
 }

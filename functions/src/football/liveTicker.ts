@@ -3,6 +3,8 @@ import { legacyFromFixture } from "../legacy/footballLegacy";
 import { FINAL_STATUSES, LIVE_STATUSES } from "../model/status";
 import type { MatchDoc } from "../model/types";
 import { dispatchMatchPushes } from "../push/matchPush";
+import { dispatchLiveActivity } from "../liveActivity/dispatch";
+import type { LiveActivitySender } from "../liveActivity/sender";
 import type { PushSender } from "../push/sender";
 import { MAX_IDS } from "../sources/apiFootball";
 import { recordRun, runJob } from "../store/health";
@@ -49,6 +51,8 @@ export type TickDeps = FootballDeps & {
   sleep: (ms: number) => Promise<void>;
   /** Envio de push (início, golos, MVP). Sem ele, o ticker não envia nem grava marcas. */
   push?: PushSender;
+  /** Jogo no ecrã de bloqueio do iPhone (Plano 10). Sem ele, nada arranca nem grava marcas. */
+  liveActivity?: LiveActivitySender;
 };
 
 export interface TickResult {
@@ -240,6 +244,11 @@ export async function tick(d: TickDeps): Promise<TickResult> {
           if (d.push) {
             await dispatchMatchPushes(d.db, d.push, match, details?.events?.items ?? [], now).catch((e) =>
               logger.warn(`liveTicker: push do jogo ${id} falhou: ${msg(e)}`),
+            );
+          }
+          if (d.liveActivity) {
+            await dispatchLiveActivity(d.db, d.liveActivity, match, details?.events?.items ?? [], now).catch((e) =>
+              logger.warn(`liveTicker: live activity do jogo ${id} falhou: ${msg(e)}`),
             );
           }
         } catch (e) {
