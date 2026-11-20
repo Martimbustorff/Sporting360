@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from "firebase-admin/firestore";
+import { applyCrests, crestRefsOf } from "./teamCrests";
 import { logger } from "firebase-functions";
 import { roundLabel } from "../model/labels";
 import { apiSportsSeason } from "../model/seasons";
@@ -323,6 +324,7 @@ export async function syncFreeCompetition(d: FreeSourcesDeps, ref: FreeCompetiti
   const fallback = await run(ref.fallback);
   const r = reconcile(known, primary, fallback, ref.prefix, now);
   r.alerts.push(...new Set(ctx.alerts));
+  await applyCrests({ db: d.db, fetch: d.fetch, now }, ref.sport, r.matches, crestRefsOf(ref.sport, [primary, fallback]));
 
   let count = 0;
   let failed = 0;

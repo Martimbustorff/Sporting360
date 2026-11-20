@@ -69,7 +69,26 @@ function normalize(e: SpEvent, season: string, now: Date): NormalizedMatch | nul
     score: status === "NS" ? { home: null, away: null } : { home, away },
     venue: null,
     attribution: HOQUEIPATINS_ATTRIBUTION,
+    crestRefs: {
+      ...(typeof teams[0] === "number" ? { home: { provider: "hoqueipatins" as const, teamId: teams[0] } } : {}),
+      ...(typeof teams[1] === "number" ? { away: { provider: "hoqueipatins" as const, teamId: teams[1] } } : {}),
+    },
   };
+}
+
+/**
+ * Emblema de uma equipa SportsPress: a imagem de destaque da equipa (2 pedidos: equipa e media). null quando a equipa
+ * não tem imagem. Chamado só para equipas sem entrada em `teamCrests` (o resultado fica guardado).
+ */
+export async function hoqueipatinsCrest(f: FetchFn, teamId: number): Promise<string | null> {
+  const wp = FREE_SOURCES.roller_hockey.fallback.url.replace(/\/sportspress\/v2\/events$/, "");
+  const o = { source: KEY, headers: FREE_HEADERS, timeoutMs: FREE_TIMEOUT_MS };
+  const team = (await getJson<{ featured_media?: number }>(f, `${wp}/sportspress/v2/teams/${teamId}?_fields=featured_media`, o)).body;
+  const media = typeof team?.featured_media === "number" && team.featured_media > 0 ? team.featured_media : null;
+  if (media === null) return null;
+  const m = (await getJson<{ source_url?: string }>(f, `${wp}/wp/v2/media/${media}?_fields=source_url`, o)).body;
+  const url = typeof m?.source_url === "string" ? m.source_url.replace(/^http:\/\//, "https://") : "";
+  return /^https:\/\/[^\s]+$/.test(url) ? url : null;
 }
 
 /**

@@ -26,6 +26,14 @@ export interface NormalizedMatch {
   venue: string | null;
   /** Texto de atribuição exigido pelos termos da fonte (ex. hoqueipatins.pt). */
   attribution?: string | null;
+  /** Onde a fonte tem o emblema de cada equipa (resolvido uma vez e guardado em `teamCrests`). */
+  crestRefs?: { home?: CrestRef; away?: CrestRef };
+}
+
+/** Equipa numa fonte que sabe dar o emblema. Só o hoqueipatins (SportsPress) tem; o futsalportugal não tem nenhum. */
+export interface CrestRef {
+  provider: "hoqueipatins";
+  teamId: number;
 }
 
 export interface FetchContext {
