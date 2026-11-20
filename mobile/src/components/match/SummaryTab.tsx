@@ -34,6 +34,7 @@ import { LiveEvents, LiveNumbers } from '@/components/match/LiveSummary';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 import { PredictionCard } from '@/components/match/PredictionCard';
 import { FansPrediction } from '@/components/match/FansPrediction';
+import { MyStory } from '@/components/match/MyStory';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
 const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
@@ -304,6 +305,7 @@ export function SummaryTab({ match }: { match: Match }) {
       ) : state === 'finished' ? (
         <>
           <FansPrediction match={match} />
+          <MyStory match={match} />
           <Events match={match} after={<MatchContext match={match} />} />
         </>
       ) : (

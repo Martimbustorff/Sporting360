@@ -36,3 +36,29 @@ export async function shareMatchday(
   haptic.success();
   return 'shared';
 }
+
+export function storyMessage(match: Pick<Match, 'id' | 'home' | 'away'>): string {
+  return `${match.home.name} x ${match.away.name}: a minha história na S360. ${shareLink(match.id)}`;
+}
+
+/**
+ * A minha história (Plano 10): captura o StoryCard a 1080x1920 (9:16, para Instagram e WhatsApp) e abre a folha de
+ * partilha. Mede `share_story` quando o sistema confirma.
+ */
+export async function shareStory(
+  ref: RefObject<ComponentRef<typeof View> | null>,
+  match: Pick<Match, 'id' | 'home' | 'away'>,
+): Promise<'shared' | 'dismissed'> {
+  const url = await captureRef(ref, {
+    format: 'png',
+    quality: 1,
+    result: 'tmpfile',
+    width: layout.storyCard.width * layout.storyCaptureScale,
+    height: layout.storyCard.height * layout.storyCaptureScale,
+  });
+  const res = await Share.open({ url, type: 'image/png', message: storyMessage(match), failOnCancel: false });
+  if (!res.success || res.dismissedAction) return 'dismissed';
+  track('share_story', { game: match.id });
+  haptic.success();
+  return 'shared';
+}

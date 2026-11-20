@@ -14,17 +14,18 @@ import { canAnimate, MOTION } from '@/lib/motion';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
-/** Caixa branca do valor (Display 40 ink): seletor do Prognóstico (52x60) e cartão de partilha (48x58). */
-export function ValueBox({ value, testID, size = 'step' }: { value: number; testID: string; size?: 'step' | 'share' }) {
-  const share = size === 'share';
-  const box = share ? layout.shareBox : layout.stepValue;
+/** Caixa branca do valor: seletor do Prognóstico (52x60), cartão de partilha (48x58) e a minha história (58x72, Score 56). */
+export function ValueBox({ value, testID, size = 'step' }: { value: number; testID: string; size?: 'step' | 'share' | 'story' }) {
+  const share = size !== 'step';
+  const story = size === 'story';
+  const box = story ? layout.storyBox : share ? layout.shareBox : layout.stepValue;
   return (
     <View
       style={{
         width: box.width,
         height: box.height,
         backgroundColor: colors.white,
-        borderRadius: share ? layout.shareBoxRadius : layout.stepValueRadius,
+        borderRadius: story ? layout.storyBoxRadius : share ? layout.shareBoxRadius : layout.stepValueRadius,
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -32,7 +33,7 @@ export function ValueBox({ value, testID, size = 'step' }: { value: number; test
       {/* A DIN Condensed reserva espaço de descendente por baixo: sem o ajuste os algarismos ficavam acima do centro
           da caixa branca (visto na partilha a 20/11). */}
       <Rolling value={value} animate={!share}>
-        <Text71 variant="display40" color="ink" testID={testID} style={{ transform: [{ translateY: layout.valueDigitNudge }] }}>
+        <Text71 variant={story ? 'score56' : 'display40'} color="ink" testID={testID} style={{ transform: [{ translateY: layout.valueDigitNudge }] }}>
           {value}
         </Text71>
       </Rolling>

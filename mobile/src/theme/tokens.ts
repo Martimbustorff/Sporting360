@@ -538,6 +538,20 @@ export const layout = {
   shareBox: { width: 48, height: 58 }, // caixas do cartão
   shareBoxRadius: 6,
   shareBoxGap: 8,
+  // A minha história (Plano 10, Figma 54 · 5049:18769): 9:16 desenhado a 360x640 e capturado a 3x (1080x1920).
+  storyCard: { width: 360, height: 640 },
+  storyCaptureScale: 3,
+  storyBox: { width: 58, height: 72 },
+  storyBoxRadius: 11,
+  storyBoxGap: 11,
+  storyPad: 28,
+  storyPillPadX: 14,
+  storyPillPadY: 5,
+  storyPillRadius: 18,
+  storyBadgePadX: 7,
+  storyBadgePadY: 2,
+  storyQr: 40,
+  storyQrPad: 3,
   pressScaleSlop: 0, // botões e cartões com `feedback="scale"` já têm 44 pt ou mais
   mvpButton: 44, // botão da taça do MVP na barra do jogo (4933:7140)
   mvpButtonIcon: 24,
