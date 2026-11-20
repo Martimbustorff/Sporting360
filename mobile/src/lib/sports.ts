@@ -13,3 +13,11 @@ export const SPORTS: readonly { key: Sport; label: string }[] = [
 export function sportLabel(s: Sport): string {
   return SPORTS.find((x) => x.key === s)?.label ?? s;
 }
+
+/**
+ * Modalidades com jogos no Calendário. 20/11 (Martim): andebol, voleibol e basquetebol ficam escondidos até haver
+ * fonte de dados (o plano gratuito da API-Sports não dá a época atual). Voltar a pôr aqui quando houver jogos.
+ */
+export const AGENDA_SPORTS: readonly { key: Sport; label: string }[] = SPORTS.filter((s) =>
+  (['football', 'futsal', 'roller_hockey'] as Sport[]).includes(s.key),
+);

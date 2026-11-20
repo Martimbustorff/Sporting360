@@ -219,6 +219,12 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     expect(screen.queryByTestId('next-match-card')).toBeNull();
   });
 
+  it('andebol, voleibol e basquetebol escondidos até haver dados (20/11)', async () => {
+    await render(ui());
+    for (const k of ['football', 'futsal', 'roller_hockey']) expect(screen.getByTestId(`sport-${k}`)).toBeTruthy();
+    for (const k of ['handball', 'volleyball', 'basketball']) expect(screen.queryByTestId(`sport-${k}`)).toBeNull();
+  });
+
   it('erro mostra a mensagem e nenhuma lista', async () => {
     mockResults.current = { status: 'error', error: new Error('x') };
     await render(ui());
@@ -229,7 +235,7 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
   it('em erro as pílulas de modalidade continuam, para poder mudar de modalidade', async () => {
     mockResults.current = { status: 'error', error: new Error('x') };
     await render(ui());
-    for (const k of ['football', 'futsal', 'handball', 'roller_hockey']) expect(screen.getByTestId(`sport-${k}`)).toBeTruthy();
+    for (const k of ['football', 'futsal', 'roller_hockey']) expect(screen.getByTestId(`sport-${k}`)).toBeTruthy();
     mockResults.current = ready([]);
     await fireEvent.press(screen.getByTestId('sport-futsal'));
     expect(useResultMatches).toHaveBeenLastCalledWith('futsal', expect.any(Date));

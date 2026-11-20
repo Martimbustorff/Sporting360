@@ -26,7 +26,7 @@ import { useResultMatches, useUpcomingMatches } from '@/data/sports';
 import { agendaLists } from '@/lib/agenda';
 import { predictionOpen } from '@/lib/gameWindows';
 import { homeMatchMoment } from '@/lib/homeMatchMoment';
-import { SPORTS, sportLabel } from '@/lib/sports';
+import { AGENDA_SPORTS, sportLabel } from '@/lib/sports';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
 
@@ -36,7 +36,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'upcoming', label: 'Próximos' },
   { key: 'results', label: 'Resultados' },
 ];
-const SPORT_TABS = SPORTS.map((s) => ({ key: s.key, label: s.label }));
+const SPORT_TABS = AGENDA_SPORTS.map((s) => ({ key: s.key, label: s.label }));
 
 const ERROR_TEXT = 'Não foi possível carregar a agenda.';
 
