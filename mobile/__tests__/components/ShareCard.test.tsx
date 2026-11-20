@@ -1,6 +1,6 @@
 // Task 9 (V7.1, frame 30 4946:7934): cartão "S360 MATCHDAY" (Figma 4946:8197).
 import { createRef, type ComponentRef } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 // Task 18: largura da janela controlada pelo teste (carry da revisão da Task 17: cartão em ecrãs estreitos).
@@ -49,7 +49,7 @@ describe('ShareCard', () => {
     expect(screen.getByText('Partilha o teu prognóstico')).toBeTruthy();
   });
 
-  it('V7.1: S360 com o S a primary, MATCH fino e DAY carregado, caixas brancas 48x58 e rodapé com o link curto', async () => {
+  it('V7.1: S360 com o S a primary, MATCH fino e DAY carregado, caixas brancas 48x58 e rodapé com o convite e o QR', async () => {
     await render(<ShareCard match={MATCH} home={1} away={2} />);
     const logo = screen.getByTestId('share-logo');
     expect(JSON.stringify(logo.props.style)).toContain('"fontSize":48');
@@ -68,10 +68,27 @@ describe('ShareCard', () => {
     expect(JSON.stringify(screen.getByTestId('share-qr-box').props.style)).toContain('"padding":8');
   });
 
-  it('QR com o link do jogo e o link curto em texto', async () => {
+  it('QR com o link do jogo e sem o link em texto (Martim 20/11)', async () => {
     await render(<ShareCard match={MATCH} home={1} away={2} />);
     expect(screen.getByTestId('qrcode').props.value).toBe('https://s360-prognostico-download.web.app/j?src=share&game=1001');
-    expect(screen.getByText('s360-prognostico-download.web.app/j')).toBeTruthy();
+    expect(screen.queryByText('s360-prognostico-download.web.app/j')).toBeNull();
+  });
+
+  it('Martim 20/11: S360 por cima de MATCHDAY, competição por cima da fase, tudo centrado; degradê sem padding', async () => {
+    await render(<ShareCard match={MATCH} home={1} away={2} />);
+    const brand = StyleSheet.flatten(screen.getByTestId('share-brand').props.style);
+    expect(brand.flexDirection ?? 'column').toBe('column');
+    expect(brand.alignItems).toBe('center');
+    const comp = screen.getByTestId('match-card-competition');
+    expect(StyleSheet.flatten(comp.props.style).alignItems).toBe('center');
+    // competição primeiro, fase por baixo
+    expect(comp.children.length).toBe(2);
+    expect(StyleSheet.flatten(screen.getByTestId('match-card-bg').props.style)).toMatchObject({ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 });
+  });
+
+  it('algarismos das caixas descidos para ficarem ao centro', async () => {
+    await render(<ShareCard match={MATCH} home={1} away={2} />);
+    expect(JSON.stringify(screen.getByTestId('share-score-home').props.style)).toContain('"translateY":3');
   });
 
   it('o Sporting usa o emblema local 2026, não o logo da API', async () => {

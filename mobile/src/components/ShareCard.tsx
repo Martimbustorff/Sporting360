@@ -1,7 +1,9 @@
 // Figma V7.1: cartão S360 MATCHDAY (4946:8197, 347 pt): degradê do topo ao bg, raio 20, "S360" (S a primary) com "MATCH" em
 // DIN Condensed Light e "DAY" em Title L 28, jornada + competição, data absoluta ("21 dezembro · 20:30", Europe/Lisbon, porque
 // a imagem dura mais do que a semana do jogo), emblemas (Sporting com o 2026 local) e nomes, caixas brancas do prognóstico,
-// "#JogoAJogoLadoALado" e rodapé com "Partilha o teu prognóstico", link curto e QR. Sem fotografias de pessoas.
+// "#JogoAJogoLadoALado" e rodapé com "Partilha o teu prognóstico" e QR. Sem fotografias de pessoas.
+// Martim 20/11: tudo centrado e empilhado (S360, MATCHDAY, competição, fase) e sem o link em texto (não serve na imagem;
+// o link vai no texto da partilha e no QR).
 // O layout comum (degradê, competição, data, emblemas) está em MatchCard, partilhado com o empréstimo de GameBox.
 // A View do cartão vai por ref para a captura (react-native-view-shot); `collapsable={false}` para o Android não a achatar.
 // Em ecrãs estreitos o cartão encolhe à vista para caber com `layout.shareCardInset` de cada lado. A escala fica em Views
@@ -15,7 +17,7 @@ import type { Match } from '@/data/schemas';
 import { formatRound } from '@/lib/formatRound';
 import { competitionText, toGameHeaderVM } from '@/lib/matchVM';
 import { formatDayMonth, formatTime } from '@/lib/ptDate';
-import { SHARE_SHORT_TEXT, shareLink } from '@/lib/shareLink';
+import { shareLink } from '@/lib/shareLink';
 import { Text71 } from '@/theme/typography';
 import { colors, layout } from '@/theme/tokens';
 
@@ -85,11 +87,12 @@ const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ ma
       away={vm.away}
       competition={name}
       round={formatRound(round) || null}
+      stacked
       kickoff={`${formatDayMonth(match.kickoff)} \u00B7 ${formatTime(match.kickoff)}`}
       kickoffTestID="share-kickoff"
       crestTestIDPrefix="share-crest"
       header={
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: layout.shareBoxGap }}>
+        <View testID="share-brand" style={{ alignItems: 'center' }}>
           <Text71 testID="share-logo" variant="brand48">
             <Text71 variant="brand48" color="primary">S</Text71>360
           </Text71>
@@ -120,12 +123,9 @@ const Card = forwardRef<ComponentRef<typeof View>, CardProps>(function Card({ ma
           paddingTop: layout.shareFooterPadTop,
         }}
       >
-        <View style={{ flex: 1, minWidth: 0, gap: layout.gameboxTextGap }}>
-          <Text71 variant="captionStrong12" numberOfLines={1}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text71 variant="captionStrong12" numberOfLines={2}>
             {SHARE_CARD_TEXT.invite}
-          </Text71>
-          <Text71 variant="badge11" color="textMuted" numberOfLines={1}>
-            {SHARE_SHORT_TEXT}
           </Text71>
         </View>
         <View testID="share-qr-box" style={{ backgroundColor: colors.white, padding: layout.shareQrPad }}>

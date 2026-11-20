@@ -520,6 +520,7 @@ export const layout = {
   shareBox: { width: 48, height: 58 }, // caixas do cartão
   shareBoxRadius: 6,
   shareBoxGap: 8,
+  valueDigitNudge: 3, // algarismos display40 da DIN Condensed descidos 3 pt para ficarem ao centro da caixa branca
   shareCardRadius: 20,
   shareCardPadX: 20,
   shareCardPadTop: 20,

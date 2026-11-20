@@ -24,7 +24,9 @@ export function ValueBox({ value, testID, size = 'step' }: { value: number; test
         justifyContent: 'center',
       }}
     >
-      <Text71 variant="display40" color="ink" testID={testID}>
+      {/* A DIN Condensed reserva espaço de descendente por baixo: sem o ajuste os algarismos ficavam acima do centro
+          da caixa branca (visto na partilha a 20/11). */}
+      <Text71 variant="display40" color="ink" testID={testID} style={{ transform: [{ translateY: layout.valueDigitNudge }] }}>
         {value}
       </Text71>
     </View>

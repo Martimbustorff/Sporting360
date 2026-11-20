@@ -24,6 +24,8 @@ export type MatchCardProps = {
   center?: ReactNode;
   /** Por cima da competição (a marca do cartão de prognóstico). */
   header?: ReactNode;
+  /** Competição numa linha e a jornada/fase por baixo, centradas (cartão do prognóstico, Martim 20/11). */
+  stacked?: boolean;
   children?: ReactNode;
   width?: number;
   onLayout?: (e: LayoutChangeEvent) => void;
@@ -44,8 +46,24 @@ function Team({ team, side, testIDPrefix }: { team: TeamVM; side: 'home' | 'away
   );
 }
 
+function RoundBadge({ round }: { round: string }) {
+  return (
+    <View
+      testID="competition-badge"
+      style={{
+        backgroundColor: colors.primary,
+        borderRadius: layout.chipRadius,
+        paddingHorizontal: layout.badgeSmallPadX,
+        paddingVertical: layout.badgeSmallPadY,
+      }}
+    >
+      <Text71 variant="badge11">{round}</Text71>
+    </View>
+  );
+}
+
 export const MatchCard = forwardRef<ComponentRef<typeof View>, MatchCardProps>(function MatchCard(
-  { home, away, competition, round, kickoff, venue, center, header, children, width, onLayout, testID, kickoffTestID, crestTestIDPrefix },
+  { home, away, competition, round, kickoff, venue, center, header, stacked, children, width, onLayout, testID, kickoffTestID, crestTestIDPrefix },
   ref,
 ) {
   // Um id por instância: com vários cartões no ecrã, ids iguais fariam um degradê referir-se ao de outro cartão.
@@ -68,36 +86,37 @@ export const MatchCard = forwardRef<ComponentRef<typeof View>, MatchCardProps>(f
         alignItems: 'center',
       }}
     >
-      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%" preserveAspectRatio="none" pointerEvents="none">
-        <Defs>
-          <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={colors.shareCardTop} />
-            <Stop offset="1" stopColor={colors.bg} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradId})`} />
-      </Svg>
+      {/* O degradê vive numa View sem padding: com o Svg direto no cartão, os 100 % do iOS contavam só a largura do
+          conteúdo e ficava uma faixa escura à direita (visto na partilha a 20/11). */}
+      <View testID="match-card-bg" style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width="100%" height="100%" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={colors.shareCardTop} />
+              <Stop offset="1" stopColor={colors.bg} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradId})`} />
+        </Svg>
+      </View>
 
       {header}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.shareBoxGap }}>
-        {round ? (
-          <View
-            testID="competition-badge"
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: layout.chipRadius,
-              paddingHorizontal: layout.badgeSmallPadX,
-              paddingVertical: layout.badgeSmallPadY,
-            }}
-          >
-            <Text71 variant="badge11">{round}</Text71>
-          </View>
-        ) : null}
-        <Text71 variant="label16" numberOfLines={1} style={{ flexShrink: 1 }}>
-          {competition}
-        </Text71>
-      </View>
+      {stacked ? (
+        <View testID="match-card-competition" style={{ alignItems: 'center', gap: layout.shareBoxGap }}>
+          <Text71 variant="label16" numberOfLines={1} style={{ textAlign: 'center' }}>
+            {competition}
+          </Text71>
+          {round ? <RoundBadge round={round} /> : null}
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.shareBoxGap }}>
+          {round ? <RoundBadge round={round} /> : null}
+          <Text71 variant="label16" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {competition}
+          </Text71>
+        </View>
+      )}
 
       <Text71 variant="caption12" color="textMuted" testID={kickoffTestID}>
         {kickoff}

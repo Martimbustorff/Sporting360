@@ -66,7 +66,7 @@ describe('Estatísticas', () => {
     expect(texts('stat-away').slice(0, 2)).toEqual(['45%', '0,6']);
     expect(screen.getByText('Posse de bola (%)')).toBeTruthy();
     // Martim 20/11: números maiores (Title L 28).
-    expect(StyleSheet.flatten(screen.getAllByTestId('stat-home')[0].props.style).fontSize).toBe(28);
+    expect(StyleSheet.flatten(screen.getAllByTestId('stat-home')[0]!.props.style)?.fontSize).toBe(28);
   });
 
   it('cartões: uma linha no fim com amarelos e vermelhos de cada equipa', async () => {
