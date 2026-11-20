@@ -1,19 +1,19 @@
 // Figma V7.1: conjunto "V7.1 / Next match card" 4920:5140 (Próximo 4920:5090, Sem jogo 4920:5112, A carregar 4920:5125,
 // Dia de jogo 4932:6358, Ao vivo 4932:6379, Terminado 4932:6400) e frames 01, 01b, 01c, 07a, 07b, 07c da Home.
-// Revisto a 20/11 (Martim, como o cartão de partilha): competição e ronda centradas no topo, fundo com o degradê do
-// cartão do prognóstico, emblemas maiores e o nome dos clubes à altura da pill da TV.
+// Revisto a 20/11 (2.ª volta, Martim): o cartão segue o cabeçalho do jogo, com o círculo de luz e os anéis atrás, os
+// títulos pela regra de toda a app (competição, jornada/fase, pílula do momento, data: `MatchTitles`), emblemas 60x70
+// com nomes em maiúsculas, a hora em destaque e uma linha de baixo com altura fixa (TV ou ação).
 // Altura fixa (`matchCardHeight`) em todos os estados (o menu e o Calendário não saltam). Estados vêm de lib/homeMatchMoment.
 // Canal de TV: chip 4920:5103 por baixo da hora (`match.tv`; sem canal não aparece).
 // SEM FIGMA: o estado de erro (nota 01b: "o mesmo cartão com Tentar outra vez"; textos escritos aqui) e a hora de um jogo adiado ou cancelado (mostra o
 // estado no lugar da hora, como o GameHeader). O brilho do esqueleto é um pulsar de opacidade (sem gradiente).
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Appear } from '@/components/Appear';
-import { TeamCrest, type TeamVM } from '@/components/GameHeader';
+import { HeaderTeam, MatchTitles, MomentChip } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
 import { TvChip } from '@/components/TvChip';
 import type { Match } from '@/data/schemas';
@@ -37,6 +37,7 @@ export const NEXT_MATCH_TEXT = {
   loading: 'A carregar o próximo jogo',
   live: 'AO VIVO',
   finished: 'TERMINADO',
+  next: 'PRÓXIMO JOGO',
   endOfGame: 'FIM DO JOGO',
   today: 'HOJE',
 } as const;
@@ -178,39 +179,21 @@ function scoreLine(m: Match): string {
   return `${m.score.home ?? 0} - ${m.score.away ?? 0}`;
 }
 
-function Teams({ vm, wide, children }: { vm: ReturnType<typeof toGameHeaderVM>; wide?: boolean; children: ReactNode }) {
-  const team = (t: TeamVM, side: 'home' | 'away') => (
-    <View style={styles.team}>
-      <TeamCrest team={t} size="next" testID={`next-crest-${side}`} />
-      <Text71 variant="strong14" numberOfLines={1} style={{ textAlign: 'center', alignSelf: 'stretch' }}>{t.name}</Text71>
-    </View>
-  );
-  return (
-    <>
-      {team(vm.home, 'home')}
-      <View style={[styles.center, wide ? { flexGrow: layout.matchCardCenterWideGrow } : null]}>{children}</View>
-      {team(vm.away, 'away')}
-    </>
-  );
-}
+const LUZ = require('../../assets/images/match-luz.svg') as number;
+const RINGS = require('../../assets/images/welcome-rings.svg') as number;
 
-/**
- * Degradê do cartão do prognóstico (MatchCard): verde em cima, fundo da app em baixo, com transparência (20/11, Martim:
- * ver o leão e a forma geométrica da Home por trás do cartão).
- */
-function CardGradient() {
-  const id = `nextGrad${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+/** Fundo do cabeçalho do jogo (20/11): luz verde e anéis da marca, centrados no cartão. */
+function CardBackdrop() {
+  const luz = layout.matchCardLuz;
+  const rings = layout.matchCardRings;
   return (
     <View testID="next-match-bg" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Svg width="100%" height="100%" preserveAspectRatio="none">
-        <Defs>
-          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={colors.shareCardTop} stopOpacity={layout.matchCardGradientOpacity} />
-            <Stop offset="1" stopColor={colors.bg} stopOpacity={layout.matchCardGradientOpacity} />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
-      </Svg>
+      <Image source={LUZ} accessible={false} style={{ position: 'absolute', left: '50%', marginLeft: -luz.width / 2, top: luz.top, width: luz.width, height: luz.height }} />
+      <Image
+        source={RINGS}
+        accessible={false}
+        style={{ position: 'absolute', left: '50%', marginLeft: -rings.size / 2, top: rings.top, width: rings.size, height: rings.size, opacity: rings.opacity }}
+      />
     </View>
   );
 }
@@ -233,8 +216,6 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
     const comp = competitionText(match.competition);
     const ui = uiState(match.status);
     const off = ui === 'postponed' || ui === 'cancelled';
-    const badge =
-      state === 'live' ? NEXT_MATCH_TEXT.live : state === 'finished' ? NEXT_MATCH_TEXT.finished : comp.round;
     const kick = formatTime(match.kickoff);
     const names = `${vm.home.name} contra ${vm.away.name}`;
     summary =
@@ -247,50 +228,57 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
             : off
               ? `${names}, ${stateLabel(ui).toLowerCase()}`
               : `${names}, ${formatCardDate(match.kickoff)} às ${kick}`;
-    let eyebrow: string;
-    let eyebrowColor: 'textMuted' | 'primaryOnDark' = 'textMuted';
+    // 20/11 (Martim): o cartão segue o cabeçalho do jogo (círculo de luz atrás, títulos centrados pela regra
+    // competição, jornada/fase, pílula do momento, data; emblemas grandes e a hora em destaque).
     let main: ReactNode;
+    let under: ReactNode = null;
     if (state === 'live') {
-      eyebrow = ui === 'halftime' ? stateLabel('halftime') : minuteText(match.elapsed, match.elapsedExtra);
-      eyebrowColor = 'primaryOnDark';
-      main = <Text71 variant="display40" numberOfLines={1} testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      under = (
+        <Text71 variant="title24" color="primaryOnDark" numberOfLines={1}>
+          {ui === 'halftime' ? stateLabel('halftime') : minuteText(match.elapsed, match.elapsedExtra)}
+        </Text71>
+      );
     } else if (state === 'finished') {
-      eyebrow = NEXT_MATCH_TEXT.endOfGame;
-      main = <Text71 variant="display40" numberOfLines={1} testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
     } else if (state === 'matchday') {
-      eyebrow = `${NEXT_MATCH_TEXT.today} · ${kick}`;
       main = <Countdown to={moment.countdownTo ?? match.kickoff} base={now} ticking={ticking} />;
+      under = (
+        <Text71 variant="eyebrow13" color="textMuted" numberOfLines={1}>{`${NEXT_MATCH_TEXT.today} · ${kick}`}</Text71>
+      );
     } else {
-      eyebrow = formatCardDate(match.kickoff);
       main = off ? (
         <Text71 variant="titleS20" numberOfLines={1} testID="next-time">{stateLabel(ui).toUpperCase()}</Text71>
       ) : (
-        <Text71 variant="display40" numberOfLines={1} testID="next-time">{kick}</Text71>
+        <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
       );
     }
+    const pillText = state === 'live' ? NEXT_MATCH_TEXT.live : state === 'finished' ? NEXT_MATCH_TEXT.finished : NEXT_MATCH_TEXT.next;
     content = (
       <View style={styles.fill} pointerEvents="box-none">
-        <View style={styles.strip} pointerEvents="none">
-          <Text71 variant="label16" numberOfLines={1} style={{ textAlign: 'center' }}>{comp.name}</Text71>
-          {badge ? (
-            <View style={styles.badge}>
-              <Text71 variant="badge11" numberOfLines={1}>{badge}</Text71>
-            </View>
-          ) : null}
+        <View pointerEvents="none">
+          <MatchTitles
+            competitionName={comp.name}
+            round={comp.round}
+            pill={<MomentChip text={pillText} live={state === 'live'} />}
+            date={formatCardDate(match.kickoff)}
+          />
         </View>
         <View style={styles.body} pointerEvents="box-none">
-          <Teams vm={vm} wide={state === 'matchday'}>
-            <Text71 variant="eyebrow13" color={eyebrowColor} numberOfLines={1}>{eyebrow}</Text71>
+          <HeaderTeam team={vm.home} side="home" />
+          <View style={styles.center} pointerEvents="none">
             {main}
-            {state === 'next' && !action ? <TvChip tv={match.tv} testID="next-tv" /> : null}
-            {action ? (
-              <Chip
-                label={action.label}
-                tone={action.label === 'VER JOGO' ? 'subtle' : 'primary'}
-                onPress={() => onAction(action.href)}
-              />
-            ) : null}
-          </Teams>
+            {under}
+          </View>
+          <HeaderTeam team={vm.away} side="away" />
+        </View>
+        {/* Linha de baixo com altura fixa: canal de TV ou ação; sem nada fica o espaço (a hora não desce). */}
+        <View style={styles.slot} pointerEvents="box-none">
+          {action ? (
+            <Chip label={action.label} tone={action.label === 'VER JOGO' ? 'subtle' : 'primary'} onPress={() => onAction(action.href)} />
+          ) : state === 'next' ? (
+            <TvChip tv={match.tv} testID="next-tv" />
+          ) : null}
         </View>
       </View>
     );
@@ -300,7 +288,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
   return (
     <View testID="next-match-card" style={styles.shadow}>
       <View style={styles.card}>
-        <CardGradient />
+        <CardBackdrop />
         {tappable ? (
           <Touchable
             accessibilityRole="button"
@@ -327,9 +315,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.r12,
     borderWidth: layout.matchCardBorder,
     borderColor: colors.white,
+    backgroundColor: colors.bg,
     overflow: 'hidden',
   },
-  fill: { flex: 1 },
+  fill: { flex: 1, paddingTop: space.s16, paddingHorizontal: space.s12 },
   strip: {
     alignItems: 'center',
     gap: space.s4,
@@ -343,10 +332,11 @@ const styles = StyleSheet.create({
     paddingVertical: layout.matchCardBadgePadY,
     flexShrink: 0,
   },
-  // Equipas e centro com a mesma altura: emblema em cima, nome em baixo, à altura da pill da TV (ou do chip de ação).
-  body: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s8, paddingBottom: space.s12 },
-  team: { flexGrow: 1, flexBasis: 0, maxWidth: layout.matchCardTeamMax, alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: space.s12 },
-  center: { flexGrow: 1, flexBasis: 0, minWidth: layout.matchCardCenterMin, alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: space.s12 },
+  body: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', paddingHorizontal: space.s8, paddingTop: space.s16 },
+  team: { flexGrow: 1, flexBasis: 0, maxWidth: layout.matchCardTeamMax, alignItems: 'center', gap: space.s8 },
+  // Hora (ou resultado) ao centro da altura do emblema, como no cabeçalho do jogo.
+  center: { minWidth: layout.headerCenterMin, minHeight: layout.crestHeader.height, alignItems: 'center', justifyContent: 'center', gap: space.s4 },
+  slot: { height: layout.matchCardSlot, alignItems: 'center', justifyContent: 'center', marginTop: space.s8 },
   chip: { borderRadius: radii.r28, paddingHorizontal: space.s12, paddingVertical: space.s4, alignItems: 'center' },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.s4, paddingTop: space.s4 },
 });

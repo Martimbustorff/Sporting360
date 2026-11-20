@@ -33,9 +33,14 @@ const live: GameHeaderVM = {
 };
 
 describe('GameHeader completo, antes do jogo (frame 29)', () => {
-  it('mostra pílula, data, hora grande e nomes; sem resultado', async () => {
-    await render(<GameHeader game={base} />);
+  it('títulos por ordem (competição, jornada, pílula só se for o próximo, data), hora grande e nomes; sem resultado', async () => {
+    const view = await render(<GameHeader game={base} />);
+    expect(screen.queryByText('Próximo jogo')).toBeNull();
+    await view.rerender(<GameHeader game={{ ...base, isNext: true }} />);
     expect(screen.getByText('Próximo jogo')).toBeTruthy();
+    const titles = within(screen.getByTestId('match-titles'));
+    expect(titles.getByTestId('titles-competition')).toBeTruthy();
+    expect(titles.getByTestId('competition-badge')).toBeTruthy();
     expect(screen.getByTestId('game-time').props.children).toBe('20:30');
     expect(screen.getByTestId('game-date').props.children).toBe('SEG 14 SET');
     expect(screen.getByText('FC Vizela')).toBeTruthy();
@@ -221,12 +226,7 @@ describe('GameHeader outra modalidade (frame 34)', () => {
 describe('nomes longos a 320 pt', () => {
   it('nomes de equipa e de competição levam uma linha com reticências', async () => {
     const long = { ...base, home: { name: 'Gil Vicente Futebol Clube', crestUrl: null }, competitionName: 'Liga Placard Futsal Feminino' };
-    await render(
-      <>
-        <GameNavTitle game={long} />
-        <GameHeader game={long} />
-      </>,
-    );
+    await render(<GameHeader game={long} />);
     expect(screen.getByText('Gil Vicente Futebol Clube').props.numberOfLines).toBe(1);
     expect(screen.getByText('Liga Placard Futsal Feminino').props.numberOfLines).toBe(1);
   });

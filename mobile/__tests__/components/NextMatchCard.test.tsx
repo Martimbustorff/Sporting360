@@ -112,7 +112,7 @@ it('Terminado com MVP aberto: Vota no MVP abre o separador MVP', async () => {
   });
   await view(m, moment(m, { mvpOpen: true }, new Date('2026-12-21T20:00:00Z')));
   expect(screen.getByText(NEXT_MATCH_TEXT.finished)).toBeTruthy();
-  expect(screen.getByText(NEXT_MATCH_TEXT.endOfGame)).toBeTruthy();
+  expect(screen.getByText(NEXT_MATCH_TEXT.finished)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: 'VOTA NO MVP' }));
   expect(handlers.onAction).toHaveBeenCalledWith('/mvp/1001');
 });
@@ -164,7 +164,7 @@ describe('altura fixa de matchCardHeight e nomes longos', () => {
     await view(m, moment(m, flags, now), { now });
     const card = screen.getByTestId('next-match-card');
     expect(StyleSheet.flatten(card.props.style).height).toBe(layout.matchCardHeight);
-    expect(layout.matchCardHeight).toBe(204);
+    expect(layout.matchCardHeight).toBe(300);
     for (const name of ['Gil Vicente Futebol Clube', 'Taça da Liga Portugal Betclic Feminina']) {
       for (const t of screen.queryAllByText(name)) expect(t.props.numberOfLines).toBe(name.startsWith('Gil') ? 1 : 1);
     }

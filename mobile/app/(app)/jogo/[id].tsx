@@ -11,7 +11,7 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Appear } from '@/components/Appear';
 import { EmptyState } from '@/components/EmptyState';
-import { GameHeader, GameNavTitle, type GameHeaderVM } from '@/components/GameHeader';
+import { GameHeader, type GameHeaderVM } from '@/components/GameHeader';
 import { Header } from '@/components/Header';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Screen } from '@/components/Screen';
@@ -25,7 +25,9 @@ import { StatsTab } from '@/components/match/StatsTab';
 import { SummaryTab } from '@/components/match/SummaryTab';
 import { VideosTab } from '@/components/match/VideosTab';
 import type { Match } from '@/data/schemas';
-import { useMatch, useMatchDetail } from '@/data/sports';
+import { useMatch, useMatchDetail, useUpcomingMatches } from '@/data/sports';
+import { useNow } from '@/data/clock';
+import { agendaLists } from '@/lib/agenda';
 import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
 import { FOOTBALL_TABS, type MatchTabKey } from '@/lib/matchTabs';
 import { goalsFromEvents, toGameHeaderVM } from '@/lib/matchVM';
@@ -107,9 +109,19 @@ function FootballNav({ match, onBack }: { match: Match; onBack: () => void }) {
       title={vm.competitionName}
       onBack={onBack}
       right={<MvpButton match={match} />}
-      center={<CrossfadeCenter title={<GameNavTitle game={vm} />} compact={<GameHeader game={vm} size="compact" />} />}
+      // 20/11: competição e jornada passaram para os títulos do cabeçalho (MatchTitles); a barra só mostra o compacto.
+      center={<CrossfadeCenter title={null} compact={<GameHeader game={vm} size="compact" />} />}
     />
   );
+}
+
+/** É o próximo jogo do Sporting nesta modalidade (o primeiro por jogar): só então leva "Próximo jogo" (20/11). */
+function useIsNext(match: Match): boolean {
+  const now = useNow();
+  const upcoming = useUpcomingMatches(match.sport, now);
+  if (upcoming.status !== 'ready') return false;
+  const next = agendaLists(upcoming.data, []).upcoming[0];
+  return next?.id === match.id;
 }
 
 /** Dados do cabeçalho completo: golos (marcadores e linha do tempo) e o prognóstico do utilizador, se existir. */
@@ -121,6 +133,7 @@ function useFootballHeaderVM(match: Match): GameHeaderVM {
   const settlement = useSettlement(match.id);
   const points = useMyGamePoints(match.id, uid);
   const goals = events.status === 'ready' ? events.data.items : null;
+  const isNext = useIsNext(match);
   const pick = prediction.status === 'ready' ? prediction.data : null;
   const settledPoints =
     settlement.status === 'ready' && points.status === 'ready' ? predictionPoints(points.data) : null;
@@ -137,13 +150,13 @@ function useFootballHeaderVM(match: Match): GameHeaderVM {
         prediction = { home: pick.home, away: pick.away, points: p.total, note: provisionalNote(pick, p.kind) };
       } else prediction = { home: pick.home, away: pick.away, points: null };
     }
-    return { ...vm, goals: goals ? goalsFromEvents(goals, match.home.id) : [], prediction };
-  }, [match, goals, pick, settledPoints]);
+    return { ...vm, goals: goals ? goalsFromEvents(goals, match.home.id) : [], prediction, isNext };
+  }, [match, goals, pick, settledPoints, isNext]);
 }
 
 /** Outras modalidades (spec 5.6, frame 34): só cabeçalho (competição, data, hora e local), sem separadores. */
 function OtherSportDetail({ match }: { match: Match }) {
-  const vm = toGameHeaderVM(match);
+  const vm = { ...toGameHeaderVM(match), isNext: useIsNext(match) };
   const attribution = match.source.attribution;
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: space.s16, gap: space.s16 }}>
@@ -207,7 +220,7 @@ export default function Jogo() {
           <Header
             title={match ? sportLabel(match.sport) : 'Jogo'}
             onBack={back}
-            center={match ? <GameNavTitle game={toGameHeaderVM(match)} /> : undefined}
+            center={undefined}
           />
         )}
         <OfflineBanner visible={loadable.status === 'ready' && loadable.fromCache === true} />

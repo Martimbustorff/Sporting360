@@ -336,9 +336,12 @@ export const layout = {
   videoGap: 8, // miniatura ao título
   videoCloseBarHeight: 44, // barra do "Fechar" em cima do leitor
   // V7.1 Cartão do próximo jogo (Figma 4920:5140): altura fixa em todos os estados, para o menu não saltar
-  matchCardHeight: 204, // 20/11: competição e ronda centradas por cima, emblemas lg
+  matchCardHeight: 300, // 20/11 (2.ª volta): títulos do cabeçalho do jogo, emblemas 60x70, hora 72, linha da TV
   matchCardStrip: 36,
   matchCardStripPadTop: 16,
+  matchCardSlot: 30, // linha de baixo do cartão (TV ou ação), sempre com esta altura
+  matchCardLuz: { width: 560, height: 430, top: -40 }, // luz do cabeçalho do jogo, à escala do cartão
+  matchCardRings: { size: 460, top: -40, opacity: 0.22 },
   matchCardGradientOpacity: 0.6, // 20/11: o leão e a forma geométrica da Home veem-se através do cartão
   matchCardTeamMax: 108,
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências

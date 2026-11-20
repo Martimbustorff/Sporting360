@@ -84,14 +84,16 @@ export function MatchRow({ match, onPress, showCompetition = false }: { match: M
         borderBottomColor: colors.separator,
       }}
     >
+      {/* 20/11: a regra dos títulos (competição, jornada/fase, data) também na linha: no Calendário a competição e a
+          jornada vêm primeiro, a verde, e a data a seguir. */}
       <View testID="row-date" style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: space.s4, maxWidth: '100%' }}>
-        <Text71 variant="badge11" color="textSubtle" numberOfLines={1} style={{ flexShrink: 0 }}>{`${date.day} ${date.month}`.toUpperCase()}</Text71>
         {showCompetition ? (
           <>
-            <Text71 variant="badge11" color="textSubtle">·</Text71>
             <Text71 testID="row-competition" variant="badge11" color="primaryOnDark" numberOfLines={1} style={{ flexShrink: 1 }}>{competition.toUpperCase()}</Text71>
+            <Text71 variant="badge11" color="textSubtle">·</Text71>
           </>
         ) : null}
+        <Text71 variant="badge11" color="textSubtle" numberOfLines={1} style={{ flexShrink: 0 }}>{`${date.day} ${date.month}`.toUpperCase()}</Text71>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s8, alignSelf: 'stretch' }}>
       <TeamSide team={vm.home} side="home" />

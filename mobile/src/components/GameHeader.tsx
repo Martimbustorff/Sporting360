@@ -52,6 +52,8 @@ export type GameHeaderVM = {
   goals?: GoalVM[];
   /** Prognóstico do utilizador neste jogo; null ou ausente esconde o cartão. */
   prediction?: PredictionVM | null;
+  /** É o próximo jogo do Sporting: só então um jogo por jogar leva a pílula "Próximo jogo" (20/11). */
+  isNext?: boolean;
 };
 
 const CREST_BOX = {
@@ -165,11 +167,55 @@ function LiveDot() {
   );
 }
 
-function MomentPill({ game }: { game: GameHeaderVM }) {
+/**
+ * Títulos do jogo, sempre por esta ordem (20/11, Martim: "tem de ser regra em todo o lado"): competição, jornada ou
+ * fase, a pílula do momento só quando se aplica (próximo jogo, ao vivo, terminado, adiado, cancelado) e a data.
+ * Usado no cabeçalho do jogo e no cartão do próximo jogo (Home e Calendário).
+ */
+export function MatchTitles({
+  competitionName,
+  round,
+  pill,
+  date,
+}: {
+  competitionName: string;
+  round: string | null | undefined;
+  /** Pílula do momento; null quando não se aplica (jogo por jogar que não é o próximo). */
+  pill: ReactNode | null;
+  date: string;
+}) {
+  const r = formatRound(round ?? '');
   return (
     <View
+      testID="match-titles"
       accessible
       accessibilityRole="header"
+      accessibilityLabel={[competitionName, round, date].filter(Boolean).join(', ')}
+      style={{ alignItems: 'center', gap: space.s8, alignSelf: 'stretch' }}
+    >
+      <Text71 variant="label16" numberOfLines={1} testID="titles-competition" style={{ textAlign: 'center' }}>
+        {competitionName}
+      </Text71>
+      {r ? (
+        <View
+          testID="competition-badge"
+          style={{ backgroundColor: colors.primary, borderRadius: layout.chipRadius, paddingHorizontal: layout.compactStateChipPadX, paddingVertical: layout.compactStateChipPadY }}
+        >
+          <Text71 variant="badge11" numberOfLines={1}>{r}</Text71>
+        </View>
+      ) : null}
+      {pill}
+      <Text71 variant="eyebrow13" color="textMuted" numberOfLines={1} testID="game-date">
+        {date}
+      </Text71>
+    </View>
+  );
+}
+
+/** Pílula do momento com o contorno verde (frame 06); `live` acrescenta o ponto que pulsa. */
+export function MomentChip({ text, live = false }: { text: string; live?: boolean }) {
+  return (
+    <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -183,10 +229,15 @@ function MomentPill({ game }: { game: GameHeaderVM }) {
         paddingVertical: layout.headerPillPadY,
       }}
     >
-      {game.state === 'live' ? <LiveDot /> : null}
-      <Text71 variant="badge11" numberOfLines={1}>{momentText(game)}</Text71>
+      {live ? <LiveDot /> : null}
+      <Text71 variant="badge11" numberOfLines={1}>{text}</Text71>
     </View>
   );
+}
+
+function MomentPill({ game }: { game: GameHeaderVM }) {
+  if (game.state === 'scheduled' && !game.isNext) return null;
+  return <MomentChip text={momentText(game)} live={game.state === 'live'} />;
 }
 
 /**
@@ -262,7 +313,7 @@ function FlipBox({ value, testID, ringed }: { value: number; testID: string; rin
   );
 }
 
-function Team({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
+export function HeaderTeam({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   return (
     <View style={{ flex: 1, flexBasis: 0, maxWidth: layout.headerTeamColumn, alignItems: 'center', gap: layout.headerTeamGap }}>
       <TeamCrest team={team} testID={`crest-${side}`} size="hd" />
@@ -313,9 +364,6 @@ function Center({ game }: { game: GameHeaderVM }) {
         </>
       ) : (
         <>
-          <Text71 variant="eyebrow13" color="textMuted" numberOfLines={1} testID="game-date">
-            {formatCardDate(game.kickoff)}
-          </Text71>
           {off ? null : (
             <Text71 variant="score72" numberOfLines={1} adjustsFontSizeToFit testID="game-time">
               {formatTime(game.kickoff)}
@@ -446,11 +494,11 @@ export function GameHeader({ game, size = 'full' }: GameHeaderProps) {
   const lastMinute = game.state === 'finished' ? 90 : Math.min(game.minute ?? 0, 90);
   return (
     <View testID="game-header" accessible={false} style={{ alignItems: 'center', gap: space.s16, paddingHorizontal: space.s16, paddingTop: layout.headerPadTop, paddingBottom: space.s16 }}>
-      <MomentPill game={game} />
+      <MatchTitles competitionName={game.competitionName} round={game.round} pill={<MomentPill game={game} />} date={formatCardDate(game.kickoff)} />
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', alignSelf: 'stretch', justifyContent: 'center' }}>
-        <Team team={game.home} side="home" />
+        <HeaderTeam team={game.home} side="home" />
         <Center game={game} />
-        <Team team={game.away} side="away" />
+        <HeaderTeam team={game.away} side="away" />
       </View>
       {goals.length > 0 && hasScore ? <Scorers goals={goals} /> : null}
       {showTimeline ? (

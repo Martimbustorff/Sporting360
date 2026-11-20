@@ -17,6 +17,7 @@ jest.mock('@/data/sports', () => ({
   // Tab Sumário (Task 9): jogo sem detalhes ainda.
   useMatchDetail: jest.fn((_id: string, kind: string) => mockDetail.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => ({ status: 'missing' })),
+  useUpcomingMatches: jest.fn(() => ({ status: 'loading' })),
 }));
 jest.mock('@/data/user', () => ({
   useMyPrediction: jest.fn(() => mockUser.current.prediction),
@@ -94,10 +95,11 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('futebol', () => {
-  it('lê o jogo do id da rota e mostra o nome da competição no Header', async () => {
+  it('lê o jogo do id da rota; competição nos títulos do cabeçalho do jogo (20/11), não na barra', async () => {
     await render(ui());
     expect(useMatch).toHaveBeenCalledWith('1001');
-    expect(within(screen.getByTestId('header')).getByText('Liga Portugal')).toBeTruthy();
+    expect(within(screen.getByTestId('match-titles')).getByText('Liga Portugal')).toBeTruthy();
+    expect(within(screen.getByTestId('header')).queryByText('Liga Portugal')).toBeNull();
   });
 
   it('mostra as 5 tabs por esta ordem (o prognóstico é um cartão no Sumário; o MVP tem ecrã próprio, 20/11)', async () => {
@@ -284,19 +286,29 @@ describe('outras modalidades', () => {
     source: { provider: 'api-sports', id: '2001', attribution: 'API-SPORTS' },
   } as Partial<Match>);
 
-  it('não mostra tabs e põe a competição na barra (frame 34)', async () => {
+  it('não mostra tabs; competição e jornada nos títulos, por esta ordem (20/11)', async () => {
     mockMatch.current = ready(futsal);
     await render(ui());
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    const header = within(screen.getByTestId('header'));
-    expect(header.getByText('Liga Placard Futsal')).toBeTruthy();
-    expect(header.getByText('J5')).toBeTruthy();
+    const titles = within(screen.getByTestId('match-titles'));
+    expect(titles.getByText('Liga Placard Futsal')).toBeTruthy();
+    expect(titles.getByText('J5')).toBeTruthy();
+  });
+
+  it('"Próximo jogo" só quando é o próximo jogo do Sporting', async () => {
+    const { useUpcomingMatches } = require('@/data/sports') as { useUpcomingMatches: jest.Mock };
+    mockMatch.current = ready(futsal);
+    const view = await render(ui());
+    expect(screen.queryByText('Próximo jogo')).toBeNull();
+    useUpcomingMatches.mockReturnValue({ status: 'ready', data: [futsal], fromCache: false });
+    await view.rerender(ui());
+    expect(screen.getByText('Próximo jogo')).toBeTruthy();
+    useUpcomingMatches.mockReturnValue({ status: 'loading' });
   });
 
   it('mostra data, hora e local só no cabeçalho do jogo', async () => {
     mockMatch.current = ready(futsal);
     await render(ui());
-    expect(screen.getByText('Próximo jogo')).toBeTruthy();
     expect(screen.getByTestId('game-date').props.children).toBe('SEG 14 SET');
     expect(screen.getByTestId('game-time').props.children).toBe('20:30');
     expect(screen.getByTestId('game-venue').props.children).toBe('Pavilhão João Rocha, Lisboa');

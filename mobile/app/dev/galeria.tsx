@@ -44,6 +44,7 @@ const NOW = new Date('2026-11-18T12:00:00Z');
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000);
 
 const SCHEDULED: GameHeaderVM = {
+  isNext: true,
   competitionName: 'Liga Portugal',
   round: formatRound('Regular Season - 16'),
   home: { name: 'Sporting CP', crestUrl: null, id: 228 },
