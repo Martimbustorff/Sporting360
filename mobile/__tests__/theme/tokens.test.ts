@@ -37,6 +37,7 @@ const MAP: Record<string, string> = {
   yellow71: 'yellow71',
   yellow71Bg: 'yellow71Bg',
   injuryBg: 'injuryBg',
+  goalOverlay: 'goalOverlay',
   pitchField: 'pitchField',
   zoneChampions: 'zoneChampions',
   zoneEurope: 'zoneEurope',

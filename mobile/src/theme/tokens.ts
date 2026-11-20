@@ -33,6 +33,8 @@ export const colors = {
   homeVeil: '#00281C', // verde do topo da Home e do ecrã de bloqueio (véu por cima do leão)
   primaryOnDark: '#19B37E',
   primaryTint: 'rgba(27, 158, 107, 0.22)', // fundo do botão da taça do MVP (4933:7140)
+  // Celebração do golo (Plano 10, 5048:18957): verde da marca a 94 %.
+  goalOverlay: 'rgba(0, 131, 91, 0.94)',
   primaryDeep: '#004A33', // fim do gradiente do cartão do líder dos marcadores (4935:7479)
   textSubtle: 'rgba(255, 255, 255, 0.5)',
   separator: 'rgba(255, 255, 255, 0.25)',
@@ -93,6 +95,7 @@ export const text71 = {
   score72: { ...dinC, fontSize: 72, lineHeight: lh(72, 100), letterSpacing: 0 },
   /** Hora/resultado do cartão do próximo jogo na Home, versão compacta (20/11). */
   score56: { ...dinC, fontSize: 56, lineHeight: lh(56, 100), letterSpacing: 0 },
+  goal120: { ...dinC, fontSize: 120, lineHeight: lh(120, 100), letterSpacing: 0 }, // "GOLO!" da celebração (Plano 10, 5048:19032)
   display40: { ...dinC, fontSize: 40, lineHeight: lh(40, 100), letterSpacing: 0 },
   titleL28: { ...dinC, fontSize: 28, lineHeight: lh(28, 110), letterSpacing: 0 },
   title24: { ...dinC, fontSize: 24, lineHeight: lh(24, 110), letterSpacing: 0.2 },
@@ -623,6 +626,7 @@ export const layout = {
   // 709/375 da largura do ecrã (760 num ecrã de 402) e centram-se no logótipo.
   welcomeRingsScale: 709 / 375,
   welcomeRingsOpacity: 1,
+  goalRingsOpacity: 0.5, // anéis na celebração do golo (5048:18958)
   splashMs: 1500, // 20/11: splash de 1,5 s (a contar de quando aparece) antes de entrar na app
   splashFadeMs: 400, // saída suave para a Home (ou o Welcome)
   splashTaglineBottom: 32, // "De Sportinguistas para Sportinguistas" a 32 do indicador (564:7339)

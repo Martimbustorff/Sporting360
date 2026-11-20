@@ -7,12 +7,12 @@ import { layout } from '@/theme/tokens';
 
 const RINGS = require('../../assets/images/welcome-rings.svg') as number;
 
-export function BrandRings({ testID }: { testID?: string }) {
+export function BrandRings({ testID, opacity = layout.welcomeRingsOpacity }: { testID?: string; opacity?: number }) {
   const { width } = useWindowDimensions();
   const size = Math.round(width * layout.welcomeRingsScale);
   return (
     <View pointerEvents="none" style={{ position: 'absolute', width: size, height: size, alignSelf: 'center' }}>
-      <Image testID={testID} source={RINGS} accessible={false} style={{ width: size, height: size, opacity: layout.welcomeRingsOpacity }} />
+      <Image testID={testID} source={RINGS} accessible={false} style={{ width: size, height: size, opacity }} />
     </View>
   );
 }

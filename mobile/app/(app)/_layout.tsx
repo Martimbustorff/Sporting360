@@ -1,6 +1,7 @@
 import { Redirect, Stack, useGlobalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AnalyticsConsentSheet } from '@/components/AnalyticsConsentSheet';
+import { GoalCelebration } from '@/components/GoalCelebration';
 import { setPendingLink } from '@/lib/pendingLink';
 import { peekSignOutNotice } from '@/lib/signOutNotice';
 import { BiometricGate } from '@/providers/BiometricGate';
@@ -73,6 +74,8 @@ export default function AppLayout() {
   return (
     <BiometricGate>
       <Stack screenOptions={{ headerShown: false }} />
+      {/* Plano 10: golo do Sporting com a app aberta, por cima de qualquer ecrã. */}
+      <GoalCelebration />
       <AnalyticsConsentGate onSettled={() => setConsentSettled(true)} />
       <PushSetup uid={user.uid} ready={consentSettled} />
     </BiometricGate>
