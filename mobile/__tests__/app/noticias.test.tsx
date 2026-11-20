@@ -56,11 +56,20 @@ beforeEach(() => {
   mockNow.current = new Date('2026-11-18T12:00:00Z');
 });
 
-describe('Notícias: só futebol (20/11)', () => {
-  it('lê só as notícias de futebol e não tem separadores de modalidade', async () => {
+describe('Notícias: filtro', () => {
+  it('abre em Todas (useNews(null)) e cada modalidade filtra no servidor', async () => {
     await renderScreen();
-    expect(useNews).toHaveBeenLastCalledWith('football');
-    expect(screen.queryAllByRole('tab')).toHaveLength(0);
+    expect(useNews).toHaveBeenLastCalledWith(null);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
+    expect(useNews).toHaveBeenLastCalledWith('futsal');
+    await fireEvent.press(screen.getByRole('tab', { name: 'Todas' }));
+    expect(useNews).toHaveBeenLastCalledWith(null);
+  });
+
+  it('o filtro tem Todas e as modalidades visíveis (futebol, futsal, hóquei; 20/11)', async () => {
+    await renderScreen();
+    expect(screen.getAllByRole('tab')).toHaveLength(4);
+    expect(screen.queryByRole('tab', { name: 'Andebol' })).toBeNull();
   });
 });
 
@@ -118,10 +127,12 @@ describe('Notícias: abrir o artigo', () => {
 });
 
 describe('Notícias: estados', () => {
-  it('vazio', async () => {
+  it('vazio em Todas e numa modalidade', async () => {
     mockNews.current = ready([]);
     await renderScreen();
     expect(screen.getByText('Sem notícias por agora.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
+    expect(screen.getByText('Sem notícias de futsal por agora.')).toBeTruthy();
   });
 
   it('leitura falhada mostra erro, nunca a mensagem de vazio', async () => {
@@ -164,13 +175,14 @@ describe('Notícias: link da notificação', () => {
       </SafeAreaProvider>,
     );
     await waitFor(() => expect(WebBrowser.openBrowserAsync).toHaveBeenCalledWith('https://www.record.pt/b'));
-    // Outro snapshot (servidor confirma): não volta a abrir.
+    // Outro snapshot (servidor confirma) ou mudar de filtro: não volta a abrir.
     mockNews.current = ready([item('b', { url: 'https://www.record.pt/b' }), item('a')]);
     await view.rerender(
       <SafeAreaProvider initialMetrics={METRICS}>
         <Noticias />
       </SafeAreaProvider>,
     );
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
     expect(WebBrowser.openBrowserAsync).toHaveBeenCalledTimes(1);
   });
 
