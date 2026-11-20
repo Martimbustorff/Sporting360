@@ -1,6 +1,6 @@
 // Figma V7.1: Prognóstico (4945:7833) e submetido com a folha de partilha (4946:7934). "Fecha em" com relógio, duas linhas de
-// seletor (Stepper), cartão das regras com contorno ("PONTOS"), Primário "Submeter prognóstico" e "Só podes submeter uma
-// vez."; submetido: "Já submeteste este prognóstico.", as linhas só com o valor e "Partilhar prognóstico" (Contorno).
+// seletor (Stepper), cartão das regras com contorno ("Pontos: +1 ..." numa linha seguida, Martim 20/11) e Primário
+// "Submeter prognóstico" (a frase "Só podes submeter uma vez." saiu a 20/11); submetido: "Já submeteste este prognóstico.", as linhas só com o valor e "Partilhar prognóstico" (Contorno).
 // Regras (spec §6): uma submissão definitiva, só pela callable submitPrediction (services/game.ts); fecha ao apito
 // inicial. A janela da app (lib/gameWindows.predictionOpen) só desenha a UI: o servidor decide e os seus códigos de
 // erro dão as mensagens. Adiado (PST) fecha com explicação e reabre sozinho quando o jogo volta a NS.
@@ -35,8 +35,7 @@ import { colors, layout, space } from '@/theme/tokens';
 
 export const PREDICTION_TEXT = {
   section: 'Prognóstico',
-  rulesTitle: 'Pontos',
-  once: 'Só podes submeter uma vez.',
+  rulesTitle: 'Pontos: ',
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
   cupRule: 'Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.',
   submit: 'Submeter prognóstico',
@@ -116,10 +115,10 @@ function RulesCard({ knockout }: { knockout: boolean }) {
         gap: space.s4,
       }}
     >
-      <Text71 variant="eyebrow13" color="textSubtle">
-        {PREDICTION_TEXT.rulesTitle}
-      </Text71>
       <Text71 variant="caption12" color="textMuted">
+        <Text71 variant="captionStrong12" color="white">
+          {PREDICTION_TEXT.rulesTitle}
+        </Text71>
         {PREDICTION_TEXT.rules}
       </Text71>
       {knockout ? (
@@ -295,9 +294,6 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
       <RulesCard knockout={isKnockoutGame(match.competition)} />
       {error ? <FormMessage text={error} /> : null}
       <PrimaryButton label={PREDICTION_TEXT.submit} onPress={() => setConfirming(true)} loading={sending} />
-      <Text71 variant="caption12" color="textSubtle">
-        {PREDICTION_TEXT.once}
-      </Text71>
       {confirming ? (
         <ConfirmSheet home={home} away={away} onConfirm={() => void send()} onCancel={() => setConfirming(false)} />
       ) : null}

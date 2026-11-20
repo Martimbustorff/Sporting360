@@ -7,6 +7,7 @@ import { handleSubmitPrediction } from "../../src/callables/submitPrediction";
 import { handleVoteMvp } from "../../src/callables/voteMvp";
 import { aggregateMvpTallies } from "../../src/scheduled/mvpTallyAggregator";
 import { sumShards } from "../../src/game/mvpTally";
+import { publishFansPredictions } from "../../src/scheduled/fansPredictionPublisher";
 
 let db: Firestore;
 const KICKOFF = new Date("2026-11-17T20:00:00Z");
@@ -130,6 +131,65 @@ describe("handleSubmitPrediction", () => {
   ])("dados inválidos %j -> invalid-argument", async (data) => {
     await seedGame();
     expect((await code(handleSubmitPrediction(db, alice, data, before)))?.code).toBe("invalid-argument");
+  });
+});
+
+describe("predictionTallies (previsão dos sportinguistas)", () => {
+  const before = new Date(KICKOFF.getTime() - 60 * MIN);
+  const pub = async () => (await db.doc("predictionTallies/m1").get()).data();
+  const split = async () => (await db.doc("predictionTallies/m1/private/split").get()).data();
+
+  it("cada palpite soma 1 ao total público e ao lado certo no documento privado", async () => {
+    await seedGame();
+    await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
+    await handleSubmitPrediction(db, { uid: "bob" }, { gameId: "m1", home: 1, away: 1 }, before);
+    await handleSubmitPrediction(db, { uid: "carl" }, { gameId: "m1", home: 3, away: 0 }, before);
+    expect(await pub()).toMatchObject({ gameId: "m1", total: 3 });
+    expect(await pub()).not.toHaveProperty("win");
+    expect(await split()).toMatchObject({ home: 2, draw: 1 });
+  });
+
+  it("segunda submissão do mesmo utilizador não conta outra vez", async () => {
+    await seedGame();
+    await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
+    await code(handleSubmitPrediction(db, alice, { gameId: "m1", home: 0, away: 1 }, before));
+    expect((await pub())!.total).toBe(1);
+    expect(await split()).toEqual(expect.objectContaining({ home: 1 }));
+    expect(await split()).not.toHaveProperty("away");
+  });
+
+  it("antes do apito o publicador não revela nada", async () => {
+    await seedGame();
+    await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
+    expect(await publishFansPredictions(db, before)).toEqual({ count: 0 });
+    expect(await pub()).not.toHaveProperty("win");
+  });
+
+  it("ao apito publica vitória/empate/derrota do lado do Sporting, uma só vez", async () => {
+    await seedGame();
+    await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
+    await handleSubmitPrediction(db, { uid: "bob" }, { gameId: "m1", home: 0, away: 1 }, before);
+    await db.doc("matches/m1").update({ status: "LIVE", statusRaw: "1H", elapsed: 3 });
+    const at = new Date(KICKOFF.getTime() + 3 * MIN);
+    expect(await publishFansPredictions(db, at)).toEqual({ count: 1 });
+    const d = (await pub())!;
+    // seedFootballMatch: Sporting em casa.
+    expect(d).toMatchObject({ total: 2, draw: 0, win: 1, loss: 1 });
+    expect(await publishFansPredictions(db, new Date(at.getTime() + MIN))).toEqual({ count: 0 });
+  });
+
+  it("jogo adiado nunca revela", async () => {
+    await seedGame();
+    await handleSubmitPrediction(db, alice, { gameId: "m1", home: 2, away: 1 }, before);
+    await db.doc("matches/m1").update({ status: "PST", statusRaw: "PST" });
+    expect(await publishFansPredictions(db, new Date(KICKOFF.getTime() + 10 * MIN))).toEqual({ count: 0 });
+  });
+
+  it("sem palpites não escreve nada", async () => {
+    await seedGame();
+    await db.doc("matches/m1").update({ status: "LIVE", statusRaw: "1H", elapsed: 3 });
+    expect(await publishFansPredictions(db, new Date(KICKOFF.getTime() + 3 * MIN))).toEqual({ count: 0 });
+    expect(await pub()).toBeUndefined();
   });
 });
 

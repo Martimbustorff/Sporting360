@@ -17,6 +17,7 @@ import { fcmSender } from "./push/sender";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleRun } from "./scheduled/settle";
 import { aggregateMvpTallies } from "./scheduled/mvpTallyAggregator";
+import { publishFansPredictions } from "./scheduled/fansPredictionPublisher";
 import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
 import { vsports } from "./sources/vsports";
@@ -85,6 +86,7 @@ export const predictionReminderPush = onSchedule(
 
 // Contagem do MVP: soma os shards de `mvpTallies/{gameId}/shards` no documento pai que a app lê.
 // Único escritor do pai; maxInstances 1 + concurrency 1 para duas execuções nunca se sobreporem.
+// Na mesma execução publica a previsão dos sportinguistas ao apito inicial (Plano 10), sem nova função agendada.
 export const mvpTallyAggregator = onSchedule(
   {
     schedule: "every 1 minutes",
@@ -96,7 +98,9 @@ export const mvpTallyAggregator = onSchedule(
     retryCount: 0,
   },
   async () => {
-    await runJob(getFirestore(), "mvp_tally", () => aggregateMvpTallies(getFirestore(), new Date()));
+    const now = new Date();
+    await runJob(getFirestore(), "mvp_tally", () => aggregateMvpTallies(getFirestore(), now));
+    await runJob(getFirestore(), "fans_prediction", () => publishFansPredictions(getFirestore(), now));
   },
 );
 

@@ -5,6 +5,8 @@ import { predictionOpen } from "../game/windows";
 import { awardPoints } from "../points/ledger";
 import { POINTS } from "../game/scoring";
 import { validGameId } from "./validation";
+import { contentionToUnavailable } from "../game/mvpTally";
+import { outcomeOf, SPLIT_DOC, TALLY_COLLECTION } from "../game/fansPrediction";
 
 function validGoals(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 20;
@@ -29,22 +31,32 @@ export async function handleSubmitPrediction(
 
   // Coleção própria da v2027: não colide com os docs `predictions` da V2.
   const ref = db.doc(`matchPredictions/${gameId}_${auth.uid}`);
+  const tallyRef = db.doc(`${TALLY_COLLECTION}/${gameId}`);
+  const splitRef = db.doc(`${TALLY_COLLECTION}/${gameId}/${SPLIT_DOC}`);
   const found: { data: Record<string, unknown> | null } = { data: null };
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (snap.exists) {
-      found.data = snap.data() ?? {};
-      return;
-    }
-    tx.create(ref, {
-      gameId,
-      userId: auth.uid,
-      home,
-      away,
-      createdAt: FieldValue.serverTimestamp(),
-      source: "v2027",
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists) {
+        found.data = snap.data() ?? {};
+        return;
+      }
+      tx.create(ref, {
+        gameId,
+        userId: auth.uid,
+        home,
+        away,
+        createdAt: FieldValue.serverTimestamp(),
+        source: "v2027",
+      });
+      // Previsão dos sportinguistas: contagem anónima na mesma transação (incrementos cegos, não lidos).
+      // O total é público; o lado escolhido fica no documento privado até ao apito (fansPredictionPublisher).
+      tx.set(tallyRef, { gameId, total: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      tx.set(splitRef, { [outcomeOf(home, away)]: FieldValue.increment(1) }, { merge: true });
     });
-  });
+  } catch (e) {
+    throw contentionToUnavailable(e);
+  }
 
   const existing = found.data;
   if (existing) {

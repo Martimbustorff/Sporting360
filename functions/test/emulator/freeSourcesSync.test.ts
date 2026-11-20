@@ -40,6 +40,7 @@ function allRouteList(): Parameters<typeof fakeFetch>[0] {
     [/schedule\/3\/43$/, "free/futsalportugal/schedule-taca-da-liga-43.html"],
     [/schedule\/3\/40$/, "free/futsalportugal/schedule-supertaca-40.html"],
     [/schedule\/3\/57$/, "free/futsalportugal/schedule-champions-league-57.html"],
+    [/schedule\/3\/85$/, "free/futsalportugal/schedule-intercontinental-85.html"],
     [/gamesheet\/66614$/, { status: 200, body: gamesheet("TFK Beitar", "Sporting CP", "2026-11-23T18:00:00+00:00") }],
     [/gamesheet\/\d+$/, { status: 404 }],
     [/hp\.fpp\.pt\/136\/12$/, "free/hp_fpp/competicoes-136-12-lista-fases.html"],
@@ -59,9 +60,9 @@ describe("syncFreeSources", () => {
   it("amostras → matches/fs_* e matches/hq_*, saúde por competição; 15 min depois fora de janela → 0 pedidos", async () => {
     const f = allRoutes();
     const r = await syncFreeSources({ db, fetch: f, now: () => NOW });
-    expect(r.count).toBe(14 + 17 + 6);
+    expect(r.count).toBe(18 + 17 + 6);
 
-    expect(await ids("fs_")).toHaveLength(14);
+    expect(await ids("fs_")).toHaveLength(18);
     const hq = await ids("hq_");
     expect(hq).toHaveLength(23);
     expect(hq).toContain("hq_hp_fpp_493_20");
@@ -83,7 +84,7 @@ describe("syncFreeSources", () => {
     expect(fs1.venue).toMatchObject({ name: "Pavilhão" });
     expect((await db.doc("matches/fs_futsalportugal_31776").get()).data()).toMatchObject({ status: "FT", score: { home: 1, away: 0 }, competition: { roundLabel: "J1" } });
 
-    expect((await db.doc("ingestHealth/free_futsal").get()).data()).toMatchObject({ lastCount: 14, lastUsed: "primary", consecutiveFailures: 0 });
+    expect((await db.doc("ingestHealth/free_futsal").get()).data()).toMatchObject({ lastCount: 18, lastUsed: "primary", consecutiveFailures: 0 });
     expect((await db.doc("ingestHealth/free_roller_hockey").get()).data()).toMatchObject({ lastCount: 17, lastUsed: "merged" });
     expect((await db.doc("ingestHealth/free_roller_hockey_europe").get()).data()).toMatchObject({ lastCount: 6 });
     // Cada URL uma vez por execução (as duas competições de hóquei partilham as páginas do hoqueipatins).

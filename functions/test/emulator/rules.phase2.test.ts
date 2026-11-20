@@ -144,6 +144,25 @@ describe("mvpTallies", () => {
   });
 });
 
+describe("predictionTallies", () => {
+  it("anonymous can read predictionTallies/g1", async () => {
+    await seed("predictionTallies/g1", { gameId: "g1", total: 3 });
+    await assertSucceeds(getDoc(doc(anon(), "predictionTallies/g1")));
+  });
+  it("nobody can write predictionTallies/g1", async () => {
+    await assertFails(setDoc(doc(as("alice"), "predictionTallies/g2"), { total: 1 }));
+    await seed("predictionTallies/g1", { gameId: "g1", total: 3 });
+    await assertFails(updateDoc(doc(as("alice"), "predictionTallies/g1"), { total: increment(1) }));
+    await assertFails(deleteDoc(doc(as("alice"), "predictionTallies/g1")));
+  });
+  it("private/split: no client read or write before or after kickoff", async () => {
+    await seed("predictionTallies/g1/private/split", { home: 2, draw: 1 });
+    await assertFails(getDoc(doc(anon(), "predictionTallies/g1/private/split")));
+    await assertFails(getDoc(doc(as("alice"), "predictionTallies/g1/private/split")));
+    await assertFails(setDoc(doc(as("alice"), "predictionTallies/g1/private/split"), { home: 9 }));
+  });
+});
+
 describe("publicProfiles", () => {
   it("anonymous can read publicProfiles/u1", async () => {
     await assertSucceeds(getDoc(doc(anon(), "publicProfiles/u1")));

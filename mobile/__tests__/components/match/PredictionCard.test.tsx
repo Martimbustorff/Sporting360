@@ -157,22 +157,23 @@ describe('Prognóstico aberto', () => {
     expect(screen.getByText('Sporting CP')).toBeTruthy();
     expect(screen.getByText('SC Braga')).toBeTruthy();
     expect(screen.getByText('Fecha em 2 h 15 min')).toBeTruthy();
-    expect(screen.getByText('+1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
+    expect(screen.getByText('Pontos: +1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
     expect(screen.queryByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
     expect(value('Sporting CP')).toBe(0);
     expect(value('SC Braga')).toBe(0);
   });
 
-  it('V7.1 frame 29: "Só podes submeter uma vez." por baixo do botão e cartão "Pontos" com as regras', async () => {
+  it('Martim 20/11: sem "Só podes submeter uma vez."; as regras numa linha seguida "Pontos: +1 ..."', async () => {
     await render(<PredictionCard match={match()} />, { wrapper });
-    expect(screen.getByText('Só podes submeter uma vez.')).toBeTruthy();
-    expect(screen.getByText('Pontos')).toBeTruthy();
+    expect(screen.queryByText('Só podes submeter uma vez.')).toBeNull();
+    expect(screen.queryByText('Pontos')).toBeNull();
+    expect(screen.getByText(/^Pontos: \+1 por participares/)).toBeTruthy();
     expect(screen.queryByText('Já submeteste este prognóstico.')).toBeNull();
   });
 
   it('a regra do prolongamento fica dentro do cartão das regras nos jogos a eliminar', async () => {
     await render(<PredictionCard match={match({ type: 'cup' })} />, { wrapper });
-    expect(screen.getByText('Pontos')).toBeTruthy();
+    expect(screen.getByText(/^Pontos: /)).toBeTruthy();
     expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
@@ -372,7 +373,7 @@ describe('Prognóstico feito, liquidado e fechado', () => {
     expect(value('SC Braga')).toBe(1);
     expect(screen.queryByLabelText('Mais um golo para Sporting CP')).toBeNull();
     expect(screen.queryByLabelText('Menos um golo para SC Braga')).toBeNull();
-    expect(screen.getByText('+1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
+    expect(screen.getByText('Pontos: +1 por participares, +3 resultado exato, +1 vencedor ou empate certo')).toBeTruthy();
     expect(screen.queryByText('Só podes submeter uma vez.')).toBeNull();
     expect(screen.getByLabelText('Partilhar prognóstico')).toBeTruthy();
   });

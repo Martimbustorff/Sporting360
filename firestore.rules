@@ -56,6 +56,9 @@ service cloud.firestore {
     match /settlements/{id} { allow read: if true; }
     // Só o documento pai (escrito pelo agregador); os shards (mvpTallies/{id}/shards) ficam fechados por omissão.
     match /mvpTallies/{id} { allow read: if true; }
+    // Previsão dos sportinguistas (Plano 10): o total é público; o lado de cada palpite fica em
+    // predictionTallies/{id}/private/split, fechado por omissão, até o servidor o publicar ao apito.
+    match /predictionTallies/{id} { allow read: if true; }
     // Nomes públicos e pontos (nunca email).
     match /leaderboards/{id} { allow read: if true; }
     match /leaderboards/{id}/entries/{entry} { allow read: if true; }
