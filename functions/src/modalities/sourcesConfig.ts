@@ -25,13 +25,15 @@ export interface ApiSportsSport {
   leagues: ApiSportsLeague[];
 }
 
+// 20/11: desligadas. O plano gratuito só dá as épocas 2022 a 2024 ("Free plans do not have access to this season"); a app
+// esconde estas modalidades. Voltar a true com plano pago ou outra fonte.
 // Ids confirmados a 20/11 com a API-Sports direta (teams?search=Sporting e leagues?country=Portugal). Os jogos vêm
 // todos pelo `team` (incluindo taças e provas europeias); a lista de ligas só serve para as classificações: as taças e
 // supertaças não têm tabela (covered: false). Provas europeias: sem tabela por agora (ids por confirmar).
 export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSportsSport> = {
   handball: {
     host: "v1.handball.api-sports.io",
-    enabled: true,
+    enabled: false,
     teamId: 791,
     seasonFormat: "year",
     leagues: [
@@ -42,7 +44,7 @@ export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSpo
   },
   volleyball: {
     host: "v1.volleyball.api-sports.io",
-    enabled: true,
+    enabled: false,
     teamId: 976,
     seasonFormat: "year",
     leagues: [
@@ -53,7 +55,7 @@ export const API_SPORTS: Record<"handball" | "volleyball" | "basketball", ApiSpo
   },
   basketball: {
     host: "v1.basketball.api-sports.io",
-    enabled: true,
+    enabled: false,
     teamId: 943,
     seasonFormat: "span",
     leagues: [
