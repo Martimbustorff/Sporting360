@@ -339,6 +339,7 @@ export const layout = {
   matchCardHeight: 204, // 20/11: competição e ronda centradas por cima, emblemas lg
   matchCardStrip: 36,
   matchCardStripPadTop: 16,
+  matchCardGradientOpacity: 0.6, // 20/11: o leão e a forma geométrica da Home veem-se através do cartão
   matchCardTeamMax: 108,
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
   matchCardBorder: 1,

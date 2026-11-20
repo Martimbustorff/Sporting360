@@ -193,7 +193,10 @@ function Teams({ vm, wide, children }: { vm: ReturnType<typeof toGameHeaderVM>; 
   );
 }
 
-/** Degradê do cartão do prognóstico (MatchCard): verde em cima, fundo da app em baixo. */
+/**
+ * Degradê do cartão do prognóstico (MatchCard): verde em cima, fundo da app em baixo, com transparência (20/11, Martim:
+ * ver o leão e a forma geométrica da Home por trás do cartão).
+ */
 function CardGradient() {
   const id = `nextGrad${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
@@ -201,8 +204,8 @@ function CardGradient() {
       <Svg width="100%" height="100%" preserveAspectRatio="none">
         <Defs>
           <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={colors.shareCardTop} />
-            <Stop offset="1" stopColor={colors.bg} />
+            <Stop offset="0" stopColor={colors.shareCardTop} stopOpacity={layout.matchCardGradientOpacity} />
+            <Stop offset="1" stopColor={colors.bg} stopOpacity={layout.matchCardGradientOpacity} />
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
@@ -313,13 +316,13 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
 }
 
 const styles = StyleSheet.create({
-  shadow: { height: layout.matchCardHeight, borderRadius: radii.r12, backgroundColor: colors.bg, ...layout.matchCardShadow },
+  // Sem sombra: num cartão transparente a sombra via-se por trás e escurecia o leão.
+  shadow: { height: layout.matchCardHeight, borderRadius: radii.r12 },
   card: {
     flex: 1,
     borderRadius: radii.r12,
     borderWidth: layout.matchCardBorder,
     borderColor: colors.white,
-    backgroundColor: colors.bg,
     overflow: 'hidden',
   },
   fill: { flex: 1 },
