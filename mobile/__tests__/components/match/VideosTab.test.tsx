@@ -169,7 +169,7 @@ describe('Vídeos', () => {
   it('dados da cache: aviso de sem ligação', async () => {
     mockVideos.current = ready([v('a')], true);
     await render(<VideosTab match={match()} />);
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
   });
 });
 

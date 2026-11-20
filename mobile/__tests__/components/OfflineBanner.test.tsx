@@ -1,18 +1,41 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { colors } from '@/theme/tokens';
-import { OfflineBanner } from '@/components/OfflineBanner';
+import { OFFLINE_GRACE_MS, OfflineBanner } from '@/components/OfflineBanner';
 import { EmptyState } from '@/components/EmptyState';
 
 describe('OfflineBanner', () => {
   it('shows the offline text when visible', async () => {
     await render(<OfflineBanner visible />);
-    expect(screen.getByText('Sem ligação. A mostrar os últimos dados guardados.')).toBeTruthy();
+    expect(await screen.findByText('Sem ligação. A mostrar os últimos dados guardados.', {}, { timeout: OFFLINE_GRACE_MS + 1000 })).toBeTruthy();
+  });
+
+  it('não aparece logo: a primeira leitura vem sempre da cache e o servidor confirma em menos de um segundo', async () => {
+    jest.useFakeTimers();
+    try {
+      const view = await render(<OfflineBanner visible />);
+      expect(screen.queryByTestId('offline-banner')).toBeNull();
+      // O servidor confirma antes do fim da tolerância: o aviso nunca chega a aparecer (nada salta no ecrã).
+      await act(async () => jest.advanceTimersByTime(OFFLINE_GRACE_MS - 100));
+      await view.rerender(<OfflineBanner visible={false} />);
+      await act(async () => jest.advanceTimersByTime(OFFLINE_GRACE_MS));
+      expect(screen.queryByTestId('offline-banner')).toBeNull();
+      // Continua sem servidor: aparece passada a tolerância.
+      await view.rerender(<OfflineBanner visible />);
+      await act(async () => jest.advanceTimersByTime(OFFLINE_GRACE_MS));
+      expect(screen.getByTestId('offline-banner')).toBeTruthy();
+      // E sai logo que os dados do servidor chegam.
+      await view.rerender(<OfflineBanner visible={false} />);
+      expect(screen.queryByTestId('offline-banner')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('uses surface-20 and a Caption 12 white text (Figma 4952:9047)', async () => {
     await render(<OfflineBanner visible />);
+    await screen.findByTestId('offline-banner', {}, { timeout: OFFLINE_GRACE_MS + 1000 });
     expect(StyleSheet.flatten(screen.getByTestId('offline-banner').props.style).backgroundColor).toBe(colors.surface20);
     const t = StyleSheet.flatten(screen.getByText(/Sem ligação/).props.style);
     expect(t.fontSize).toBe(12);

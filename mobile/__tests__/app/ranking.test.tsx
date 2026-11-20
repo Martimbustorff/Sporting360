@@ -205,7 +205,7 @@ describe('Ranking: estados', () => {
   it('em cache: aviso de sem ligação', async () => {
     mockBoard.current = ready([entry('a', 1, 'Ana')], true);
     await renderScreen();
-    expect(screen.getByText('Sem ligação. A mostrar os últimos dados guardados.')).toBeTruthy();
+    expect(await screen.findByText('Sem ligação. A mostrar os últimos dados guardados.', {}, { timeout: 3000 })).toBeTruthy();
   });
 
   it('sessão terminada: não lê a entrada própria nem mostra "Ainda não pontuaste"', async () => {

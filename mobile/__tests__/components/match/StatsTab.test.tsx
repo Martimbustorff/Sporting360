@@ -152,7 +152,7 @@ describe('Estatísticas', () => {
   it('dados da cache mostram o aviso sem ligação', async () => {
     mockDetails.current = { statistics: { status: 'ready', data: statsDoc(), fromCache: true } };
     await render(<StatsTab match={match('LIVE')} />);
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
   });
 });
 

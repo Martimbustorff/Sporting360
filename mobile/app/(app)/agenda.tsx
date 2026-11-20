@@ -1,10 +1,10 @@
 // Figma V7.1: frame 35 "Calendário" (4948:8199); linha de jogo 4948:8278 (MatchRow), pílulas de modalidade 4948:8261.
-// Ordem do frame: cartão do próximo jogo (o mesmo da Home), pílulas de modalidade, Próximos/Resultados e a lista com
-// todos os jogos (também o do cartão), "Fonte" no fim.
-// 35c (4994:12606): a carregar é o esqueleto do Esqueleto do 47 (3 linhas). As pílulas de modalidade ficam à vista (decisão
-// testada: mudar de modalidade a meio do carregamento); o frame 35c não as desenha.
-// SEM FIGMA: o aviso de cache (OfflineBanner), o estado vazio e de erro, e a atribuição
-// "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas). O cartão só aparece quando há próximo jogo (os estados "sem jogo" são da Home).
+// 20/11 (Martim: "saltos no ecrã" ao mudar de modalidade): as pílulas de modalidade e Próximos/Resultados ficam fixas
+// por baixo do cabeçalho, no mesmo sítio a carregar, com erro e com dados. Só a parte de baixo muda: o cartão do
+// próximo jogo (o mesmo da Home, só em Próximos e só quando há jogo) e a lista com todos os jogos, "Fonte" no fim.
+// 35c (4994:12606): a carregar é o esqueleto do 47 (3 linhas), por baixo da barra fixa.
+// SEM FIGMA: o aviso de cache (OfflineBanner, com tolerância), o estado vazio e de erro, e a atribuição
+// "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas).
 import { useMemo, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { router, useIsFocused, type Href } from 'expo-router';
@@ -79,13 +79,19 @@ export default function Agenda() {
     loading: false,
   });
 
-  // As pílulas de modalidade também ficam em carregamento e erro (a lista, com o cartão, ainda não existe): quem vê um erro
-  // numa modalidade tem de poder mudar de modalidade.
-  const sportChips = <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />;
+  // Barra fixa: não sai do sítio a carregar, com erro nem quando a modalidade não tem próximo jogo (antes o cartão
+  // aparecia e desaparecia por cima das pílulas e o ecrã saltava). Com erro tem de se poder mudar de modalidade.
+  const bar = (
+    <View testID="agenda-bar" style={{ gap: space.s12, paddingHorizontal: space.s24, paddingTop: space.s12, paddingBottom: space.s12 }}>
+      <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />
+      <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
+      <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
+    </View>
+  );
 
-  const header = (
-    <View style={{ gap: space.s12, paddingBottom: space.s12 }}>
-      {next ? (
+  const header =
+    tab === 'upcoming' && next ? (
+      <View style={{ paddingBottom: space.s12 }}>
         <NextMatchCard
           moment={moment}
           match={next}
@@ -95,11 +101,8 @@ export default function Agenda() {
           onAction={(href) => router.push(href as Href)}
           onOpenAgenda={() => undefined}
         />
-      ) : null}
-      {sportChips}
-      <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
-    </View>
-  );
+      </View>
+    ) : undefined;
 
   const sources = sport === 'football' ? [...new Set([FOOTBALL_SOURCE, ...attributions(list)])] : attributions(list);
   // Rodapé só quando há fontes a atribuir: sem ele não fica um bloco vazio no fim.
@@ -129,26 +132,21 @@ export default function Agenda() {
           </Touchable>
         }
       />
-      <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
+      {bar}
       {isError(upcoming) || isError(results) ? (
-        <>
-          <View style={{ paddingHorizontal: space.s24, paddingTop: space.s12 }}>{sportChips}</View>
-          <EmptyState icon="info" text={ERROR_TEXT} />
-        </>
+        <EmptyState icon="info" text={ERROR_TEXT} />
       ) : isLoading(upcoming) || isLoading(results) ? (
-        <>
-          <View style={{ paddingHorizontal: space.s24, paddingTop: space.s12 }}>{sportChips}</View>
-          <ScreenSkeleton testID="agenda-skeleton" />
-        </>
+        <ScreenSkeleton testID="agenda-skeleton" />
       ) : (
         <FlatList
+          testID="agenda-list"
           data={list}
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => <MatchRow match={item} onPress={(id) => router.push(`/jogo/${id}`)} />}
           ListHeaderComponent={header}
           ListEmptyComponent={<EmptyState text={empty} />}
           ListFooterComponent={footer}
-          contentContainerStyle={{ paddingTop: space.s12, paddingHorizontal: space.s24 }}
+          contentContainerStyle={{ paddingHorizontal: space.s24 }}
         />
       )}
     </Screen>

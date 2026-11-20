@@ -180,7 +180,7 @@ describe('Gestão de GameBox', () => {
   it('dados da cache mostram o aviso', async () => {
     mockBoxes.current = { status: 'ready', data: [box('g1', 1)], fromCache: true };
     await render(wrap(<GameboxList />));
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
   });
 
   describe('GameBox antiga só no perfil (users/{uid}.gameboxNumber)', () => {

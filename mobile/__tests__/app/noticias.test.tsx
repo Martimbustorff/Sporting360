@@ -151,7 +151,7 @@ describe('Notícias: estados', () => {
   it('fromCache mostra o OfflineBanner; sem cache não', async () => {
     mockNews.current = ready([item('a')], true);
     await renderScreen();
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
   });
 
   it('sem fromCache não há OfflineBanner', async () => {

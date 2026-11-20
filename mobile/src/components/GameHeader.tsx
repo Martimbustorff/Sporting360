@@ -7,7 +7,7 @@
 // pontos quando existem eventos de pontos do servidor (a app nunca calcula pontuação). O nome da competição e a jornada
 // vivem na barra de navegação (`GameNavTitle`), uma só vez (nota 06).
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { MatchTimeline } from '@/components/MatchTimeline';
@@ -16,7 +16,7 @@ import { PredictionSummary, type PredictionVM } from '@/components/PredictionSum
 import { minuteText, penaltiesText, stateLabel, type GoalVM, type UiState } from '@/lib/matchVM';
 import { formatRound } from '@/lib/formatRound';
 import { formatCardDate, formatTime } from '@/lib/ptDate';
-import { SPORTING_API_ID } from '@/lib/teams';
+import { SPORTING_API_ID, teamInitials } from '@/lib/teams';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
@@ -69,16 +69,38 @@ const CREST_BOX = {
 export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'hd' | 'md' | 'sm' | 'xs' | 'form' | 'row' }) {
   const box = CREST_BOX[size];
   const source = team.id === SPORTING_API_ID ? SPORTING_CREST : team.crestUrl ? { uri: team.crestUrl } : null;
-  if (!source) return <View testID={testID} style={box} />;
+  // O emblema que falhou fica marcado por URL: um adversário novo na mesma linha volta a tentar.
+  const [failed, setFailed] = useState<string | null>(null);
+  const uri = team.crestUrl ?? '';
+  if (!source || (failed !== null && failed === uri)) return <CrestMonogram name={team.name} box={box} testID={testID} />;
   return (
     <Image
       testID={testID}
       source={source}
       contentFit="contain"
+      cachePolicy="memory-disk"
+      onError={() => setFailed(uri)}
       accessibilityElementsHidden
       importantForAccessibility="no"
       style={box}
     />
+  );
+}
+
+/**
+ * SEM FIGMA (20/11, Martim: adversários das modalidades sem emblema): quando a fonte não tem emblema (o futsalportugal
+ * não tem nenhum) ou o URL falha, um círculo surface-20 com as iniciais do clube, no mesmo espaço do emblema.
+ */
+function CrestMonogram({ name, box, testID }: { name: string; box: { width: number; height: number }; testID?: string }) {
+  const d = Math.min(box.width, box.height);
+  return (
+    <View testID={testID} style={[box, { alignItems: 'center', justifyContent: 'center' }]}>
+      <View accessibilityElementsHidden importantForAccessibility="no" style={{ width: d, height: d, borderRadius: d / 2, backgroundColor: colors.surface20, alignItems: 'center', justifyContent: 'center' }}>
+        <Text71 variant="badge11" style={{ fontSize: Math.max(7, Math.round(d * 0.36)), lineHeight: Math.max(9, Math.round(d * 0.44)) }}>
+          {teamInitials(name)}
+        </Text71>
+      </View>
+    </View>
   );
 }
 

@@ -42,11 +42,8 @@ describe('eas.json', () => {
     });
   });
 
-  it('submits Android to the internal track with a service account outside git', () => {
-    expect(eas.submit.production.android).toEqual({
-      serviceAccountKeyPath: './google-play-service-account.json',
-      track: 'internal',
-    });
+  it('submits Android to the internal track; the service account key lives in EAS credentials, never in git', () => {
+    expect(eas.submit.production.android).toEqual({ track: 'internal' });
     expect(gitignore).toContain('google-play-service-account.json');
     expect(gitignore).toContain('*.p8');
   });

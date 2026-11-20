@@ -192,7 +192,7 @@ describe('CompetitionStandings: estados', () => {
   it('dados da cache: aviso offline', async () => {
     mockData.standings = { status: 'ready', data: standings, fromCache: true };
     await render(<CompetitionStandings competitionKey={KEY} />);
-    expect(screen.getByText('Sem ligação. A mostrar os últimos dados guardados.')).toBeTruthy();
+    expect(await screen.findByText('Sem ligação. A mostrar os últimos dados guardados.', {}, { timeout: 3000 })).toBeTruthy();
   });
 
   it('"Ver competição" abre /competicao/{key}; escondido com showCompetitionLink={false} (F10)', async () => {

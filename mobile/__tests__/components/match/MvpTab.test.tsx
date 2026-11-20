@@ -456,7 +456,7 @@ describe('Votado, fechado e apurado', () => {
   it('dados em cache (sem ligação): aviso offline', async () => {
     mockData.players = { ...(players() as { status: 'ready'; data: unknown }), fromCache: true };
     await render(<MvpTab match={match()} />, { wrapper });
-    expect(screen.getByText('Sem ligação. A mostrar os últimos dados guardados.')).toBeTruthy();
+    expect(await screen.findByText('Sem ligação. A mostrar os últimos dados guardados.', {}, { timeout: 3000 })).toBeTruthy();
   });
 });
 

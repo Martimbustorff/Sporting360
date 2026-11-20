@@ -1,5 +1,5 @@
 // Task 7: Agenda multi-modalidade. Hooks de dados mockados; expo-router global (jest.setup).
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { OFFLINE_TEXT } from '@/components/OfflineBanner';
 import type { GameStatus, Match, Sport } from '@/data/schemas';
@@ -185,7 +185,7 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
   it('dados da cache mostram o aviso de falta de ligação', async () => {
     mockUpcoming.current = ready([match({ id: '1001' })], true);
     await render(ui());
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(OFFLINE_TEXT)).toBeTruthy();
     expect(screen.getByTestId('match-row-1001')).toBeTruthy();
   });
@@ -194,6 +194,29 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     mockUpcoming.current = ready([match({ id: '1001' })]);
     await render(ui());
     expect(screen.queryByTestId('offline-banner')).toBeNull();
+  });
+
+  it('pílulas e Próximos/Resultados ficam na barra fixa, fora da lista, a carregar, com erro e com dados (sem saltos)', async () => {
+    const view = await render(ui());
+    expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
+    expect(within(screen.getByTestId('agenda-bar')).getByRole('tab', { name: 'Próximos' })).toBeTruthy();
+    mockUpcoming.current = { status: 'error', error: new Error('x') };
+    await view.rerender(ui());
+    expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
+    mockUpcoming.current = ready([match({ id: '1001' })]);
+    mockResults.current = ready([]);
+    await view.rerender(ui());
+    expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
+    expect(within(screen.getByTestId('agenda-list')).queryByTestId('sport-football')).toBeNull();
+  });
+
+  it('o cartão do próximo jogo só aparece em Próximos', async () => {
+    mockUpcoming.current = ready([match({ id: '1001' })]);
+    mockResults.current = ready([]);
+    await render(ui());
+    expect(screen.getByTestId('next-match-card')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Resultados' }));
+    expect(screen.queryByTestId('next-match-card')).toBeNull();
   });
 
   it('erro mostra a mensagem e nenhuma lista', async () => {

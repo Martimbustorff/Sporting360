@@ -332,7 +332,7 @@ describe('carregamento, cache, ausência e erro (Review Focus 3)', () => {
   it('dados da cache mostram o aviso de falta de ligação', async () => {
     mockMatch.current = ready(match(), true);
     await render(ui());
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(OFFLINE_TEXT)).toBeTruthy();
   });
 

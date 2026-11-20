@@ -281,7 +281,7 @@ describe('Formações', () => {
   it('dados da cache mostram o aviso sem ligação', async () => {
     mockDetails.current = { lineups: { ...lineups(), fromCache: true } };
     await render(<LineupsTab match={match('LIVE')} />);
-    expect(screen.getByTestId('offline-banner')).toBeTruthy();
+    expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
   });
 
   it('jogadores com o mesmo playerId repetido: sem avisos de chave duplicada', async () => {

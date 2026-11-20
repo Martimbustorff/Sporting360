@@ -207,3 +207,23 @@ describe('nomes longos (Review Focus 4)', () => {
     expect(screen.getByTestId('row-crest-away')).toBeTruthy();
   });
 });
+
+describe('emblema de recurso (modalidades sem emblema na fonte)', () => {
+  it('sem emblema mostra as iniciais do adversário no espaço do emblema', async () => {
+    await render(
+      <MatchRow
+        match={{
+          id: 'fs_1', sport: 'futsal',
+          competition: { key: 'futsal_liga_2026-2027', id: 'liga', name: 'Liga Placard', type: 'league', season: '2026-2027', round: null, roundLabel: null },
+          home: { id: 'fundao', name: 'AD Fundão', logo: null },
+          away: { id: 'sporting', name: 'Sporting CP', logo: 'https://s360-prognostico-download.web.app/brand/sporting-cp-2026.png' },
+          sportingSide: 'away', kickoff: new Date('2026-11-22T20:30:00Z'), status: 'NS', elapsed: null, elapsedExtra: null,
+          score: { home: null, away: null, halftime: null, extratime: null, penalty: null },
+          finishedAt: null, venue: null, referee: null, source: { provider: 'futsalportugal', id: '1', attribution: null },
+        } as never}
+        onPress={() => undefined}
+      />,
+    );
+    expect(screen.getByText('FU', { includeHiddenElements: true })).toBeTruthy();
+  });
+});
