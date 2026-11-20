@@ -316,7 +316,7 @@ describe("mapFixture: jogadores e onzes", () => {
           players: [
             { ...p[0], statistics: [{ ...p[0].statistics[0], games: { ...p[0].statistics[0].games, rating: "7.3" } }] },
             { ...p[1], statistics: [{ ...p[1].statistics[0], games: { ...p[1].statistics[0].games, rating: null } }] },
-            { ...p[0], id: 9999, statistics: [{ ...p[0].statistics[0], games: { ...p[0].statistics[0].games, rating: "" } }] },
+            { ...p[0], player: { ...p[0].player, id: 9999 }, statistics: [{ ...p[0].statistics[0], games: { ...p[0].statistics[0].games, rating: "" } }] },
           ],
         },
       ],
@@ -325,7 +325,7 @@ describe("mapFixture: jogadores e onzes", () => {
     expect(lines[0].rating).toBe(7.3);
     expect(lines[1].rating).toBeNull();
     expect(lines[2].rating).toBeNull();
-    expect(lines[0]).toMatchObject({ playerId: String(p[0].id), name: p[0].name, goals: 0, minutes: 90, substitute: false });
+    expect(lines[0]).toMatchObject({ playerId: String(p[0].player.id), name: p[0].player.name, goals: 0, minutes: 90, substitute: false });
   });
 
   it("texto só com espaços não vira 0 (rating e precisão de passes ficam null)", () => {

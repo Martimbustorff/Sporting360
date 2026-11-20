@@ -93,6 +93,17 @@ unset RAPIDAPI_KEY VSPORTS_KEY
 - [ ] **Adiamentos:** se possível, ver um jogo adiado tarde pela API (o ticker pode fazer até 4 h de polling de um `NS`).
 - [ ] **Manutenção anual:** os ids de época do hoqueipatins (`seasons=1122` para 2026/2027) e das fases do hp.fpp.pt mudam todos os anos: atualizar em `sourcesConfig.ts` em agosto.
 
+### Resultado da gravação (20/11)
+
+Gravado com o jogo 1575543 (Sporting 1-0 Moreirense) e a Liga 2026/27; testes em `functions/test/unit/realFixtures.test.ts`.
+- API-Football Pro sem erros em 16 pedidos.
+- **Corrigido:** em `fixtures?ids=`, cada jogador vem em `players[].players[].player` (id, nome, foto), não ao nível de cima. Sem a correção, as notas e as linhas por jogador (e os candidatos a MVP) ficavam com `playerId` "undefined".
+- **Corrigido:** `games.substitute` vem sempre `false`; suplente passa a ser quem não está no `startXI`.
+- Substituições: `player` sai, `assist` entra (confirmado pelos minutos).
+- Classificação da Liga: 18 linhas. Forma nas previsões: 10 letras (a app mostra as 5 últimas).
+- VSports: época 2026/27 = 31, Sporting = 6, `dt` em `D/M/AAAA`. Vídeos por jogo (`vdo-pesquisa-sec?gm=`) não gravados: confirmar no modo sombra.
+- Por gravar: troféus multi-jogador, API-Sports (modalidades continuam desligadas em `sourcesConfig.ts`).
+
 ## 4. Integrar o v2027-app (PARAGEM (Martim): git local, sem deploy)
 
 As regras, os índices e as callables do Plano 3 só se publicam a partir da árvore que tem o `v2027-app` integrado. Como os índices são precisos antes do modo sombra (secção 5), a integração faz-se aqui.

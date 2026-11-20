@@ -199,7 +199,13 @@ function numOrNull(v: unknown): number | null {
   return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
-function mapPlayers(t: AfFixturePlayers) {
+/**
+ * `games.substitute` vem sempre `false` na API real (gravada a 20/11): com onze conhecido, suplente é
+ * quem não está no `startXI`; sem onze, fica o valor da API.
+ */
+function mapPlayers(t: AfFixturePlayers, lineups: AfLineup[]) {
+  const lineup = lineups.find((l) => l.team.id === t.team.id);
+  const starters = lineup && lineup.startXI.length ? new Set(lineup.startXI.map((x) => String(x.player.id))) : null;
   return {
     teamId: String(t.team.id),
     players: t.players.map((p): PlayerStatLine => {
@@ -208,9 +214,9 @@ function mapPlayers(t: AfFixturePlayers) {
       const tackles = (s?.tackles ?? {}) as { total?: unknown };
       const fouls = (s?.fouls ?? {}) as { committed?: unknown };
       return {
-        playerId: String(p.id),
-        name: p.name,
-        photo: p.photo ?? null,
+        playerId: String(p.player.id),
+        name: p.player.name,
+        photo: p.player.photo ?? null,
         number: s?.games.number ?? null,
         position: s?.games.position ?? null,
         minutes: s?.games.minutes ?? null,
@@ -223,7 +229,7 @@ function mapPlayers(t: AfFixturePlayers) {
         foulsCommitted: num(fouls.committed),
         cardsYellow: num(s?.cards.yellow),
         cardsRed: num(s?.cards.red),
-        substitute: s?.games.substitute ?? false,
+        substitute: starters ? !starters.has(String(p.player.id)) : s?.games.substitute ?? false,
       };
     }),
   };
@@ -254,7 +260,7 @@ function mapDetails(f: AfFixture): FootballDetails {
         }
       : null,
     lineups: lineups.length ? { teams: lineups.map(mapLineup) } : null,
-    players: players.length ? { teams: players.map(mapPlayers) } : null,
+    players: players.length ? { teams: players.map((t) => mapPlayers(t, lineups)) } : null,
   };
 }
 

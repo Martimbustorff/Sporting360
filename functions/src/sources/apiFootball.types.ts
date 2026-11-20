@@ -73,9 +73,10 @@ export interface AfPlayerMatchStats {
   [k: string]: unknown;
 }
 
+/** Forma real da API (gravada a 20/11): o jogador vem em `player`, as estatísticas ao lado. */
 export interface AfFixturePlayers {
   team: AfTeamRef;
-  players: { id: number; name: string; photo: string; statistics: AfPlayerMatchStats[] }[];
+  players: { player: { id: number; name: string; photo: string | null }; statistics: AfPlayerMatchStats[] }[];
 }
 
 /** Fixture completa (pedido por `ids`): inclui events, lineups, statistics e players. */

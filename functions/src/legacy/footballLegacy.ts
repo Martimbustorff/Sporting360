@@ -202,9 +202,11 @@ function legacyPlayers(f: AfFixture, gameId: string): Record<string, DocumentDat
       teamId: t.team.id,
       Players: t.players.map((p) => {
         const s = p.statistics?.[0];
-        const playerId = String(p.id);
+        const playerId = String(p.player.id);
+        // `games.substitute` vem sempre false na API real: com onze conhecido, suplente é quem não é titular.
+        const isSub = lineup && lineup.startXI.length ? !lineup.startXI.some((x) => String(x.player.id) === playerId) : s?.games?.substitute === true;
         let grid = "";
-        if (s?.games?.substitute === true) {
+        if (isSub) {
           const out1 = substs.find((e) => e.assist?.id !== null && e.assist?.id !== undefined && String(e.assist.id) === playerId);
           grid = (out1 && out1.player?.id != null ? startGrid(String(out1.player.id)) : null) ?? startGrid(playerId) ?? "";
         } else {
@@ -217,8 +219,8 @@ function legacyPlayers(f: AfFixture, gameId: string): Record<string, DocumentDat
         return {
           playerId,
           number: numberOrNull(s?.games?.number),
-          name: p.name,
-          photo: text(p.photo),
+          name: p.player.name,
+          photo: text(p.player.photo),
           position: text(s?.games?.position),
           rating: rating === null || rating === undefined || String(rating).trim() === "" ? null : String(rating),
           goals: count(s?.goals?.total),
@@ -232,7 +234,7 @@ function legacyPlayers(f: AfFixture, gameId: string): Record<string, DocumentDat
           teamId: t.team.id,
           grid,
           minutes: count(s?.games?.minutes),
-          substitute: s?.games?.substitute === true,
+          substitute: isSub,
         };
       }),
     };

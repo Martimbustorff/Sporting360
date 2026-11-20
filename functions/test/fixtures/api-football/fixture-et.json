@@ -777,9 +777,11 @@
           },
           "players": [
             {
-              "id": 5000,
-              "name": "Israel",
-              "photo": "https://media.api-sports.io/football/players/5000.png",
+              "player": {
+                "id": 5000,
+                "name": "Israel",
+                "photo": "https://media.api-sports.io/football/players/5000.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -839,9 +841,11 @@
               ]
             },
             {
-              "id": 5001,
-              "name": "Fresneda",
-              "photo": "https://media.api-sports.io/football/players/5001.png",
+              "player": {
+                "id": 5001,
+                "name": "Fresneda",
+                "photo": "https://media.api-sports.io/football/players/5001.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -901,9 +905,11 @@
               ]
             },
             {
-              "id": 5002,
-              "name": "Diomande",
-              "photo": "https://media.api-sports.io/football/players/5002.png",
+              "player": {
+                "id": 5002,
+                "name": "Diomande",
+                "photo": "https://media.api-sports.io/football/players/5002.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -963,9 +969,11 @@
               ]
             },
             {
-              "id": 5003,
-              "name": "Inácio",
-              "photo": "https://media.api-sports.io/football/players/5003.png",
+              "player": {
+                "id": 5003,
+                "name": "Inácio",
+                "photo": "https://media.api-sports.io/football/players/5003.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1025,9 +1033,11 @@
               ]
             },
             {
-              "id": 5004,
-              "name": "Quenda",
-              "photo": "https://media.api-sports.io/football/players/5004.png",
+              "player": {
+                "id": 5004,
+                "name": "Quenda",
+                "photo": "https://media.api-sports.io/football/players/5004.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1087,9 +1097,11 @@
               ]
             },
             {
-              "id": 5005,
-              "name": "Hjulmand",
-              "photo": "https://media.api-sports.io/football/players/5005.png",
+              "player": {
+                "id": 5005,
+                "name": "Hjulmand",
+                "photo": "https://media.api-sports.io/football/players/5005.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1149,9 +1161,11 @@
               ]
             },
             {
-              "id": 5006,
-              "name": "Morita",
-              "photo": "https://media.api-sports.io/football/players/5006.png",
+              "player": {
+                "id": 5006,
+                "name": "Morita",
+                "photo": "https://media.api-sports.io/football/players/5006.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1211,9 +1225,11 @@
               ]
             },
             {
-              "id": 5007,
-              "name": "Trincão",
-              "photo": "https://media.api-sports.io/football/players/5007.png",
+              "player": {
+                "id": 5007,
+                "name": "Trincão",
+                "photo": "https://media.api-sports.io/football/players/5007.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1273,9 +1289,11 @@
               ]
             },
             {
-              "id": 5008,
-              "name": "Pedro Gonçalves",
-              "photo": "https://media.api-sports.io/football/players/5008.png",
+              "player": {
+                "id": 5008,
+                "name": "Pedro Gonçalves",
+                "photo": "https://media.api-sports.io/football/players/5008.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1335,9 +1353,11 @@
               ]
             },
             {
-              "id": 5009,
-              "name": "Luis Suárez",
-              "photo": "https://media.api-sports.io/football/players/5009.png",
+              "player": {
+                "id": 5009,
+                "name": "Luis Suárez",
+                "photo": "https://media.api-sports.io/football/players/5009.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1397,9 +1417,11 @@
               ]
             },
             {
-              "id": 5010,
-              "name": "Gyökeres",
-              "photo": "https://media.api-sports.io/football/players/5010.png",
+              "player": {
+                "id": 5010,
+                "name": "Gyökeres",
+                "photo": "https://media.api-sports.io/football/players/5010.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1459,9 +1481,11 @@
               ]
             },
             {
-              "id": 5011,
-              "name": "Debast",
-              "photo": "https://media.api-sports.io/football/players/5011.png",
+              "player": {
+                "id": 5011,
+                "name": "Debast",
+                "photo": "https://media.api-sports.io/football/players/5011.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1521,9 +1545,11 @@
               ]
             },
             {
-              "id": 5012,
-              "name": "Araújo",
-              "photo": "https://media.api-sports.io/football/players/5012.png",
+              "player": {
+                "id": 5012,
+                "name": "Araújo",
+                "photo": "https://media.api-sports.io/football/players/5012.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1583,9 +1609,11 @@
               ]
             },
             {
-              "id": 5013,
-              "name": "Catamo",
-              "photo": "https://media.api-sports.io/football/players/5013.png",
+              "player": {
+                "id": 5013,
+                "name": "Catamo",
+                "photo": "https://media.api-sports.io/football/players/5013.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1654,9 +1682,11 @@
           },
           "players": [
             {
-              "id": 6000,
-              "name": "Trubin",
-              "photo": "https://media.api-sports.io/football/players/6000.png",
+              "player": {
+                "id": 6000,
+                "name": "Trubin",
+                "photo": "https://media.api-sports.io/football/players/6000.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1716,9 +1746,11 @@
               ]
             },
             {
-              "id": 6001,
-              "name": "Aursnes",
-              "photo": "https://media.api-sports.io/football/players/6001.png",
+              "player": {
+                "id": 6001,
+                "name": "Aursnes",
+                "photo": "https://media.api-sports.io/football/players/6001.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1778,9 +1810,11 @@
               ]
             },
             {
-              "id": 6002,
-              "name": "Otamendi",
-              "photo": "https://media.api-sports.io/football/players/6002.png",
+              "player": {
+                "id": 6002,
+                "name": "Otamendi",
+                "photo": "https://media.api-sports.io/football/players/6002.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1840,9 +1874,11 @@
               ]
             },
             {
-              "id": 6003,
-              "name": "Silva",
-              "photo": "https://media.api-sports.io/football/players/6003.png",
+              "player": {
+                "id": 6003,
+                "name": "Silva",
+                "photo": "https://media.api-sports.io/football/players/6003.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1902,9 +1938,11 @@
               ]
             },
             {
-              "id": 6004,
-              "name": "Carreras",
-              "photo": "https://media.api-sports.io/football/players/6004.png",
+              "player": {
+                "id": 6004,
+                "name": "Carreras",
+                "photo": "https://media.api-sports.io/football/players/6004.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -1964,9 +2002,11 @@
               ]
             },
             {
-              "id": 6005,
-              "name": "Barreiro",
-              "photo": "https://media.api-sports.io/football/players/6005.png",
+              "player": {
+                "id": 6005,
+                "name": "Barreiro",
+                "photo": "https://media.api-sports.io/football/players/6005.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2026,9 +2066,11 @@
               ]
             },
             {
-              "id": 6006,
-              "name": "Kokçu",
-              "photo": "https://media.api-sports.io/football/players/6006.png",
+              "player": {
+                "id": 6006,
+                "name": "Kokçu",
+                "photo": "https://media.api-sports.io/football/players/6006.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2088,9 +2130,11 @@
               ]
             },
             {
-              "id": 6007,
-              "name": "Di María",
-              "photo": "https://media.api-sports.io/football/players/6007.png",
+              "player": {
+                "id": 6007,
+                "name": "Di María",
+                "photo": "https://media.api-sports.io/football/players/6007.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2150,9 +2194,11 @@
               ]
             },
             {
-              "id": 6008,
-              "name": "Pavlidis",
-              "photo": "https://media.api-sports.io/football/players/6008.png",
+              "player": {
+                "id": 6008,
+                "name": "Pavlidis",
+                "photo": "https://media.api-sports.io/football/players/6008.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2212,9 +2258,11 @@
               ]
             },
             {
-              "id": 6009,
-              "name": "Schjelderup",
-              "photo": "https://media.api-sports.io/football/players/6009.png",
+              "player": {
+                "id": 6009,
+                "name": "Schjelderup",
+                "photo": "https://media.api-sports.io/football/players/6009.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2274,9 +2322,11 @@
               ]
             },
             {
-              "id": 6010,
-              "name": "Rollheiser",
-              "photo": "https://media.api-sports.io/football/players/6010.png",
+              "player": {
+                "id": 6010,
+                "name": "Rollheiser",
+                "photo": "https://media.api-sports.io/football/players/6010.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2336,9 +2386,11 @@
               ]
             },
             {
-              "id": 6011,
-              "name": "Tomás Araújo",
-              "photo": "https://media.api-sports.io/football/players/6011.png",
+              "player": {
+                "id": 6011,
+                "name": "Tomás Araújo",
+                "photo": "https://media.api-sports.io/football/players/6011.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2398,9 +2450,11 @@
               ]
             },
             {
-              "id": 6012,
-              "name": "Florentino",
-              "photo": "https://media.api-sports.io/football/players/6012.png",
+              "player": {
+                "id": 6012,
+                "name": "Florentino",
+                "photo": "https://media.api-sports.io/football/players/6012.png"
+              },
               "statistics": [
                 {
                   "games": {
@@ -2460,9 +2514,11 @@
               ]
             },
             {
-              "id": 6013,
-              "name": "Prestianni",
-              "photo": "https://media.api-sports.io/football/players/6013.png",
+              "player": {
+                "id": 6013,
+                "name": "Prestianni",
+                "photo": "https://media.api-sports.io/football/players/6013.png"
+              },
               "statistics": [
                 {
                   "games": {
