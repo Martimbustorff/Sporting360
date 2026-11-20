@@ -79,6 +79,14 @@ describe("syncVideos", () => {
     expect(f.calls).toHaveLength(0);
   });
 
+  it("preenchimento (backMs): jogo de há 13 dias apanhado mesmo fora do minuto 0", async () => {
+    await seed("1500003", 13 * 24, {}, NOW_M7);
+    const f = fakeFetch(routes({ rounds: round1([vm("55", "4/11/2026")]) }));
+    const r = await syncVideos({ ...deps(f, NOW_M7), backMs: 30 * 24 * HOUR });
+    expect(r.count).toBe(4);
+    expect((await db.collection("matches/1500003/videos").get()).size).toBe(4);
+  });
+
   it("nenhum jogo nas 48 h: 0 chamadas", async () => {
     await seed("1500003", 60);
     await seed("1500004", -2);

@@ -2,6 +2,7 @@
 // barra de 4 pt por baixo com as duas equipas lado a lado, raio 2) e 4947:8311 (linha "Cartões": amarelo e vermelho de
 // cada equipa, 10x14 raio 2, contagem Label 16). A barra da equipa com o valor maior é primary-on-dark, a outra
 // surface-20 (empate sem líder). Antes do jogo (500:29279) os valores e as barras ficam esbatidos: prop `muted`.
+// Martim 20/11: números maiores. Valores em Title L 28 (eram Title S 20) e contagens dos cartões em Title S 20 (eram Label 16).
 import { View } from 'react-native';
 import { statBars } from '@/lib/stats';
 import { Text71 } from '@/theme/typography';
@@ -39,11 +40,11 @@ export function StatRow({ label, home, away, muted }: StatRowProps) {
       style={{ gap: layout.statLabelGap, opacity: muted ? layout.statMutedOpacity : 1 }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.s8 }}>
-        <Text71 variant="titleS20" testID="stat-home" numberOfLines={1}>{home}</Text71>
+        <Text71 variant="titleL28" testID="stat-home" numberOfLines={1}>{home}</Text71>
         <Text71 variant="caption12" color="textMuted" numberOfLines={1} style={{ flexShrink: 1, textAlign: 'center' }}>
           {label}
         </Text71>
-        <Text71 variant="titleS20" testID="stat-away" numberOfLines={1}>{away}</Text71>
+        <Text71 variant="titleL28" testID="stat-away" numberOfLines={1}>{away}</Text71>
       </View>
       <View style={{ flexDirection: 'row', gap: layout.statBarGap }}>
         {bar('home')}
@@ -60,9 +61,9 @@ function CardCount({ yellow, red, side }: { yellow: string; red: string; side: '
   return (
     <View testID={`cards-${side}`} style={{ flexDirection: 'row', alignItems: 'center', gap: layout.statCardCountGap }}>
       {chip(colors.yellow71)}
-      <Text71 variant="label16" testID={`cards-${side}-yellow`}>{yellow}</Text71>
+      <Text71 variant="titleS20" testID={`cards-${side}-yellow`}>{yellow}</Text71>
       {chip(colors.formLoss)}
-      <Text71 variant="label16" testID={`cards-${side}-red`}>{red}</Text71>
+      <Text71 variant="titleS20" testID={`cards-${side}-red`}>{red}</Text71>
     </View>
   );
 }

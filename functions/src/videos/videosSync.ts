@@ -70,6 +70,8 @@ export interface VideosDeps {
   prefix?: string;
   /** Override do id de época da VSports (param VSPORTS_SEASON_ID). */
   seasonId?: number;
+  /** Só para o preenchimento manual (scripts/backfill-videos.ts): janela para trás em vez das 48 h, sem cadência. */
+  backMs?: number;
 }
 
 type Out = { count: number; failed: number };
@@ -81,8 +83,11 @@ type Out = { count: number; failed: number };
  */
 export async function syncVideos(d: VideosDeps): Promise<Out> {
   const now = d.now();
-  const window = await listFootballWindow(d.db, new Date(now.getTime() - BACK_MS), now);
-  const games = window.filter((m) => m.competition.id !== CHAMPIONS_ID && now.getTime() - m.kickoff.getTime() <= (now.getUTCMinutes() === 0 ? BACK_MS : FAST_MS));
+  const back = d.backMs ?? BACK_MS;
+  const window = await listFootballWindow(d.db, new Date(now.getTime() - back), now);
+  const games = window.filter(
+    (m) => m.competition.id !== CHAMPIONS_ID && (d.backMs !== undefined || now.getTime() - m.kickoff.getTime() <= (now.getUTCMinutes() === 0 ? BACK_MS : FAST_MS)),
+  );
   if (games.length === 0) return { count: 0, failed: 0 };
 
   const seasonId = vsportsSeasonId(now, d.seasonId);
