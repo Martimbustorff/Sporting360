@@ -249,20 +249,20 @@ describe('cronologia em duas colunas', () => {
       }),
     };
     await render(<SummaryTab match={match({ status: 'FT' })} />);
-    // Mais recente primeiro: 71' VAR, 50' autogolo, 38' Samu, 23' Suárez.
+    // Cronológico: 23' Suárez, 38' Samu, 50' autogolo, 71' VAR.
     const rows = screen.getAllByTestId('event-row');
     const col = (i: number, k: 'left' | 'right') => within(within(rows[i]!).getByTestId(`event-${k}`));
-    expect(col(3, 'left').getByText('Suárez')).toBeTruthy();
-    expect(col(2, 'right').getByText('Samu')).toBeTruthy();
-    expect(col(1, 'right').getByText('Debast')).toBeTruthy();
-    expect(col(1, 'right').getByText('Autogolo')).toBeTruthy();
-    expect(col(0, 'right').getByText('Golo anulado')).toBeTruthy();
-    expect(col(0, 'right').getByText('fora de jogo de Samu')).toBeTruthy();
-    expect(within(rows[0]!).queryByLabelText('Golo')).toBeNull();
-    expect(within(rows[0]!).getByLabelText('VAR')).toBeTruthy();
+    expect(col(0, 'left').getByText('Suárez')).toBeTruthy();
+    expect(col(1, 'right').getByText('Samu')).toBeTruthy();
+    expect(col(2, 'right').getByText('Debast')).toBeTruthy();
+    expect(col(2, 'right').getByText('Autogolo')).toBeTruthy();
+    expect(col(3, 'right').getByText('Golo anulado')).toBeTruthy();
+    expect(col(3, 'right').getByText('fora de jogo de Samu')).toBeTruthy();
+    expect(within(rows[3]!).queryByLabelText('Golo')).toBeNull();
+    expect(within(rows[3]!).getByLabelText('VAR')).toBeTruthy();
   });
 
-  it('dois lances no mesmo minuto e tempo extra: mais recente primeiro é a ordem inversa da API', async () => {
+  it('dois lances no mesmo minuto e tempo extra: pela ordem da API', async () => {
     mockDetails.current = {
       events: ready({
         items: [
@@ -273,10 +273,10 @@ describe('cronologia em duas colunas', () => {
     };
     await render(<SummaryTab match={match({ status: 'FT' })} />);
     const names = screen.getAllByTestId('event-row').map((r) => within(r).getAllByText(/DaApi$/)[0]!.props.children);
-    expect(names).toEqual(['SegundoDaApi', 'PrimeiroDaApi']);
+    expect(names).toEqual(['PrimeiroDaApi', 'SegundoDaApi']);
   });
 
-  it('mais recente primeiro (terminado): partes com a última no topo e tempo extra ordenado', async () => {
+  it('cronológico (terminado, 20/11): 1.ª parte no topo e tempo extra ordenado', async () => {
     mockDetails.current = {
       events: ready({
         items: [
@@ -293,10 +293,10 @@ describe('cronologia em duas colunas', () => {
     const names = screen
       .getAllByTestId('event-row')
       .map((r) => within(r).getAllByText(/^(Primeiro|DescontoI|Quarenta5|Segunda|DescontoII|Noventa1)$/)[0]!.props.children);
-    expect(names).toEqual(['DescontoII', 'Noventa1', 'Segunda', 'DescontoI', 'Quarenta5', 'Primeiro']);
-    // Separadores: 2ª Parte antes da 1ª Parte.
+    expect(names).toEqual(['Primeiro', 'Quarenta5', 'DescontoI', 'Segunda', 'Noventa1', 'DescontoII']);
+    // Separadores: 1ª Parte antes da 2ª Parte.
     const labels = screen.getAllByText(/^[12]ª Parte$/).map((n) => n.props.children);
-    expect(labels).toEqual(['2ª Parte', '1ª Parte']);
+    expect(labels).toEqual(['1ª Parte', '2ª Parte']);
   });
 
   it('Sporting a jogar fora: os lances da equipa visitante ficam à esquerda', async () => {
@@ -363,7 +363,7 @@ describe('Sumário ao vivo (Figma 06)', () => {
     expect(screen.queryByText('Números do jogo')).toBeNull();
   });
 
-  it('lances: o mais recente primeiro, com o título pela equipa e a segunda linha só com o que os dados dão', async () => {
+  it('lances por ordem cronológica (20/11), com o título pela equipa e a segunda linha só com o que os dados dão', async () => {
     mockDetails.current = {
       events: ready({
         items: [
@@ -379,22 +379,22 @@ describe('Sumário ao vivo (Figma 06)', () => {
     await render(<SummaryTab match={LIVE()} />);
     const rows = screen.getAllByTestId('live-event');
     expect(rows).toHaveLength(6);
-    expect(within(rows[0]!).getByText('66’')).toBeTruthy();
-    expect(within(rows[0]!).getByText('Golo do Sporting')).toBeTruthy();
-    expect(within(rows[0]!).getByText('Autogolo')).toBeTruthy();
-    expect(within(rows[1]!).getByText('Cartão amarelo do SC Braga')).toBeTruthy();
-    expect(within(rows[1]!).queryByTestId('live-event-line')).toBeNull();
-    expect(within(rows[2]!).getByText('Entra Giroud, sai Gyökeres')).toBeTruthy();
-    expect(within(rows[3]!).getByText('Assistência de Pedro Gonçalves')).toBeTruthy();
-    expect(within(rows[4]!).getByText('Golo do SC Braga')).toBeTruthy();
+    expect(within(rows[5]!).getByText('66’')).toBeTruthy();
+    expect(within(rows[5]!).getByText('Golo do Sporting')).toBeTruthy();
+    expect(within(rows[5]!).getByText('Autogolo')).toBeTruthy();
+    expect(within(rows[4]!).getByText('Cartão amarelo do SC Braga')).toBeTruthy();
     expect(within(rows[4]!).queryByTestId('live-event-line')).toBeNull();
-    expect(within(rows[5]!).getByText('De penálti')).toBeTruthy();
+    expect(within(rows[3]!).getByText('Entra Giroud, sai Gyökeres')).toBeTruthy();
+    expect(within(rows[2]!).getByText('Assistência de Pedro Gonçalves')).toBeTruthy();
+    expect(within(rows[1]!).getByText('Golo do SC Braga')).toBeTruthy();
+    expect(within(rows[1]!).queryByTestId('live-event-line')).toBeNull();
+    expect(within(rows[0]!).getByText('De penálti')).toBeTruthy();
   });
 
   it('o golo do Sporting vem a primary-on-dark e o do adversário a branco', async () => {
     mockDetails.current = { events: ready({ items: [ev({ minute: 10, teamId: '228' }), ev({ minute: 20, teamId: '217' })]  }) };
     await render(<SummaryTab match={LIVE()} />);
-    const [theirs, ours] = screen.getAllByTestId('live-event');
+    const [ours, theirs] = screen.getAllByTestId('live-event');
     expect(StyleSheet.flatten(within(ours!).getByText('Golo do Sporting').props.style).color).toBe(colors.primaryOnDark);
     expect(StyleSheet.flatten(within(theirs!).getByText('Golo do SC Braga').props.style).color).toBe(colors.white);
   });

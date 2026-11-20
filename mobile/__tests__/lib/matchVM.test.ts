@@ -507,11 +507,11 @@ describe('liveFeed (Sumário ao vivo, Figma 06)', () => {
   });
   const feed = (items: EventItem[]) => liveFeed(items, '228', 'home');
 
-  it('mais recente primeiro, com o minuto e a coluna', () => {
+  it('por ordem cronológica (20/11), com o minuto e a coluna', () => {
     const f = feed([item({ minute: 23 }), item({ minute: 54, teamId: '217' }), item({ minute: 54, extra: null, type: 'card', detail: 'Yellow Card' })]);
-    expect(f.map((e) => e.minute)).toEqual(['54’', '54’', '23’']);
-    expect(f[0]).toMatchObject({ kind: 'yellow', side: 'sporting' });
+    expect(f.map((e) => e.minute)).toEqual(['23’', '54’', '54’']);
     expect(f[1]).toMatchObject({ kind: 'goal', side: 'opponent' });
+    expect(f[2]).toMatchObject({ kind: 'yellow', side: 'sporting' });
   });
 
   it('golo: "Assistência de {nome}" só com assistência; penálti e autogolo têm a sua linha', () => {

@@ -99,15 +99,16 @@ describe('Vídeos', () => {
     ]);
   });
 
-  it('o primeiro (o resumo) em destaque 16:9 e os outros em linha com miniatura', async () => {
+  it('todos a toda a largura com o título por baixo (20/11), o resumo primeiro', async () => {
     mockVideos.current = ready([v('g1', { minute: '5' }), v('resumo', { type: 'resumo' })]);
     await render(<VideosTab match={match()} />);
     const frame = (id: string) => {
       const open = within(screen.getByTestId(`video-row-${id}`)).getByTestId('video-open');
       return StyleSheet.flatten(open.props.style as object) as { flexDirection?: string } | undefined;
     };
-    expect(frame('g1')?.flexDirection).toBe('row');
+    expect(frame('g1')?.flexDirection).toBeUndefined();
     expect(frame('resumo')?.flexDirection).toBeUndefined();
+    expect(rows()).toEqual(['video-row-resumo', 'video-row-g1']);
   });
 
   it('sem resumo, o primeiro da lista é o destaque', async () => {
@@ -125,8 +126,9 @@ describe('Vídeos', () => {
       v('4', { type: 'outro', minute: '4' }),
     ]);
     await render(<VideosTab match={match()} />);
-    const label = (id: string) => within(screen.getByTestId(`video-row-${id}`)).getByTestId('video-type').props.children;
-    expect(['1', '2', '3', '4'].map(label)).toEqual(['Lance', 'Resumo', 'Flash interview', 'Vídeo']);
+    const label = (id: string) => within(screen.getByTestId(`video-row-${id}`)).queryByTestId('video-type')?.props.children ?? null;
+    // "Vídeo" não diz nada: sem rótulo (20/11).
+    expect(['1', '2', '3', '4'].map(label)).toEqual(['Lance', 'Resumo', 'Flash interview', null]);
   });
 
   it('um embed fora de vsports.pt não aparece na lista', async () => {

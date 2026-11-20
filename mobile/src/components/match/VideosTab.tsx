@@ -1,5 +1,6 @@
-// Figma V7.1: 4947:8624 (33 Jogo · Vídeos): o primeiro vídeo (o resumo) em destaque 16:9 com o rótulo do tipo em
-// Eyebrow 13 primary-on-dark; os outros em linhas com miniatura 132x74, rótulo e título. A duração do frame fica
+// Figma V7.1: 4947:8624 (33 Jogo · Vídeos, revisto 20/11): todos os vídeos a toda a largura (16:9) com o título por
+// baixo; o rótulo do tipo em Eyebrow 13 primary-on-dark só quando diz alguma coisa (Resumo, Lance, Flash interview),
+// nunca "Vídeo" (Martim: "escusamos de escrever vídeo em todos"). A duração do frame fica
 // pendente de uma decisão futura sobre o servidor (hoje não grava `duration`). O leitor (`VideoPlayer`) mantém o comportamento.
 // Decisão: o destaque é o vídeo do tipo `resumo`; sem resumo, o primeiro da lista. Os restantes seguem por minuto.
 // SEM FIGMA: o estado de erro, os vazios e o aviso de cache.
@@ -16,11 +17,11 @@ import { MatchScrollView } from '@/components/match/MatchScroll';
 export const VIDEOS_ERROR = 'Não foi possível carregar os dados.';
 const EMPTY = 'Os vídeos aparecem depois dos lances.';
 const EMPTY_EUROPE = 'Sem vídeos para esta competição.';
-const TYPE_LABEL: Record<Video['type'], string> = {
+const TYPE_LABEL: Record<Video['type'], string | undefined> = {
   golo: 'Lance', // Figma 33 (4947:8624): o vídeo de golo traz o rótulo "LANCE"
   resumo: 'Resumo',
   flash_interview: 'Flash interview',
-  outro: 'Vídeo',
+  outro: undefined,
 };
 
 /** Ordem de um minuto VSports ("12", "45+3"); sem minuto ou ilegível vai para o fim. */
@@ -65,12 +66,12 @@ export function VideosTab({ match }: { match: Match }) {
   return (
     <MatchScrollView
       testID="videos-tab"
-      contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.md }}
+      contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg }}
     >
       <OfflineBanner visible={offline} />
-      {list.map((v, i) => (
+      {list.map((v) => (
         <View key={v.id} testID={`video-row-${v.id}`}>
-          <VideoPlayer video={v} variant={i === 0 ? 'featured' : 'row'} kind={TYPE_LABEL[v.type]} />
+          <VideoPlayer video={v} variant="featured" kind={TYPE_LABEL[v.type]} />
         </View>
       ))}
     </MatchScrollView>

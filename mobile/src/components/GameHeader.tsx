@@ -217,7 +217,7 @@ function FlipBox({ value, testID, ringed }: { value: number; testID: string; rin
         testID={testID}
         numberOfLines={1}
         adjustsFontSizeToFit
-        style={{ textAlign: 'center' }}
+        style={{ textAlign: 'center', transform: [{ translateY: layout.headerScoreDigitNudge }] }}
       >
         {value}
       </Text71>

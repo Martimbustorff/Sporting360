@@ -6,11 +6,12 @@
 // Decisões: o selo da nota fica sobre a foto, como no frame (a nota "por cima" do nome); primary a partir de 8,0 e
 // `bg` nas outras; sem nota não há selo. SEM FIGMA: as linhas do campo são Views (sem imagem) e "Onze ainda não
 // disponível." quando a equipa não tem onze.
+import { Fragment } from 'react';
 import { View } from 'react-native';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Touchable } from '@/components/Touchable';
 import type { LineupPlayer } from '@/data/schemas';
-import { pitchName, TOP_RATING } from '@/lib/pitch';
+import { pitchName, pitchRowPositions, TOP_RATING } from '@/lib/pitch';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
@@ -104,9 +105,13 @@ function Lines() {
   );
 }
 
+const gapBefore = (positions: number[], i: number) => (positions[i] ?? 0) - (i === 0 ? 0 : (positions[i - 1] ?? 0));
+
 export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer }: PitchProps) {
   // Guarda-redes em baixo: as linhas ao contrário e as colunas espelhadas.
   const shown = [...rows].reverse().map((r) => [...r].reverse());
+  // Cada linha no seu sítio do relvado (médios no meio-campo); os espaços entre linhas são a diferença de posições.
+  const positions = pitchRowPositions(shown.length);
   return (
     <View
       testID="pitch"
@@ -124,26 +129,29 @@ export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer }
           <Text71 variant="body14" color="textMuted" style={{ textAlign: 'center' }}>{NO_XI}</Text71>
         </View>
       ) : (
-        <View style={{ flex: 1, justifyContent: 'space-between', padding: layout.pitchFieldPad }}>
+        <View style={{ flex: 1, padding: layout.pitchFieldPad }}>
           {shown.map((row, i) => (
-            <View
-              key={i}
-              testID="pitch-row"
-              style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start' }}
-            >
-              {row.map((p, j) => (
-                <View key={`${p.playerId}-${j}`} style={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
-                  <Player
-                    p={p}
-                    rating={ratings[p.playerId]}
-                    value={ratingValues[p.playerId]}
-                    photo={photos[p.playerId]}
-                    onPress={onPlayer ? () => onPlayer(p.playerId) : undefined}
-                  />
-                </View>
-              ))}
-            </View>
+            <Fragment key={i}>
+              <View style={{ flex: gapBefore(positions, i) }} />
+              <View
+                testID="pitch-row"
+                style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start' }}
+              >
+                {row.map((p, j) => (
+                  <View key={`${p.playerId}-${j}`} style={{ flex: 1, minWidth: 0, alignItems: 'center' }}>
+                    <Player
+                      p={p}
+                      rating={ratings[p.playerId]}
+                      value={ratingValues[p.playerId]}
+                      photo={photos[p.playerId]}
+                      onPress={onPlayer ? () => onPlayer(p.playerId) : undefined}
+                    />
+                  </View>
+                ))}
+              </View>
+            </Fragment>
           ))}
+          <View style={{ flex: 1 - (positions[positions.length - 1] ?? 1) }} />
         </View>
       )}
     </View>

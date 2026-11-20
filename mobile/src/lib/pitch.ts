@@ -88,3 +88,21 @@ export const TOP_RATING = 8;
 export function enteredText(minute: number, extra: number | null): string {
   return `entrou aos ${minute}${extra ? `+${extra}` : ''}'`;
 }
+
+/**
+ * Posição vertical de cada linha no relvado, de cima (avançados) para baixo (guarda-redes), em fração da altura.
+ * 20/11 (Martim): os médios ficam na linha do meio-campo, o guarda-redes junto à baliza e a defesa à frente dele; antes
+ * as linhas espalhavam-se pelo relvado todo e um 4-3-3 ficava com buracos. As linhas do meio centram-se em 0,5.
+ */
+export function pitchRowPositions(n: number): number[] {
+  if (n <= 0) return [];
+  if (n === 1) return [0.5];
+  if (n === 2) return [0.5, 0.94];
+  if (n === 3) return [0.2, 0.72, 0.94];
+  const middle = n - 3;
+  const step = Math.min(0.15, 0.36 / middle);
+  const mids = Array.from({ length: middle }, (_, k) => 0.5 + (k - (middle - 1) / 2) * step);
+  // Avançados acima do meio-campo, com pelo menos um passo de distância à linha de cima do meio.
+  const top = Math.min(0.2, (mids[0] ?? 0.5) - step);
+  return [top, ...mids.map((x) => x), 0.74, 0.94].slice(0, n);
+}

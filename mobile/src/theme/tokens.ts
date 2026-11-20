@@ -520,6 +520,7 @@ export const layout = {
   shareBox: { width: 48, height: 58 }, // caixas do cartão
   shareBoxRadius: 6,
   shareBoxGap: 8,
+  headerScoreDigitNudge: 5, // 20/11 (Martim): os algarismos score72 da DIN Condensed ficavam altos na caixa branca; descidos 5 pt
   valueDigitNudge: 3, // algarismos display40 da DIN Condensed descidos 3 pt para ficarem ao centro da caixa branca
   shareCardRadius: 20,
   shareCardPadX: 20,

@@ -284,13 +284,12 @@ function liveLine(e: ShownEvent, vm: EventVM): string | undefined {
   }
 }
 
-/** Lances do Sumário ao vivo, o mais recente primeiro (no mesmo minuto, a ordem inversa da API). */
+/** Lances do Sumário ao vivo, do apito inicial ao mais recente (20/11, Martim: sempre por ordem cronológica). */
 export function liveFeed(items: EventItem[], homeTeamId: string, sportingSide: 'home' | 'away' = 'home'): LiveEventVM[] {
   const seen = new Map<string, number>();
   return items
     .filter(isShownEvent)
     .sort((a, b) => a.minute - b.minute || (a.extra ?? 0) - (b.extra ?? 0))
-    .reverse()
     .map((e) => {
       const vm = toEventVM(e, homeTeamId, sportingSide);
       const line = liveLine(e, vm);

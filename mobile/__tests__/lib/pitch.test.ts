@@ -97,3 +97,28 @@ describe('ratingNumbers, photosMap e enteredText', () => {
     expect(enteredText(90, 2)).toBe("entrou aos 90+2'");
   });
 });
+
+describe('pitchRowPositions (20/11: médios na linha do meio-campo)', () => {
+  const { pitchRowPositions } = require('@/lib/pitch') as typeof import('@/lib/pitch');
+  it('4-3-3 (4 linhas): avançados em cima, médios a 0,5, defesa e guarda-redes em baixo', () => {
+    expect(pitchRowPositions(4)).toEqual([0.2, 0.5, 0.74, 0.94]);
+  });
+  it('4-2-3-1 (5 linhas): as duas linhas do meio centradas no meio-campo', () => {
+    const p = pitchRowPositions(5);
+    expect(p).toHaveLength(5);
+    expect((p[1]! + p[2]!) / 2).toBeCloseTo(0.5);
+    expect(p[0]!).toBeLessThan(p[1]!);
+    expect(p[3]).toBe(0.74);
+  });
+  it('sempre crescente e dentro do relvado', () => {
+    for (let n = 1; n <= 7; n++) {
+      const p = pitchRowPositions(n);
+      expect(p).toHaveLength(n);
+      p.forEach((x, i) => {
+        expect(x).toBeGreaterThan(0);
+        expect(x).toBeLessThan(1);
+        if (i > 0) expect(x).toBeGreaterThan(p[i - 1]!);
+      });
+    }
+  });
+});
