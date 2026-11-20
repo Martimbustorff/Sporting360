@@ -412,7 +412,7 @@ export default function GameboxBilhete() {
     content = found ? <Body views={views} initialIndex={index} /> : <EmptyState icon="info" text={TICKET_TEXT.notFound} />;
   }
   return (
-    <Screen padded="none">
+    <Screen padded="none" backdrop={false}>
       <Header title={TICKET_TEXT.title} onBack={back} />
       {content}
     </Screen>

@@ -7,7 +7,6 @@
 // (`provisionalPoints`); depois de liquidado mandam os eventos de pontos do servidor.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Appear } from '@/components/Appear';
 import { EmptyState } from '@/components/EmptyState';
@@ -38,8 +37,6 @@ import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
-const LUZ = require('../../../assets/images/match-luz.svg') as number;
-const RINGS = require('../../../assets/images/welcome-rings.svg') as number;
 
 const TAB_VIEWS: Record<MatchTabKey, (props: { match: Match }) => React.JSX.Element> = {
   sumario: SummaryTab,
@@ -86,20 +83,6 @@ function Skeleton() {
 }
 
 /** Luz verde atrás do resultado e anéis da marca a 22 % (4924:6269 e 4924:6270), por baixo de tudo. */
-function MatchBackdrop() {
-  const { width, height, top } = layout.matchLuz;
-  const rings = layout.matchRings;
-  return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, height: layout.matchBackdropHeight, overflow: 'hidden' }}>
-      <Image source={LUZ} accessible={false} style={{ position: 'absolute', left: '50%', marginLeft: -width / 2, top, width, height }} />
-      <Image
-        source={RINGS}
-        accessible={false}
-        style={{ position: 'absolute', left: '50%', marginLeft: -rings.size / 2, top: rings.top, width: rings.size, height: rings.size, opacity: rings.opacity }}
-      />
-    </View>
-  );
-}
 
 /** Futebol: competição no centro da barra e, com o scroll, o resultado compacto (4933:7267). */
 function FootballNav({ match, onBack }: { match: Match; onBack: () => void }) {
@@ -212,7 +195,6 @@ export default function Jogo() {
 
   return (
     <Screen padded="none">
-      <MatchBackdrop />
       <MatchScrollProvider>
         {match && football ? (
           <FootballNav match={match} onBack={back} />

@@ -24,6 +24,16 @@ describe('Screen', () => {
     expect(root.props.edges.top).toBe('additive');
   });
 
+  it('draws the brand circle by default (20/11: every screen but Home)', async () => {
+    await render(<Screen><Text>ola</Text></Screen>);
+    expect(screen.getByTestId('brand-backdrop')).toBeTruthy();
+  });
+
+  it('backdrop={false} leaves the plain background (GameBox ticket QR)', async () => {
+    await render(<Screen backdrop={false}><Text>ola</Text></Screen>);
+    expect(screen.queryByTestId('brand-backdrop')).toBeNull();
+  });
+
   it('snapshot (default)', async () => {
     const r = await render(<Screen><Text>ola</Text></Screen>);
     expect(r.toJSON()).toMatchSnapshot();

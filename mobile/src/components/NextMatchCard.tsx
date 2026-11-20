@@ -9,8 +9,9 @@
 // estado no lugar da hora, como o GameHeader). O brilho do esqueleto é um pulsar de opacidade (sem gradiente).
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Appear } from '@/components/Appear';
 import { HeaderTeam, MatchTitles, MomentChip } from '@/components/GameHeader';
@@ -179,21 +180,23 @@ function scoreLine(m: Match): string {
   return `${m.score.home ?? 0} - ${m.score.away ?? 0}`;
 }
 
-const LUZ = require('../../assets/images/match-luz.svg') as number;
-const RINGS = require('../../assets/images/welcome-rings.svg') as number;
-
-/** Fundo do cabeçalho do jogo (20/11): luz verde e anéis da marca, centrados no cartão. */
-function CardBackdrop() {
-  const luz = layout.matchCardLuz;
-  const rings = layout.matchCardRings;
+/**
+ * Degradê do cartão (MatchCard): verde em cima, fundo da app em baixo, com transparência (20/11, Martim: ver o leão e a
+ * forma geométrica da Home por trás do cartão; o cartão não tem círculo próprio).
+ */
+function CardGradient() {
+  const id = `nextGrad${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <View testID="next-match-bg" style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Image source={LUZ} accessible={false} style={{ position: 'absolute', left: '50%', marginLeft: -luz.width / 2, top: luz.top, width: luz.width, height: luz.height }} />
-      <Image
-        source={RINGS}
-        accessible={false}
-        style={{ position: 'absolute', left: '50%', marginLeft: -rings.size / 2, top: rings.top, width: rings.size, height: rings.size, opacity: rings.opacity }}
-      />
+      <Svg width="100%" height="100%" preserveAspectRatio="none">
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={colors.shareCardTop} stopOpacity={layout.matchCardGradientOpacity} />
+            <Stop offset="1" stopColor={colors.bg} stopOpacity={layout.matchCardGradientOpacity} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
     </View>
   );
 }
@@ -288,7 +291,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
   return (
     <View testID="next-match-card" style={styles.shadow}>
       <View style={styles.card}>
-        <CardBackdrop />
+        <CardGradient />
         {tappable ? (
           <Touchable
             accessibilityRole="button"
@@ -315,7 +318,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.r12,
     borderWidth: layout.matchCardBorder,
     borderColor: colors.white,
-    backgroundColor: colors.bg,
     overflow: 'hidden',
   },
   fill: { flex: 1, paddingTop: space.s16, paddingHorizontal: space.s12 },

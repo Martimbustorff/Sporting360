@@ -13,6 +13,113 @@ exports[`Screen snapshot (default) 1`] = `
   }
 >
   <View
+    pointerEvents="none"
+    style={
+      {
+        "height": 520,
+        "left": 0,
+        "overflow": "hidden",
+        "position": "absolute",
+        "right": 0,
+        "top": 0,
+      }
+    }
+    testID="brand-backdrop"
+  >
+    <ViewManagerAdapter_ExpoImage
+      accessible={false}
+      containerViewRef={"[React.ref]"}
+      contentFit="cover"
+      contentPosition={
+        {
+          "left": "50%",
+          "top": "50%",
+        }
+      }
+      height={520}
+      left="50%"
+      marginLeft={-340}
+      nativeViewRef={"[React.ref]"}
+      onError={[Function]}
+      onLoad={[Function]}
+      onLoadStart={[Function]}
+      onProgress={[Function]}
+      placeholder={[]}
+      position="absolute"
+      sfEffect={null}
+      source={
+        [
+          {
+            "testUri": "../../../assets/images/match-luz.svg",
+          },
+        ]
+      }
+      style={
+        {
+          "height": 520,
+          "left": "50%",
+          "marginLeft": -340,
+          "position": "absolute",
+          "top": -90,
+          "width": 680,
+        }
+      }
+      svgVariables={null}
+      symbolSize={null}
+      symbolWeight={null}
+      top={-90}
+      transition={null}
+      width={680}
+    />
+    <ViewManagerAdapter_ExpoImage
+      accessible={false}
+      containerViewRef={"[React.ref]"}
+      contentFit="cover"
+      contentPosition={
+        {
+          "left": "50%",
+          "top": "50%",
+        }
+      }
+      height={560}
+      left="50%"
+      marginLeft={-280}
+      nativeViewRef={"[React.ref]"}
+      onError={[Function]}
+      onLoad={[Function]}
+      onLoadStart={[Function]}
+      onProgress={[Function]}
+      opacity={0.22}
+      placeholder={[]}
+      position="absolute"
+      sfEffect={null}
+      source={
+        [
+          {
+            "testUri": "../../../assets/images/welcome-rings.svg",
+          },
+        ]
+      }
+      style={
+        {
+          "height": 560,
+          "left": "50%",
+          "marginLeft": -280,
+          "opacity": 0.22,
+          "position": "absolute",
+          "top": -74,
+          "width": 560,
+        }
+      }
+      svgVariables={null}
+      symbolSize={null}
+      symbolWeight={null}
+      top={-74}
+      transition={null}
+      width={560}
+    />
+  </View>
+  <View
     className="flex-1"
     style={
       {

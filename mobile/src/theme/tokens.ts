@@ -340,8 +340,6 @@ export const layout = {
   matchCardStrip: 36,
   matchCardStripPadTop: 16,
   matchCardSlot: 30, // linha de baixo do cartão (TV ou ação), sempre com esta altura
-  matchCardLuz: { width: 560, height: 430, top: -40 }, // luz do cabeçalho do jogo, à escala do cartão
-  matchCardRings: { size: 460, top: -40, opacity: 0.22 },
   matchCardGradientOpacity: 0.6, // 20/11: o leão e a forma geométrica da Home veem-se através do cartão
   matchCardTeamMax: 108,
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
