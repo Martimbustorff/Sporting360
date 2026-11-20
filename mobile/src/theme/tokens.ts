@@ -30,6 +30,7 @@ export const colors = {
   // V7.1 (variáveis do Figma R3IhhyNxNZuVINgUtJjZE3)
   bgRaised: '#06261C',
   bgTint: '#003625',
+  homeVeil: '#00281C', // verde do topo da Home e do ecrã de bloqueio (véu por cima do leão)
   primaryOnDark: '#19B37E',
   primaryDeep: '#004A33', // fim do gradiente do cartão do líder dos marcadores (4935:7479)
   textSubtle: 'rgba(255, 255, 255, 0.5)',
@@ -351,14 +352,26 @@ export const layout = {
   skeletonBar: 12,
   skeletonGap: 12,
   skeletonRowsGap: 10,
-  // V7.1 Home backdrop (Figma 4920:5141)
-  homeBackdropLion: { left: -46, top: 80, width: 494, height: 874 },
-  homeBackdropLionImage: { left: '-83.11%', top: '-5.4%', width: '239.87%', height: '105.4%' },
-  homeBackdropLionOpacity: 0.62,
-  homeBackdropTintOpacity: 0.6,
-  homeBackdropRingsClip: { width: 402, height: 520 },
-  homeBackdropRings: { left: 35, top: 67, width: 608, height: 608 },
-  homeBackdropFade: { height: 220, from: 'rgba(0, 27, 19, 0)', to: 'rgba(0, 27, 19, 0.9)' },
+  // V7.1 Home backdrop (Figma 4920:5141), revisto a 20/11 a pedido do Martim: verde limpo em cima, leão e anéis mais
+  // abaixo. Tudo em proporções do ecrã (src/lib/homeBackdrop.ts), para não haver arestas em nenhum tamanho.
+  homeBackdrop: {
+    lionAspect: 679 / 527, // lock-lion.png
+    lionWidth: 2.3, // largura da imagem do leão, em larguras de ecrã
+    lionMinWidth: 1.6, // nunca menos do que isto: garante que cobre a largura (paisagem, tablets)
+    lionMaxHeight: 0.82, // nem mais alto do que 82 % do ecrã (telemóveis curtos)
+    lionOverflow: 0.07, // fração da imagem que passa abaixo do fundo do ecrã
+    eyeX: 0.8, // o olho do leão fica a 80 % da largura do ecrã
+    eyeImageX: 0.677, // posição do olho dentro da imagem
+    eyeImageY: 0.39,
+    lionOpacity: 0.62,
+    ringsWidth: 1.5, // anéis: 1,5 larguras de ecrã, centrados no olho
+    ringsEyeDy: -0.02, // desvio vertical do centro dos anéis, em alturas da imagem do leão
+    veilSolidTo: 0.04, // véu verde opaco até 4 % abaixo do topo da imagem (esconde a aresta de cima)
+    veilFadeTo: 0.42, // e a esbater até 42 %, onde fica só a tinta
+    tintOpacity: 0.6, // verde bg-tint por cima do leão
+    fadeHeight: 220 / 874, // esbatido escuro em baixo, em alturas de ecrã
+    fadeOpacity: 0.9,
+  },
   // V7.1 Folha GameBox aberta (Figma 4951:8673 com GameBox, 4951:9190 sem)
   gameboxOpenGap: 14, // todos os espaços verticais da folha aberta (4951:8673)
   gameboxEmptyGapOpen: 20, // câmara, texto e botão (4951:9190)

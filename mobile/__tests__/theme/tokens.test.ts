@@ -20,6 +20,7 @@ const MAP: Record<string, string> = {
   textDisabled: 'disabled',
   bgRaised: 'bgRaised',
   bgTint: 'bgTint',
+  homeVeil: 'homeVeil',
   primaryOnDark: 'primaryOnDark',
   primaryDeep: 'primaryDeep',
   textSubtle: 'textSubtle',

@@ -21,6 +21,7 @@ module.exports = {
           disabled: 'rgba(255, 255, 255, 0.4)',
           bgRaised: '#06261C',
           bgTint: '#003625',
+          homeVeil: '#00281C',
           primaryOnDark: '#19B37E',
           primaryDeep: '#004A33',
           textSubtle: 'rgba(255, 255, 255, 0.5)',

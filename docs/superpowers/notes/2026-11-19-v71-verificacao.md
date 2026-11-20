@@ -224,3 +224,11 @@ Verificação a 19/11 com `get_screenshot` de cada frame contra o código. Frame
 | 10b 4997:12493 (tabela ao vivo) | `StandingsTable.tsx` | Jogos já terminados na tabela ao vivo: sem etiqueta, só os números atualizados (Martim 19/11 23:43) | corrigido no código, sem alterações nos frames |
 
 Pendentes Martim neste plano: nenhum.
+
+## Home: fundo revisto depois do TestFlight (20/11)
+
+Pedido do Martim ao testar o build 9 (7.0.0): duas arestas no fundo da Home, mais verde em cima, leão e anéis mais abaixo, bem dimensionado em todos os telemóveis. Sem build só para isto.
+
+| Frame | Ecrã ou ficheiro | Diferença | Decisão |
+|---|---|---|---|
+| Componente "V7.1 / Home backdrop" 4920:5141 (usado em 01, 01b, 01c, 01e, 05, 07a, 07b, 07c, 43, 43b, 43e, 48, 48b, 48e) | `mobile/src/components/LionBackdrop.tsx`, `mobile/src/lib/homeBackdrop.ts` | Os anéis eram cortados numa caixa fixa de 402 pt (aresta vertical à direita em ecrãs mais largos). O esbatido de baixo saía opaco, porque o react-native-svg ignora a transparência de uma cor no `stopColor` (aresta horizontal a 220 pt do fundo). Leão e anéis tinham medidas fixas do frame de 402 x 874. | corrigido: geometria em proporções do ecrã (leão alinhado pelo fundo e pelo olho a 80 % da largura; anéis com 1,5 larguras centrados no olho; véu verde opaco em cima que tapa a aresta de cima do leão; transparências em `stopOpacity`). Componente do Figma redesenhado com as mesmas fórmulas. Testes em 10 tamanhos, de 320 x 568 a tablet e paisagem. |
