@@ -39,7 +39,14 @@ const routes = () =>
     [/predictions/, "api-football/predictions.json"],
     [/injuries/, "api-football/injuries-fixture.json"],
     [/venues/, "api-football/venue.json"],
+    // 20/11: forma dos últimos 5 em qualquer competição (a equipa 228 ganhou os dois últimos jogos).
+    [/fixtures\?team=\d+&last=5/, envelope(LAST5)],
   ] as Array<[RegExp, string | object]>;
+const LAST5 = [1, 2].map((ts) => ({
+  fixture: { id: 1400100 + ts, timestamp: 1_700_000_000 + ts, date: "2026-11-01T20:00:00+00:00", status: { short: "FT" } },
+  teams: { home: { id: 228, name: "Sporting CP", winner: true }, away: { id: 211, name: "Benfica", winner: false } },
+  goals: { home: 2, away: 0 },
+}));
 const kick = (h: number) => new Date(NOW.getTime() + h * HOUR);
 const seedNs = (id: string, hours: number, venue: object | null = { id: "1", name: "Estádio José Alvalade", city: "Lisboa" }) =>
   seedFootballMatch(db, { id, status: "NS", statusRaw: "NS", elapsed: null, finishedAt: null, finishedAtSource: null, kickoff: kick(hours), venue, score: { home: null, away: null, halftime: null, extratime: null, penalty: null } } as never);
@@ -49,18 +56,19 @@ beforeEach(() => {
 });
 
 describe("syncPrematch", () => {
-  it("jogo NS daqui a 30 h: previsões, lesões e estádio (3 chamadas)", async () => {
+  it("jogo NS daqui a 30 h: previsões, forma das 2 equipas, lesões e estádio (5 chamadas)", async () => {
     await seedNs("1500003", 30);
     const f = fakeFetch(routes());
     const r = await syncPrematch(deps(f));
     expect(r).toMatchObject({ count: 1, failed: 0 });
-    expect(f.calls).toHaveLength(3);
+    expect(f.calls).toHaveLength(5);
 
     const p = (await db.doc("matches/1500003/details/prematch").get()).data()!;
     expect(p.percent).toEqual({ home: 45, draw: 45, away: 10 });
     expect(p.advice).toBe("Double chance : Sporting CP or draw");
     expect(p.winner).toEqual({ id: "228", name: "Sporting CP", comment: "Win or draw" });
-    expect(p.form).toEqual({ home: "WWDLW", away: "LDWWD" });
+    // Forma em qualquer competição (fixtures?team=&last=5), não só a da competição do jogo.
+    expect(p.form).toEqual({ home: "WW", away: "LL" });
     expect(p.last5.home).toMatchObject({ played: 5, form: "80%" });
     expect(p.fetchedAt.toMillis()).toBe(NOW.getTime());
     expect(p.h2h).toHaveLength(1);
@@ -110,7 +118,7 @@ describe("syncPrematch", () => {
     const f = fakeFetch(routes());
     await syncPrematch(deps(f));
     expect(f.calls.some((u) => /venues/.test(u))).toBe(false);
-    expect(f.calls).toHaveLength(2);
+    expect(f.calls).toHaveLength(4); // previsões, forma das 2 equipas e lesões
     expect((await db.doc("matches/1500003").get()).get("venue")).toMatchObject({ capacity: 50095, image: "https://x/1.png" });
   });
 
@@ -214,5 +222,22 @@ describe("syncPrematch", () => {
     const { match } = mapFixture({ events: [], lineups: [], statistics: [], players: [], ...fx }, { now: NOW, previous: null, observedLive: false });
     await saveMatch(db, { match }, { prefix: "t_" });
     expect((await db.doc("matches/1500003").get()).get("venue")).toMatchObject({ id: "1", capacity: 50095, image: expect.stringContaining("venues/1.png") });
+  });
+
+  it("forma com cache até ao jogo seguinte: o mesmo jogo não volta a pedir; o jogo a seguir pede outra vez", async () => {
+    await seedNs("1500003", 30);
+    await syncPrematch(deps(fakeFetch(routes())));
+    expect((await db.doc("teamForm/228").get()).data()).toMatchObject({ form: "WW" });
+    // 13 h depois (previsões outra vez): a forma vem da cache.
+    clock = new Date(NOW.getTime() + 13 * HOUR);
+    const again = fakeFetch(routes());
+    await syncPrematch(deps(again));
+    expect(again.calls.filter((u) => u.includes("last=5"))).toHaveLength(0);
+    // Jogo seguinte (depois deste): a cache já não vale e pede de novo.
+    clock = new Date(NOW.getTime() + 60 * HOUR);
+    await seedNs("1500004", 90);
+    const next = fakeFetch(routes());
+    await syncPrematch(deps(next));
+    expect(next.calls.filter((u) => u.includes("last=5"))).toHaveLength(2);
   });
 });

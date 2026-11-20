@@ -24,7 +24,9 @@ export function MatchDetailLayout({ header, tabs, children }: { header: ReactNod
   const fade = useAnimatedStyle(() => {
     const h = height.get();
     const p = h > 0 ? Math.min(Math.max(y.get(), 0), h) / h : 0;
-    return { opacity: 1 - Math.min(1, p * 1.5) };
+    // 20/11 (captura do Martim): o completo tem de sumir antes de o compacto aparecer na barra, senão os emblemas e a
+    // hora dos dois ficam sobrepostos a meio do scroll. Some até 40 % do colapso; o compacto entra de 50 % a 100 %.
+    return { opacity: 1 - Math.min(1, p / layout.collapseHeaderOut) };
   });
   return (
     <View testID="match-detail" style={{ flex: 1, overflow: 'hidden' }}>
@@ -52,11 +54,11 @@ export function CrossfadeCenter({ title, compact }: { title: ReactNode; compact:
   const isCompact = ctx?.compact === true;
   const titleStyle = useAnimatedStyle(() => {
     const h = height.get() > 0 ? height.get() : layout.collapseRange;
-    return { opacity: interpolate(y.get(), [0, h], [1, 0], Extrapolation.CLAMP) };
+    return { opacity: interpolate(y.get(), [0, h * layout.collapseHeaderOut], [1, 0], Extrapolation.CLAMP) };
   });
   const compactStyle = useAnimatedStyle(() => {
     const h = height.get() > 0 ? height.get() : layout.collapseRange;
-    return { opacity: interpolate(y.get(), [0, h], [0, 1], Extrapolation.CLAMP) };
+    return { opacity: interpolate(y.get(), [h * layout.collapseCompactIn, h], [0, 1], Extrapolation.CLAMP) };
   });
   const fill = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' } as const;
   return (

@@ -42,8 +42,18 @@ const NO_EVENTS_PART = 'Sem incidências.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
 
+/**
+ * Previsão da API-Football está tudo igual (33/33/33): a API não distingue as equipas e a secção não diz nada.
+ * 20/11 (Martim): nesse caso não se mostra.
+ */
+export function predictionIsFlat(percent: { home: number; draw: number; away: number }): boolean {
+  const v = [percent.home, percent.draw, percent.away];
+  return Math.max(...v) - Math.min(...v) <= 1;
+}
+
 /** Previsão (sem frame): percentagens de vitória da casa, empate e fora, com o nome da equipa por baixo. */
 function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
+  if (predictionIsFlat(p.percent)) return null;
   const cols = [
     { label: match.home.name, value: p.percent.home },
     { label: 'Empate', value: p.percent.draw },

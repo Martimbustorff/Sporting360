@@ -53,6 +53,40 @@ function prematchDoc(p: AfPrediction, now: Date) {
   };
 }
 
+const FINISHED = new Set(["FT", "AET", "PEN"]);
+
+/**
+ * Forma dos últimos 5 jogos em qualquer competição, do mais antigo para o mais recente ("WWDLW"), como a app lê.
+ * 20/11 (Martim): a forma da previsão é só da competição do jogo (numa Taça o Sporting ficava sem forma).
+ * Vitória/derrota pelo `winner` da API (conta prolongamento e penáltis); sem vencedor é empate.
+ */
+export function formFromFixtures(fixtures: AfFixtureCore[], teamId: string): string {
+  return fixtures
+    .filter((f) => FINISHED.has(f.fixture.status.short))
+    .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp)
+    .slice(-5)
+    .map((f) => {
+      const side = String(f.teams.home.id) === teamId ? f.teams.home : String(f.teams.away.id) === teamId ? f.teams.away : null;
+      if (!side) return "";
+      return side.winner === true ? "W" : side.winner === false ? "L" : "D";
+    })
+    .join("");
+}
+
+/**
+ * Forma de uma equipa com cache em `teamForm/{id}` até ao jogo seguinte (Martim, 20/11: "uma vez e faz cache até ao
+ * jogo seguinte"): vale enquanto foi calculada para um jogo que começa a esta hora ou depois; a seguir a esse jogo, o
+ * próximo pede outra vez (1 chamada por equipa e por jogo).
+ */
+async function teamForm(d: FootballDeps, teamId: string, kickoff: Date, now: Date): Promise<string> {
+  const ref = d.db.doc(`teamForm/${teamId}`);
+  const cached = (await ref.get()).data() as { form?: string; validUntil?: { toMillis(): number } } | undefined;
+  if (cached?.form !== undefined && cached.validUntil && cached.validUntil.toMillis() >= kickoff.getTime()) return cached.form;
+  const form = formFromFixtures(await d.api.lastFixtures(Number(teamId), 5), teamId);
+  await write(d, `teamForm_${teamId}`, `teamForm/${teamId}`, { form, validUntil: kickoff, fetchedAt: now });
+  return form;
+}
+
 /** Parte (`details/{name}`) inexistente ou com `fetchedAt` de há 12 h ou mais. */
 async function stale(d: FootballDeps, id: string, name: string, nowMs: number): Promise<boolean> {
   const at = (await d.db.doc(`matches/${id}/details/${name}`).get()).get("fetchedAt") as { toMillis(): number } | undefined;
@@ -119,7 +153,17 @@ export async function syncPrematch(d: FootballDeps): Promise<Out> {
       await step("previsões", async () => {
         const p = (await d.api.predictions(m.id))[0];
         // Resposta vazia: marca-a para a validade de 12 h se aplicar (a app lê `empty` como "sem previsões").
-        await write(d, m.id, `matches/${m.id}/details/prematch`, p ? prematchDoc(p, now) : { fetchedAt: now, empty: true });
+        const doc: Record<string, unknown> = p ? prematchDoc(p, now) : { fetchedAt: now, empty: true };
+        if (p) {
+          // Forma em todas as competições (com cache até ao jogo seguinte); se falhar fica a da competição.
+          try {
+            doc.form = { home: await teamForm(d, String(m.home.id), m.kickoff, now), away: await teamForm(d, String(m.away.id), m.kickoff, now) };
+          } catch (e) {
+            if (isQuotaError(e)) throw e;
+            logger.warn(`syncPrematch: forma do jogo ${m.id} falhou, fica a da competição: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+        await write(d, m.id, `matches/${m.id}/details/prematch`, doc);
       });
     if (inj)
       await step("lesões", async () => {

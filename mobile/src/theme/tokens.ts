@@ -470,6 +470,8 @@ export const layout = {
   screenLionOpacity: 0.55, // 20/11: leão desfocado no fundo dos ecrãs (menos Home e bilhete), por baixo do círculo
   matchBackdropHeight: 520, // altura do cantinho da luz (4924:6269)
   collapseRange: 120, // SEM FIGMA: alcance de reserva enquanto a altura do cabeçalho completo não foi medida
+  collapseHeaderOut: 0.4, // 20/11: o cabeçalho completo (e o título da barra) somem até 40 % do colapso
+  collapseCompactIn: 0.5, // e o compacto só entra a partir de 50 %: nunca se sobrepõem
   collapseCompactFrom: 0.5, // progresso (scroll / altura do cabeçalho) a partir do qual o compacto é o rótulo acessível
   collapseCompactExit: 0.4, // histerese: só volta ao completo abaixo disto
   tabsScrollPad: 24, // folga ao pôr o separador ativo à vista

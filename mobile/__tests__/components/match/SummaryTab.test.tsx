@@ -179,6 +179,13 @@ describe('jogo futuro (NS)', () => {
     expect(screen.queryByTestId('h2h-bar')).toBeNull();
   });
 
+  it('previsão toda igual (33/33/33, a API não distingue as equipas): sem secção Previsão (20/11)', async () => {
+    const p = { ...(prematch() as Exclude<PrematchDoc, { empty: true }>), percent: { home: 33, draw: 33, away: 33 } };
+    mockDetails.current = { prematch: ready(p), injuries: ready(injuries()) };
+    await render(<SummaryTab match={match()} />);
+    expect(screen.queryByText('Previsão')).toBeNull();
+  });
+
   it('prematch vazio e sem lesões: "Disponível no dia de jogo"', async () => {
     mockDetails.current = { prematch: ready({ fetchedAt: new Date(), empty: true }), injuries: { status: 'missing' } };
     await render(<SummaryTab match={match()} />);
