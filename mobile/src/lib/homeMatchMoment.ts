@@ -64,7 +64,7 @@ export function homeMatchMoment(input: HomeMomentInput): HomeMoment {
   if (sameLisbonDay(m.kickoff, now)) {
     return {
       state: 'matchday',
-      action: predictionOpen ? { label: 'PROGNÓSTICO', href: `/jogo/${m.id}?tab=prognostico` } : null,
+      action: predictionOpen ? { label: 'PROGNÓSTICO', href: `/jogo/${m.id}?tab=sumario` } : null,
       countdownTo: m.kickoff,
     };
   }

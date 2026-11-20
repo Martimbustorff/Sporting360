@@ -26,5 +26,5 @@ export default function LinkPartilhado() {
   }, [game, src]);
 
   if (!game) return <Redirect href="/" />;
-  return <Redirect href={{ pathname: '/jogo/[id]', params: { id: game, tab: 'prognostico' } }} />;
+  return <Redirect href={{ pathname: '/jogo/[id]', params: { id: game, tab: 'sumario' } }} />;
 }

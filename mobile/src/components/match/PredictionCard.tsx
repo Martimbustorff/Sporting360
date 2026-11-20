@@ -6,11 +6,14 @@
 // erro dão as mensagens. Adiado (PST) fecha com explicação e reabre sozinho quando o jogo volta a NS.
 // As folhas (confirmação e partilha) são a ModalSheet (bg-raised, raio 28, grabber ao centro, 4946:8195).
 // A partilha abre o cartão "S360 MATCHDAY" (ShareCard) com "Partilhar" (Branco) e "Fechar" (Contorno).
+// Martim 20/11: o prognóstico deixou de ter separador. É um cartão no topo do Sumário, só antes do apito inicial (jogo
+// NS e relógio antes do kickoff); ao apito sai e o palpite e os pontos ficam no cabeçalho do jogo (PredictionSummary).
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import Feather from '@expo/vector-icons/Feather';
 import { View } from 'react-native';
 import { FormMessage } from '@/components/AuthForm';
 import { EmptyState } from '@/components/EmptyState';
+import { SectionBar } from '@/components/SectionBar';
 import { ModalSheet } from '@/components/ModalSheet';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PrimaryButton } from '@/components/PrimaryButton';
@@ -18,28 +21,25 @@ import { ShareCard } from '@/components/ShareCard';
 import { Stepper } from '@/components/Stepper';
 import { TeamCrest } from '@/components/GameHeader';
 import type { Match } from '@/data/schemas';
-import { useMyGamePoints, useMyPrediction, useSettlement } from '@/data/user';
+import { useMyPrediction } from '@/data/user';
 import { countdownText } from '@/lib/countdown';
 import { GameActionError, isKnockoutGame, predictionOpen, type GameActionCode } from '@/lib/gameWindows';
 import { useSession } from '@/providers/SessionProvider';
 import { toGameHeaderVM } from '@/lib/matchVM';
-import { predictionPoints } from '@/lib/predictionPoints';
 import { reportCode } from '@/lib/report';
 import { submitPrediction } from '@/services/game';
 import { shareMatchday } from '@/services/share';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space } from '@/theme/tokens';
-import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const PREDICTION_TEXT = {
+  section: 'Prognóstico',
   rulesTitle: 'Pontos',
   once: 'Só podes submeter uma vez.',
   rules: '+1 por participares, +3 resultado exato, +1 vencedor ou empate certo',
   cupRule: 'Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.',
   submit: 'Submeter prognóstico',
   closed: 'Os prognósticos fecharam ao apito inicial.',
-  postponed: 'Jogo adiado. Podes fazer o prognóstico quando houver nova data.',
-  cancelled: 'Jogo cancelado. Sem pontos.',
   error: 'Não foi possível carregar os dados.',
   signedOut: 'Entra na tua conta para fazeres o prognóstico.',
   share: 'Partilhar prognóstico',
@@ -62,8 +62,6 @@ export const PREDICTION_ERRORS: Record<GameActionCode, string> = {
 const TICK_MS = 30_000;
 const MAX_GOALS = 20;
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
-
-const pointsText = (n: number) => `+${n} ${n === 1 ? 'ponto' : 'pontos'}`;
 
 /**
  * Relógio a cada 30 s e um disparo exato no `kickoff`, para o formulário fechar sozinho ao apito inicial. Depois do
@@ -219,11 +217,10 @@ function MyPrediction({ match, home, away }: { match: Match; home: number; away:
   );
 }
 
-function SubmittedPrediction({ match, home, away, children }: { match: Match; home: number; away: number; children?: React.ReactNode }) {
+function SubmittedPrediction({ match, home, away }: { match: Match; home: number; away: number }) {
   return (
     <View style={{ gap: space.s16 }}>
       <StatusLine icon="check-circle" text={PREDICTION_ERRORS.ALREADY} />
-      {children}
       <MyPrediction match={match} home={home} away={away} />
       <RulesCard knockout={isKnockoutGame(match.competition)} />
       <SharePrediction match={match} home={home} away={away} />
@@ -306,61 +303,41 @@ function PredictionForm({ match, now, onClosed }: { match: Match; now: Date; onC
   );
 }
 
-export function PredictionTab({ match }: { match: Match }) {
+/**
+ * Cartão do prognóstico no topo do Sumário. Só existe antes do apito inicial: jogo NS e relógio antes do `kickoff`
+ * (fecha sozinho ao kickoff, sem esperar pelo estado da API). Adiado, cancelado, ao vivo ou terminado: nada.
+ */
+export function PredictionCard({ match }: { match: Match }) {
   const session = useSession();
   const uid = session.status === 'signedIn' ? session.user.uid : null;
   const prediction = useMyPrediction(match.id, uid);
-  const settlement = useSettlement(match.id);
-  const points = useMyGamePoints(match.id, uid);
   const now = usePredictionClock(match.kickoff);
 
-  // O servidor disse que fechou (relógio do telemóvel adiantado/atrasado). Esquece-se quando o jogo muda de
-  // estado ou de data (adiado que volta a NS), para o formulário poder reabrir.
+  // O servidor disse que fechou (relógio do telemóvel atrasado). Esquece-se quando o jogo muda de estado ou de data
+  // (adiado que volta a NS), para o formulário poder reabrir.
   const [serverClosed, setServerClosed] = useState(false);
   const kickoffMs = match.kickoff.getTime();
   useEffect(() => {
     setServerClosed(false);
   }, [match.status, kickoffMs]);
 
-  if (match.status === 'CANC') return <EmptyState icon="info" text={PREDICTION_TEXT.cancelled} />;
-  if (session.status === 'signedOut') return <EmptyState icon="info" text={PREDICTION_TEXT.signedOut} />;
-  if (prediction.status === 'loading') return <View testID="prediction-loading" />;
-  if (prediction.status === 'error') return <EmptyState icon="info" text={PREDICTION_TEXT.error} />;
+  if (!predictionOpen(match, now)) return null;
+
+  let body: React.JSX.Element;
+  if (session.status === 'signedOut') body = <EmptyState icon="info" text={PREDICTION_TEXT.signedOut} compact />;
+  else if (prediction.status === 'loading') body = <View testID="prediction-loading" />;
+  else if (prediction.status === 'error') body = <EmptyState icon="info" text={PREDICTION_TEXT.error} compact />;
+  else if (prediction.status === 'ready') body = <SubmittedPrediction match={match} home={prediction.data.home} away={prediction.data.away} />;
+  else if (serverClosed) body = <EmptyState icon="info" text={PREDICTION_TEXT.closed} compact />;
+  // `key`: um jogo adiado que volta com nova data começa de novo em 0-0.
+  else body = <PredictionForm key={kickoffMs} match={match} now={now} onClosed={() => setServerClosed(true)} />;
 
   const offline = prediction.status === 'ready' && prediction.fromCache === true;
-  let body: React.JSX.Element;
-  if (prediction.status === 'ready') {
-    const settled = settlement.status === 'ready' ? settlement.data : null;
-    body = (
-      <SubmittedPrediction match={match} home={prediction.data.home} away={prediction.data.away}>
-        {settled ? (
-          <Text71 variant="titleS20" style={{ textAlign: 'center' }}>
-            {`Resultado final: ${settled.finalHome}-${settled.finalAway}`}
-          </Text71>
-        ) : null}
-        {settled && points.status === 'ready' ? (
-          <Text71 variant="title24" color="primaryOnDark" style={{ textAlign: 'center' }}>
-            {pointsText(predictionPoints(points.data))}
-          </Text71>
-        ) : null}
-      </SubmittedPrediction>
-    );
-  } else if (match.status === 'PST') {
-    body = <EmptyState icon="info" text={PREDICTION_TEXT.postponed} />;
-  } else if (!serverClosed && predictionOpen(match, now)) {
-    // `key`: um jogo adiado que volta com nova data começa de novo em 0-0.
-    body = <PredictionForm key={kickoffMs} match={match} now={now} onClosed={() => setServerClosed(true)} />;
-  } else {
-    body = <EmptyState icon="info" text={PREDICTION_TEXT.closed} />;
-  }
-
   return (
-    <MatchScrollView
-      testID="prediction-tab"
-      contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.predictionTabTop, paddingBottom: space.s32, gap: space.s16 }}
-    >
+    <View testID="prediction-card" style={{ gap: space.s16 }}>
+      <SectionBar label={PREDICTION_TEXT.section} />
       <OfflineBanner visible={offline} />
       {body}
-    </MatchScrollView>
+    </View>
   );
 }

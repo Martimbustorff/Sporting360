@@ -19,7 +19,6 @@ import { CrossfadeCenter, MatchDetailLayout } from '@/components/match/Collapsin
 import { LineupsTab } from '@/components/match/LineupsTab';
 import { MatchScrollProvider, useMatchScrollContext } from '@/components/match/MatchScroll';
 import { MvpTab } from '@/components/match/MvpTab';
-import { PredictionTab } from '@/components/match/PredictionTab';
 import { StandingsTab } from '@/components/match/StandingsTab';
 import { StatsTab } from '@/components/match/StatsTab';
 import { SummaryTab } from '@/components/match/SummaryTab';
@@ -45,7 +44,6 @@ const TAB_VIEWS: Record<MatchTabKey, (props: { match: Match }) => React.JSX.Elem
   estatisticas: StatsTab,
   formacoes: LineupsTab,
   classificacao: StandingsTab,
-  prognostico: PredictionTab,
   mvp: MvpTab,
 };
 

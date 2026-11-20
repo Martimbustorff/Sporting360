@@ -57,7 +57,7 @@ describe('homeMatchMoment', () => {
       const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T08:00:00Z'), predictionOpen: true });
       expect(r.state).toBe('matchday');
       expect(r.countdownTo).toEqual(m.kickoff);
-      expect(r.action).toEqual({ label: 'PROGNÓSTICO', href: '/jogo/1001?tab=prognostico' });
+      expect(r.action).toEqual({ label: 'PROGNÓSTICO', href: '/jogo/1001?tab=sumario' });
     });
     it('sem prognóstico aberto: contagem sem ação', () => {
       const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T08:00:00Z') });

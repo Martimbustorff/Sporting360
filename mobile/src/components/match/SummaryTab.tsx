@@ -32,6 +32,7 @@ import { Text71 } from '@/theme/typography';
 import { colors, formLetterBg, layout, radius, space } from '@/theme/tokens';
 import { LiveEvents, LiveNumbers } from '@/components/match/LiveSummary';
 import { MatchScrollView } from '@/components/match/MatchScroll';
+import { PredictionCard } from '@/components/match/PredictionCard';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
 const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
@@ -306,7 +307,10 @@ export function SummaryTab({ match }: { match: Match }) {
       contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s32, gap: space.s16 }}
     >
       {state === 'scheduled' ? (
-        <PreMatch match={match} />
+        <>
+          <PredictionCard match={match} />
+          <PreMatch match={match} />
+        </>
       ) : state === 'postponed' ? (
         <EmptyState icon="info" text={POSTPONED} />
       ) : state === 'cancelled' ? (

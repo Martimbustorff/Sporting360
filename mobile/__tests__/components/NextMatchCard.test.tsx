@@ -77,7 +77,7 @@ it('Dia de jogo: HOJE · hora, contagem HH:MM:SS ao relógio dado e ação Progn
   expect(screen.getByText('HOJE · 18:00')).toBeTruthy();
   expect(screen.getByTestId('next-countdown').props.children).toBe('02:14:37');
   await fireEvent.press(screen.getByRole('button', { name: 'PROGNÓSTICO' }));
-  expect(handlers.onAction).toHaveBeenCalledWith('/jogo/1001?tab=prognostico');
+  expect(handlers.onAction).toHaveBeenCalledWith('/jogo/1001?tab=sumario');
   expect(handlers.onOpenMatch).not.toHaveBeenCalled();
 });
 

@@ -99,7 +99,7 @@ describe('futebol', () => {
     expect(within(screen.getByTestId('header')).getByText('Liga Portugal')).toBeTruthy();
   });
 
-  it('mostra as 7 tabs por esta ordem', async () => {
+  it('mostra as 6 tabs por esta ordem (o prognóstico é um cartão no Sumário)', async () => {
     await render(ui());
     expect(tabLabels()).toEqual([
       'Sumário',
@@ -107,7 +107,6 @@ describe('futebol', () => {
       'Estatísticas',
       'Formações',
       'Classificação',
-      'Prognóstico',
       'MVP',
     ]);
   });
@@ -121,10 +120,11 @@ describe('futebol', () => {
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
   });
 
-  it('?tab=prognostico abre o Prognóstico', async () => {
+  it('?tab=prognostico (links e push antigos) abre o Sumário com o cartão do prognóstico', async () => {
     mockParams.current = { id: '1001', tab: 'prognostico' };
     await render(ui());
-    expect(screen.getByRole('tab', { name: 'Prognóstico' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByRole('tab', { name: 'Sumário' }).props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('prediction-card')).toBeTruthy();
     // Task 16: sem sessão (sem SessionProvider) o prognóstico fica a carregar.
     expect(screen.getByTestId('prediction-loading')).toBeTruthy();
   });
@@ -228,7 +228,9 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
     mockMatch.current = ready(liveMatch());
     await render(ui());
     expect(screen.getByText('Ao vivo · 2.ª parte')).toBeTruthy();
-    expect(screen.getAllByRole('tab')).toHaveLength(7);
+    expect(screen.getAllByRole('tab')).toHaveLength(6);
+    // Ao vivo o Sumário é o do jogo: o cartão do prognóstico já saiu (Martim 20/11).
+    expect(screen.queryByTestId('prediction-card')).toBeNull();
     expect(screen.queryByTestId('game-header-compact')).toBeNull(); // oculto à acessibilidade
     expect(screen.getByTestId('game-header-compact', { includeHiddenElements: true })).toBeTruthy();
   });
@@ -240,7 +242,7 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
     expect(screen.getByTestId('game-header-compact').props.accessibilityLabel).toBe(
       'Sporting CP 2, SC Braga 1, ao vivo, 67’',
     );
-    expect(screen.getAllByRole('tab')).toHaveLength(7);
+    expect(screen.getAllByRole('tab')).toHaveLength(6);
     await scrollTo(0);
     expect(screen.queryByTestId('game-header-compact')).toBeNull();
   });

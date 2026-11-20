@@ -1,4 +1,4 @@
-// Task 16: tab Prognóstico. Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__),
+// Task 16: Prognóstico (desde 20/11 um cartão no topo do Sumário, só antes do apito inicial). Hooks de dados e sessão mockados; a callable é a do RNFB (mock em __mocks__),
 // chamada pelo services/game real, para testar o caminho completo até ao código de erro do servidor.
 const mockWindow = { width: 375, height: 812, scale: 2, fontScale: 1 };
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -42,7 +42,7 @@ import Share from 'react-native-share';
 import { captureRef } from 'react-native-view-shot';
 import { track } from '@/services/analytics';
 import { Stepper } from '@/components/Stepper';
-import { PredictionTab } from '@/components/match/PredictionTab';
+import { PredictionCard } from '@/components/match/PredictionCard';
 
 const METRICS = { frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 44, left: 0, right: 0, bottom: 34 } };
 const wrapper = ({ children }: { children: ReactNode }) => (
@@ -129,7 +129,7 @@ describe('Stepper V7.1', () => {
 
   it('a 320 pt o emblema esconde-se e o nome ocupa o espaço que sobra', async () => {
     mockWindow.width = 320;
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.queryByTestId('prediction-crest-home', { includeHiddenElements: true })).toBeNull();
     expect(screen.queryByTestId('prediction-crest-away', { includeHiddenElements: true })).toBeNull();
     const name = screen.getByText('Sporting CP');
@@ -140,7 +140,7 @@ describe('Stepper V7.1', () => {
   });
 
   it('a 375 pt mantém o emblema', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByTestId('prediction-crest-home', { includeHiddenElements: true })).toBeTruthy();
   });
 
@@ -153,7 +153,7 @@ describe('Stepper V7.1', () => {
 
 describe('Prognóstico aberto', () => {
   it('mostra equipas, contagem, regras e sem nota das taças numa liga', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByText('Sporting CP')).toBeTruthy();
     expect(screen.getByText('SC Braga')).toBeTruthy();
     expect(screen.getByText('Fecha em 2 h 15 min')).toBeTruthy();
@@ -164,20 +164,20 @@ describe('Prognóstico aberto', () => {
   });
 
   it('V7.1 frame 29: "Só podes submeter uma vez." por baixo do botão e cartão "Pontos" com as regras', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByText('Só podes submeter uma vez.')).toBeTruthy();
     expect(screen.getByText('Pontos')).toBeTruthy();
     expect(screen.queryByText('Já submeteste este prognóstico.')).toBeNull();
   });
 
   it('a regra do prolongamento fica dentro do cartão das regras nos jogos a eliminar', async () => {
-    await render(<PredictionTab match={match({ type: 'cup' })} />, { wrapper });
+    await render(<PredictionCard match={match({ type: 'cup' })} />, { wrapper });
     expect(screen.getByText('Pontos')).toBeTruthy();
     expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
   it('em taças mostra a regra do prolongamento e penáltis', async () => {
-    await render(<PredictionTab match={match({ type: 'cup' })} />, { wrapper });
+    await render(<PredictionCard match={match({ type: 'cup' })} />, { wrapper });
     expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
@@ -187,29 +187,29 @@ describe('Prognóstico aberto', () => {
     ['eliminatória europeia', { type: 'europe' as const, round: 'Round of 16' }],
     ['play-off europeu', { type: 'europe' as const, round: 'Knockout Round Play-offs' }],
   ])('%s mostra a regra do prolongamento e penáltis', async (_, over) => {
-    await render(<PredictionTab match={match(over)} />, { wrapper });
+    await render(<PredictionCard match={match(over)} />, { wrapper });
     expect(screen.getByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeTruthy();
   });
 
   it('fase de liga europeia não mostra a regra do prolongamento', async () => {
-    await render(<PredictionTab match={match({ type: 'europe', round: 'League Stage - 3' })} />, { wrapper });
+    await render(<PredictionCard match={match({ type: 'europe', round: 'League Stage - 3' })} />, { wrapper });
     expect(screen.queryByText('Nos jogos a eliminar conta o resultado com prolongamento; penáltis contam como empate.')).toBeNull();
   });
 
   it('sem prognóstico não há botão de partilha', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.queryByLabelText('Partilhar prognóstico')).toBeNull();
   });
 
   it('a contagem atualiza a cada 30 s', async () => {
-    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 2 * 60_000 + 10_000) })} />, { wrapper });
+    await render(<PredictionCard match={match({ kickoff: new Date(NOW.getTime() + 2 * 60_000 + 10_000) })} />, { wrapper });
     expect(screen.getByText('Fecha em 2 min')).toBeTruthy();
     await tick(30_000);
     expect(screen.getByText('Fecha em 1 min')).toBeTruthy();
   });
 
   it('submeter exige confirmação e chama a callable uma vez', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Mais um golo para Sporting CP');
     await press('Mais um golo para Sporting CP');
     await press('Mais um golo para SC Braga');
@@ -228,7 +228,7 @@ describe('Prognóstico aberto', () => {
   });
 
   it('cancelar a confirmação não chama o servidor e mantém os valores', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Mais um golo para SC Braga');
     await press('Submeter prognóstico');
     await press('Cancelar');
@@ -237,12 +237,12 @@ describe('Prognóstico aberto', () => {
     expect(value('SC Braga')).toBe(1);
   });
 
-  it('fecha sozinho no kickoff sem chamar o servidor', async () => {
-    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 45_000) })} />, { wrapper });
-    expect(screen.getByLabelText('Submeter prognóstico')).toBeTruthy();
+  it('no kickoff o cartão sai sozinho, sem chamar o servidor', async () => {
+    await render(<PredictionCard match={match({ kickoff: new Date(NOW.getTime() + 45_000) })} />, { wrapper });
+    expect(screen.getByTestId('prediction-card')).toBeTruthy();
+    expect(screen.getByText('Prognóstico')).toBeTruthy();
     await tick(45_000);
-    expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
-    expect(screen.getByText('Os prognósticos fecharam ao apito inicial.')).toBeTruthy();
+    expect(screen.queryByTestId('prediction-card')).toBeNull();
     expect(mockCall).not.toHaveBeenCalled();
   });
 });
@@ -269,7 +269,7 @@ describe('Relógio do prognóstico', () => {
 
   it('no kickoff o intervalo de 30 s é limpo (o formulário já fechou)', async () => {
     const t = clockIntervals();
-    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 45_000) })} />, { wrapper });
+    await render(<PredictionCard match={match({ kickoff: new Date(NOW.getTime() + 45_000) })} />, { wrapper });
     expect(t.created).toHaveLength(1);
     expect(t.cleared).not.toContain(t.created[0]);
     await tick(45_000);
@@ -279,7 +279,7 @@ describe('Relógio do prognóstico', () => {
 
   it('kickoff a 30 dias: o intervalo continua ativo (o setTimeout longo não dispara logo)', async () => {
     const t = clockIntervals();
-    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() + 30 * 24 * 3600_000) })} />, { wrapper });
+    await render(<PredictionCard match={match({ kickoff: new Date(NOW.getTime() + 30 * 24 * 3600_000) })} />, { wrapper });
     expect(t.created).toHaveLength(1);
     await tick(5 * 60_000);
     expect(t.cleared).not.toContain(t.created[0]);
@@ -288,14 +288,14 @@ describe('Relógio do prognóstico', () => {
 
   it('jogo que já começou: nem chega a criar o intervalo', async () => {
     const t = clockIntervals();
-    await render(<PredictionTab match={match({ kickoff: new Date(NOW.getTime() - 60_000) })} />, { wrapper });
+    await render(<PredictionCard match={match({ kickoff: new Date(NOW.getTime() - 60_000) })} />, { wrapper });
     expect(t.created).toHaveLength(0);
   });
 });
 
 describe('Erros da callable', () => {
   async function submit21() {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Mais um golo para Sporting CP');
     await press('Mais um golo para Sporting CP');
     await press('Mais um golo para SC Braga');
@@ -359,14 +359,14 @@ describe('Erros da callable', () => {
 describe('Prognóstico feito, liquidado e fechado', () => {
   it('prognóstico existente mostra "2-1" e sem formulário', async () => {
     mockData.prediction = prediction(2, 1);
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByLabelText('O teu prognóstico: 2-1')).toBeTruthy();
     expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
   });
 
   it('submetido (V7.1 frame 30): estado "Já submeteste", linhas só de leitura com os valores, regras e Partilhar em contorno', async () => {
     mockData.prediction = prediction(2, 1);
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByText('Já submeteste este prognóstico.')).toBeTruthy();
     expect(value('Sporting CP')).toBe(2);
     expect(value('SC Braga')).toBe(1);
@@ -377,56 +377,38 @@ describe('Prognóstico feito, liquidado e fechado', () => {
     expect(screen.getByLabelText('Partilhar prognóstico')).toBeTruthy();
   });
 
-  it('liquidado: resultado final e pontos do prognóstico somados (1 + 3 → "+4 pontos"; MVP não conta)', async () => {
+  it.each([
+    ['ao vivo', { status: 'LIVE' as const, kickoff: new Date('2026-11-21T17:00:00Z') }],
+    ['terminado', { status: 'FT' as const, kickoff: new Date('2026-11-20T20:00:00Z') }],
+    ['NS com o kickoff já passado', { status: 'NS' as const, kickoff: new Date(NOW.getTime() - 60_000) }],
+  ])('%s: não desenha nada, mesmo com prognóstico (fica no cabeçalho)', async (_, over) => {
     mockData.prediction = prediction(2, 1);
-    mockData.settlement = { status: 'ready', data: { finalHome: 2, finalAway: 1, officialMvp: [] } };
-    mockData.points = {
-      status: 'ready',
-      data: [ev('prediction_participation', 1), ev('prediction_exact', 3), ev('mvp_participation', 1)],
-    };
-    await render(<PredictionTab match={match({ status: 'FT', kickoff: new Date('2026-11-20T20:00:00Z') })} />, { wrapper });
-    expect(screen.getByText('Resultado final: 2-1')).toBeTruthy();
-    expect(screen.getByLabelText('O teu prognóstico: 2-1')).toBeTruthy();
-    expect(screen.getByText('+4 pontos')).toBeTruthy();
-  });
-
-  it('fechado sem prognóstico', async () => {
-    await render(<PredictionTab match={match({ status: 'LIVE', kickoff: new Date('2026-11-21T17:00:00Z') })} />, { wrapper });
-    expect(screen.getByText('Os prognósticos fecharam ao apito inicial.')).toBeTruthy();
-    expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+    await render(<PredictionCard match={match(over)} />, { wrapper });
+    expect(screen.queryByTestId('prediction-card')).toBeNull();
   });
 
   it('a carregar o prognóstico: sem formulário', async () => {
     mockData.prediction = { status: 'loading' };
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     expect(screen.getByTestId('prediction-loading')).toBeTruthy();
     expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
   });
 });
 
 describe('Adiado e cancelado (Review Focus 2)', () => {
-  it('PST sem prognóstico: mensagem de adiado e sem botão; volta a NS com nova data → o formulário volta', async () => {
-    const { rerender } = await render(<PredictionTab match={match({ status: 'PST' })} />, { wrapper });
-    expect(screen.getByText('Jogo adiado. Podes fazer o prognóstico quando houver nova data.')).toBeTruthy();
-    expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+  it('PST: sem cartão; volta a NS com nova data → o formulário volta', async () => {
+    const { rerender } = await render(<PredictionCard match={match({ status: 'PST' })} />, { wrapper });
+    expect(screen.queryByTestId('prediction-card')).toBeNull();
 
-    await rerender(<PredictionTab match={match({ status: 'NS', kickoff: new Date('2026-11-22T20:00:00Z') })} />);
-    expect(screen.queryByText('Jogo adiado. Podes fazer o prognóstico quando houver nova data.')).toBeNull();
+    await rerender(<PredictionCard match={match({ status: 'NS', kickoff: new Date('2026-11-22T20:00:00Z') })} />);
     expect(screen.getByLabelText('Submeter prognóstico')).toBeTruthy();
     expect(screen.getByText('Fecha em 1 d 2 h')).toBeTruthy();
   });
 
-  it('PST com prognóstico guardado mostra o prognóstico', async () => {
+  it.each(['PST', 'CANC'] as const)('%s com prognóstico guardado: sem cartão', async (status) => {
     mockData.prediction = prediction(1, 1);
-    await render(<PredictionTab match={match({ status: 'PST' })} />, { wrapper });
-    expect(screen.getByLabelText('O teu prognóstico: 1-1')).toBeTruthy();
-  });
-
-  it('CANC: jogo cancelado, sem pontos', async () => {
-    mockData.prediction = prediction(1, 0);
-    await render(<PredictionTab match={match({ status: 'CANC' })} />, { wrapper });
-    expect(screen.getByText('Jogo cancelado. Sem pontos.')).toBeTruthy();
-    expect(screen.queryByLabelText('Submeter prognóstico')).toBeNull();
+    await render(<PredictionCard match={match({ status })} />, { wrapper });
+    expect(screen.queryByTestId('prediction-card')).toBeNull();
   });
 });
 
@@ -434,7 +416,7 @@ describe('Adiado e cancelado (Review Focus 2)', () => {
 describe('Partilhar prognóstico', () => {
   it('prognóstico guardado: abre o cartão, partilha e fecha', async () => {
     mockData.prediction = prediction(2, 1);
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Partilhar prognóstico');
     expect(screen.getByText('#JogoAJogoLadoALado')).toBeTruthy();
     expect(screen.getByTestId('share-score-home')).toHaveTextContent('2');
@@ -455,7 +437,7 @@ describe('Partilhar prognóstico', () => {
 
   it('fechar o cartão sem partilhar', async () => {
     mockData.prediction = prediction(2, 1);
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Partilhar prognóstico');
     await press('Fechar');
     expect(screen.queryByText('#JogoAJogoLadoALado')).toBeNull();
@@ -463,7 +445,7 @@ describe('Partilhar prognóstico', () => {
   });
 
   it('logo depois de submeter já se pode partilhar', async () => {
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Mais um golo para Sporting CP');
     await press('Submeter prognóstico');
     await press('Confirmar');
@@ -476,7 +458,7 @@ describe('Partilhar prognóstico', () => {
   it('falha da captura: mensagem e o cartão fica aberto', async () => {
     mockData.prediction = prediction(2, 1);
     (captureRef as jest.Mock).mockRejectedValueOnce(Object.assign(new Error('x'), { code: 'snap' }));
-    await render(<PredictionTab match={match()} />, { wrapper });
+    await render(<PredictionCard match={match()} />, { wrapper });
     await press('Partilhar prognóstico');
     await press('Partilhar');
     await flush();

@@ -232,7 +232,7 @@ describe('próximo jogo', () => {
     expect(screen.getByText('HOJE · 20:30')).toBeTruthy();
     expect(screen.getByTestId('next-countdown').props.children).toBe('03:30:00');
     await fireEvent.press(screen.getByRole('button', { name: 'PROGNÓSTICO' }));
-    expect(router.push).toHaveBeenCalledWith('/jogo/1001?tab=prognostico');
+    expect(router.push).toHaveBeenCalledWith('/jogo/1001?tab=sumario');
   });
 
   it('a contagem anda a cada segundo com a Home visível', async () => {

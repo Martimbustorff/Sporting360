@@ -17,7 +17,7 @@ describe('/j', () => {
   it('com game abre o jogo na tab Prognóstico e mede a abertura', async () => {
     await renderRouter(ROUTES, { initialUrl: '/j?game=1001&src=share' });
     expect(screen).toHavePathname('/jogo/1001');
-    expect(screen).toHaveSearchParams({ id: '1001', tab: 'prognostico' });
+    expect(screen).toHaveSearchParams({ id: '1001', tab: 'sumario' });
     expect(track).toHaveBeenCalledWith('share_open', { game: '1001', src: 'share' });
     expect(track).toHaveBeenCalledTimes(1);
   });
