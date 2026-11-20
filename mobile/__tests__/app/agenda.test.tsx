@@ -196,27 +196,32 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     expect(screen.queryByTestId('offline-banner')).toBeNull();
   });
 
-  it('pílulas e Próximos/Resultados ficam na barra fixa, fora da lista, a carregar, com erro e com dados (sem saltos)', async () => {
+  it('pílulas fixas fora da lista a carregar, com erro e com dados; cartão por cima de Próximos/Resultados (20/11)', async () => {
     const view = await render(ui());
     expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
-    expect(within(screen.getByTestId('agenda-bar')).getByRole('tab', { name: 'Próximos' })).toBeTruthy();
+    expect(within(screen.getByTestId('agenda-bar')).queryByRole('tab', { name: 'Próximos' })).toBeNull();
     mockUpcoming.current = { status: 'error', error: new Error('x') };
     await view.rerender(ui());
     expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
     mockUpcoming.current = ready([match({ id: '1001' })]);
     mockResults.current = ready([]);
     await view.rerender(ui());
-    expect(within(screen.getByTestId('agenda-bar')).getByTestId('sport-football')).toBeTruthy();
     expect(within(screen.getByTestId('agenda-list')).queryByTestId('sport-football')).toBeNull();
+    const head = within(screen.getByTestId('agenda-header'));
+    expect(head.getByTestId('next-match-card')).toBeTruthy();
+    expect(head.getByRole('tab', { name: 'Próximos' })).toBeTruthy();
   });
 
-  it('o cartão do próximo jogo só aparece em Próximos', async () => {
+  it('o cartão do próximo jogo fica também em Resultados; sem próximo jogo, "Sem jogos agendados" sem link para a agenda', async () => {
     mockUpcoming.current = ready([match({ id: '1001' })]);
     mockResults.current = ready([]);
-    await render(ui());
-    expect(screen.getByTestId('next-match-card')).toBeTruthy();
+    const view = await render(ui());
     await fireEvent.press(screen.getByRole('tab', { name: 'Resultados' }));
-    expect(screen.queryByTestId('next-match-card')).toBeNull();
+    expect(screen.getByTestId('next-match-card')).toBeTruthy();
+    mockUpcoming.current = ready([]);
+    await view.rerender(ui());
+    expect(screen.getByText('SEM JOGOS AGENDADOS')).toBeTruthy();
+    expect(screen.queryByText('VER AGENDA')).toBeNull();
   });
 
   it('andebol, voleibol e basquetebol escondidos até haver dados (20/11)', async () => {

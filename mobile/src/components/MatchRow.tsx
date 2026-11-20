@@ -1,7 +1,7 @@
-// Figma V7.1: linha de jogo do Calendário e das jornadas (4948:8278, resultado 4948:8397): data em duas linhas (dia da semana
-// e número em Badge 11 a text-subtle, mês em Caption Strong a muted), nome + emblema da casa alinhados à direita, caixa
-// central surface-10 de 58 pt com a hora ou o resultado (Label 16) e emblema + nome de fora; separador de 1 pt por baixo
-// (`separator`, no fim da linha).
+// Figma V7.1: linha de jogo do Calendário e das jornadas (4948:8278, revista 20/11): por cima, centrada, a data em Badge 11
+// text-subtle e (com `showCompetition`, no Calendário) a competição e a jornada/fase a primary-on-dark; por baixo nome +
+// emblema da casa alinhados à direita, caixa central surface-10 de 58 pt com a hora ou o resultado (Label 16) e emblema +
+// nome de fora, emblemas de 32 pt e nomes em Body 16; separador de 1 pt por baixo.
 // SEM FIGMA: "Adiado"/"Cancelado" na caixa central no lugar da hora (palavras de `stateLabel`, as mesmas do GameHeader); o
 // desempate por penáltis por baixo da caixa (`penaltiesText`); o rótulo de acessibilidade que resume a linha, com a
 // competição e a jornada (o frame já não as mostra). Os nomes levam reticências numa linha: a 320 pt a caixa e a data
@@ -21,7 +21,7 @@ function TeamSide({ team, side }: { team: TeamVM; side: 'home' | 'away' }) {
   const crest = <TeamCrest team={team} size="row" testID={`row-crest-${side}`} />;
   const name = (
     <Text71
-      variant="body14"
+      variant="body16"
       numberOfLines={1}
       ellipsizeMode="tail"
       style={{ flexShrink: 1, minWidth: 0, textAlign: side === 'home' ? 'right' : 'left' }}
@@ -60,7 +60,7 @@ function rowLabel(match: Match, vm: ReturnType<typeof toGameHeaderVM>): string {
   return [teams, competition, stateLabel(vm.state)].join('. ');
 }
 
-export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: string) => void }) {
+export function MatchRow({ match, onPress, showCompetition = false }: { match: Match; onPress?: (id: string) => void; showCompetition?: boolean }) {
   // O view-model da Task 4 dá a competição em pt-PT, os emblemas (Sporting sempre com o local) e o
   // resultado já filtrado (null antes do jogo, adiado ou cancelado).
   const vm = toGameHeaderVM(match);
@@ -72,10 +72,11 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
   const date = formatRowDate(match.kickoff);
   const time = formatTime(match.kickoff);
 
+  const competition = vm.round ? `${vm.competitionName} · ${vm.round}` : vm.competitionName;
+
   const content = (
     <View
       style={{
-        flexDirection: 'row',
         alignItems: 'center',
         gap: space.s8,
         paddingVertical: layout.matchRowPadY,
@@ -83,10 +84,16 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
         borderBottomColor: colors.separator,
       }}
     >
-      <View testID="row-date" style={{ width: layout.matchRowDate, flexShrink: 0, gap: layout.matchRowDateGap }}>
-        <Text71 variant="badge11" color="textSubtle" numberOfLines={1}>{date.day}</Text71>
-        <Text71 variant="captionStrong12" color="textMuted" numberOfLines={1}>{date.month}</Text71>
+      <View testID="row-date" style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: space.s4, maxWidth: '100%' }}>
+        <Text71 variant="badge11" color="textSubtle" numberOfLines={1} style={{ flexShrink: 0 }}>{`${date.day} ${date.month}`.toUpperCase()}</Text71>
+        {showCompetition ? (
+          <>
+            <Text71 variant="badge11" color="textSubtle">·</Text71>
+            <Text71 testID="row-competition" variant="badge11" color="primaryOnDark" numberOfLines={1} style={{ flexShrink: 1 }}>{competition.toUpperCase()}</Text71>
+          </>
+        ) : null}
       </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.s8, alignSelf: 'stretch' }}>
       <TeamSide team={vm.home} side="home" />
       <View testID="row-center" style={{ width: layout.matchRowCenter, flexShrink: 0, alignItems: 'center', gap: space.s4 }}>
         <View
@@ -112,6 +119,7 @@ export function MatchRow({ match, onPress }: { match: Match; onPress?: (id: stri
         ) : null}
       </View>
       <TeamSide team={vm.away} side="away" />
+      </View>
     </View>
   );
 

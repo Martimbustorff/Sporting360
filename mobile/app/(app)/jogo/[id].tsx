@@ -5,7 +5,7 @@
 // SEM FIGMA: o esqueleto de carregamento, o aviso de cache (OfflineBanner) e a linha "Fonte: ...". O sino do Figma não
 // existe hoje neste ecrã (nenhuma ação), por isso não se desenha. Ao vivo, os pontos do cartão do prognóstico são provisórios
 // (`provisionalPoints`); depois de liquidado mandam os eventos de pontos do servidor.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -18,7 +18,7 @@ import { Tabs } from '@/components/Tabs';
 import { CrossfadeCenter, MatchDetailLayout } from '@/components/match/CollapsingHeader';
 import { LineupsTab } from '@/components/match/LineupsTab';
 import { MatchScrollProvider, useMatchScrollContext } from '@/components/match/MatchScroll';
-import { MvpTab } from '@/components/match/MvpTab';
+import { MvpButton } from '@/components/match/MvpButton';
 import { StandingsTab } from '@/components/match/StandingsTab';
 import { StatsTab } from '@/components/match/StatsTab';
 import { SummaryTab } from '@/components/match/SummaryTab';
@@ -44,7 +44,6 @@ const TAB_VIEWS: Record<MatchTabKey, (props: { match: Match }) => React.JSX.Elem
   estatisticas: StatsTab,
   formacoes: LineupsTab,
   classificacao: StandingsTab,
-  mvp: MvpTab,
 };
 
 const MISSING_TEXT = 'Jogo não encontrado.';
@@ -55,6 +54,16 @@ const param = (v: string | string[] | undefined): string | undefined =>
 
 function tabFromParam(v: string | undefined): MatchTabKey {
   return FOOTBALL_TABS.some((t) => t.key === v) ? (v as MatchTabKey) : 'sumario';
+}
+
+/** `?tab=mvp` (links e push antigos): o MVP deixou de ser separador (20/11) e tem ecrã próprio. */
+function useOldMvpLink(id: string | null, tab: string | undefined) {
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !id || tab !== 'mvp') return;
+    done.current = true;
+    router.push(`/mvp/${id}`);
+  }, [id, tab]);
 }
 
 /** SEM FIGMA: enquanto o jogo não chega, um bloco com a altura do cabeçalho. */
@@ -96,6 +105,7 @@ function FootballNav({ match, onBack }: { match: Match; onBack: () => void }) {
     <Header
       title={vm.competitionName}
       onBack={onBack}
+      right={<MvpButton match={match} />}
       center={<CrossfadeCenter title={<GameNavTitle game={vm} />} compact={<GameHeader game={vm} size="compact" />} />}
     />
   );
@@ -176,6 +186,7 @@ export default function Jogo() {
   const params = useLocalSearchParams<{ id?: string | string[]; tab?: string | string[] }>();
   const id = param(params.id) ?? null;
   const initialTab = tabFromParam(param(params.tab));
+  useOldMvpLink(id, param(params.tab));
   const loadable = useMatch(id);
   const match = loadable.status === 'ready' ? loadable.data : null;
 

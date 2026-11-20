@@ -7,7 +7,7 @@ import type { GameStatus, Match } from '@/data/schemas';
 
 const mockMatch: { current: unknown } = { current: { status: 'loading' } };
 const mockDetail: { current: Record<string, unknown> } = { current: {} };
-const mockUser: { current: { prediction: unknown; settlement: unknown; points: unknown } } = {
+const mockUser: { current: { prediction: unknown; settlement: unknown; points: unknown; mvpVote?: unknown } } = {
   current: { prediction: { status: 'loading' }, settlement: { status: 'missing' }, points: { status: 'loading' } },
 };
 const mockParams: { current: Record<string, string> } = { current: { id: '1001' } };
@@ -22,6 +22,7 @@ jest.mock('@/data/user', () => ({
   useMyPrediction: jest.fn(() => mockUser.current.prediction),
   useSettlement: jest.fn(() => mockUser.current.settlement),
   useMyGamePoints: jest.fn(() => mockUser.current.points),
+  useMyMvpVote: jest.fn(() => mockUser.current.mvpVote ?? { status: 'loading' }),
 }));
 jest.mock('@/providers/SessionProvider', () => ({
   useSession: () => ({ status: 'signedIn', user: { uid: 'u1' } }),
@@ -99,16 +100,9 @@ describe('futebol', () => {
     expect(within(screen.getByTestId('header')).getByText('Liga Portugal')).toBeTruthy();
   });
 
-  it('mostra as 6 tabs por esta ordem (o prognóstico é um cartão no Sumário)', async () => {
+  it('mostra as 5 tabs por esta ordem (o prognóstico é um cartão no Sumário; o MVP tem ecrã próprio, 20/11)', async () => {
     await render(ui());
-    expect(tabLabels()).toEqual([
-      'Sumário',
-      'Vídeos',
-      'Estatísticas',
-      'Formações',
-      'Classificação',
-      'MVP',
-    ]);
+    expect(tabLabels()).toEqual(['Sumário', 'Vídeos', 'Estatísticas', 'Formações', 'Classificação']);
   });
 
   it('abre no Sumário e mudar de tab troca o conteúdo', async () => {
@@ -127,6 +121,22 @@ describe('futebol', () => {
     expect(screen.getByTestId('prediction-card')).toBeTruthy();
     // Task 16: sem sessão (sem SessionProvider) o prognóstico fica a carregar.
     expect(screen.getByTestId('prediction-loading')).toBeTruthy();
+  });
+
+  it('MVP (20/11): taça no topo de um jogo terminado abre o ecrã do MVP', async () => {
+    const { router } = require('expo-router') as { router: { push: jest.Mock } };
+    (useMatch as jest.Mock).mockReturnValue(ready(match({ status: 'FT', finishedAt: new Date('2026-09-14T21:00:00Z') })));
+    await render(ui());
+    await fireEvent.press(screen.getByTestId('mvp-button'));
+    expect(router.push).toHaveBeenCalledWith('/mvp/1001');
+  });
+
+  it('`?tab=mvp` (links e push antigos) leva ao ecrã do MVP', async () => {
+    const { router } = require('expo-router') as { router: { push: jest.Mock } };
+    mockParams.current = { id: '1001', tab: 'mvp' };
+    await render(ui());
+    expect(router.push).toHaveBeenCalledWith('/mvp/1001');
+    expect(screen.getByRole('tab', { name: 'Sumário', selected: true })).toBeTruthy();
   });
 
   it('um `tab` desconhecido cai no Sumário', async () => {
@@ -228,7 +238,7 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
     mockMatch.current = ready(liveMatch());
     await render(ui());
     expect(screen.getByText('Ao vivo · 2.ª parte')).toBeTruthy();
-    expect(screen.getAllByRole('tab')).toHaveLength(6);
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
     // Ao vivo o Sumário é o do jogo: o cartão do prognóstico já saiu (Martim 20/11).
     expect(screen.queryByTestId('prediction-card')).toBeNull();
     expect(screen.queryByTestId('game-header-compact')).toBeNull(); // oculto à acessibilidade
@@ -242,7 +252,7 @@ describe('cabeçalho compacto com o scroll (frames 06 e 08)', () => {
     expect(screen.getByTestId('game-header-compact').props.accessibilityLabel).toBe(
       'Sporting CP 2, SC Braga 1, ao vivo, 67’',
     );
-    expect(screen.getAllByRole('tab')).toHaveLength(6);
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
     await scrollTo(0);
     expect(screen.queryByTestId('game-header-compact')).toBeNull();
   });

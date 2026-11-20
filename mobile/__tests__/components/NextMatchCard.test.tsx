@@ -114,7 +114,7 @@ it('Terminado com MVP aberto: Vota no MVP abre o separador MVP', async () => {
   expect(screen.getByText(NEXT_MATCH_TEXT.finished)).toBeTruthy();
   expect(screen.getByText(NEXT_MATCH_TEXT.endOfGame)).toBeTruthy();
   await fireEvent.press(screen.getByRole('button', { name: 'VOTA NO MVP' }));
-  expect(handlers.onAction).toHaveBeenCalledWith('/jogo/1001?tab=mvp');
+  expect(handlers.onAction).toHaveBeenCalledWith('/mvp/1001');
 });
 
 it('Terminado depois de votar: Ver jogo', async () => {
@@ -146,7 +146,7 @@ it('A carregar: esqueleto anunciado como ocupado, sem botões', async () => {
   expect(screen.queryAllByRole('button')).toHaveLength(0);
 });
 
-describe('altura fixa de 192 pt e nomes longos', () => {
+describe('altura fixa de matchCardHeight e nomes longos', () => {
   const long = {
     home: { id: '228', name: 'Sporting CP', logo: null },
     away: { id: '300', name: 'Gil Vicente Futebol Clube', logo: null },
@@ -160,11 +160,11 @@ describe('altura fixa de 192 pt e nomes longos', () => {
     ['sem jogo', null, {}, NOW],
     ['a carregar', null, { loading: true }, NOW],
   ];
-  it.each(cases)('%s: 192 pt, nomes numa linha com reticências', async (_n, m, flags, now) => {
+  it.each(cases)('%s: altura fixa, nomes numa linha com reticências', async (_n, m, flags, now) => {
     await view(m, moment(m, flags, now), { now });
     const card = screen.getByTestId('next-match-card');
     expect(StyleSheet.flatten(card.props.style).height).toBe(layout.matchCardHeight);
-    expect(layout.matchCardHeight).toBe(192);
+    expect(layout.matchCardHeight).toBe(204);
     for (const name of ['Gil Vicente Futebol Clube', 'Taça da Liga Portugal Betclic Feminina']) {
       for (const t of screen.queryAllByText(name)) expect(t.props.numberOfLines).toBe(name.startsWith('Gil') ? 1 : 1);
     }

@@ -56,6 +56,7 @@ const CREST_BOX = {
   lg: layout.crestSize,
   hd: layout.crestHeader,
   md: layout.crestCard,
+  next: layout.crestNext,
   sm: layout.crestSmall,
   xs: layout.crestCompact,
   form: layout.crestForm,
@@ -66,7 +67,7 @@ const CREST_BOX = {
  * `size`: 'hd' no cabeçalho do jogo (60x70, V7.1 4924:6375), 'xs' no cabeçalho compacto (24x28, 4933:7267), 'lg' no cabeçalho (75x87, Figma 500:28798), 'sm' nas linhas da Agenda (30x35, Figma 500:28825),
  * 'form' na linha de forma do Sumário (18x21, 4933:7343), 'md' no cartão do próximo jogo da Home (52x60, V7.1 4920:5096), 'row' nas linhas de jogo (22x25,5, V7.1 4948:8283).
  */
-export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'hd' | 'md' | 'sm' | 'xs' | 'form' | 'row' }) {
+export function TeamCrest({ team, testID, size = 'lg' }: { team: TeamVM; testID?: string; size?: 'lg' | 'hd' | 'md' | 'next' | 'sm' | 'xs' | 'form' | 'row' }) {
   const box = CREST_BOX[size];
   const source = team.id === SPORTING_API_ID ? SPORTING_CREST : team.crestUrl ? { uri: team.crestUrl } : null;
   // O emblema que falhou fica marcado por URL: um adversário novo na mesma linha volta a tentar.

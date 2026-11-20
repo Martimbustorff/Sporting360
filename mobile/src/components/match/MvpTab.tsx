@@ -154,58 +154,27 @@ function StarIcon() {
 }
 
 /** Escolha (4934:7273): círculo vazio com contorno surface-20; marcada, anel branco com o miolo em primary-on-dark. */
-function Radio({ selected }: { selected: boolean }) {
-  return (
-    <View
-      accessible={false}
-      style={{
-        width: layout.mvpRadio,
-        height: layout.mvpRadio,
-        borderRadius: layout.mvpRadio / 2,
-        borderWidth: selected ? layout.mvpRadioRing : layout.mvpRadioStroke,
-        borderColor: selected ? colors.white : colors.surface20,
-        backgroundColor: selected ? colors.primaryOnDark : undefined,
-      }}
-    />
-  );
-}
-
+/**
+ * Cartão de um jogador na grelha do ecrã do MVP (4934:7263, revisto 20/11: "as caras dos jogadores"): foto de 64 com o
+ * número, nome, posição, selo "Melhor nota" e a nota. O escolhido fica com contorno verde (sem círculo de escolha).
+ */
 function CandidateRow({
   candidate,
   line,
   best,
   selected,
+  width,
   onPress,
 }: {
   candidate: MvpCandidate;
   line: CandidateLine | undefined;
   best: boolean;
   selected: boolean;
+  width: number;
   onPress: () => void;
 }) {
-  const compact = useWindowDimensions().width < layout.stepCompactBelow;
   const rating = line?.rating ?? null;
   const position = positionAbbr(line?.position ?? null);
-  const badgeEl = best ? (
-    <View
-              testID={`mvp-best-${candidate.playerId}`}
-              style={{
-                flexShrink: 0,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: layout.mvpBadgeGap,
-                paddingHorizontal: layout.mvpBadgePadX,
-                paddingVertical: layout.mvpBadgePadY,
-                borderRadius: layout.mvpBadgeRadius,
-                backgroundColor: colors.primary,
-              }}
-            >
-              <StarIcon />
-              <Text71 variant="badge11" numberOfLines={1}>
-                MELHOR NOTA
-              </Text71>
-            </View>
-  ) : null;
   return (
     <Touchable
       testID={`mvp-candidate-${candidate.playerId}`}
@@ -213,37 +182,46 @@ function CandidateRow({
       accessibilityLabel={`Escolher ${candidate.name}`}
       accessibilityState={{ checked: selected }}
       onPress={onPress}
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: layout.mvpRowGap,
-          paddingVertical: layout.mvpRowPadY,
-          borderBottomWidth: layout.separator,
-          borderBottomColor: colors.separator,
-        },
-        selected ? { paddingHorizontal: layout.mvpSelectedPadX, borderRadius: layout.mvpSelectedRadius, backgroundColor: colors.surface06 } : null,
-      ]}
+      style={{
+        width,
+        alignItems: 'center',
+        gap: space.s4,
+        paddingVertical: space.s12,
+        paddingHorizontal: space.s4,
+        borderRadius: radii.r12,
+        borderWidth: layout.mvpTileBorder,
+        borderColor: selected ? colors.primaryOnDark : 'transparent',
+        backgroundColor: selected ? colors.surface10 : colors.surface06,
+      }}
     >
-      <PlayerPhoto photo={line?.photo ?? null} size={layout.mvpPhoto} number={candidate.number} />
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: layout.mvpNameGap }}>
-          <Text71 variant="strong14" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {candidate.name}
+      <PlayerPhoto photo={line?.photo ?? null} size={layout.mvpTilePhoto} number={candidate.number} />
+      <Text71 variant="strong14" numberOfLines={1} style={{ textAlign: 'center', alignSelf: 'stretch' }}>
+        {candidate.name}
+      </Text71>
+      {position ? (
+        <Text71 testID={`mvp-second-line-${candidate.playerId}`} variant="caption12" color="textSubtle" numberOfLines={1}>
+          {position}
+        </Text71>
+      ) : null}
+      {best ? (
+        <View
+          testID={`mvp-best-${candidate.playerId}`}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: layout.mvpBadgeGap,
+            paddingHorizontal: layout.mvpBadgePadX,
+            paddingVertical: layout.mvpBadgePadY,
+            borderRadius: layout.mvpBadgeRadius,
+            backgroundColor: colors.primary,
+          }}
+        >
+          <StarIcon />
+          <Text71 variant="badge11" numberOfLines={1}>
+            MELHOR NOTA
           </Text71>
-          {best && !compact ? badgeEl : null}
         </View>
-        {position || (best && compact) ? (
-          <View testID={`mvp-second-line-${candidate.playerId}`} style={{ flexDirection: 'row', alignItems: 'center', gap: layout.mvpNameGap }}>
-            {position ? (
-              <Text71 variant="caption12" color="textSubtle" numberOfLines={1} style={{ flexShrink: 1 }}>
-                {position}
-              </Text71>
-            ) : null}
-            {best && compact ? badgeEl : null}
-          </View>
-        ) : null}
-      </View>
+      ) : null}
       {rating !== null ? (
         <View
           testID={`mvp-rating-${candidate.playerId}`}
@@ -261,7 +239,6 @@ function CandidateRow({
           </Text71>
         </View>
       ) : null}
-      <Radio selected={selected} />
     </Touchable>
   );
 }
@@ -374,6 +351,9 @@ function VoteForm({
     }
   };
 
+  // Três cartões por linha na largura útil (ecrã menos as margens de 24 e os dois espaços).
+  const { width: screenW } = useWindowDimensions();
+  const tile = Math.floor((screenW - 2 * space.s24 - 2 * layout.mvpTileGap) / 3);
   const lines = candidateLines(doc);
   const best = bestRatedIds(candidates.map((c) => ({ id: c.playerId, rating: lines[c.playerId]?.rating ?? null })));
   const anyRating = candidates.some((c) => lines[c.playerId]?.rating != null);
@@ -383,7 +363,7 @@ function VoteForm({
       <Text71 variant="caption12" color="textMuted">
         {anyRating ? 'Quem foi o melhor do Sporting? A nota é da API-Football e serve só de referência.' : 'Quem foi o melhor do Sporting?'}
       </Text71>
-      <View>
+      <View testID="mvp-grid" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: layout.mvpTileGap }}>
         {candidates.map((c) => (
           <CandidateRow
             key={c.playerId}
@@ -391,6 +371,7 @@ function VoteForm({
             line={lines[c.playerId]}
             best={best.has(c.playerId)}
             selected={c.playerId === selected}
+            width={tile}
             onPress={() => {
               if (sending) return;
               setSelected(c.playerId);

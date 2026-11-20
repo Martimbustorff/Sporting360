@@ -286,7 +286,7 @@ describe('próximo jogo', () => {
     await render(ui());
     expect(screen.getByText('TERMINADO')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'VOTA NO MVP' }));
-    expect(router.push).toHaveBeenCalledWith('/jogo/1001?tab=mvp');
+    expect(router.push).toHaveBeenCalledWith('/mvp/1001');
   });
 
   it('terminado depois de votar: Ver jogo', async () => {

@@ -23,6 +23,7 @@ module.exports = {
           bgTint: '#003625',
           homeVeil: '#00281C',
           primaryOnDark: '#19B37E',
+          primaryTint: 'rgba(27, 158, 107, 0.22)',
           primaryDeep: '#004A33',
           textSubtle: 'rgba(255, 255, 255, 0.5)',
           separator: 'rgba(255, 255, 255, 0.25)',

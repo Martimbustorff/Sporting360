@@ -52,7 +52,7 @@ export function homeMatchMoment(input: HomeMomentInput): HomeMoment {
     const vote = mvpOpen && !votedMvp;
     return {
       state: 'finished',
-      action: vote ? { label: 'VOTA NO MVP', href: `/jogo/${m.id}?tab=mvp` } : open(m),
+      action: vote ? { label: 'VOTA NO MVP', href: `/mvp/${m.id}` } : open(m),
       countdownTo: null,
     };
   }

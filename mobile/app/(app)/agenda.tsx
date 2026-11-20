@@ -1,8 +1,7 @@
-// Figma V7.1: frame 35 "Calendário" (4948:8199); linha de jogo 4948:8278 (MatchRow), pílulas de modalidade 4948:8261.
-// 20/11 (Martim: "saltos no ecrã" ao mudar de modalidade): as pílulas de modalidade e Próximos/Resultados ficam fixas
-// por baixo do cabeçalho, no mesmo sítio a carregar, com erro e com dados. Só a parte de baixo muda: o cartão do
-// próximo jogo (o mesmo da Home, só em Próximos e só quando há jogo) e a lista com todos os jogos, "Fonte" no fim.
-// 35c (4994:12606): a carregar é o esqueleto do 47 (3 linhas), por baixo da barra fixa.
+// Figma V7.1: frame 35 "Calendário" (4948:8199, revisto 20/11); linha de jogo 4948:8278 (MatchRow), pílulas 4948:8261.
+// 20/11 (Martim): pílulas fixas por baixo do cabeçalho; por baixo, a rolar, o cartão do próximo jogo (sempre, também em
+// Resultados; "Sem jogos agendados" com a mesma altura quando não há), Próximos/Resultados e a lista, "Fonte" no fim.
+// 35c (4994:12606): a carregar é o cartão a carregar e o esqueleto do 47 por baixo das tabs.
 // SEM FIGMA: o aviso de cache (OfflineBanner, com tolerância), o estado vazio e de erro, e a atribuição
 // "Fonte: ..." (o futebol é sempre "Fonte: API-Football", frame 35; as outras modalidades, só as fontes gratuitas).
 import { useMemo, useState } from 'react';
@@ -70,39 +69,44 @@ export default function Agenda() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
+  const loading = isLoading(upcoming) || isLoading(results);
+  const failed = isError(upcoming) || isError(results);
   const moment = homeMatchMoment({
     match: next,
     now,
     predictionOpen: next ? predictionOpen(next, now) : false,
     mvpOpen: false,
     votedMvp: false,
-    loading: false,
+    loading,
   });
 
-  // Barra fixa: não sai do sítio a carregar, com erro nem quando a modalidade não tem próximo jogo (antes o cartão
-  // aparecia e desaparecia por cima das pílulas e o ecrã saltava). Com erro tem de se poder mudar de modalidade.
+  // 20/11 (Martim): só as pílulas ficam fixas. O cartão do próximo jogo fica sempre por cima (em Próximos e em
+  // Resultados) e a escolha Próximos/Resultados por baixo dele. Sem próximo jogo, o cartão "Sem jogos agendados" com a
+  // mesma altura: mudar de modalidade ou de separador não faz saltar nada.
   const bar = (
-    <View testID="agenda-bar" style={{ gap: space.s12, paddingHorizontal: space.s24, paddingTop: space.s12, paddingBottom: space.s12 }}>
+    <View testID="agenda-bar" style={{ paddingHorizontal: space.s24, paddingTop: space.s12, paddingBottom: space.s12 }}>
       <Chips items={SPORT_TABS} value={sport} onChange={setSport} testIDPrefix="sport" />
-      <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
-      <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
     </View>
   );
 
-  const header =
-    tab === 'upcoming' && next ? (
-      <View style={{ paddingBottom: space.s12 }}>
+  const header = (
+    <View testID="agenda-header" style={{ gap: space.s12, paddingBottom: space.s8 }}>
+      <OfflineBanner visible={fromCache(upcoming) || fromCache(results)} />
+      {failed ? null : (
         <NextMatchCard
           moment={moment}
           match={next}
           now={now}
           ticking={focused}
+          hideAgendaLink
           onOpenMatch={(id) => router.push(`/jogo/${id}`)}
           onAction={(href) => router.push(href as Href)}
           onOpenAgenda={() => undefined}
         />
-      </View>
-    ) : undefined;
+      )}
+      <Tabs mode="equal" items={TABS} value={tab} onChange={setTab} />
+    </View>
+  );
 
   const sources = sport === 'football' ? [...new Set([FOOTBALL_SOURCE, ...attributions(list)])] : attributions(list);
   // Rodapé só quando há fontes a atribuir: sem ele não fica um bloco vazio no fim.
@@ -133,22 +137,24 @@ export default function Agenda() {
         }
       />
       {bar}
-      {isError(upcoming) || isError(results) ? (
-        <EmptyState icon="info" text={ERROR_TEXT} />
-      ) : isLoading(upcoming) || isLoading(results) ? (
-        <ScreenSkeleton testID="agenda-skeleton" />
-      ) : (
-        <FlatList
-          testID="agenda-list"
-          data={list}
-          keyExtractor={(m) => m.id}
-          renderItem={({ item }) => <MatchRow match={item} onPress={(id) => router.push(`/jogo/${id}`)} />}
-          ListHeaderComponent={header}
-          ListEmptyComponent={<EmptyState text={empty} />}
-          ListFooterComponent={footer}
-          contentContainerStyle={{ paddingHorizontal: space.s24 }}
-        />
-      )}
+      <FlatList
+        testID="agenda-list"
+        data={loading || failed ? [] : list}
+        keyExtractor={(m) => m.id}
+        renderItem={({ item }) => <MatchRow match={item} showCompetition onPress={(id) => router.push(`/jogo/${id}`)} />}
+        ListHeaderComponent={header}
+        ListEmptyComponent={
+          failed ? (
+            <EmptyState icon="info" text={ERROR_TEXT} />
+          ) : loading ? (
+            <ScreenSkeleton testID="agenda-skeleton" />
+          ) : (
+            <EmptyState text={empty} />
+          )
+        }
+        ListFooterComponent={loading || failed ? undefined : footer}
+        contentContainerStyle={{ paddingHorizontal: space.s24, paddingBottom: space.s24 }}
+      />
     </Screen>
   );
 }

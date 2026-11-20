@@ -5,12 +5,12 @@ export type MatchTabKey =
   | 'videos'
   | 'estatisticas'
   | 'formacoes'
-  | 'classificacao'
-  | 'mvp';
+  | 'classificacao';
 
 /**
  * Tabs do detalhe de um jogo de futebol, por esta ordem. As outras modalidades não têm tabs. O prognóstico não tem
  * separador (Martim 20/11): é um cartão no Sumário antes do jogo; `?tab=prognostico` (links e push antigos) abre o Sumário.
+ * O MVP também não (20/11): tem ecrã próprio (`/mvp/{id}`), aberto pela taça no topo do jogo; `?tab=mvp` reencaminha.
  */
 export const FOOTBALL_TABS: { key: MatchTabKey; label: string }[] = [
   { key: 'sumario', label: 'Sumário' },
@@ -18,5 +18,4 @@ export const FOOTBALL_TABS: { key: MatchTabKey; label: string }[] = [
   { key: 'estatisticas', label: 'Estatísticas' },
   { key: 'formacoes', label: 'Formações' },
   { key: 'classificacao', label: 'Classificação' },
-  { key: 'mvp', label: 'MVP' },
 ];

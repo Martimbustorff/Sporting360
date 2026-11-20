@@ -51,10 +51,10 @@ beforeEach(() => {
 afterEach(() => jest.useRealTimers());
 
 describe('jogo por jogar', () => {
-  it('mostra a data em duas linhas e a hora na caixa do meio (sem competição nem seta)', async () => {
+  it('data numa linha por cima (20/11) e a hora na caixa do meio; sem competição por omissão (jornadas)', async () => {
     await render(<MatchRow match={match()} onPress={jest.fn()} />);
-    expect(screen.getByText('SEG 14')).toBeTruthy();
-    expect(screen.getByText('SET')).toBeTruthy();
+    expect(screen.getByText('SEG 14 SET')).toBeTruthy();
+    expect(screen.queryByTestId('row-competition')).toBeNull();
     expect(screen.getByTestId('row-time').props.children).toBe('20:30');
     expect(screen.queryByTestId('row-score')).toBeNull();
     expect(screen.queryByText('Liga Portugal')).toBeNull();
@@ -106,7 +106,7 @@ describe('adiado e cancelado (Review Focus 2)', () => {
     await render(<MatchRow match={match({ status: 'PST' })} onPress={jest.fn()} />);
     expect(screen.getByText('Adiado')).toBeTruthy();
     expect(screen.queryByText('20:30')).toBeNull();
-    expect(screen.getByText('SEG 14')).toBeTruthy();
+    expect(screen.getByText('SEG 14 SET')).toBeTruthy();
     expect(screen.queryByTestId('row-score')).toBeNull();
   });
 
@@ -195,10 +195,12 @@ describe('nomes longos (Review Focus 4)', () => {
     expect(StyleSheet.flatten(screen.getByTestId('row-center').props.style)).toEqual(
       expect.objectContaining({ flexShrink: 0, width: layout.matchRowCenter }),
     );
-    expect(StyleSheet.flatten(screen.getByTestId('row-date').props.style)).toEqual(
-      expect.objectContaining({ flexShrink: 0, width: layout.matchRowDate }),
-    );
     expect(screen.getByTestId('row-score').props.children).toBe('3-0');
+  });
+
+  it('no Calendário (showCompetition) a linha de cima leva a competição e a jornada', async () => {
+    await render(<MatchRow match={match()} showCompetition onPress={jest.fn()} />);
+    expect(screen.getByTestId('row-competition').props.children).toMatch(/^LIGA PORTUGAL/);
   });
 
   it('emblema da casa e de fora presentes com nomes longos', async () => {

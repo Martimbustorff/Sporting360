@@ -1,13 +1,16 @@
 // Figma V7.1: conjunto "V7.1 / Next match card" 4920:5140 (Próximo 4920:5090, Sem jogo 4920:5112, A carregar 4920:5125,
 // Dia de jogo 4932:6358, Ao vivo 4932:6379, Terminado 4932:6400) e frames 01, 01b, 01c, 07a, 07b, 07c da Home.
-// Altura fixa de 192 pt em todos os estados (o menu não salta). Estados vêm de lib/homeMatchMoment.
+// Revisto a 20/11 (Martim, como o cartão de partilha): competição e ronda centradas no topo, fundo com o degradê do
+// cartão do prognóstico, emblemas maiores e o nome dos clubes à altura da pill da TV.
+// Altura fixa (`matchCardHeight`) em todos os estados (o menu e o Calendário não saltam). Estados vêm de lib/homeMatchMoment.
 // Canal de TV: chip 4920:5103 por baixo da hora (`match.tv`; sem canal não aparece).
 // SEM FIGMA: o estado de erro (nota 01b: "o mesmo cartão com Tentar outra vez"; textos escritos aqui) e a hora de um jogo adiado ou cancelado (mostra o
 // estado no lugar da hora, como o GameHeader). O brilho do esqueleto é um pulsar de opacidade (sem gradiente).
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { TeamCrest, type TeamVM } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
@@ -52,6 +55,8 @@ export type NextMatchCardProps = {
   onAction: (href: string) => void;
   onOpenAgenda: () => void;
   onRetry?: () => void;
+  /** No próprio Calendário o "Ver agenda" não leva a lado nenhum: fica só o aviso. */
+  hideAgendaLink?: boolean;
 };
 
 function Shimmer({ style }: { style: StyleProp<ViewStyle> }) {
@@ -73,7 +78,7 @@ const bar = (w: number, h: number, r: number): ViewStyle => ({ width: w, height:
 function Loading() {
   const team = (
     <View style={styles.team}>
-      <Shimmer style={bar(layout.crestCard.width, layout.crestCard.width, layout.crestCard.width / 2)} />
+      <Shimmer style={bar(layout.crestNext.width, layout.crestNext.width, layout.crestNext.width / 2)} />
       <Shimmer style={bar(64, 10, 5)} />
     </View>
   );
@@ -105,7 +110,7 @@ function Message({
 }: {
   title: string;
   hint: string;
-  actionLabel: string;
+  actionLabel: string | null;
   withArrow: boolean;
   onAction: () => void;
 }) {
@@ -119,10 +124,12 @@ function Message({
           <Image source={ICON_CALENDAR} accessible={false} style={{ width: layout.matchCardIcon, height: layout.matchCardIcon, opacity: layout.matchCardIconOpacity }} />
           <Text71 variant="titleS20" numberOfLines={2} style={{ textAlign: 'center' }}>{title}</Text71>
           <Text71 variant="caption12" color="textMuted" numberOfLines={2} style={{ textAlign: 'center' }}>{hint}</Text71>
-          <Touchable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} style={styles.link}>
-            <Text71 variant="eyebrow13" color="primaryOnDark">{actionLabel}</Text71>
-            {withArrow ? <Feather name="arrow-right" size={16} color={colors.primaryOnDark} /> : null}
-          </Touchable>
+          {actionLabel ? (
+            <Touchable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={onAction} style={styles.link}>
+              <Text71 variant="eyebrow13" color="primaryOnDark">{actionLabel}</Text71>
+              {withArrow ? <Feather name="arrow-right" size={16} color={colors.primaryOnDark} /> : null}
+            </Touchable>
+          ) : null}
         </View>
       </View>
     </View>
@@ -173,7 +180,7 @@ function scoreLine(m: Match): string {
 function Teams({ vm, wide, children }: { vm: ReturnType<typeof toGameHeaderVM>; wide?: boolean; children: ReactNode }) {
   const team = (t: TeamVM, side: 'home' | 'away') => (
     <View style={styles.team}>
-      <TeamCrest team={t} size="md" testID={`next-crest-${side}`} />
+      <TeamCrest team={t} size="next" testID={`next-crest-${side}`} />
       <Text71 variant="strong14" numberOfLines={1} style={{ textAlign: 'center', alignSelf: 'stretch' }}>{t.name}</Text71>
     </View>
   );
@@ -186,7 +193,25 @@ function Teams({ vm, wide, children }: { vm: ReturnType<typeof toGameHeaderVM>; 
   );
 }
 
-export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry }: NextMatchCardProps) {
+/** Degradê do cartão do prognóstico (MatchCard): verde em cima, fundo da app em baixo. */
+function CardGradient() {
+  const id = `nextGrad${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  return (
+    <View testID="next-match-bg" style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width="100%" height="100%" preserveAspectRatio="none">
+        <Defs>
+          <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor={colors.shareCardTop} />
+            <Stop offset="1" stopColor={colors.bg} />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+    </View>
+  );
+}
+
+export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry, hideAgendaLink = false }: NextMatchCardProps) {
   const { state, action } = moment;
   let content: ReactNode;
   let summary = '';
@@ -197,7 +222,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
     content = error ? (
       <Message title={NEXT_MATCH_TEXT.errorTitle} hint={NEXT_MATCH_TEXT.errorHint} actionLabel={NEXT_MATCH_TEXT.retry} withArrow={false} onAction={onRetry ?? (() => {})} />
     ) : (
-      <Message title={NEXT_MATCH_TEXT.none} hint={NEXT_MATCH_TEXT.noneHint} actionLabel={NEXT_MATCH_TEXT.agenda} withArrow onAction={onOpenAgenda} />
+      <Message title={NEXT_MATCH_TEXT.none} hint={NEXT_MATCH_TEXT.noneHint} actionLabel={hideAgendaLink ? null : NEXT_MATCH_TEXT.agenda} withArrow onAction={onOpenAgenda} />
     );
   } else {
     const vm = toGameHeaderVM(match);
@@ -242,7 +267,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
     content = (
       <View style={styles.fill} pointerEvents="box-none">
         <View style={styles.strip} pointerEvents="none">
-          <Text71 variant="label16" numberOfLines={1} style={{ flexShrink: 1 }}>{comp.name}</Text71>
+          <Text71 variant="label16" numberOfLines={1} style={{ textAlign: 'center' }}>{comp.name}</Text71>
           {badge ? (
             <View style={styles.badge}>
               <Text71 variant="badge11" numberOfLines={1}>{badge}</Text71>
@@ -271,6 +296,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
   return (
     <View testID="next-match-card" style={styles.shadow}>
       <View style={styles.card}>
+        <CardGradient />
         {tappable ? (
           <Touchable
             accessibilityRole="button"
@@ -298,14 +324,10 @@ const styles = StyleSheet.create({
   },
   fill: { flex: 1 },
   strip: {
-    height: layout.matchCardStrip,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.s8,
-    paddingLeft: space.s16,
-    paddingRight: space.s12,
-    backgroundColor: colors.surface10,
+    gap: space.s4,
+    paddingTop: layout.matchCardStripPadTop,
+    paddingHorizontal: space.s16,
   },
   badge: {
     backgroundColor: colors.primary,
@@ -314,9 +336,10 @@ const styles = StyleSheet.create({
     paddingVertical: layout.matchCardBadgePadY,
     flexShrink: 0,
   },
-  body: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s8 },
-  team: { flexGrow: 1, flexBasis: 0, maxWidth: layout.matchCardTeamMax, alignItems: 'center', gap: space.s8 },
-  center: { flexGrow: 1, flexBasis: 0, minWidth: layout.matchCardCenterMin, alignItems: 'center', gap: space.s4 },
+  // Equipas e centro com a mesma altura: emblema em cima, nome em baixo, à altura da pill da TV (ou do chip de ação).
+  body: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.s8, paddingBottom: space.s12 },
+  team: { flexGrow: 1, flexBasis: 0, maxWidth: layout.matchCardTeamMax, alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: space.s12 },
+  center: { flexGrow: 1, flexBasis: 0, minWidth: layout.matchCardCenterMin, alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch', paddingVertical: space.s12 },
   chip: { borderRadius: radii.r28, paddingHorizontal: space.s12, paddingVertical: space.s4, alignItems: 'center' },
   link: { flexDirection: 'row', alignItems: 'center', gap: space.s4, paddingTop: space.s4 },
 });

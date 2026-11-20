@@ -678,19 +678,16 @@ describe('MVP com notas (V7.1)', () => {
       jest.spyOn(Dimensions, 'get').mockImplementation(((k: 'window' | 'screen') => ({ ...real(k), width })) as typeof Dimensions.get);
     };
 
-    it('o selo desce para a segunda linha, ao lado da posição, e o nome não tem largura fixa', async () => {
+    it('grelha (20/11): três cartões por linha mesmo a 320 pt, o nome numa linha e o selo no cartão', async () => {
       at(320);
       mockData.players = players([q('10', 'Francisco Maximiliano Gonçalves de Albuquerque', 8.9)]);
       await render(<MvpTab match={match()} />, { wrapper });
       const row = screen.getByTestId('mvp-candidate-10');
-      const second = within(row).getByTestId('mvp-second-line-10');
-      expect(within(second).getByTestId('mvp-best-10')).toBeTruthy();
-      expect(within(second).getByText('MED')).toBeTruthy();
-      const name = within(row).getByText('Francisco Maximiliano Gonçalves de Albuquerque');
-      expect(name.props.numberOfLines).toBe(1);
-      const style = StyleSheet.flatten(name.props.style);
-      expect(style.width).toBeUndefined();
-      expect(style.flexShrink).toBe(1);
+      expect(within(row).getByTestId('mvp-best-10')).toBeTruthy();
+      expect(within(row).getByText('MED')).toBeTruthy();
+      expect(within(row).getByText('Francisco Maximiliano Gonçalves de Albuquerque').props.numberOfLines).toBe(1);
+      // (320 - 2x24 - 2x10) / 3 = 84 pt
+      expect(StyleSheet.flatten(row.props.style).width).toBe(84);
     });
 
     it('a 360 pt ou mais o selo fica ao lado do nome, fora da segunda linha', async () => {

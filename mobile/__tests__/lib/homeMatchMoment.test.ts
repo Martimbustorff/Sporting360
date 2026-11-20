@@ -102,7 +102,7 @@ describe('homeMatchMoment', () => {
     const m = match('FT', '2026-11-22T20:30:00Z', { finishedAt: new Date('2026-11-22T22:25:00Z') });
     it('MVP aberto e por votar: Vota no MVP', () => {
       const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T22:30:00Z'), mvpOpen: true });
-      expect(r).toEqual({ state: 'finished', action: { label: 'VOTA NO MVP', href: '/jogo/1001?tab=mvp' }, countdownTo: null });
+      expect(r).toEqual({ state: 'finished', action: { label: 'VOTA NO MVP', href: '/mvp/1001' }, countdownTo: null });
     });
     it('já votou: Ver jogo', () => {
       const r = homeMatchMoment({ ...base, match: m, now: at('2026-11-22T22:30:00Z'), mvpOpen: true, votedMvp: true });

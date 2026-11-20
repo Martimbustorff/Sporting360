@@ -32,6 +32,7 @@ export const colors = {
   bgTint: '#003625',
   homeVeil: '#00281C', // verde do topo da Home e do ecrã de bloqueio (véu por cima do leão)
   primaryOnDark: '#19B37E',
+  primaryTint: 'rgba(27, 158, 107, 0.22)', // fundo do botão da taça do MVP (4933:7140)
   primaryDeep: '#004A33', // fim do gradiente do cartão do líder dos marcadores (4935:7479)
   textSubtle: 'rgba(255, 255, 255, 0.5)',
   separator: 'rgba(255, 255, 255, 0.25)',
@@ -97,6 +98,8 @@ export const text71 = {
   eyebrow13: { ...dinC, fontSize: 13, lineHeight: lh(13, 120), letterSpacing: 0.8 },
   menu15: { ...din, fontSize: 15, lineHeight: lh(15, 120), letterSpacing: 0.6 },
   badge11: { ...din, fontSize: 11, lineHeight: lh(11, 120), letterSpacing: 0.6 },
+  /** Nomes da linha de jogo (20/11: emblemas e nomes maiores no Calendário). */
+  body16: { fontFamily: fonts.body, fontSize: 16, lineHeight: lh(16, 140), letterSpacing: 0, textTransform: 'none' },
   body14: { fontFamily: fonts.body, fontSize: 14, lineHeight: lh(14, 150), letterSpacing: 0, textTransform: 'none' },
   bodyLight14: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: lh(14, 155), letterSpacing: 0.2, textTransform: 'none' },
   strong14: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: lh(14, 140), letterSpacing: 0, textTransform: 'none' },
@@ -333,12 +336,14 @@ export const layout = {
   videoGap: 8, // miniatura ao título
   videoCloseBarHeight: 44, // barra do "Fechar" em cima do leitor
   // V7.1 Cartão do próximo jogo (Figma 4920:5140): altura fixa em todos os estados, para o menu não saltar
-  matchCardHeight: 192,
+  matchCardHeight: 204, // 20/11: competição e ronda centradas por cima, emblemas lg
   matchCardStrip: 36,
+  matchCardStripPadTop: 16,
   matchCardTeamMax: 108,
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
   matchCardBorder: 1,
   crestCard: { width: 52, height: 60 }, // 4920:5096
+  crestNext: { width: 64, height: 74 }, // 20/11: cartão do próximo jogo (Home e Calendário), emblemas maiores
   matchCardIcon: 28, // calendário do estado "Sem jogo" (4920:5117)
   matchCardIconOpacity: 0.4, // nota 01b: ícone a 40 %
   tvChipIcon: 14, // ícone do canal de TV (4921:5318, 4920:5103)
@@ -520,6 +525,13 @@ export const layout = {
   shareBox: { width: 48, height: 58 }, // caixas do cartão
   shareBoxRadius: 6,
   shareBoxGap: 8,
+  mvpButton: 44, // botão da taça do MVP na barra do jogo (4933:7140)
+  mvpButtonIcon: 24,
+  mvpButtonDot: 10,
+  mvpButtonDotInset: 4,
+  mvpTileGap: 10, // grelha de caras do ecrã do MVP (4934:7263)
+  mvpTilePhoto: 64,
+  mvpTileBorder: 2,
   headerScoreDigitNudge: 5, // 20/11 (Martim): os algarismos score72 da DIN Condensed ficavam altos na caixa branca; descidos 5 pt
   valueDigitNudge: 3, // algarismos display40 da DIN Condensed descidos 3 pt para ficarem ao centro da caixa branca
   shareCardRadius: 20,
@@ -683,13 +695,13 @@ export const layout = {
   pillRadius: 999,
   playerPhotoRoundedRadius: 20, // Foto do jogador 4959:9551: cantos de 20 também a 84 (frame 42)
   // V7.1 Calendário e jornadas (35 a 37): linha de jogo (4948:8278), seletor de ronda (4948:8390), quadro (4948:8517)
-  crestRow: { width: 22, height: 25.52 }, // 4948:8283
+  crestRow: { width: 32, height: 37 }, // 4948:8283 (20/11: maior, a data passou para cima)
   matchRowDate: 56, // coluna da data
   matchRowCenter: 58, // caixa da hora ou do resultado (4948:8286)
   matchRowCenterRadius: 6,
   matchRowCenterPadX: 8,
   matchRowCenterPadY: 4,
-  matchRowSideGap: 6, // nome ao emblema
+  matchRowSideGap: 10, // nome ao emblema
   matchRowDateGap: 2,
   tieCardPadX: 14, // eliminatória (4948:8517)
   tieCardPadY: 10,
