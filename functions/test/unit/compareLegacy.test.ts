@@ -82,14 +82,13 @@ describe("classifyDiff (diferenças esperadas)", () => {
     expect(classifyDiff("players", { id: "p", field: "Players.3.name", a: null, b: "" })).toBe("unexpected");
   });
 
-  it("news: sport e publishedAt são campos novos; tweets: métricas mudam com o tempo", () => {
+  it("news: sport e publishedAt são campos novos", () => {
     expect(classifyDiff("news", { id: "n", field: "publishedAt", a: undefined, b: "2026-12-01" })).toBe("expected");
     expect(classifyDiff("news", { id: "n", field: "sport", a: undefined, b: "football" })).toBe("expected");
     expect(classifyDiff("news", { id: "n", field: "title", a: "a", b: "b" })).toBe("unexpected");
     const content = "palavra ".repeat(80).trim();
     expect(classifyDiff("news", { id: "n", field: "summary", a: content, b: summarize(content) }, { content })).toBe("expected");
     expect(classifyDiff("news", { id: "n", field: "summary", a: content, b: "outro" }, { content })).toBe("unexpected");
-    expect(classifyDiff("tweets", { id: "t", field: "metrics.like_count", a: 1, b: 9 })).toBe("expected");
   });
 
   it("games: o logótipo do Sporting passa a ser o emblema de 2026", () => {

@@ -15,7 +15,7 @@ import { summarize } from "../src/news/newsSync";
 export const SHADOW_PREFIX = "_shadow_";
 
 /** Coleções antigas que a V2 lê e que as functions v2027 escrevem (contrato do Plano 2). */
-export const LEGACY_COLLECTIONS = ["games", "summaries", "stastistics", "lineups", "players", "standings", "videos", "news", "tweets"] as const;
+export const LEGACY_COLLECTIONS = ["games", "summaries", "stastistics", "lineups", "players", "standings", "videos", "news"] as const;
 export type LegacyCollection = (typeof LEGACY_COLLECTIONS)[number];
 
 /** Campos que nunca se comparam: marca da ingestão nova. */
@@ -35,7 +35,6 @@ export const IGNORE_FIELDS: Record<LegacyCollection, string[]> = {
   standings: [],
   videos: [],
   news: [],
-  tweets: [],
 };
 
 export type Change = { id: string; field: string; a: unknown; b: unknown };
@@ -94,7 +93,6 @@ const ZEROISH = new Set<unknown>([0, "", null, undefined]);
  * - summaries: `playerSub` vazio como `""` ou `"null"`;
  * - players: contadores `0`, `""` e `null`/ausente são equivalentes;
  * - news: `sport` e `publishedAt` são campos novos; `summary` resumido (= summarize(content), Task 14);
- * - tweets: `metrics.*` mudam entre leituras.
  */
 export function classifyDiff(col: string, c: Change, shadowDoc?: DocumentData): "expected" | "unexpected" {
   const parts = c.field.split(".");
@@ -104,7 +102,6 @@ export function classifyDiff(col: string, c: Change, shadowDoc?: DocumentData): 
   if (col === "players" && parts[0] === "Players" && COUNTERS.has(last) && ZEROISH.has(c.a) && ZEROISH.has(c.b)) return "expected";
   if (col === "news" && (c.field === "sport" || c.field === "publishedAt") && c.a === undefined) return "expected";
   if (col === "news" && c.field === "summary" && typeof shadowDoc?.content === "string" && c.b === summarize(shadowDoc.content)) return "expected";
-  if (col === "tweets" && parts[0] === "metrics") return "expected";
   return "unexpected";
 }
 

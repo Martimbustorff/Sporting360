@@ -11,7 +11,6 @@ import {
 // Segredos simulados: importar o index não pode depender de valores reais.
 process.env.RAPIDAPI_KEY = "test-rapidapi";
 process.env.VSPORTS_KEY = "test-vsports";
-process.env.TWITTER_BEARER_TOKEN = "test-twitter";
 process.env.GCLOUD_PROJECT ??= "demo-scp360";
 
 type Endpoint = {
@@ -50,7 +49,7 @@ describe("listas de publicação", () => {
   });
 
   it("tamanhos e nomes sem repetições", () => {
-    expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(12);
+    expect(DEPLOY_DATA_FUNCTIONS).toHaveLength(11);
     expect(DEPLOY_CUTOVER_FUNCTIONS).toEqual(["legacyPredictionSettlement"]);
     expect(DEPLOY_ENGINE_FUNCTIONS).toEqual(["submitPrediction", "voteMvp", "mvpTallyAggregator", "settleScheduler", "updateProfile", "deleteAccount", "linkProviderByEmail", "createLoan", "claimLoan", "cancelLoan", "loansMaintenance", "onGameboxDeleted", "onGameboxUpdated", "loanRedirect"]);
     expect(DEPLOY_PUSH_FUNCTIONS).toEqual(["predictionReminderPush"]);
@@ -112,7 +111,6 @@ describe("configuração de cada function exportada", () => {
     footballPrematchSync: ["RAPIDAPI_KEY"],
     apiSportsSync: ["RAPIDAPI_KEY"],
     videosSync: ["VSPORTS_KEY"],
-    tweetsSync: ["TWITTER_BEARER_TOKEN"],
     newsSync: [],
     freeSourcesSync: [],
     legacyPredictionSettlement: [],

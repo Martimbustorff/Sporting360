@@ -21,7 +21,7 @@ Os argumentos `--only functions:v2027:...` abaixo foram gerados por `deployArg` 
 
 | Lista | Nomes |
 |---|---|
-| `DEPLOY_DATA_FUNCTIONS` (12) | footballFixturesSync, footballPostMatchSync, footballLiveTicker, footballStandingsSync, footballSeasonSync, footballWeeklySync, footballPrematchSync, videosSync, newsSync, tweetsSync, apiSportsSync, freeSourcesSync |
+| `DEPLOY_DATA_FUNCTIONS` (11) | footballFixturesSync, footballPostMatchSync, footballLiveTicker, footballStandingsSync, footballSeasonSync, footballWeeklySync, footballPrematchSync, videosSync, newsSync, apiSportsSync, freeSourcesSync (a `tweetsSync` foi retirada a 20/11: a app nova não mostra tweets; o feed da V2 fica parado a partir do corte) |
 | `DEPLOY_CUTOVER_FUNCTIONS` (1) | legacyPredictionSettlement |
 | `DEPLOY_ENGINE_FUNCTIONS` (14) | submitPrediction, voteMvp, mvpTallyAggregator, settleScheduler, updateProfile, deleteAccount, linkProviderByEmail, createLoan, claimLoan, cancelLoan, loansMaintenance, onGameboxDeleted, onGameboxUpdated, loanRedirect (as sete últimas são do empréstimo de GameBox, planos 8 e 9) |
 | `DEPLOY_PUSH_FUNCTIONS` (1) | predictionReminderPush (Plano 6) |
@@ -51,7 +51,6 @@ Valores atuais, sem rotação (decisão do Martim, 18/11: as chaves antigas não
 ```bash
 firebase functions:secrets:set RAPIDAPI_KEY --project scp360-37a74
 firebase functions:secrets:set VSPORTS_KEY --project scp360-37a74
-firebase functions:secrets:set TWITTER_BEARER_TOKEN --project scp360-37a74
 firebase functions:secrets:get RAPIDAPI_KEY --project scp360-37a74   # mostra as versões, nunca o valor
 ```
 
@@ -92,7 +91,6 @@ unset RAPIDAPI_KEY VSPORTS_KEY
 - [ ] **Textos de ronda:** playoffs e formato "Jornada N" das minicompetições (futsal e hóquei) mostrados em português e nunca "J" + texto.
 - [ ] **Liga dos Campeões:** com `fixtures/rounds` real, a ronda atual é a fase de liga (não o quadro); um jogo de pré-eliminatória por acabar não prende a ronda; a alternativa por ordem de jogos (quando o endpoint de rondas falha) não troca a vista para quadro; nomes em português para as pré-eliminatórias.
 - [ ] **Adiamentos:** se possível, ver um jogo adiado tarde pela API (o ticker pode fazer até 4 h de polling de um `NS`).
-- [ ] **X (Twitter):** escalão da conta de programador e limite mensal de leitura no portal. O código novo usa a mesma cadência da antiga (`0 */10 * * *`, 2 contas, 10 tweets por pedido, ≈5 pedidos/dia, ≈1.500 tweets/mês): tem de caber no escalão atual.
 - [ ] **Manutenção anual:** os ids de época do hoqueipatins (`seasons=1122` para 2026/2027) e das fases do hp.fpp.pt mudam todos os anos: atualizar em `sourcesConfig.ts` em agosto.
 
 ## 4. Integrar o v2027-app (PARAGEM (Martim): git local, sem deploy)
@@ -139,7 +137,7 @@ NEWS_LEGACY_CONTENT=true
 ```bash
 cat functions/.env.scp360-37a74   # confirmar LEGACY_COLLECTION_PREFIX=_shadow_ antes de publicar
 date -u +%Y-%m-%dT%H:%M:%SZ   # guardar: é o --since da comparação
-firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
+firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
 ```
 
 Com o prefixo `_shadow_`, as coleções antigas são escritas em `_shadow_games`, `_shadow_summaries`, etc.; o modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `ingestState`) é escrito nas coleções reais, que a V2 não lê. A `legacyPredictionSettlement` **não** é publicada aqui.
@@ -165,9 +163,9 @@ npx tsx scripts/compare-legacy.ts --project scp360-37a74 --since <hora guardada 
 
 O script conta primeiro os documentos (1 leitura por documento de cada coleção real e sombra, mais 2 por documento comparado) e pára acima de `--max-reads` (150.000); `--collections games,standings` limita. Esperado: `RESULTADO: zero diferenças fora das esperadas` e saída 0. `news.summary` conta como esperado quando é o resumo (`summarize`, 400 caracteres) do `content`.
 
-Diferenças já classificadas como esperadas (não contam): `_ingest`; em `games`, `isActive`, `endTime` (estado real em vez da janela de 150 min), `channel` (manual, não existe em sombra) e `predictionsSettled`; qualquer `*.logo` que passa a ser o emblema de 2026; `summaries.playerSub` vazio como `""` ou `"null"`; contadores de `players` `0`/`""`/`null`; `news.sport` e `news.publishedAt` (campos novos); `news.summary` resumido do `content`; `tweets.metrics.*`; jogos só em sombra de competições que a função antiga não pedia (e os seus `summaries`, `lineups`, etc.).
+Diferenças já classificadas como esperadas (não contam): `_ingest`; em `games`, `isActive`, `endTime` (estado real em vez da janela de 150 min), `channel` (manual, não existe em sombra) e `predictionsSettled`; qualquer `*.logo` que passa a ser o emblema de 2026; `summaries.playerSub` vazio como `""` ou `"null"`; contadores de `players` `0`/`""`/`null`; `news.sport` e `news.publishedAt` (campos novos); `news.summary` resumido do `content`; jogos só em sombra de competições que a função antiga não pedia (e os seus `summaries`, `lineups`, etc.).
 
-Diferenças a explicar caso a caso (não são erro por si): jogo a decorrer no momento da leitura (`elapsedTime`, resultado), notícias ou tweets que uma das functions já apanhou e a outra ainda não. Conferir também no painel da RapidAPI o consumo real do dia face à secção 16.
+Diferenças a explicar caso a caso (não são erro por si): jogo a decorrer no momento da leitura (`elapsedTime`, resultado), notícias que uma das functions já apanhou e a outra ainda não. Conferir também no painel da RapidAPI o consumo real do dia face à secção 16.
 
 ## 7. Emblema de 2026 no Hosting (PARAGEM (Martim))
 
@@ -286,7 +284,7 @@ Corte, por esta ordem:
    git commit -m "chore: cutover, legacy collections written by v2027"
    ```
    ```bash
-   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync,functions:v2027:legacyPredictionSettlement --project scp360-37a74
+   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync,functions:v2027:legacyPredictionSettlement --project scp360-37a74
    ```
    Se o deploy falhar a meio (algumas functions publicadas, outras não): repetir **o mesmo comando**. Não avançar para o passo 3 antes de `cd functions && npx tsx scripts/check-predeploy.ts --project scp360-37a74` mostrar as 13 functions de dados e corte em `europe-west1` (linha `functions v2027`) e nenhuma desconhecida.
 3. Logo a seguir, apagar as outras 12 antigas por nome (confirmar a lista no prompt; sem `--force`):
@@ -346,7 +344,7 @@ Logo a seguir às regras:
 - [ ] **multi-conta**: trocar de conta e voltar;
 - [ ] **GameBox**: criar, **editar** e apagar;
 - [ ] fazer um prognóstico e votar no MVP num jogo; ver o ranking (os +1 entram);
-- [ ] notícias e tweets abrem;
+- [ ] notícias abrem (o feed de tweets da V2 fica parado no último tweet, decisão de 20/11);
 - [ ] detalhe de um jogo recente: sumário, estatísticas, formações, jogadores, vídeos; classificação; emblema novo do Sporting visível.
 
 Nos logs: nenhum `PERMISSION_DENIED` nas escritas da V2 e nenhuma das functions antigas voltou a correr. Se algo falhar: regras anteriores (secção 11) e avisar.
@@ -423,7 +421,6 @@ Calendário de 3 em 3 h (8/dia), 1 por cada tick de 10 min na janela do jogo (�
 | **Total** | **≈70 a 110** | **+≈40 a 60** |
 | VSports (sem quota publicada) | 0 sem jogo nas 48 h anteriores | ≈360 no dia do jogo, ≈96 no dia seguinte |
 | RSS de notícias (3 fontes, de 15 em 15 min) | ≈288 | ≈288 |
-| X (2 contas, `0 */10 * * *`) | ≈5 pedidos, ≈50 tweets | igual |
 
 ## 17. Reverter (PARAGEM (Martim))
 
@@ -432,7 +429,7 @@ Calendário de 3 em 3 h (8/dia), 1 por cada tick de 10 min na janela do jogo (�
 As antigas nunca deixaram de correr. Apagar as novas de dados e, se se quiser, as coleções sombra:
 
 ```bash
-firebase functions:delete footballFixturesSync footballPostMatchSync footballLiveTicker footballStandingsSync footballSeasonSync footballWeeklySync footballPrematchSync videosSync newsSync tweetsSync apiSportsSync freeSourcesSync --region europe-west1 --project scp360-37a74
+firebase functions:delete footballFixturesSync footballPostMatchSync footballLiveTicker footballStandingsSync footballSeasonSync footballWeeklySync footballPrematchSync videosSync newsSync apiSportsSync freeSourcesSync --region europe-west1 --project scp360-37a74
 ```
 
 O modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `ingestState`) não é lido pela V2 e pode ficar.
@@ -445,7 +442,7 @@ O modelo novo (`matches`, `competitions`, `teams`, `venues`, `ingestHealth`, `in
    git add functions/.env.scp360-37a74
    git commit -m "chore: revert cutover, v2027 back to shadow collections"
    firebase functions:delete legacyPredictionSettlement --region europe-west1 --project scp360-37a74
-   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:tweetsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
+   firebase deploy --only functions:v2027:footballFixturesSync,functions:v2027:footballPostMatchSync,functions:v2027:footballLiveTicker,functions:v2027:footballStandingsSync,functions:v2027:footballSeasonSync,functions:v2027:footballWeeklySync,functions:v2027:footballPrematchSync,functions:v2027:videosSync,functions:v2027:newsSync,functions:v2027:apiSportsSync,functions:v2027:freeSourcesSync --project scp360-37a74
    ```
    (Ou apagá-las com o comando da secção anterior.)
 2. Republicar as 13 antigas a partir do código completo. A cópia `legacy/v2-functions` do repositório **não compila** (os ficheiros com chaves foram omitidos); usar o zip original `predictionsSettlementScheduler_function-source.zip` (PC do Martim, `Desktop\Personal\S360`), numa pasta temporária fora do repositório:

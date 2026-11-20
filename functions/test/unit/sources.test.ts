@@ -6,7 +6,6 @@ import { apiFootball } from "../../src/sources/apiFootball";
 import { apiSports } from "../../src/sources/apiSports";
 import { vsports, vsportsSeasonId } from "../../src/sources/vsports";
 import { fetchFeed } from "../../src/sources/rss";
-import { twitter } from "../../src/sources/twitter";
 
 const HOST = "api-football-v1.p.rapidapi.com";
 const KEY = "test-key-not-real";
@@ -225,24 +224,6 @@ describe("fetchFeed", () => {
     const f = fakeFetch([[/./, { status: 500, body: "" }]]);
     const e = await caught(fetchFeed(f, { name: "X", url: "https://x.test/rss" }));
     expect(e.kind).toBe("http");
-  });
-});
-
-describe("twitter", () => {
-  it("userTweets: Bearer e params do código antigo", async () => {
-    const f = fakeFetch([[/api\.twitter\.com\/2\/users\/21389998\/tweets/, "twitter/user-tweets.json"]]);
-    const tw = twitter({ token: "tok-test", fetch: f });
-    const r = await tw.userTweets("21389998");
-    expect(r.data).toHaveLength(2);
-    expect((f.inits[0].headers as Record<string, string>).Authorization).toBe("Bearer tok-test");
-    const u = new URL(f.calls[0]);
-    expect(Object.fromEntries(u.searchParams)).toEqual({
-      max_results: "10",
-      expansions: "attachments.media_keys,author_id",
-      "user.fields": "profile_image_url,username,name",
-      "media.fields": "url,preview_image_url",
-      "tweet.fields": "created_at,public_metrics,note_tweet",
-    });
   });
 });
 

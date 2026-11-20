@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, TWITTER_BEARER_TOKEN, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
+import { LEGACY_COLLECTION_PREFIX, NEWS_LEGACY_CONTENT, PUSH_ENABLED, RAPIDAPI_KEY, VSPORTS_KEY, VSPORTS_SEASON_ID } from "./config/secrets";
 import { syncCompetitions, syncStandings } from "./football/competitionSync";
 import { LIVE_REQUEST_TIMEOUT_MS, liveTickerJob } from "./football/liveTicker";
 import { syncPrematch } from "./football/prematchSync";
@@ -14,13 +14,11 @@ import { syncFreeSources } from "./modalities/freeSourcesSync";
 import { syncNews } from "./news/newsSync";
 import { runPredictionReminder } from "./push/predictionReminder";
 import { fcmSender } from "./push/sender";
-import { syncTweets } from "./social/tweetsSync";
 import { settleLegacyPredictionsIfProduction } from "./legacy/predictionSettlement";
 import { settleRun } from "./scheduled/settle";
 import { aggregateMvpTallies } from "./scheduled/mvpTallyAggregator";
 import { apiFootball } from "./sources/apiFootball";
 import { apiSports } from "./sources/apiSports";
-import { twitter } from "./sources/twitter";
 import { vsports } from "./sources/vsports";
 import { cancelLoansForGamebox, cancelLoansOnGameboxEdit, maintainLoans } from "./loans/lifecycle";
 import { safelyTrigger } from "./callables/loans";
@@ -205,14 +203,6 @@ export const newsSync = onSchedule(
   { schedule: "every 15 minutes", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120 },
   async () => {
     await runJob(getFirestore(), "news", () => syncNews({ db: getFirestore(), fetch, now: () => new Date(), writeLegacyContent: NEWS_LEGACY_CONTENT.value() }));
-  },
-);
-
-// Tweets das contas do Sporting, de 10 em 10 horas (quota da API do Twitter).
-export const tweetsSync = onSchedule(
-  { schedule: "0 */10 * * *", region: "europe-west1", timeZone: "Europe/Lisbon", timeoutSeconds: 120, secrets: [TWITTER_BEARER_TOKEN] },
-  async () => {
-    await runJob(getFirestore(), "tweets", () => syncTweets({ db: getFirestore(), tw: twitter({ token: TWITTER_BEARER_TOKEN.value() }) }));
   },
 );
 

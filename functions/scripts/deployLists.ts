@@ -12,7 +12,6 @@ export const DEPLOY_DATA_FUNCTIONS = [
   "footballPrematchSync",
   "videosSync",
   "newsSync",
-  "tweetsSync",
   "apiSportsSync",
   "freeSourcesSync",
 ] as const;
