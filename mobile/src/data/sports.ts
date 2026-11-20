@@ -16,6 +16,7 @@ import {
   InjuriesDocSchema,
   LineupsDocSchema,
   MatchSchema,
+  FansPredictionSchema,
   MvpTallySchema,
   PlayersDocSchema,
   PlayerStatsDocSchema,
@@ -35,6 +36,7 @@ import {
   VideoSchema,
   type Bracket,
   type CoachDoc,
+  type FansPrediction,
   type Competition,
   type CompetitionType,
   type DetailDocs,
@@ -137,6 +139,11 @@ const DETAIL_SCHEMAS: { [K in DetailKind]: z.ZodType<DetailDocs[K]> } = {
 /** Percentagens do MVP: mvpTallies/{gameId}, escrito pelo servidor ao minuto (as shards não se leem). Inexistente = `missing`. */
 export function useMvpTally(gameId: string | null): Loadable<MvpTally> {
   return useDocument(gameId ? `mvpTallies/${gameId}` : null, MvpTallySchema);
+}
+
+/** Previsão dos sportinguistas de um jogo (Plano 10). */
+export function useFansPrediction(gameId: string | null): Loadable<FansPrediction> {
+  return useDocument(gameId ? `predictionTallies/${gameId}` : null, FansPredictionSchema);
 }
 
 export function useMatchDetail<K extends DetailKind>(id: string | null, kind: K): Loadable<DetailDocs[K]> {

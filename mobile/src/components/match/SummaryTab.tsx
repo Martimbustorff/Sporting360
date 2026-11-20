@@ -4,7 +4,8 @@
 // Decisões: 20/11 (Martim) a cronologia vai do apito inicial ao fim (1.ª parte no topo, como no frame 08 revisto),
 // com os separadores por parte e o resultado de cada parte calculado em `groupEvents`; cada bloco só aparece se houver dados (nunca marcadores de posição); numa barra de
 // confrontos o segmento sem jogos não aparece; as ausências ficam agrupadas por equipa (Sporting primeiro).
-// SEM FIGMA: Previsão, o aviso "Pré-jogo ainda não disponível.", as mensagens de adiado, cancelado e sem lances
+// Plano 10 (20/11): a Previsão da API-Football saiu; no seu lugar a previsão dos sportinguistas (FansPrediction, 52a/b/c).
+// SEM FIGMA: o aviso "Pré-jogo ainda não disponível.", as mensagens de adiado, cancelado e sem lances
 // (EmptyState `info`), as linhas Capacidade e a fotografia do estádio. A barra "TV/Transmissão Online" (655:31954) fica de
 // fora: `matches` não tem canal de TV. O texto `advice` da API (inglês) nunca se mostra.
 import { Image } from 'expo-image';
@@ -32,6 +33,7 @@ import { colors, formLetterBg, layout, radius, space } from '@/theme/tokens';
 import { LiveEvents, LiveNumbers } from '@/components/match/LiveSummary';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 import { PredictionCard } from '@/components/match/PredictionCard';
+import { FansPrediction } from '@/components/match/FansPrediction';
 
 const EMPTY_PREMATCH = 'Disponível no dia de jogo';
 const PREMATCH_PENDING = 'Pré-jogo ainda não disponível.';
@@ -41,38 +43,6 @@ const NO_EVENTS_DONE = 'Sem lances registados.';
 const NO_EVENTS_PART = 'Sem incidências.';
 const LOAD_ERROR = 'Não foi possível carregar os dados.';
 
-
-/**
- * Previsão da API-Football está tudo igual (33/33/33): a API não distingue as equipas e a secção não diz nada.
- * 20/11 (Martim): nesse caso não se mostra.
- */
-export function predictionIsFlat(percent: { home: number; draw: number; away: number }): boolean {
-  const v = [percent.home, percent.draw, percent.away];
-  return Math.max(...v) - Math.min(...v) <= 1;
-}
-
-/** Previsão (sem frame): percentagens de vitória da casa, empate e fora, com o nome da equipa por baixo. */
-function Prediction({ p, match }: { p: PrematchFull; match: Match }) {
-  if (predictionIsFlat(p.percent)) return null;
-  const cols = [
-    { label: match.home.name, value: p.percent.home },
-    { label: 'Empate', value: p.percent.draw },
-    { label: match.away.name, value: p.percent.away },
-  ];
-  return (
-    <>
-      <SectionBar label="Previsão" />
-      <View style={{ flexDirection: 'row', gap: space.s8 }}>
-        {cols.map((c) => (
-          <View key={c.label} style={{ flex: 1, alignItems: 'center', gap: space.s4 }}>
-            <Text71 variant="title24">{`${c.value}%`}</Text71>
-            <Text71 variant="caption12" color="textMuted" numberOfLines={1}>{c.label}</Text71>
-          </View>
-        ))}
-      </View>
-    </>
-  );
-}
 
 /** Lados do jogo pela ordem do Figma (Sporting primeiro), com o nome e o emblema de cada um. */
 function sidesOf(match: Match) {
@@ -224,7 +194,6 @@ function PreMatch({ match }: { match: Match }) {
     <>
       {full ? (
         <>
-          <Prediction p={full} match={match} />
           <Form p={full} match={match} />
           <HeadToHead p={full} match={match} />
         </>
@@ -325,6 +294,7 @@ export function SummaryTab({ match }: { match: Match }) {
       {state === 'scheduled' ? (
         <>
           <PredictionCard match={match} />
+          <FansPrediction match={match} />
           <PreMatch match={match} />
         </>
       ) : state === 'postponed' ? (
@@ -332,9 +302,13 @@ export function SummaryTab({ match }: { match: Match }) {
       ) : state === 'cancelled' ? (
         <EmptyState icon="info" text={CANCELLED} />
       ) : state === 'finished' ? (
-        <Events match={match} after={<MatchContext match={match} />} />
+        <>
+          <FansPrediction match={match} />
+          <Events match={match} after={<MatchContext match={match} />} />
+        </>
       ) : (
         <>
+          <FansPrediction match={match} />
           <LiveNumbers match={match} />
           <LiveEvents match={match} />
         </>

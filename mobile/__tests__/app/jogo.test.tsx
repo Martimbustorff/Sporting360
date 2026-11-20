@@ -17,6 +17,7 @@ jest.mock('@/data/sports', () => ({
   // Tab Sumário (Task 9): jogo sem detalhes ainda.
   useMatchDetail: jest.fn((_id: string, kind: string) => mockDetail.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => ({ status: 'missing' })),
+  useFansPrediction: jest.fn(() => ({ status: 'missing' })),
   useUpcomingMatches: jest.fn(() => ({ status: 'loading' })),
 }));
 jest.mock('@/data/user', () => ({

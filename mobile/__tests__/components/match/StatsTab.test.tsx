@@ -14,6 +14,7 @@ const mockDetails: { current: Record<string, L> } = { current: {} };
 jest.mock('@/data/sports', () => ({
   useMatchDetail: jest.fn((_id: string | null, kind: string) => mockDetails.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => ({ status: 'missing' })),
+  useFansPrediction: jest.fn(() => ({ status: 'missing' })),
 }));
 jest.mock('expo-image', () => {
   const { View } = require('react-native');

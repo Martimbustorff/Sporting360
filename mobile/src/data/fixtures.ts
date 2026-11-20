@@ -88,6 +88,8 @@ function stateFixtures(now: Date, base: Record<string, unknown>): SeedDoc[] {
     path: 'mvpTallies/9002',
     data: { gameId: '9002', counts: { '1001': 5, '1002': 3, '1003': 1, '1004': 1 }, total: 10, updatedAt: now },
   });
+  // Previsão dos sportinguistas do jogo ao vivo (Plano 10): percentagens publicadas ao apito.
+  docs.push({ path: 'predictionTallies/9002', data: { gameId: '9002', total: 1234, win: 839, draw: 259, loss: 136, updatedAt: now } });
   docs.push({
     path: 'matches/9002/details/events',
     data: {

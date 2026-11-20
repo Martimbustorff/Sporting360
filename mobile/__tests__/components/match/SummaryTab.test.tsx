@@ -7,10 +7,12 @@ import type { EventItem, GameStatus, InjuriesDoc, Match, PrematchDoc, Venue } fr
 type L = { status: 'loading' } | { status: 'missing' } | { status: 'ready'; data: unknown; fromCache?: boolean };
 const mockDetails: { current: Record<string, L> } = { current: {} };
 const mockVenue: { current: L } = { current: { status: 'missing' } };
+const mockFans: { current: L } = { current: { status: 'missing' } };
 
 jest.mock('@/data/sports', () => ({
   useMatchDetail: jest.fn((_id: string | null, kind: string) => mockDetails.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => mockVenue.current),
+  useFansPrediction: jest.fn(() => mockFans.current),
 }));
 jest.mock('expo-image', () => {
   const { View } = require('react-native');
@@ -88,15 +90,15 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockDetails.current = {};
   mockVenue.current = { status: 'missing' };
+  mockFans.current = { status: 'missing' };
 });
 
 describe('jogo futuro (NS)', () => {
-  it('mostra previsão, forma, confrontos diretos e lesionados; não mostra o advice da API', async () => {
+  it('mostra forma, confrontos diretos e lesionados; a Previsão da API saiu (Plano 10) e o advice nunca aparece', async () => {
     mockDetails.current = { prematch: ready(prematch()), injuries: ready(injuries()) };
     await render(<SummaryTab match={match()} />);
-    expect(screen.getByText('45%')).toBeTruthy();
-    expect(screen.getByText('30%')).toBeTruthy();
-    expect(screen.getByText('25%')).toBeTruthy();
+    expect(screen.queryByText('45%')).toBeNull();
+    expect(screen.queryByText('Previsão')).toBeNull();
     expect(screen.getByTestId('form-home').props.accessibilityLabel).toBe('Forma: V V E D V');
     expect(screen.getAllByTestId('form-letter-home').map((n) => n.props.children)).toEqual(['V', 'V', 'E', 'D', 'V']);
     expect(screen.getByText('Forma · últimos 5')).toBeTruthy();
@@ -179,11 +181,12 @@ describe('jogo futuro (NS)', () => {
     expect(screen.queryByTestId('h2h-bar')).toBeNull();
   });
 
-  it('previsão toda igual (33/33/33, a API não distingue as equipas): sem secção Previsão (20/11)', async () => {
-    const p = { ...(prematch() as Exclude<PrematchDoc, { empty: true }>), percent: { home: 33, draw: 33, away: 33 } };
-    mockDetails.current = { prematch: ready(p), injuries: ready(injuries()) };
+  it('Plano 10: com 50 ou mais palpites, a previsão dos sportinguistas mostra só a contagem antes do apito', async () => {
+    mockFans.current = ready({ gameId: '1001', total: 1234 });
     await render(<SummaryTab match={match()} />);
-    expect(screen.queryByText('Previsão')).toBeNull();
+    expect(screen.getByText('Previsão dos sportinguistas')).toBeTruthy();
+    expect(screen.getByText('1.234')).toBeTruthy();
+    expect(screen.queryByText('Vitória')).toBeNull();
   });
 
   it('prematch vazio e sem lesões: "Disponível no dia de jogo"', async () => {
@@ -509,6 +512,29 @@ describe('contexto do jogo (Figma 08)', () => {
     expect(screen.queryByText('Forma · últimos 5')).toBeNull();
     expect(screen.queryByText('Ausências')).toBeNull();
     expect(screen.queryByText('Disponível no dia de jogo')).toBeNull();
+  });
+});
+
+describe('previsão dos sportinguistas depois do apito (Plano 10)', () => {
+  const fans = () => (mockFans.current = ready({ gameId: '1001', total: 120, win: 68, draw: 21, loss: 11 }));
+
+  it('ao vivo: percentagens no topo do Sumário', async () => {
+    fans();
+    await render(<SummaryTab match={match({ status: 'LIVE', elapsed: 30 })} />);
+    expect(screen.getByText('68%')).toBeTruthy();
+    expect(screen.getByText('Vitória')).toBeTruthy();
+  });
+
+  it('terminado: percentagens antes da cronologia', async () => {
+    fans();
+    await render(<SummaryTab match={match({ status: 'FT', score: { home: 2, away: 1, halftime: null, extratime: null, penalty: null } })} />);
+    expect(screen.getByText('68%')).toBeTruthy();
+  });
+
+  it('adiado: nada', async () => {
+    fans();
+    await render(<SummaryTab match={match({ status: 'PST' })} />);
+    expect(screen.queryByText('Previsão dos sportinguistas')).toBeNull();
   });
 });
 

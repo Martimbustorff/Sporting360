@@ -617,6 +617,19 @@ export const MvpTallySchema = z.object({
 });
 export type MvpTally = z.infer<typeof MvpTallySchema>;
 
+/**
+ * predictionTallies/{gameId}: previsão dos sportinguistas (Plano 10). `total` existe desde o primeiro palpite;
+ * `win`/`draw`/`loss` (do lado do Sporting) só a partir do apito inicial. Outros campos são ignorados.
+ */
+export const FansPredictionSchema = z.object({
+  gameId: z.string(),
+  total: z.number().int().nonnegative(),
+  win: z.number().int().nonnegative().optional(),
+  draw: z.number().int().nonnegative().optional(),
+  loss: z.number().int().nonnegative().optional(),
+});
+export type FansPrediction = z.infer<typeof FansPredictionSchema>;
+
 /** settlements/{gameId}, written once by the server. */
 export const SettlementSchema = z.looseObject({
   finalHome: num,

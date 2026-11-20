@@ -15,6 +15,7 @@ const mockPush = jest.fn();
 jest.mock('@/data/sports', () => ({
   useMatchDetail: jest.fn((_id: string | null, kind: string) => mockDetails.current[kind] ?? { status: 'missing' }),
   useVenue: jest.fn(() => ({ status: 'missing' })),
+  useFansPrediction: jest.fn(() => ({ status: 'missing' })),
 }));
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a), replace: jest.fn(), back: jest.fn() } }));
 jest.mock('expo-image', () => {
