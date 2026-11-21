@@ -19,6 +19,7 @@ export function SwipeTabs<K extends string>({
   children,
   testID = 'swipe-tabs',
   slide = true,
+  inset = 0,
 }: {
   keys: readonly K[];
   value: K;
@@ -30,16 +31,23 @@ export function SwipeTabs<K extends string>({
    * a escolha Próximos/Resultados estão dentro da lista): o gesto muda de separador sem mexer o conteúdo.
    */
   slide?: boolean;
+  /**
+   * 21/11 (capturas do Martim): no detalhe do jogo o conteúdo sobe por baixo do cabeçalho (MatchScrollView com margem
+   * negativa). Este contentor corta o que sai dele (overflow hidden, para o deslizar entre separadores), por isso estende-se
+   * para cima a mesma altura e devolve-a em padding; senão a lista ficava cortada a meio do ecrã com um buraco por cima.
+   */
+  inset?: number;
 }) {
-  if (!canAnimate()) return <View testID={testID} style={{ flex: 1 }}>{children}</View>;
+  const box = inset > 0 ? { marginTop: -inset, paddingTop: inset } : null;
+  if (!canAnimate()) return <View testID={testID} style={[{ flex: 1 }, box]}>{children}</View>;
   return (
-    <Swipe keys={keys} value={value} onChange={onChange} testID={testID} slide={slide}>
+    <Swipe keys={keys} value={value} onChange={onChange} testID={testID} slide={slide} box={box}>
       {children}
     </Swipe>
   );
 }
 
-function Swipe<K extends string>({ keys, value, onChange, children, testID, slide }: { keys: readonly K[]; value: K; onChange: (k: K) => void; children: ReactNode; testID: string; slide: boolean }) {
+function Swipe<K extends string>({ keys, value, onChange, children, testID, slide, box }: { keys: readonly K[]; value: K; onChange: (k: K) => void; children: ReactNode; testID: string; slide: boolean; box: { marginTop: number; paddingTop: number } | null }) {
   const index = Math.max(0, keys.indexOf(value));
   const count = keys.length;
   const x = useSharedValue(0);
@@ -73,7 +81,7 @@ function Swipe<K extends string>({ keys, value, onChange, children, testID, slid
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View testID={testID} style={[{ flex: 1, overflow: 'hidden' }, style]}>
+      <Animated.View testID={testID} style={[{ flex: 1, overflow: 'hidden' }, box, style]}>
         {slide ? (
           <Animated.View key={value} entering={entering} style={{ flex: 1 }}>
             {children}

@@ -176,7 +176,7 @@ function FootballDetail({ match, initialTab }: { match: Match; initialTab: Match
       }
     >
       {/* 20/11: arrastar para o lado muda de separador; o novo entra a deslizar desse lado. */}
-      <SwipeTabs keys={FOOTBALL_TABS.map((t) => t.key)} value={tab} onChange={change}>
+      <SwipeTabs keys={FOOTBALL_TABS.map((t) => t.key)} value={tab} onChange={change} inset={scroll?.inset ?? 0}>
         <ActiveTab match={match} />
       </SwipeTabs>
     </MatchDetailLayout>
