@@ -111,7 +111,7 @@ export const text71 = {
   strong14: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: lh(14, 140), letterSpacing: 0, textTransform: 'none' },
   caption12: { fontFamily: fonts.body, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
   /** Contagem do cartão do jogo (Figma 4932:6358): Title 32, números tabulares para não tremer ao segundo. */
-  countdown32: { ...dinC, fontSize: 32, lineHeight: lh(32, 110), letterSpacing: 0, fontVariant: ['tabular-nums'] },
+  countdown40: { ...dinC, fontSize: 40, lineHeight: lh(40, 110), letterSpacing: 0, fontVariant: ['tabular-nums'] }, // 21/11: contagem do dia de jogo no cartão
   captionStrong12: { fontFamily: fonts.bodySemiBold, fontSize: 12, lineHeight: lh(12, 140), letterSpacing: 0, textTransform: 'none' },
   /** Marca "S360" do cartão de partilha (4946:8199): DIN Condensed 48. */
   brand48: { ...dinC, fontSize: 48, lineHeight: lh(48, 100), letterSpacing: 0 },
@@ -349,6 +349,8 @@ export const layout = {
   matchCardSlot: 30, // linha de baixo do cartão (TV ou ação), sempre com esta altura
   matchCardGradientOpacity: 0.6, // 20/11: o leão e a forma geométrica da Home veem-se através do cartão
   matchCardTeamMax: 108,
+  matchCardCenter: 150, // 21/11: coluna central fixa (hora, contagem, resultado; TV, minuto ou ação) para o cartão ser simétrico
+  matchCardCenterCompact: 136,
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
   matchCardBorder: 1,
   crestCard: { width: 52, height: 60 }, // 4920:5096

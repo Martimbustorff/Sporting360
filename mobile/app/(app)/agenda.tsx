@@ -116,6 +116,7 @@ export default function Agenda() {
           now={now}
           ticking={focused}
           hideAgendaLink
+          plain
           onOpenMatch={(id) => router.push(`/jogo/${id}`)}
           onAction={(href) => router.push(href as Href)}
           onOpenAgenda={() => undefined}

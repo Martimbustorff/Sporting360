@@ -1,4 +1,4 @@
-// Plano 7, Tarefa 4: cartão do próximo jogo (Figma 4920:5140), todos os estados, altura fixa e nomes longos.
+// Plano 7, Tarefa 4: cartão do próximo jogo (Figma 4920:5140), todos os estados, altura pelo conteúdo (21/11) e nomes longos.
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -55,7 +55,7 @@ describe('compact (Home, 20/11)', () => {
   it('altura 200, hora a 56 e o canal de TV por baixo da hora; mesma ordem de títulos', async () => {
     const m = match('NS', { tv: 'BTV' }, '2026-12-26T18:00:00Z');
     await render(<NextMatchCard compact moment={moment(m)} match={m} now={NOW} {...handlers} />);
-    expect(StyleSheet.flatten(screen.getByTestId('next-match-card').props.style).height).toBe(layout.matchCardHeightCompact);
+    expect(StyleSheet.flatten(screen.getByTestId('next-match-card').props.style).height).toBeUndefined(); // 21/11: altura pelo conteúdo, nada cortado
     expect(StyleSheet.flatten(screen.getByTestId('next-time').props.style).fontSize).toBe(56);
     expect(screen.getByTestId('next-tv')).toBeTruthy();
     expect(screen.getByText('Taça de Portugal')).toBeTruthy();
@@ -100,14 +100,13 @@ it('Dia de jogo sem prognóstico aberto: sem botão', async () => {
   expect(screen.getByTestId('next-countdown')).toBeTruthy();
 });
 
-it('Ao vivo: badge, minuto, resultado e Ver jogo', async () => {
+it('Ao vivo: badge, minuto e resultado; sem Ver jogo (o cartão inteiro abre o jogo)', async () => {
   const m = match('LIVE', { elapsed: 67, score: { home: 2, away: 1, halftime: null, extratime: null, penalty: null } as Match['score'] });
   await view(m, moment(m, {}, new Date('2026-12-21T19:10:00Z')));
   expect(screen.getByText(NEXT_MATCH_TEXT.live)).toBeTruthy();
   expect(screen.getByText('67’')).toBeTruthy();
   expect(screen.getByTestId('next-score').props.children).toBe('2 - 1');
-  await fireEvent.press(screen.getByRole('button', { name: 'VER JOGO' }));
-  expect(handlers.onAction).toHaveBeenCalledWith('/jogo/1001');
+  expect(screen.queryByRole('button', { name: 'VER JOGO' })).toBeNull();
   expect(screen.getByRole('button', { name: /^Jogo ao vivo/ })).toBeTruthy();
 });
 
@@ -158,7 +157,7 @@ it('A carregar: esqueleto anunciado como ocupado, sem botões', async () => {
   expect(screen.queryAllByRole('button')).toHaveLength(0);
 });
 
-describe('altura fixa de matchCardHeight e nomes longos', () => {
+describe('altura pelo conteúdo e nomes longos', () => {
   const long = {
     home: { id: '228', name: 'Sporting CP', logo: null },
     away: { id: '300', name: 'Gil Vicente Futebol Clube', logo: null },
@@ -172,11 +171,10 @@ describe('altura fixa de matchCardHeight e nomes longos', () => {
     ['sem jogo', null, {}, NOW],
     ['a carregar', null, { loading: true }, NOW],
   ];
-  it.each(cases)('%s: altura fixa, nomes numa linha com reticências', async (_n, m, flags, now) => {
+  it.each(cases)('%s: altura pelo conteúdo, nomes numa linha com reticências', async (_n, m, flags, now) => {
     await view(m, moment(m, flags, now), { now });
     const card = screen.getByTestId('next-match-card');
-    expect(StyleSheet.flatten(card.props.style).height).toBe(layout.matchCardHeight);
-    expect(layout.matchCardHeight).toBe(300);
+    expect(StyleSheet.flatten(card.props.style).height).toBe(m ? undefined : layout.matchCardHeight); // 21/11: com jogo, altura pelo conteúdo
     for (const name of ['Gil Vicente Futebol Clube', 'Taça da Liga Portugal Betclic Feminina']) {
       for (const t of screen.queryAllByText(name)) expect(t.props.numberOfLines).toBe(name.startsWith('Gil') ? 1 : 1);
     }

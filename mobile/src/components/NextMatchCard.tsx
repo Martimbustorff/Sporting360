@@ -14,7 +14,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Appear } from '@/components/Appear';
-import { HeaderTeam, MatchTitles, MomentChip } from '@/components/GameHeader';
+import { MatchTitles, MomentChip, TeamCrest } from '@/components/GameHeader';
 import { Touchable } from '@/components/Touchable';
 import { TvChip } from '@/components/TvChip';
 import type { Match } from '@/data/schemas';
@@ -66,6 +66,8 @@ export type NextMatchCardProps = {
    * ao vivo o minuto fica a 20 e não há "Ver jogo" (o cartão inteiro já abre o jogo).
    */
   compact?: boolean;
+  /** 21/11 (Martim): no Calendário o cartão não tem ações (nem "Prognóstico"): o cartão inteiro abre o jogo. */
+  plain?: boolean;
 };
 
 function Shimmer({ style }: { style: StyleProp<ViewStyle> }) {
@@ -171,7 +173,7 @@ function Countdown({ to, base, ticking }: { to: Date; base: Date; ticking: boole
   }, [left, target]);
   return (
     <Text71
-      variant="countdown32"
+      variant="countdown40"
       numberOfLines={1}
       adjustsFontSizeToFit
       minimumFontScale={layout.matchCardCountdownMinScale}
@@ -207,7 +209,7 @@ function CardGradient() {
   );
 }
 
-export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry, hideAgendaLink = false, compact = false }: NextMatchCardProps) {
+export function NextMatchCard({ moment, match, now, ticking = false, error = false, onOpenMatch, onAction, onOpenAgenda, onRetry, hideAgendaLink = false, compact = false, plain = false }: NextMatchCardProps) {
   const { state, action } = moment;
   let content: ReactNode;
   let summary = '';
@@ -237,74 +239,76 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
             : off
               ? `${names}, ${stateLabel(ui).toLowerCase()}`
               : `${names}, ${formatCardDate(match.kickoff)} às ${kick}`;
-    // 20/11 (Martim): o cartão segue o cabeçalho do jogo (círculo de luz atrás, títulos centrados pela regra
-    // competição, jornada/fase, pílula do momento, data; emblemas grandes e a hora em destaque).
+    // 21/11 (Martim): simétrico. Títulos (competição, jornada, data; no dia de jogo "HOJE · 18:00" no lugar da data),
+    // uma linha de emblemas com a hora, a contagem ou o resultado ao centro, e uma linha de nomes com o canal de TV, o
+    // minuto ou a ação ao centro. Sem a pílula "Próximo jogo" (o cartão em destaque já é o próximo jogo); "Ao vivo" e
+    // "Terminado" ficam. No Calendário (`plain`) não há ações: o cartão inteiro abre o jogo.
     let main: ReactNode;
-    let under: ReactNode = null;
-    const big = compact ? 'score56' : 'score72';
+    let minute: ReactNode = null;
     if (state === 'live') {
-      main = <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
-      under = (
+      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      minute = (
         <Text71 variant={compact ? 'titleS20' : 'title24'} color="primaryOnDark" numberOfLines={1}>
           {ui === 'halftime' ? stateLabel('halftime') : minuteText(match.elapsed, match.elapsedExtra)}
         </Text71>
       );
     } else if (state === 'finished') {
-      main = <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
     } else if (state === 'matchday') {
       main = <Countdown to={moment.countdownTo ?? match.kickoff} base={now} ticking={ticking} />;
-      under = (
-        <Text71 variant="eyebrow13" color="textMuted" numberOfLines={1}>{`${NEXT_MATCH_TEXT.today} · ${kick}`}</Text71>
-      );
     } else {
       main = off ? (
         <Text71 variant="titleS20" numberOfLines={1} testID="next-time">{stateLabel(ui).toUpperCase()}</Text71>
       ) : (
-        <Text71 variant={big} numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
+        <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
       );
     }
-    const showAction = action && !(compact && state === 'live');
-    const slot = showAction ? (
+    const showAction = !plain && action && state !== 'live';
+    const slot = minute ?? (showAction ? (
       <Chip label={action.label} tone={action.label === 'VER JOGO' ? 'subtle' : 'primary'} onPress={() => onAction(action.href)} />
-    ) : state === 'next' ? (
+    ) : state === 'next' || state === 'matchday' ? (
       <TvChip tv={match.tv} testID="next-tv" />
-    ) : null;
-    const pillText = state === 'live' ? NEXT_MATCH_TEXT.live : state === 'finished' ? NEXT_MATCH_TEXT.finished : NEXT_MATCH_TEXT.next;
+    ) : null);
+    const pill = state === 'live' ? <MomentChip text={NEXT_MATCH_TEXT.live} live /> : state === 'finished' ? <MomentChip text={NEXT_MATCH_TEXT.finished} /> : null;
+    const crest = compact ? 'md' : 'hd';
+    const crestBox = compact ? layout.crestCard : layout.crestHeader;
+    const centerW = compact ? layout.matchCardCenterCompact : layout.matchCardCenter;
     content = (
-      <View style={styles.fill} pointerEvents="box-none">
+      <View style={[styles.fill, compact && styles.fillCompact]} pointerEvents="box-none">
         <View pointerEvents="none">
           <MatchTitles
             competitionName={comp.name}
             round={comp.round}
-            pill={<MomentChip text={pillText} live={state === 'live'} />}
-            date={formatCardDate(match.kickoff)}
+            pill={pill}
+            date={state === 'matchday' ? `${NEXT_MATCH_TEXT.today} · ${kick}` : formatCardDate(match.kickoff)}
             tight={compact}
           />
         </View>
-        <View style={[styles.body, compact && styles.bodyCompact]} pointerEvents="box-none">
-          <HeaderTeam team={vm.home} side="home" crest={compact ? 'md' : 'hd'} />
-          <View style={[styles.center, compact && styles.centerCompact]} pointerEvents="box-none">
-            <View pointerEvents="none" style={{ alignItems: 'center', gap: space.s4 }}>
-              {main}
-              {under}
-            </View>
-            {compact ? slot : null}
+        <View style={[styles.row, { marginTop: compact ? space.s12 : space.s16 }]} pointerEvents="box-none">
+          <View style={styles.side} pointerEvents="none">
+            <TeamCrest team={vm.home} testID="crest-home" size={crest} />
           </View>
-          <HeaderTeam team={vm.away} side="away" crest={compact ? 'md' : 'hd'} />
+          <View style={[styles.mid, { width: centerW, height: crestBox.height }]} pointerEvents="none">
+            {main}
+          </View>
+          <View style={styles.side} pointerEvents="none">
+            <TeamCrest team={vm.away} testID="crest-away" size={crest} />
+          </View>
         </View>
-        {/* Linha de baixo com altura fixa: canal de TV ou ação; sem nada fica o espaço (a hora não desce). */}
-        {compact ? null : (
-          <View style={styles.slot} pointerEvents="box-none">
+        <View style={[styles.row, styles.names]} pointerEvents="box-none">
+          <Text71 variant={compact ? 'strong14' : 'label16'} numberOfLines={1} style={styles.name}>{vm.home.name}</Text71>
+          <View style={[styles.mid, { width: centerW, minHeight: layout.matchCardSlot }]} pointerEvents="box-none">
             {slot}
           </View>
-        )}
+          <Text71 variant={compact ? 'strong14' : 'label16'} numberOfLines={1} style={styles.name}>{vm.away.name}</Text71>
+        </View>
       </View>
     );
   }
 
   const tappable = match && state !== 'loading' && state !== 'none';
   return (
-    <View testID="next-match-card" style={[styles.shadow, compact && styles.shadowCompact]}>
+    <View testID="next-match-card" style={[styles.shadow, compact && styles.shadowCompact, tappable ? null : styles.fixed, tappable || !compact ? null : styles.fixedCompact]}>
       <View style={styles.card}>
         <CardGradient />
         {tappable ? (
@@ -317,7 +321,7 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
           />
         ) : null}
         {/* 20/11: ao mudar de estado (a carregar para o jogo, próximo para ao vivo) o conteúdo entra com um fade curto. */}
-        <Appear key={state} style={[styles.fill, compact && styles.fillCompact]} pointerEvents="box-none">
+        <Appear key={state} style={tappable ? undefined : styles.grow} pointerEvents="box-none">
           {content}
         </Appear>
       </View>
@@ -327,19 +331,25 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
 
 const styles = StyleSheet.create({
   // Sem sombra: num cartão transparente a sombra via-se por trás e escurecia o leão.
-  shadow: { height: layout.matchCardHeight, borderRadius: radii.r12 },
-  shadowCompact: { height: layout.matchCardHeightCompact },
-  fillCompact: { paddingTop: space.s12 },
-  bodyCompact: { paddingTop: space.s8 },
-  centerCompact: { minHeight: layout.crestCard.height },
+  // 21/11: a altura segue o conteúdo (nada fica cortado); só os estados sem jogo (a carregar, sem jogo, erro) têm altura fixa.
+  shadow: { borderRadius: radii.r12 },
+  shadowCompact: {},
+  fixed: { height: layout.matchCardHeight },
+  fixedCompact: { height: layout.matchCardHeightCompact },
+  grow: { flex: 1 },
+  fillCompact: { paddingTop: space.s12, paddingBottom: space.s12 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  side: { flex: 1, flexBasis: 0, alignItems: 'center' },
+  mid: { alignItems: 'center', justifyContent: 'center' },
+  names: { marginTop: space.s8 },
+  name: { flex: 1, flexBasis: 0, textAlign: 'center' },
   card: {
-    flex: 1,
     borderRadius: radii.r12,
     borderWidth: layout.matchCardBorder,
     borderColor: colors.white,
     overflow: 'hidden',
   },
-  fill: { flex: 1, paddingTop: space.s16, paddingHorizontal: space.s12 },
+  fill: { paddingTop: space.s16, paddingBottom: space.s16, paddingHorizontal: space.s12 },
   strip: {
     alignItems: 'center',
     gap: space.s4,
