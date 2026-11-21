@@ -352,6 +352,7 @@ export const layout = {
   matchCardTeamMax: 108,
   matchCardCenter: 150, // 21/11: coluna central fixa (hora, contagem, resultado; TV, minuto ou ação) para o cartão ser simétrico
   matchCardCenterCompact: 136,
+  matchCardCrestLift: 8, // 21/11 (Martim): emblemas e nomes sobem para o meio do emblema ficar à altura da hora/contagem
   matchCardCenterMin: 84, // largura do esqueleto da hora; abaixo disto os nomes levam reticências
   matchCardBorder: 1,
   crestCard: { width: 52, height: 60 }, // 4920:5096

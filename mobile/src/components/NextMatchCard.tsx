@@ -286,13 +286,13 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
           />
         </View>
         <View style={[styles.row, { marginTop: compact ? space.s12 : space.s16 }]} pointerEvents="box-none">
-          <View style={styles.side} pointerEvents="none">
+          <View style={[styles.side, styles.lift]} pointerEvents="none">
             <TeamCrest team={vm.home} testID="crest-home" size={crest} />
           </View>
           <View style={[styles.mid, { width: centerW, height: crestBox.height }]} pointerEvents="none">
             {main}
           </View>
-          <View style={styles.side} pointerEvents="none">
+          <View style={[styles.side, styles.lift]} pointerEvents="none">
             <TeamCrest team={vm.away} testID="crest-away" size={crest} />
           </View>
         </View>
@@ -342,7 +342,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   side: { flex: 1, flexBasis: 0, alignItems: 'center' },
   mid: { alignItems: 'center', justifyContent: 'center' },
-  names: { marginTop: space.s8 },
+  // Os emblemas sobem (o desenho do emblema tem o "SCP" por cima e o centro visual mais abaixo); os nomes acompanham.
+  lift: { transform: [{ translateY: -layout.matchCardCrestLift }] },
+  names: { marginTop: space.s8 - layout.matchCardCrestLift },
   // 21/11 (captura do Hóquei): o iOS só encolhe o texto até caber se ele tiver largura; sem ela a hora ficava minúscula e
   // encostada. Ocupa a coluna central inteira e centra.
   big: { alignSelf: 'stretch', textAlign: 'center' },

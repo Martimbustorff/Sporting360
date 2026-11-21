@@ -75,11 +75,18 @@ export default function Agenda() {
 
   // Só se recalcula quando chega um snapshot novo (a identidade do Loadable muda), não a cada render.
   const lists = useMemo(() => agendaLists(listOf(upcoming), listOf(results)), [upcoming, results]);
-  const list = tab === 'upcoming' ? lists.upcoming : lists.results;
   const next = lists.upcoming[0] ?? null;
+  // 21/11 (Martim): o próximo jogo já está em destaque no cartão; em Próximos a lista começa no seguinte.
+  const list = tab === 'upcoming' ? lists.upcoming.slice(1) : lists.results;
+  // As fontes contam também o jogo do cartão (está no ecrã).
+  const shown = tab === 'upcoming' ? lists.upcoming : lists.results;
   const modalidade = sportLabel(sport).toLowerCase();
   const empty =
-    tab === 'upcoming' ? `Sem jogos de ${modalidade} agendados.` : `Sem resultados de ${modalidade}.`;
+    tab === 'upcoming'
+      ? next
+        ? `Sem mais jogos de ${modalidade} agendados.`
+        : `Sem jogos de ${modalidade} agendados.`
+      : `Sem resultados de ${modalidade}.`;
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -126,7 +133,7 @@ export default function Agenda() {
     </View>
   );
 
-  const sources = sport === 'football' ? [...new Set([FOOTBALL_SOURCE, ...attributions(list)])] : attributions(list);
+  const sources = sport === 'football' ? [...new Set([FOOTBALL_SOURCE, ...attributions(shown)])] : attributions(shown);
   // Rodapé só quando há fontes a atribuir: sem ele não fica um bloco vazio no fim.
   const footer =
     sources.length > 0 ? (

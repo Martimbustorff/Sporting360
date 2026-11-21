@@ -110,10 +110,18 @@ describe('listas', () => {
   } as Partial<Match> & { id: string });
 
   it('Próximos mostra as linhas e carregar numa abre /jogo/{id}', async () => {
+    mockUpcoming.current = ready([ns, match({ id: '1002', kickoff: new Date('2026-12-28T18:00:00Z') } as Partial<Match> & { id: string })]);
+    await render(ui());
+    await fireEvent.press(screen.getByTestId('match-row-1002'));
+    expect(router.push).toHaveBeenCalledWith('/jogo/1002');
+  });
+
+  it('21/11: o próximo jogo (no cartão) não se repete na lista de Próximos', async () => {
     mockUpcoming.current = ready([ns]);
     await render(ui());
-    await fireEvent.press(screen.getByTestId('match-row-1001'));
-    expect(router.push).toHaveBeenCalledWith('/jogo/1001');
+    expect(screen.getByTestId('next-match-card')).toBeTruthy();
+    expect(screen.queryByTestId('match-row-1001')).toBeNull();
+    expect(screen.getByText('Sem mais jogos de futebol agendados.')).toBeTruthy();
   });
 
   it('o separador Resultados mostra a lista por data descendente', async () => {
@@ -195,7 +203,7 @@ describe('carregamento, cache e erro (Review Focus 3)', () => {
     await render(ui());
     expect(await screen.findByTestId('offline-banner', {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(OFFLINE_TEXT)).toBeTruthy();
-    expect(screen.getByTestId('match-row-1001')).toBeTruthy();
+    expect(screen.getByTestId('next-match-card')).toBeTruthy();
   });
 
   it('com dados do servidor não há aviso', async () => {
