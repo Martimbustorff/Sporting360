@@ -200,7 +200,7 @@ export const layout = {
   pitchCircle: 64,
   lineupPhoto: 34, // 4947:8539
   lineupPhotoBox: 36,
-  lineupBall: 16, // 21/11: bola do marcador no campo, no canto de baixo à esquerda da foto (a nota fica em cima à direita, o número ao meio)
+  lineupBall: 16, // 21/11: bola do marcador no campo, no canto de cima à esquerda da foto, ao espelho da nota (em baixo está o número)
   lineupBallLeft: -8,
   lineupChipLeft: 20, // nota: left 20, top 0 (4947:8542)
   lineupChipRadius: 4,

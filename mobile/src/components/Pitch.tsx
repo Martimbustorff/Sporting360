@@ -92,7 +92,7 @@ function Player({ p, rating, value, photo, onPress, goals = 0 }: {
           </View>
         ) : null}
         {goals > 0 ? (
-          <View style={{ position: 'absolute', bottom: 0, left: layout.lineupBallLeft }}>
+          <View style={{ position: 'absolute', top: 0, left: layout.lineupBallLeft }}>
             <GoalBall goals={goals} />
           </View>
         ) : null}
