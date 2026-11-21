@@ -6,10 +6,10 @@ jest.mock('expo-widgets', () => {
 });
 
 import { Platform } from 'react-native';
+import * as svc from '@/services/liveActivity';
 
 it('no Android não carrega o expo-widgets e não faz nada', async () => {
   Object.defineProperty(Platform, 'OS', { get: () => 'android', configurable: true });
-  const svc = await import('@/services/liveActivity');
   expect(svc.sharedDir()).toBeNull();
   expect(svc.startIfMissing({ sport: 'football', status: 'LIVE', elapsed: 30 } as never, [], new Date())).toBe(false);
   expect(svc.watchPushToStart('u1')()).toBeUndefined();
