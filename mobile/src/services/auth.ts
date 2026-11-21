@@ -13,6 +13,7 @@ import { codeOf, reportCode } from '@/lib/report';
 import { authInstance, db } from '@/services/firebase';
 import { ensureProfile } from '@/services/profile';
 import { unregisterPush } from '@/services/push';
+import { unregisterLiveActivity } from '@/services/liveActivity';
 
 function fail(e: unknown): never {
   throw new Error(authErrorMessage(codeOf(e)));
@@ -68,6 +69,7 @@ export async function signOut(): Promise<void> {
   if (user?.uid) {
     try {
       await unregisterPush(user.uid);
+      await unregisterLiveActivity(user.uid);
     } catch {
       // a sessão termina na mesma
     }

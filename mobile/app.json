@@ -104,7 +104,15 @@
           "recordAudioAndroid": false
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.scp360",
+          "enablePushNotifications": true,
+          "frequentUpdates": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
