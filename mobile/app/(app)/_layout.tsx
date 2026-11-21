@@ -5,7 +5,6 @@ import { GoalCelebration } from '@/components/GoalCelebration';
 import { setPendingLink } from '@/lib/pendingLink';
 import { peekSignOutNotice } from '@/lib/signOutNotice';
 import { BiometricGate } from '@/providers/BiometricGate';
-import { LiveActivitySetup } from '@/providers/LiveActivitySetup';
 import { PushSetup } from '@/providers/PushSetup';
 import { useSession } from '@/providers/SessionProvider';
 import { getAnalyticsConsent } from '@/services/analytics';
@@ -79,8 +78,6 @@ export default function AppLayout() {
       <GoalCelebration />
       <AnalyticsConsentGate onSettled={() => setConsentSettled(true)} />
       <PushSetup uid={user.uid} ready={consentSettled} />
-      {/* Plano 10: jogo no ecrã de bloqueio (só iPhone). */}
-      <LiveActivitySetup uid={user.uid} />
     </BiometricGate>
   );
 }
