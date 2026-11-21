@@ -18,6 +18,7 @@ export const CONTA_TEXT = {
   noEmail: 'Sem email',
   loading: 'A carregar…',
   nameError: 'Não foi possível carregar o nome.',
+  noSince: 'Adicionar (MM/AAAA)',
 } as const;
 
 function Field({ label, value, onPress, a11y }: { label: string; value: string; onPress?: () => void; a11y?: string }) {
@@ -64,6 +65,7 @@ export default function Conta() {
   const uid = user?.uid ?? null;
   const profile = usePublicProfile(uid);
   const doc = useMyUser(uid);
+  const since = doc.status === 'ready' && doc.data.partnerNumber != null ? String(doc.data.partnerNumber).trim() : '';
 
   // Nome público: o de publicProfiles; sem ele, a regra do servidor ("Maria C."), como no Perfil.
   let name: string = CONTA_TEXT.loading;
@@ -83,6 +85,13 @@ export default function Conta() {
         contentContainerStyle={{ paddingHorizontal: space.s24, paddingTop: layout.authContentTop, gap: layout.settingsFieldGap }}
       >
         <Field label="Nome público" value={name} a11y={`Nome público: ${name}. Mudar`} onPress={() => router.push('/perfil/nome')} />
+        {/* 21/11 (Martim): "Sócio desde" também aqui, onde se procura; abre o Editar perfil (MM/AAAA). */}
+        <Field
+          label="Sócio desde"
+          value={since || CONTA_TEXT.noSince}
+          a11y={`Sócio desde: ${since || CONTA_TEXT.noSince}. Mudar`}
+          onPress={() => router.push('/perfil/editar')}
+        />
         <Field label="Email" value={user?.email ?? CONTA_TEXT.noEmail} />
         {user?.providers.includes('password') ? (
           <Touchable

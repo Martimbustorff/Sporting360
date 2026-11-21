@@ -77,6 +77,14 @@ describe('cabeçalho e filtro', () => {
     expect(router.push).toHaveBeenCalledWith('/equipa');
   });
 
+  it('21/11: o botão Plantel só aparece no Futebol', async () => {
+    await render(ui());
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
+    expect(screen.queryByRole('button', { name: 'Plantel' })).toBeNull();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Futebol' }));
+    expect(screen.getByRole('button', { name: 'Plantel' })).toBeTruthy();
+  });
+
   it('começa no Futebol e mudar para Futsal volta a perguntar os jogos dessa modalidade', async () => {
     await render(ui());
     expect(sportsAsked()[0]).toBe('football');

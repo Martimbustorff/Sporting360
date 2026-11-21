@@ -177,6 +177,7 @@ function Countdown({ to, base, ticking }: { to: Date; base: Date; ticking: boole
       numberOfLines={1}
       adjustsFontSizeToFit
       minimumFontScale={layout.matchCardCountdownMinScale}
+      style={styles.big}
       testID="next-countdown"
     >
       {countdownClock(running ? left : 0)}
@@ -246,21 +247,21 @@ export function NextMatchCard({ moment, match, now, ticking = false, error = fal
     let main: ReactNode;
     let minute: ReactNode = null;
     if (state === 'live') {
-      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit style={styles.big} testID="next-score">{scoreLine(match)}</Text71>;
       minute = (
         <Text71 variant={compact ? 'titleS20' : 'title24'} color="primaryOnDark" numberOfLines={1}>
           {ui === 'halftime' ? stateLabel('halftime') : minuteText(match.elapsed, match.elapsedExtra)}
         </Text71>
       );
     } else if (state === 'finished') {
-      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-score">{scoreLine(match)}</Text71>;
+      main = <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit style={styles.big} testID="next-score">{scoreLine(match)}</Text71>;
     } else if (state === 'matchday') {
       main = <Countdown to={moment.countdownTo ?? match.kickoff} base={now} ticking={ticking} />;
     } else {
       main = off ? (
         <Text71 variant="titleS20" numberOfLines={1} testID="next-time">{stateLabel(ui).toUpperCase()}</Text71>
       ) : (
-        <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit testID="next-time">{kick}</Text71>
+        <Text71 variant={compact ? 'score56' : 'score72'} numberOfLines={1} adjustsFontSizeToFit style={styles.big} testID="next-time">{kick}</Text71>
       );
     }
     const showAction = !plain && action && state !== 'live';
@@ -342,6 +343,9 @@ const styles = StyleSheet.create({
   side: { flex: 1, flexBasis: 0, alignItems: 'center' },
   mid: { alignItems: 'center', justifyContent: 'center' },
   names: { marginTop: space.s8 },
+  // 21/11 (captura do Hóquei): o iOS só encolhe o texto até caber se ele tiver largura; sem ela a hora ficava minúscula e
+  // encostada. Ocupa a coluna central inteira e centra.
+  big: { alignSelf: 'stretch', textAlign: 'center' },
   name: { flex: 1, flexBasis: 0, textAlign: 'center' },
   card: {
     borderRadius: radii.r12,

@@ -151,10 +151,13 @@ describe('cabeçalho', () => {
     expect(router.push).toHaveBeenCalledWith('/perfil');
   });
 
-  it('sem partnerNumber (ou ilegível) não mostra os anos de sócio', async () => {
+  it('sem partnerNumber (ou ilegível) não mostra os anos de sócio, pede-os e o toque abre o Editar perfil (21/11)', async () => {
     mockUser.current = { status: 'ready', data: { name: 'João Oliveira Simões' } };
     await render(ui());
     expect(screen.queryByTestId('home-member-years')).toBeNull();
+    expect(screen.getByTestId('home-member-years-ask').props.children).toBe('ADICIONAR ANOS DE SÓCIO');
+    await fireEvent.press(screen.getByText('João Oliveira Simões'));
+    expect(router.push).toHaveBeenCalledWith('/perfil/editar');
     mockUser.current = { status: 'ready', data: { name: 'João Oliveira Simões', partnerNumber: 'abc' } };
     await render(ui());
     expect(screen.queryByTestId('home-member-years')).toBeNull();

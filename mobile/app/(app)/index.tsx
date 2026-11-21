@@ -28,6 +28,8 @@ import { useSession } from '@/providers/SessionProvider';
 import { Text71 } from '@/theme/typography';
 import { colors, layout, space, type } from '@/theme/tokens';
 
+export const HOME_MEMBER_ASK = 'Adicionar anos de sócio';
+
 const ICONS = {
   settings: require('../../assets/icons/settings-future.svg'), // 4:1727 Interface / Settings_Future
   news: require('../../assets/icons/news.svg'), // 1561:5409 news_icon_with_photo 7
@@ -99,6 +101,8 @@ export default function Home() {
       : publicName({ displayName: profile.status === 'ready' ? profile.data.displayName : null }, uid));
   const since = user.status === 'ready' && user.data.partnerNumber != null ? String(user.data.partnerNumber).trim() : '';
   const years = since ? memberYearsText(since) : null;
+  // 21/11 (Martim): sem data legível, a Home diz onde se põe e o toque abre logo o campo "Sócio desde".
+  const askYears = user.status === 'ready' && !years;
   const comunidade = config.status === 'ready' && config.data.features.comunidadeLeonina === true;
   const items = menuItems(comunidade);
 
@@ -129,8 +133,8 @@ export default function Home() {
 
         <Touchable
           accessibilityRole="button"
-          accessibilityHint="Abre o perfil"
-          onPress={() => router.push('/perfil')}
+          accessibilityHint={askYears ? 'Abre o campo Sócio desde' : 'Abre o perfil'}
+          onPress={() => router.push(askYears ? '/perfil/editar' : '/perfil')}
           style={{ paddingTop: space.s16, paddingBottom: space.s16 }}
         >
           <Text71 variant="titleL28" numberOfLines={1}>{name}</Text71>
@@ -138,6 +142,10 @@ export default function Home() {
           {years ? (
             <Text71 testID="home-member-years" variant="titleS20" color="textSubtle" style={{ paddingTop: space.s4 }}>
               {years.toUpperCase()}
+            </Text71>
+          ) : askYears ? (
+            <Text71 testID="home-member-years-ask" variant="titleS20" color="primaryOnDark" style={{ paddingTop: space.s4 }}>
+              {HOME_MEMBER_ASK.toUpperCase()}
             </Text71>
           ) : null}
         </Touchable>

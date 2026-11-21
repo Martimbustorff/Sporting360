@@ -258,6 +258,16 @@ describe('Conta', () => {
     expect(screen.queryByDisplayValue('ze@x.pt')).toBeNull();
   });
 
+  it('21/11: Sócio desde aparece e abre o Editar perfil; sem data diz Adicionar', async () => {
+    await render(wrap(<Conta />));
+    expect(screen.getByText('Adicionar (MM/AAAA)')).toBeTruthy();
+    mockMyUser.current = { status: 'ready', data: { partnerNumber: '05/2008' } };
+    await render(wrap(<Conta />));
+    expect(screen.getByText('05/2008')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: /Sócio desde: 05\/2008/ }));
+    expect(mockPush).toHaveBeenCalledWith('/perfil/editar');
+  });
+
   it('tocar no nome abre /perfil/nome', async () => {
     await render(wrap(<Conta />));
     await fireEvent.press(screen.getByRole('button', { name: /Nome público/ }));

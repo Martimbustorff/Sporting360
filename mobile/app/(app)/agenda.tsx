@@ -144,14 +144,17 @@ export default function Agenda() {
       <Header
         title="CALENDÁRIO"
         onBack={back}
+        // 21/11 (Martim): o plantel é o do futebol; nas outras modalidades o ícone não aparece.
         right={
-          <Touchable
-            accessibilityRole="button"
-            accessibilityLabel="Plantel"
-            onPress={() => router.push('/equipa')}
-          >
-            <Feather name="users" size={layout.headerIcon} color={colors.white} />
-          </Touchable>
+          sport === 'football' ? (
+            <Touchable
+              accessibilityRole="button"
+              accessibilityLabel="Plantel"
+              onPress={() => router.push('/equipa')}
+            >
+              <Feather name="users" size={layout.headerIcon} color={colors.white} />
+            </Touchable>
+          ) : undefined
         }
       />
       {bar}

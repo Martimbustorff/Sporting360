@@ -57,6 +57,8 @@ describe('compact (Home, 20/11)', () => {
     await render(<NextMatchCard compact moment={moment(m)} match={m} now={NOW} {...handlers} />);
     expect(StyleSheet.flatten(screen.getByTestId('next-match-card').props.style).height).toBeUndefined(); // 21/11: altura pelo conteúdo, nada cortado
     expect(StyleSheet.flatten(screen.getByTestId('next-time').props.style).fontSize).toBe(56);
+    // 21/11 (Hóquei): a hora ocupa a coluna central, senão o iOS encolhe-a até ficar minúscula.
+    expect(StyleSheet.flatten(screen.getByTestId('next-time').props.style)).toMatchObject({ alignSelf: 'stretch', textAlign: 'center' });
     expect(screen.getByTestId('next-tv')).toBeTruthy();
     expect(screen.getByText('Taça de Portugal')).toBeTruthy();
     expect(screen.getByText('SÁB 26 DEZ')).toBeTruthy();
