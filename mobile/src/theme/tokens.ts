@@ -473,6 +473,7 @@ export const layout = {
   matchRings: { size: 560, top: -74, opacity: 0.22 }, // 4924:6270 "Anéis (marca)" a 22 %
   lionFrameWidth: 375, // largura do frame do João onde lockLion/lockLionImage foram medidos
   screenLionOpacity: 0.55, // 20/11: leão desfocado no fundo dos ecrãs (menos Home e bilhete), por baixo do círculo
+  brandLionFade: 0.2, // 21/11: esbatido por cima da aresta de cima do leão (fração da altura do leão), sem linha visível
   matchBackdropHeight: 520, // altura do cantinho da luz (4924:6269)
   collapseRange: 120, // SEM FIGMA: alcance de reserva enquanto a altura do cabeçalho completo não foi medida
   collapseHeaderOut: 0.4, // 20/11: o cabeçalho completo (e o título da barra) somem até 40 % do colapso

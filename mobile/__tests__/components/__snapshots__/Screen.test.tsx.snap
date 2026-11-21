@@ -13,34 +13,46 @@ exports[`Screen snapshot (default) 1`] = `
   }
 >
   <View
+    onLayout={[Function]}
     pointerEvents="none"
     style={
-      {
-        "bottom": 0,
-        "left": 0,
-        "position": "absolute",
-        "right": 0,
-        "top": 0,
-      }
+      [
+        {
+          "bottom": 0,
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        },
+        {
+          "overflow": "hidden",
+        },
+      ]
     }
     testID="brand-backdrop"
   >
     <View
       style={
-        {
-          "height": 1326,
-          "left": -80,
-          "opacity": 0.55,
-          "overflow": "hidden",
-          "position": "absolute",
-          "top": 270,
-          "width": 1338,
-        }
+        [
+          {
+            "position": "absolute",
+          },
+          {
+            "height": 1093.8799999999999,
+            "left": -354.15187863377594,
+            "top": 316.6916000000001,
+            "width": 1409.3823908918403,
+          },
+          {
+            "opacity": 0.55,
+          },
+        ]
       }
       testID="brand-backdrop-lion"
     >
       <ViewManagerAdapter_ExpoImage
         accessible={false}
+        bottom={0}
         containerViewRef={"[React.ref]"}
         contentFit="fill"
         contentPosition={
@@ -49,8 +61,7 @@ exports[`Screen snapshot (default) 1`] = `
             "top": "50%",
           }
         }
-        height={1397.6}
-        left={-543}
+        left={0}
         nativeViewRef={"[React.ref]"}
         onError={[Function]}
         onLoad={[Function]}
@@ -58,6 +69,7 @@ exports[`Screen snapshot (default) 1`] = `
         onProgress={[Function]}
         placeholder={[]}
         position="absolute"
+        right={0}
         sfEffect={null}
         source={
           [
@@ -68,19 +80,18 @@ exports[`Screen snapshot (default) 1`] = `
         }
         style={
           {
-            "height": 1397.6,
-            "left": -543,
+            "bottom": 0,
+            "left": 0,
             "position": "absolute",
-            "top": -71.6,
-            "width": 1799.2,
+            "right": 0,
+            "top": 0,
           }
         }
         svgVariables={null}
         symbolSize={null}
         symbolWeight={null}
-        top={-71.6}
+        top={0}
         transition={null}
-        width={1799.2}
       />
     </View>
     <View
@@ -100,6 +111,59 @@ exports[`Screen snapshot (default) 1`] = `
         ]
       }
     />
+    <View
+      height={535.4676000000001}
+      style={
+        {
+          "left": 0,
+          "position": "absolute",
+          "right": 0,
+          "top": 0,
+        }
+      }
+      testID="brand-backdrop-fade"
+      width="100%"
+    >
+      <View
+        testID="svg-Defs"
+      >
+        <View
+          id="brandLionFade"
+          testID="svg-LinearGradient"
+          x1="0"
+          x2="0"
+          y1="0"
+          y2="1"
+        >
+          <View
+            offset={0}
+            stopColor="#001B13"
+            stopOpacity={1}
+            testID="svg-Stop"
+          />
+          <View
+            offset={0.5914299950174391}
+            stopColor="#001B13"
+            stopOpacity={1}
+            testID="svg-Stop"
+          />
+          <View
+            offset={1}
+            stopColor="#001B13"
+            stopOpacity={0}
+            testID="svg-Stop"
+          />
+        </View>
+      </View>
+      <View
+        fill="url(#brandLionFade)"
+        height="100%"
+        testID="svg-Rect"
+        width="100%"
+        x="0"
+        y="0"
+      />
+    </View>
     <View
       style={
         {
