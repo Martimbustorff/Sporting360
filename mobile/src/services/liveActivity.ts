@@ -7,7 +7,6 @@
 // Erros só com reportCode: nunca o token nem o uid.
 import { Asset } from 'expo-asset';
 import { File } from 'expo-file-system';
-import { addPushToStartTokenListener, widgetsDirectory } from 'expo-widgets';
 import { getMessaging, getToken } from '@react-native-firebase/messaging';
 import { deleteDoc, doc, serverTimestamp, setDoc } from '@react-native-firebase/firestore';
 import { Platform } from 'react-native';
@@ -15,7 +14,8 @@ import type { EventItem, Match } from '@/data/schemas';
 import { CREST_FILE, matchActivityProps } from '@/lib/matchActivity';
 import { reportCode } from '@/lib/report';
 import { db } from '@/services/firebase';
-import MatchActivity from '../../widgets/MatchActivity';
+import type { LiveActivityFactory } from 'expo-widgets';
+import type { MatchActivityProps as Props } from '@/lib/matchActivity';
 
 const SPORTING_CREST = require('../../assets/images/sporting-cp-2026.png') as number;
 /** Com o jogo há menos disto a decorrer, a atividade vem pelo servidor; depois, a app arranca-a se faltar. */
@@ -23,9 +23,22 @@ export const LOCAL_START_AFTER_MIN = 3;
 
 export const liveActivitySupported = (): boolean => Platform.OS === 'ios' && Number.parseFloat(String(Platform.Version)) >= 16.1;
 
+// O expo-widgets e a atividade só se carregam no iPhone: no Android o módulo nativo não tem a fábrica de atividades e
+// carregar widgets/MatchActivity rebentava ao abrir a app.
+type Widgets = typeof import('expo-widgets');
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- carregar só no iPhone
+const widgets = (): Widgets => require('expo-widgets') as Widgets;
+let factory: LiveActivityFactory<Props> | null = null;
+function MatchActivity(): LiveActivityFactory<Props> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- carregar só no iPhone
+  factory ??= (require('../../widgets/MatchActivity') as { default: LiveActivityFactory<Props> }).default;
+  return factory;
+}
+
 /** Pasta partilhada sem a barra final (o servidor junta "/crest_X.png"). */
 export function sharedDir(): string | null {
-  const d = widgetsDirectory;
+  if (!liveActivitySupported()) return null;
+  const d = widgets().widgetsDirectory;
   return d ? d.replace(/\/+$/, '') : null;
 }
 
@@ -41,7 +54,7 @@ async function fcmToken(): Promise<string | null> {
 export function watchPushToStart(uid: string): () => void {
   if (!liveActivitySupported()) return () => undefined;
   try {
-    const sub = addPushToStartTokenListener(({ activityPushToStartToken }) => {
+    const sub = widgets().addPushToStartTokenListener(({ activityPushToStartToken }) => {
       void (async () => {
         const token = await fcmToken();
         if (!token || !activityPushToStartToken) return;
@@ -65,7 +78,7 @@ export function watchActivities(uid: string, matchId: string): () => void {
   if (!liveActivitySupported()) return () => undefined;
   const subs: { remove: () => void }[] = [];
   try {
-    for (const activity of MatchActivity.getInstances()) {
+    for (const activity of MatchActivity().getInstances()) {
       const save = (activityToken: string) =>
         void (async () => {
           const token = await fcmToken();
@@ -114,8 +127,8 @@ export function startIfMissing(match: Match, events: EventItem[], now: Date): bo
   if (match.status !== 'LIVE' && match.status !== 'HT') return false;
   if ((match.elapsed ?? 0) < LOCAL_START_AFTER_MIN) return false;
   try {
-    if (MatchActivity.getInstances().length > 0) return false;
-    MatchActivity.start(matchActivityProps(match, events, now, sharedDir()), `s360://jogo/${match.id}`);
+    if (MatchActivity().getInstances().length > 0) return false;
+    MatchActivity().start(matchActivityProps(match, events, now, sharedDir()), `s360://jogo/${match.id}`);
     return true;
   } catch (e) {
     reportCode('liveActivity.start', e);
