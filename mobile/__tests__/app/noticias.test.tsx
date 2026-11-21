@@ -66,10 +66,12 @@ describe('Notícias: filtro', () => {
     expect(useNews).toHaveBeenLastCalledWith(null);
   });
 
-  it('o filtro tem Todas e as modalidades visíveis (futebol, futsal, hóquei; 20/11)', async () => {
+  it('o filtro tem Todas e as seis modalidades (21/11)', async () => {
     await renderScreen();
-    expect(screen.getAllByRole('tab')).toHaveLength(4);
-    expect(screen.queryByRole('tab', { name: 'Andebol' })).toBeNull();
+    expect(screen.getAllByRole('tab')).toHaveLength(7);
+    for (const name of ['Futebol', 'Futsal', 'Andebol', 'Hóquei em patins', 'Voleibol', 'Basquetebol']) {
+      expect(screen.getByRole('tab', { name })).toBeTruthy();
+    }
   });
 });
 
@@ -131,8 +133,8 @@ describe('Notícias: estados', () => {
     mockNews.current = ready([]);
     await renderScreen();
     expect(screen.getByText('Sem notícias por agora.')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('tab', { name: 'Futsal' }));
-    expect(screen.getByText('Sem notícias de futsal por agora.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('tab', { name: 'Andebol' }));
+    expect(screen.getByText('Em breve')).toBeTruthy();
   });
 
   it('leitura falhada mostra erro, nunca a mensagem de vazio', async () => {

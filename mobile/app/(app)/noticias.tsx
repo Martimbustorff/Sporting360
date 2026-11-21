@@ -19,19 +19,19 @@ import { useNow } from '@/data/clock';
 import type { News, Sport } from '@/data/schemas';
 import { useNews } from '@/data/user';
 import { openLink } from '@/lib/openLink';
-import { AGENDA_SPORTS, sportLabel } from '@/lib/sports';
+import { SPORTS } from '@/lib/sports';
 import { space } from '@/theme/tokens';
 
 type Filter = 'all' | Sport;
 
-// 20/11: só as modalidades visíveis na app (andebol, voleibol e basquetebol escondidos sem fonte de dados).
-const FILTERS: { key: Filter; label: string }[] = [{ key: 'all', label: 'Todas' }, ...AGENDA_SPORTS.map((s) => ({ key: s.key, label: s.label }))];
+// 21/11 (Martim): todas as modalidades; nas que ainda não têm notícias aparece "Em breve". Só o Calendário fica nas três
+// com dados.
+const FILTERS: { key: Filter; label: string }[] = [{ key: 'all', label: 'Todas' }, ...SPORTS.map((s) => ({ key: s.key, label: s.label }))];
 const MINUTE_MS = 60_000;
 
 export const NOTICIAS_TEXT = {
   error: 'Não foi possível carregar as notícias.',
-  empty: (filter: Filter) =>
-    filter === 'all' ? 'Sem notícias por agora.' : `Sem notícias de ${sportLabel(filter).toLowerCase()} por agora.`,
+  empty: (filter: Filter) => (filter === 'all' ? 'Sem notícias por agora.' : 'Em breve'),
 } as const;
 
 export default function Noticias() {
