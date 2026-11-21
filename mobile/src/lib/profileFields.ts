@@ -36,6 +36,12 @@ export function validMemberSince(v: string, now: Date = new Date()): boolean {
   return year < cur.year || (year === cur.year && month <= cur.month);
 }
 
+/** 21/11: máscara do campo "Sócio desde": só algarismos, a barra entra sozinha depois do mês ("052008" → "05/2008"). */
+export function formatMemberSince(v: string): string {
+  const d = v.replace(/\D/g, '').slice(0, 6);
+  return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+}
+
 /** 1 a 10 algarismos. */
 export function validMemberNumber(v: string): boolean {
   return /^\d{1,10}$/.test(v);
@@ -106,11 +112,15 @@ export function diffForm(
  * a Home mostra "30 anos de sócio"). Conta o ano só quando o mês de entrada já chegou. Valor ilegível ou no futuro: null.
  */
 export function memberYears(since: string, now: Date = new Date()): number | null {
-  const m = /^\s*(?:(\d{1,2})\s*\/?\s*)?((?:19|20)\d{2})\s*$/.exec(since);
+  // 21/11: também "05-2008", "05.2008", "05 2008" e "2008-05" (dados antigos com outros separadores).
+  const sep = '[\\s/.\\-]*';
+  const mY = new RegExp(`^\\s*(?:(\\d{1,2})${sep})?((?:19|20)\\d{2})\\s*$`).exec(since);
+  const yM = mY ? null : new RegExp(`^\\s*((?:19|20)\\d{2})${sep.replace('*', '+')}(\\d{1,2})\\s*$`).exec(since);
+  const m = mY ? { month: mY[1], year: mY[2] } : yM ? { month: yM[2], year: yM[1] } : null;
   if (!m) return null;
-  const month = m[1] ? Number(m[1]) : 1;
+  const month = m.month ? Number(m.month) : 1;
   if (month < 1 || month > 12) return null;
-  const year = Number(m[2]);
+  const year = Number(m.year);
   const cur = lisbonParts(now);
   const years = cur.year - year - (cur.month < month ? 1 : 0);
   return years < 0 ? null : years;

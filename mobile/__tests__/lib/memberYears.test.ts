@@ -1,4 +1,4 @@
-import { memberYears, memberYearsText } from '@/lib/profileFields';
+import { formatMemberSince, memberYears, memberYearsText } from '@/lib/profileFields';
 
 // 20/11/2026 ao meio-dia em Lisboa.
 const NOW = new Date('2026-11-20T12:00:00Z');
@@ -33,5 +33,25 @@ describe('memberYearsText', () => {
     expect(memberYearsText('11/2025', NOW)).toBe('1 ano de sócio');
     expect(memberYearsText('11/2026', NOW)).toBe('Sócio há menos de 1 ano');
     expect(memberYearsText('xx', NOW)).toBeNull();
+  });
+});
+
+describe('21/11: outros separadores e a máscara do campo', () => {
+  it('aceita - . espaço e AAAA-MM', () => {
+    expect(memberYears('05-2008', NOW)).toBe(18);
+    expect(memberYears('05.2008', NOW)).toBe(18);
+    expect(memberYears('05 2008', NOW)).toBe(18);
+    expect(memberYears('2008-05', NOW)).toBe(18);
+    expect(memberYears('2008/12', NOW)).toBe(17);
+    expect(memberYears('13-2008', NOW)).toBeNull();
+    expect(memberYears('abc', NOW)).toBeNull();
+  });
+  it('a máscara deixa só algarismos e põe a barra depois do mês', () => {
+    expect(formatMemberSince('0')).toBe('0');
+    expect(formatMemberSince('05')).toBe('05');
+    expect(formatMemberSince('052')).toBe('05/2');
+    expect(formatMemberSince('052008')).toBe('05/2008');
+    expect(formatMemberSince('05/20089')).toBe('05/2008');
+    expect(formatMemberSince('05-2008')).toBe('05/2008');
   });
 });

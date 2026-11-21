@@ -18,7 +18,7 @@ import { Touchable } from '@/components/Touchable';
 import { useMyUser } from '@/data/hooks';
 import type { Sport } from '@/data/schemas';
 import { useTeamData } from '@/data/sports';
-import { diffForm, formFromUser, SEASON_SEAT_MAX, type ProfileForm } from '@/lib/profileFields';
+import { diffForm, formatMemberSince, formFromUser, SEASON_SEAT_MAX, type ProfileForm } from '@/lib/profileFields';
 import { SPORTS } from '@/lib/sports';
 import { useSession } from '@/providers/SessionProvider';
 import { ProfileSaveError, updateMyProfileFields } from '@/services/userProfile';
@@ -209,9 +209,10 @@ function Form({ uid, initial }: { uid: string; initial: ProfileForm }) {
       <TextField
         label="Sócio desde (MM/AAAA)"
         value={form.partnerNumber}
-        onChangeText={(v) => set('partnerNumber', v)}
+        onChangeText={(v) => set('partnerNumber', formatMemberSince(v))}
         error={errors.partnerNumber}
-        keyboardType="numbers-and-punctuation"
+        keyboardType="number-pad"
+        placeholder="05/2008"
       />
       <TextField
         label="Lugar anual"
