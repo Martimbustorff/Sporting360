@@ -106,6 +106,7 @@ export const text71 = {
   badge11: { ...din, fontSize: 11, lineHeight: lh(11, 120), letterSpacing: 0.6 },
   /** Nomes da linha de jogo (20/11: emblemas e nomes maiores no Calendário). */
   body16: { fontFamily: fonts.body, fontSize: 16, lineHeight: lh(16, 140), letterSpacing: 0, textTransform: 'none' },
+  body18: { fontFamily: fonts.body, fontSize: 18, lineHeight: lh(18, 140), letterSpacing: 0, textTransform: 'none' }, // 21/11: nomes na linha do Calendário (35c)
   body14: { fontFamily: fonts.body, fontSize: 14, lineHeight: lh(14, 150), letterSpacing: 0, textTransform: 'none' },
   bodyLight14: { fontFamily: fonts.bodyLight, fontSize: 14, lineHeight: lh(14, 155), letterSpacing: 0.2, textTransform: 'none' },
   strong14: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: lh(14, 140), letterSpacing: 0, textTransform: 'none' },
@@ -732,6 +733,14 @@ export const layout = {
   pillRadius: 999,
   playerPhotoRoundedRadius: 20, // Foto do jogador 4959:9551: cantos de 20 também a 84 (frame 42)
   // V7.1 Calendário e jornadas (35 a 37): linha de jogo (4948:8278), seletor de ronda (4948:8390), quadro (4948:8517)
+  crestRowL: { width: 40, height: 46 }, // 21/11 Figma 35c: linha do Calendário em ecrãs de 375 pt ou mais
+  matchRowLargeFrom: 375,
+  // Na linha grande os espaços apertam para os nomes não perderem largura: com tudo junto, "Sporting CP" cabe a 16 a partir de
+  // 393 pt (como hoje) e a 18 a partir de 430 pt; entre os dois o nome encolhe até 16 antes de levar reticências.
+  matchRowCenterL: 54,
+  matchRowSideGapL: 6,
+  matchRowGapL: 6,
+  matchRowNameMinScale: 16 / 18, // abaixo disto (SE 1.ª geração, Android estreitos) a linha do Calendário fica com 32 e 16
   crestRow: { width: 32, height: 37 }, // 4948:8283 (20/11: maior, a data passou para cima)
   matchRowDate: 56, // coluna da data
   matchRowCenter: 58, // caixa da hora ou do resultado (4948:8286)

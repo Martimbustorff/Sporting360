@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { layout } from '@/theme/tokens';
-import { MatchRow } from '@/components/MatchRow';
+import { MatchRow, rowIsLarge } from '@/components/MatchRow';
 import type { GameStatus, Match } from '@/data/schemas';
 
 jest.mock('expo-image', () => {
@@ -201,6 +201,30 @@ describe('nomes longos (Review Focus 4)', () => {
   it('no Calendário (showCompetition) a linha de cima leva a competição e a jornada', async () => {
     await render(<MatchRow match={match()} showCompetition onPress={jest.fn()} />);
     expect(screen.getByTestId('row-competition').props.children).toMatch(/^LIGA PORTUGAL/);
+  });
+
+  describe('21/11 (Figma 35c): competição numa linha, jornada · data por baixo, maior a partir de 375 pt', () => {
+    it('a competição fica sozinha na primeira linha e a jornada abre a segunda', async () => {
+      await render(<MatchRow match={match()} showCompetition onPress={jest.fn()} />);
+      expect(screen.getByTestId('row-competition').props.children).toBe('LIGA PORTUGAL');
+      expect(StyleSheet.flatten(screen.getByTestId('row-date').props.style).flexDirection).toBeUndefined();
+      expect(screen.getByText('J16')).toBeTruthy();
+    });
+
+    it('cresce a partir de 375 pt: 320 e 360 não, 375, 393 e 430 sim', () => {
+      expect([320, 360, 374, 375, 393, 430].map(rowIsLarge)).toEqual([false, false, false, true, true, true]);
+    });
+
+    it('num ecrã grande (o do teste) emblemas 40 e nomes 18', async () => {
+      await render(<MatchRow match={match()} showCompetition onPress={jest.fn()} />);
+      expect(StyleSheet.flatten(screen.getByText('Sporting CP').props.style).fontSize).toBe(18);
+    });
+
+    it('fora do Calendário nunca cresce nem mostra a competição', async () => {
+      await render(<MatchRow match={match()} onPress={jest.fn()} />);
+      expect(screen.queryByTestId('row-competition')).toBeNull();
+      expect(StyleSheet.flatten(screen.getByText('Sporting CP').props.style).fontSize).toBe(16);
+    });
   });
 
   it('emblema da casa e de fora presentes com nomes longos', async () => {
