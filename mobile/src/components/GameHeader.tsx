@@ -381,25 +381,36 @@ function Center({ game }: { game: GameHeaderVM }) {
 }
 
 function Scorers({ goals }: { goals: GoalVM[] }) {
+  // 21/11 (Martim): cada marcador tem a sua bola, do lado de dentro (a casa à esquerda da bola, a de fora à direita).
+  const ball = (
+    <Image
+      source={ICON_BALL}
+      accessible={false}
+      style={{ width: layout.headerBallIcon, height: layout.headerBallIcon, marginTop: layout.headerBallTop }}
+    />
+  );
   const column = (side: 'home' | 'away') => (
     <View style={{ flex: 1, flexBasis: 0, gap: layout.headerScorersGap, alignItems: side === 'home' ? 'flex-end' : 'flex-start' }}>
       {goals
         .filter((g) => g.side === side)
         .map((g, i) => (
-          <Text71 key={`${side}-${i}`} variant="caption12" color="textMuted" numberOfLines={1} style={{ maxWidth: '100%' }}>
-            {g.text}
-          </Text71>
+          <View
+            key={`${side}-${i}`}
+            testID={`scorer-${side}`}
+            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: space.s4, maxWidth: '100%' }}
+          >
+            {side === 'away' ? ball : null}
+            <Text71 variant="caption12" color="textMuted" numberOfLines={1} style={{ flexShrink: 1 }}>
+              {g.text}
+            </Text71>
+            {side === 'home' ? ball : null}
+          </View>
         ))}
     </View>
   );
   return (
-    <View testID="game-scorers" style={{ flexDirection: 'row', alignSelf: 'stretch', gap: space.s8, paddingTop: space.s4 }}>
+    <View testID="game-scorers" style={{ flexDirection: 'row', alignSelf: 'stretch', gap: space.s16, paddingTop: space.s4 }}>
       {column('home')}
-      <Image
-        source={ICON_BALL}
-        accessible={false}
-        style={{ width: layout.headerBallIcon, height: layout.headerBallIcon, marginTop: layout.headerBallTop }}
-      />
       {column('away')}
     </View>
   );

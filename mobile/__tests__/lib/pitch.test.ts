@@ -1,6 +1,6 @@
 // Task 11: funções puras do campo (Formações).
 import type { LineupPlayer, PlayersDoc } from '@/data/schemas';
-import { enteredText, photosMap, pitchName, pitchRows, ratingNumbers, ratingOf } from '@/lib/pitch';
+import { enteredText, goalsMap, photosMap, pitchName, pitchRows, ratingNumbers, ratingOf } from '@/lib/pitch';
 
 const p = (playerId: string, grid: string | null, pos: string | null = null): LineupPlayer => ({
   playerId,
@@ -120,5 +120,15 @@ describe('pitchRowPositions (20/11: médios na linha do meio-campo)', () => {
         if (i > 0) expect(x).toBeGreaterThan(p[i - 1]!);
       });
     }
+  });
+});
+
+describe('goalsMap (21/11)', () => {
+  const g = (playerId: string | null, detail = 'Normal Goal', comments: string | null = null) =>
+    ({ minute: 10, extra: null, teamId: '228', playerId, assistId: null, type: 'goal', detail, comments }) as never;
+  it('conta golos por jogador, sem autogolos, penáltis falhados nem desempate', () => {
+    const ev = { items: [g('1'), g('1', 'Penalty'), g('2', 'Own Goal'), g('3', 'Missed Penalty'), g('4', 'Penalty', 'Penalty Shootout'), g(null)] };
+    expect(goalsMap(ev as never)).toEqual({ '1': 2 });
+    expect(goalsMap(null)).toEqual({});
   });
 });

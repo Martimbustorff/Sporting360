@@ -1,5 +1,5 @@
 // Formações: funções puras sobre `details/lineups` e `details/players` (Plano 2, liveTicker). Sem React nem Firestore.
-import type { LineupPlayer, PlayersDoc } from '@/data/schemas';
+import type { EventsDoc, LineupPlayer, PlayersDoc } from '@/data/schemas';
 
 const POS_ORDER = ['G', 'D', 'M', 'F'] as const;
 
@@ -105,4 +105,19 @@ export function pitchRowPositions(n: number): number[] {
   // Avançados acima do meio-campo, com pelo menos um passo de distância à linha de cima do meio.
   const top = Math.min(0.2, (mids[0] ?? 0.5) - step);
   return [top, ...mids.map((x) => x), 0.74, 0.94].slice(0, n);
+}
+
+/**
+ * 21/11 (Martim): golos de cada jogador (`playerId`) para a bola no campo e nos suplentes. Contam os golos marcados à
+ * própria equipa: sem autogolos, sem penáltis falhados e sem o desempate por penáltis.
+ */
+export function goalsMap(events: EventsDoc | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const e of events?.items ?? []) {
+    if (e.type !== 'goal' || !e.playerId) continue;
+    const detail = e.detail.toLowerCase();
+    if (detail === 'own goal' || detail === 'missed penalty' || e.comments === 'Penalty Shootout') continue;
+    out[e.playerId] = (out[e.playerId] ?? 0) + 1;
+  }
+  return out;
 }

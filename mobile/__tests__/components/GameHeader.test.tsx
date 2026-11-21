@@ -109,6 +109,8 @@ describe('GameHeader completo, ao vivo (frame 06)', () => {
     expect(scorers.getByText('L. Suárez 23’')).toBeTruthy();
     expect(scorers.getByText('Trincão 54’')).toBeTruthy();
     expect(scorers.getByText('Samu 38’')).toBeTruthy();
+    // 21/11 (Martim): uma bola por marcador, não uma só para todos.
+    expect(screen.getAllByTestId(/^scorer-/)).toHaveLength(3);
   });
 
   it('a linha do tempo põe os golos do Sporting em cima e os do adversário em baixo', async () => {

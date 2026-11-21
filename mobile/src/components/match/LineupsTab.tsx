@@ -11,16 +11,16 @@ import { View } from 'react-native';
 import { SkeletonRows } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { OfflineBanner } from '@/components/OfflineBanner';
-import { Pitch } from '@/components/Pitch';
+import { GoalBall, Pitch } from '@/components/Pitch';
 import { InfoRow } from '@/components/SectionBar';
 import { Segmented } from '@/components/Segmented';
 import { Touchable } from '@/components/Touchable';
 import type { EventsDoc, LineupPlayer, LineupsDoc, Match, PlayersDoc } from '@/data/schemas';
 import { useMatchDetail } from '@/data/sports';
 import { uiState } from '@/lib/matchVM';
-import { enteredText, photosMap, pitchRows, ratingNumbers, ratingsMap } from '@/lib/pitch';
+import { enteredText, goalsMap, photosMap, pitchRows, ratingNumbers, ratingsMap } from '@/lib/pitch';
 import { Text71 } from '@/theme/typography';
-import { layout, spacing } from '@/theme/tokens';
+import { layout, space, spacing } from '@/theme/tokens';
 import { MatchScrollView } from '@/components/match/MatchScroll';
 
 export const LINEUPS_ERROR = 'Não foi possível carregar os dados.';
@@ -51,13 +51,16 @@ function playedMinutes(players: PlayersDoc | null, playerId: string): number | n
   return null;
 }
 
-function SubRow({ p, note, onPress }: { p: LineupPlayer; note: string | null; onPress?: () => void }) {
+function SubRow({ p, note, onPress, goals = 0 }: { p: LineupPlayer; note: string | null; onPress?: () => void; goals?: number }) {
   const content = (
     <>
       <Text71 variant="label16" color="textSubtle" style={{ minWidth: layout.subNumberWidth }}>
         {p.number != null ? String(p.number) : ''}
       </Text71>
-      <Text71 variant="body14" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, minWidth: 0 }}>{p.name}</Text71>
+      <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: space.s8 }}>
+        <Text71 variant="body14" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1, minWidth: 0 }}>{p.name}</Text71>
+        <GoalBall goals={goals} testID="sub-goals" />
+      </View>
       {note ? <Text71 variant="caption12" color="textMuted" numberOfLines={1} testID="sub-note">{note}</Text71> : null}
     </>
   );
@@ -67,7 +70,7 @@ function SubRow({ p, note, onPress }: { p: LineupPlayer; note: string | null; on
     alignItems: 'center' as const,
     gap: layout.subRowGap,
   };
-  const label = `Suplente ${p.name}`;
+  const label = `Suplente ${p.name}${goals === 1 ? ', 1 golo' : goals > 1 ? `, ${goals} golos` : ''}`;
   return onPress ? (
     <Touchable testID="sub-row" accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={style}>
       {content}
@@ -99,6 +102,7 @@ export function LineupsTab({ match }: { match: Match }) {
   const eventsDoc = events.status === 'ready' ? events.data : null;
   const ratings = ratingsMap(playersDoc);
   const ratingValues = ratingNumbers(playersDoc);
+  const goals = goalsMap(eventsDoc);
   const photos = photosMap(playersDoc);
   const openPlayer = (id: string) => router.push(`/equipa/jogador/${id}`);
 
@@ -161,6 +165,7 @@ export function LineupsTab({ match }: { match: Match }) {
         ratings={ratings}
         ratingValues={ratingValues}
         photos={photos}
+        goals={goals}
         missing={!none && !team}
         onPlayer={selected === 'sporting' ? openPlayer : undefined}
       />
@@ -172,6 +177,7 @@ export function LineupsTab({ match }: { match: Match }) {
               key={`${p.playerId}-${i}`}
               p={p}
               note={subNote(p)}
+              goals={goals[p.playerId] ?? 0}
               onPress={selected === 'sporting' ? () => openPlayer(p.playerId) : undefined}
             />
           ))}

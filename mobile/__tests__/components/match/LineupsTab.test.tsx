@@ -180,6 +180,25 @@ describe('Formações', () => {
     expect(screen.getByText('não jogou')).toBeTruthy();
   });
 
+  it('21/11: quem marcou leva a bola no campo (com o número de golos) e nos suplentes', async () => {
+    const t = team('228', 100, '4-3-3', 'Rui Borges');
+    const ev = {
+      status: 'ready' as const,
+      data: { items: [
+        { minute: 13, extra: null, teamId: '228', playerId: '100', assistId: null, type: 'goal', detail: 'Normal Goal', comments: null },
+        { minute: 60, extra: null, teamId: '228', playerId: '100', assistId: null, type: 'goal', detail: 'Penalty', comments: null },
+        { minute: 94, extra: null, teamId: '228', playerId: '150', assistId: null, type: 'goal', detail: 'Normal Goal', comments: null },
+        { minute: 70, extra: null, teamId: '228', playerId: '101', assistId: null, type: 'goal', detail: 'Own Goal', comments: null },
+      ] },
+    };
+    mockDetails.current = { lineups: lineups([t, team('217', 200, '4-4-2', 'X')]), events: ev };
+    await render(<LineupsTab match={match('FT')} />);
+    const balls = screen.getAllByTestId('pitch-goals');
+    expect(balls).toHaveLength(1);
+    expect(within(balls[0]!).getByText('2')).toBeTruthy();
+    expect(screen.getAllByTestId('sub-goals')).toHaveLength(1);
+  });
+
   it('FT sem documento players: sem "não jogou"', async () => {
     mockDetails.current = { lineups: lineups() };
     await render(<LineupsTab match={match('FT')} />);

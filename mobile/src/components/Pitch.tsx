@@ -8,6 +8,7 @@
 // disponível." quando a equipa não tem onze.
 import { Fragment } from 'react';
 import { View } from 'react-native';
+import { Image } from 'expo-image';
 import { PlayerPhoto } from '@/components/PlayerPhoto';
 import { Touchable } from '@/components/Touchable';
 import type { LineupPlayer } from '@/data/schemas';
@@ -16,6 +17,29 @@ import { Text71 } from '@/theme/typography';
 import { colors, layout, radii, space } from '@/theme/tokens';
 
 export const NO_XI = 'Onze ainda não disponível.';
+
+const ICON_BALL = require('../../assets/icons/ball.svg') as number;
+
+/** 21/11 (Martim): bola de quem marcou; com mais de um golo, "2" ao lado. Também nos suplentes (LineupsTab). */
+export function GoalBall({ goals, testID = 'pitch-goals' }: { goals: number; testID?: string }) {
+  if (goals <= 0) return null;
+  return (
+    <View
+      testID={testID}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 1,
+        paddingHorizontal: 1,
+        borderRadius: layout.lineupChipRadius,
+        backgroundColor: colors.bg,
+      }}
+    >
+      <Image source={ICON_BALL} accessible={false} style={{ width: layout.lineupBall - 2, height: layout.lineupBall - 2 }} />
+      {goals > 1 ? <Text71 variant="badge11">{String(goals)}</Text71> : null}
+    </View>
+  );
+}
 
 export type PitchProps = {
   /** Linhas do onze, do guarda-redes para a frente (`pitchRows`). Vazio: campo sem jogadores. */
@@ -29,16 +53,20 @@ export type PitchProps = {
   missing?: boolean;
   /** Toque num jogador (só passado para o Sporting). */
   onPlayer?: (id: string) => void;
+  /** Golos por `playerId` (goalsMap). */
+  goals?: Record<string, number>;
 };
 
-function Player({ p, rating, value, photo, onPress }: {
+function Player({ p, rating, value, photo, onPress, goals = 0 }: {
   p: LineupPlayer;
   rating?: string;
   value?: number;
   photo?: string;
   onPress?: () => void;
+  goals?: number;
 }) {
-  const label = [p.number != null ? `${p.number} ${p.name}` : p.name, rating ? `nota ${rating}` : null]
+  const goalText = goals === 1 ? '1 golo' : goals > 1 ? `${goals} golos` : null;
+  const label = [p.number != null ? `${p.number} ${p.name}` : p.name, rating ? `nota ${rating}` : null, goalText]
     .filter(Boolean)
     .join(', ');
   const body = (
@@ -61,6 +89,11 @@ function Player({ p, rating, value, photo, onPress }: {
             }}
           >
             <Text71 variant="badge11">{rating}</Text71>
+          </View>
+        ) : null}
+        {goals > 0 ? (
+          <View style={{ position: 'absolute', bottom: 0, left: layout.lineupBallLeft }}>
+            <GoalBall goals={goals} />
           </View>
         ) : null}
       </View>
@@ -107,7 +140,7 @@ function Lines() {
 
 const gapBefore = (positions: number[], i: number) => (positions[i] ?? 0) - (i === 0 ? 0 : (positions[i - 1] ?? 0));
 
-export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer }: PitchProps) {
+export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer, goals = {} }: PitchProps) {
   // Guarda-redes em baixo: as linhas ao contrário e as colunas espelhadas.
   const shown = [...rows].reverse().map((r) => [...r].reverse());
   // Cada linha no seu sítio do relvado (médios no meio-campo); os espaços entre linhas são a diferença de posições.
@@ -144,6 +177,7 @@ export function Pitch({ rows, ratings, ratingValues, photos, missing, onPlayer }
                       rating={ratings[p.playerId]}
                       value={ratingValues[p.playerId]}
                       photo={photos[p.playerId]}
+                      goals={goals[p.playerId] ?? 0}
                       onPress={onPlayer ? () => onPlayer(p.playerId) : undefined}
                     />
                   </View>
